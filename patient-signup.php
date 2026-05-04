@@ -99,19 +99,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$patientNumber, $firstName, $lastName, $age, $sex, $contactNumber, $branchId]);
                 $patientId = $pdo->lastInsertId();
 
+                // Generate verification token
+                $verificationToken = bin2hex(random_bytes(32));
+
                 // Insert into users table
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status, patient_id) VALUES (?, ?, 'patient', 'Pending', ?)");
-                $stmt->execute([$email, $hashedPassword, $patientId]);
+                $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status, patient_id, is_email_verified, verification_token) VALUES (?, ?, 'patient', 'Pending', ?, 0, ?)");
+                $stmt->execute([$email, $hashedPassword, $patientId, $verificationToken]);
 
                 // Notify Branch Admin
                 $notifTitle = "New Patient Registration";
-                $notifMsg = "Patient " . $firstName . " " . $lastName . " has registered and is pending approval.";
-                $notifStmt = $pdo->prepare("INSERT INTO notifications (role, branch_id, title, message, link) VALUES ('branch_admin', ?, ?, ?, '/" . PROJECT_DIR . "/patient-approvals')");
+                $notifMsg = "Patient " . $firstName . " " . $lastName . " has registered a new account.";
+                $notifStmt = $pdo->prepare("INSERT INTO notifications (role, branch_id, title, message, link) VALUES ('branch_admin', ?, ?, ?, '/" . PROJECT_DIR . "/patients')");
                 $notifStmt->execute([$branchId, $notifTitle, $notifMsg]);
 
+                // Send Verification Email
+                require_once __DIR__ . '/app/helpers/mailer_helper.php';
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify.php?token=' . $verificationToken;
+                
+                $emailBody = "
+                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
+                        <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
+                        <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
+                        <p style='color: #4b5563; font-size: 16px;'>Thank you for registering. Please click the button below to verify your email address. This is required before you can log in to your account.</p>
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='{$verifyLink}' style='display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;'>Verify Email Address</a>
+                        </div>
+                        <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, you can copy and paste this link into your browser:<br><a href='{$verifyLink}' style='color: #2563eb;'>{$verifyLink}</a></p>
+                        <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
+                        <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
+                    </div>
+                ";
+                sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
+
                 $pdo->commit();
-                $success = 'Registration successful! Your account is currently pending approval by the Branch Admin.';
+                $success = 'Registration successful! Please check your email to verify your account.';
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $error = 'An error occurred during registration: ' . $e->getMessage();

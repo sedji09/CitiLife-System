@@ -31,7 +31,6 @@ return [
 
   "branch_admin" => [
     ["label" => "Dashboard", "icon" => "layout-dashboard", "href" => "/dashboard", "perm_key" => "dashboard"],
-    ["label" => "Patient Approvals", "icon" => "user-check", "href" => "/patient-approvals", "perm_key" => "approvals"],
     ["label" => "Record Requests", "icon" => "folder-sync", "href" => "/record-requests", "perm_key" => "record_requests"],
     ["label" => "Branch X-ray Cases", "icon" => "folder-open", "href" => "/branch-xray-cases", "perm_key" => "patient_history"],
     ["label" => "Audit Logs", "icon" => "file-search", "href" => "/audit-logs", "perm_key" => "audit_logs"],

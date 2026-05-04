@@ -135,7 +135,7 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
     <!-- Total Patients of Branch Card -->
     <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition group">
@@ -165,19 +165,6 @@
       </p>
     </div>
 
-    <!-- Pending Patient Approvals Card -->
-    <a href="?role=branch_admin&page=patient-approvals"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition block group">
-      <div class="flex items-center justify-between">
-        <p class="text-sm font-semibold text-gray-500 group-hover:text-green-600 transition">Pending
-          Patient Approvals</p>
-        <div class="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition">
-          <i data-lucide="user-round-check" class="w-5 h-5 text-green-600"></i>
-        </div>
-      </div>
-      <p class="text-3xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingApprovalsCount ?? 0) ?></p>
-      <p class="text-xs text-gray-400 mt-1">Awaiting confirmation</p>
-    </a>
 
     <!--Pending Record Requests Card -->
     <a href="?role=branch_admin&page=record-requests"

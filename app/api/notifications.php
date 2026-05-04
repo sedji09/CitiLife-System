@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notifId = $input['notification_id'] ?? null;
         
         // Base sql
-        $sql = "UPDATE notifications SET is_read = 1 WHERE (user_id = ? OR (role = ? AND (branch_id IS NULL OR branch_id = ?)))";
+        $sql = "UPDATE notifications SET is_read = 1 WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))";
         $params = [$userId, $role, $branchId];
 
         if ($notifId) {
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $stmt = $pdo->prepare("
     SELECT * FROM notifications 
     WHERE is_read = 0 
-      AND (user_id = ? OR (role = ? AND (branch_id IS NULL OR branch_id = ?)))
+      AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
     ORDER BY created_at DESC 
     LIMIT 20
 ");
@@ -65,7 +65,7 @@ $pdo->exec("UPDATE notifications SET link = REPLACE(link, '&amp;', '&') WHERE li
 $stmtCount = $pdo->prepare("
     SELECT COUNT(*) FROM notifications 
     WHERE is_read = 0 
-      AND (user_id = ? OR (role = ? AND (branch_id IS NULL OR branch_id = ?)))
+      AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
 ");
 $stmtCount->execute([$userId, $role, $branchId]);
 $unreadCount = $stmtCount->fetchColumn();
