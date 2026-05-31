@@ -1,24 +1,5 @@
 RewriteEngine On
 
-Options -Indexes
-
-# If the request is a real file or directory, serve it
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# If the user requests exactly what matches a PHP file, append .php to serve it
-# This allows /login to serve login.php, /patient-login to serve patient-login.php
-RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^(.*)$ $1.php [L]
-
-# Otherwise, route the first segment to index.php as the "page" parameter
-# This handles the internal dashboard routes like /dashboard, /patient-approvals
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([^/]+)/?$ index.php?page=$1 [L,QSA]
-
-# Route deeper paths to index.php just in case
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [L]
+# Send all requests to the public directory
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
