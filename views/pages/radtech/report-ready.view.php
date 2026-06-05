@@ -174,7 +174,7 @@
 
                                     <!-- Print Result -->
                                     <a href="javascript:void(0)" 
-                                        onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/app/views/pages/radtech/print-report.php?id=<?= $row['id'] ?>', 'Yes, Print', true, event)" 
+                                        onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)" 
                                         class="text-green-500 hover:text-green-700 transition"
                                         title="Print Report">
                                         <i data-lucide="printer"
@@ -320,7 +320,7 @@
             iframe.style.height = '1200px';
             iframe.style.border = 'none';
 
-            iframe.src = `${baseDir}/app/views/pages/radtech/print-report.php?id=${caseId}&no_shadow=1&snapshot=1`;
+            iframe.src = `${baseDir}/index.php?page=print-report&id=${caseId}&no_shadow=1&snapshot=1`;
             document.body.appendChild(iframe);
 
             iframe.onload = async () => {
@@ -344,7 +344,15 @@
                             width: page.scrollWidth,
                             height: page.scrollHeight,
                             windowWidth: doc.documentElement.scrollWidth,
-                            windowHeight: doc.documentElement.scrollHeight
+                            windowHeight: doc.documentElement.scrollHeight,
+                            onclone: (clonedDoc) => {
+                                clonedDoc.querySelectorAll('.page').forEach(el => {
+                                    el.style.margin = '0';
+                                    el.style.boxShadow = 'none';
+                                    el.style.border = 'none';
+                                    el.style.background = '#fff';
+                                });
+                            }
                         });
                         const imgData = canvas.toDataURL('image/jpeg', pages.length > 5 ? 0.8 : 0.9);
                         base64Images.push(imgData);

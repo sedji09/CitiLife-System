@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = [
             'first_name' => trim($_POST['first_name'] ?? ''),
             'last_name' => trim($_POST['last_name'] ?? ''),
-            'age' => (int)($_POST['age'] ?? 0),
+            'birthdate' => trim($_POST['birthdate'] ?? ''),
             'sex' => $_POST['sex'] ?? '',
             'contact_number' => trim($_POST['contact_number'] ?? '')
         ];

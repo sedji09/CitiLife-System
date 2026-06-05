@@ -1,6 +1,6 @@
 <?php
 /**
- * UserRoleDefaultsController.php
+ * UserRoleSettingsController.php
  * IT Admin module for managing system security policies and role permissions.
  */
 

@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'user_id'           => $userId,
                 'first_name'        => $nameParts[0] ?? '',
                 'last_name'         => $nameParts[1] ?? '',
-                'age'               => (int) ($_POST['age'] ?? 0),
+                'birthdate'         => $_POST['birthdate'] ?? '',
                 'sex'               => $_POST['sex'] ?? 'Male',
                 'contact_number'    => trim($_POST['contact'] ?? ''),
                 'branch_id'         => (int) ($_POST['branch_id'] ?? 0),
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'source'            => 'portal'
             ];
 
-            if (!$fullName || !$regData['sex'] || $regData['age'] <= 0 || !$regData['branch_id']) {
+            if (!$fullName || !$regData['sex'] || empty($regData['birthdate']) || !$regData['branch_id']) {
                 $error = 'Please fill in all required fields.';
             } else {
                 $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
@@ -67,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'priority'          => 'Routine'
             ];
 
-            if (!$regData['patient_id'] || !$regData['branch_id']) {
+            if (!$regData['patient_id']) {
+                $error = 'Patient profile not found. Please contact the clinic to link your account before requesting an X-ray.';
+            } elseif (!$regData['branch_id']) {
                 $error = 'Please select a branch.';
             } else {
                 $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);

@@ -1,9 +1,9 @@
 let currentEditId = null;
 
-function openEditModal(id, name, age, sex, contact, philhealth, philhealthId) {
+function openEditModal(id, name, birthdate, sex, contact, philhealth, philhealthId) {
     currentEditId = id;
     document.getElementById('modalName').value = name;
-    document.getElementById('modalAge').value = age;
+    document.getElementById('modalBirthdate').value = birthdate;
     document.getElementById('modalSex').value = sex;
     document.getElementById('modalContact').value = contact;
     document.getElementById('modalPhilHealth').value = philhealth;
@@ -50,13 +50,13 @@ function formatPhilHealthInput(input) {
 
 function saveEditModal() {
     const name = document.getElementById('modalName').value;
-    const age = document.getElementById('modalAge').value;
+    const birthdate = document.getElementById('modalBirthdate').value;
     const sex = document.getElementById('modalSex').value;
     const contact = document.getElementById('modalContact').value;
     const philhealth = document.getElementById('modalPhilHealth').value;
     const philhealthId = document.getElementById('modalPhilHealthId').value;
 
-    if (!name || !age || !sex || !contact) {
+    if (!name || !birthdate || !sex || !contact) {
         toast('Please fill in all required fields', 'error');
         return;
     }
@@ -85,7 +85,7 @@ function saveEditModal() {
     const inputs = [
         { name: 'id', value: currentEditId },
         { name: 'name', value: name },
-        { name: 'age', value: age },
+        { name: 'birthdate', value: birthdate },
         { name: 'sex', value: sex },
         { name: 'contact', value: contact },
         { name: 'philhealth', value: philhealth },

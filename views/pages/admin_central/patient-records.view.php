@@ -142,7 +142,8 @@
                                                 <i data-lucide="eye"
                                                     class="w-6 h-6 bg-blue-100 px-1 py-1 rounded-md border border-blue-500 text-blue-500"></i>
                                             </button>
-                                            <button type="button" class="opacity-80" title="Edit Patient (Coming Soon)">
+                                            <button type="button" class="opacity-80" title="Edit Patient"
+                                                onclick='openEditModal(<?= json_encode($p) ?>)'>
                                                 <i data-lucide="edit-3"
                                                     class="w-6 h-6 bg-green-100 px-1 py-1 rounded-md border border-green-500 text-green-500"></i>
                                             </button>
@@ -215,8 +216,8 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label for="age" class="block text-sm font-semibold text-gray-700 mb-1.5">Age</label>
-                    <input type="number" id="age" name="age" min="1" max="110" required
+                    <label for="birthdate" class="block text-sm font-semibold text-gray-700 mb-1.5">Birthdate</label>
+                    <input type="date" id="birthdate" name="birthdate" required
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
                 <div>
@@ -262,7 +263,7 @@
         document.getElementById('edit_patient_id').value = patient.id;
         document.getElementById('first_name').value = patient.first_name;
         document.getElementById('last_name').value = patient.last_name;
-        document.getElementById('age').value = patient.age;
+        document.getElementById('birthdate').value = patient.birthdate;
         document.getElementById('sex').value = patient.sex;
         document.getElementById('contact_number').value = patient.contact_number;
         document.getElementById('editPatientModal').classList.remove('hidden');

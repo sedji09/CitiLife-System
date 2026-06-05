@@ -2,16 +2,15 @@
 node_modules/
 vendor/
 # Database and Backups
-*.sql
-storage/backups/
-citilife_db.sql
+# *.sql
+# storage/backups/
+#citilife_db.sql
 # Configuration
-.env
-app/config/database.php
+#.env
+#app/config/database.php
 # IDE and OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-# Executables
 composer.phar

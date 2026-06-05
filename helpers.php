@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('Asia/Manila');
+
 if (!function_exists('basePath')) {
     /**
      * Get base path of the project
@@ -26,6 +28,9 @@ if (!function_exists('loadView')) {
         $viewPath = basePath("views/{$name}.view.php");
 
         if (file_exists($viewPath)) {
+            if (isset($data['viewPath'])) {
+                unset($data['viewPath']);
+            }
             extract($data);
             require $viewPath;
         } else {
@@ -44,13 +49,16 @@ if (!function_exists('loadLayoutView')) {
      */
     function loadLayoutView($name, $data = [])
     {
-        // Extract dynamic page variables first so they don't overwrite $contentView
-        extract($data);
-
+        $_originalName = $name;
         $contentView = basePath("views/{$name}.view.php");
 
+        if (isset($data['contentView'])) {
+            unset($data['contentView']);
+        }
+        extract($data);
+
         if (!file_exists($contentView)) {
-            echo "View '{$name}' not found at: {$contentView}";
+            echo "View '{$_originalName}' not found at: {$contentView}";
             return;
         }
 
@@ -86,6 +94,9 @@ if (!function_exists('loadPartial')) {
         $partialPath = basePath("views/partials/{$name}.php");
 
         if (file_exists($partialPath)) {
+            if (isset($data['partialPath'])) {
+                unset($data['partialPath']);
+            }
             extract($data);
             require $partialPath;
         } else {

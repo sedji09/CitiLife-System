@@ -18,8 +18,9 @@ if (file_exists($autoloader_path)) {
  * @param string $altBody Plain text alternative body
  * @return bool True if sent, false on error
  */
-function sendEmail($toEmail, $toName, $subject, $body, $altBody = '') {
-    $config_path = __DIR__ . '/../config/smtp.php';
+if (!function_exists('sendEmail')) {
+    function sendEmail($toEmail, $toName, $subject, $body, $altBody = '') {
+    $config_path = __DIR__ . '/../../config/smtp.php';
     if (!file_exists($config_path)) {
         error_log("SMTP config not found at {$config_path}");
         return false;
@@ -55,4 +56,5 @@ function sendEmail($toEmail, $toName, $subject, $body, $altBody = '') {
         error_log("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
         return false;
     }
+}
 }

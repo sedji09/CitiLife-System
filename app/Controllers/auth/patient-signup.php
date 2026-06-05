@@ -48,7 +48,7 @@ try {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = trim($_POST['first_name'] ?? '');
     $lastName = trim($_POST['last_name'] ?? '');
-    $age = (int) ($_POST['age'] ?? 0);
+    $birthdate = trim($_POST['birthdate'] ?? '');
     $sex = $_POST['sex'] ?? 'Male';
     $contactNumber = trim($_POST['contact_number'] ?? '');
     $branchId = $_POST['branch_id'] ?? '';
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contactPattern = "/^09\d{9}$/";
     $isContactValid = preg_match($contactPattern, $contactNumber);
 
-    if (empty($firstName) || empty($lastName) || empty($age) || empty($email) || empty($password) || empty($branchId)) {
+    if (empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($password) || empty($branchId)) {
         $error = 'Please fill out all required fields.';
     } elseif (!$isNameValid) {
         $error = 'Invalid Name. Please use letters only.';
@@ -98,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $patientNumber = generatePatientNumber($pdo, $branchId);
 
                 // Insert into patients table
-                $stmt = $pdo->prepare("INSERT INTO patients (patient_number, first_name, last_name, age, sex, contact_number, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$patientNumber, $firstName, $lastName, $age, $sex, $contactNumber, $branchId]);
+                $stmt = $pdo->prepare("INSERT INTO patients (patient_number, first_name, last_name, birthdate, sex, contact_number, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate, $sex, $contactNumber, $branchId]);
                 $patientId = $pdo->lastInsertId();
 
                 // Generate verification token
@@ -303,12 +303,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 value="<?= htmlspecialchars($lastName ?? '') ?>">
                         </div>
 
-                        <!-- Age -->
+                        <!-- Birthdate -->
                         <div>
-                            <label for="d_age" class="block text-sm font-semibold text-gray-700 mb-1">Age *</label>
-                            <input id="d_age" name="age" type="number" min="0" required
+                            <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate *</label>
+                            <input id="d_birthdate" name="birthdate" type="date" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                value="<?= htmlspecialchars($age ?? '') ?>">
+                                value="<?= htmlspecialchars($birthdate ?? '') ?>">
                         </div>
 
                         <!-- Sex -->
@@ -549,17 +549,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 2: Age -->
+                        <!-- Step 2: Birthdate -->
                         <div class="step" id="step2">
-                            <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">How old are you?</h2>
-                            <p class="text-[15px] text-gray-800 mb-6">Enter your age.</p>
+                            <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">When is your birthday?</h2>
+                            <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
                             <div class="relative mb-6">
-                                <input type="number" id="m_age" name="age" min="0" required
+                                <input type="date" id="m_birthdate" name="birthdate" required
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
-                                    placeholder=" " value="<?= htmlspecialchars($age ?? '') ?>" />
-                                <label for="m_age"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Age</label>
+                                    placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
+                                <label for="m_birthdate"
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Birthdate</label>
                             </div>
                             <button type="button" onclick="nextStep(2)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>

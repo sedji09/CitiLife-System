@@ -265,4 +265,4 @@ $branchId = $_SESSION['branch_id'] ?? null;
     </div>
 </div>
 
-<script src="/<?= PROJECT_DIR ?>/app/views/pages/admin_central/reports.js?v=<?= time() ?>"></script>
+<script src="/<?= PROJECT_DIR ?>/views/pages/admin_central/reports.js?v=<?= time() ?>"></script>

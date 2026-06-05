@@ -41,8 +41,18 @@ if (isset($_GET['action'])) {
             if ($caseData['released'] == 0) {
                 // Save images
                 if (!empty($images)) {
-                    $uploadDir = __DIR__ . '/../../../../public/uploads/reports';
+                    $uploadDir = __DIR__ . '/../../../public/uploads/reports';
                     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+                    
+                    // Clean up any existing report pages for this case
+                    $existingPhotos = glob($uploadDir . '/' . $caseData['case_number'] . '_page_*.jpg');
+                    if ($existingPhotos) {
+                        foreach ($existingPhotos as $photo) {
+                            if (file_exists($photo)) {
+                                unlink($photo);
+                            }
+                        }
+                    }
                     
                     foreach ($images as $index => $base64) {
                         list($type, $data) = explode(';', $base64);

@@ -167,7 +167,7 @@
 
 
     <!--Pending Record Requests Card -->
-    <a href="?role=branch_admin&page=record-requests"
+    <a href="/<?= PROJECT_DIR ?>/record-requests"
       class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-sm font-semibold text-gray-500 group-hover:text-amber-600 transition">
@@ -191,7 +191,7 @@
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col dash-card">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between dash-card-header">
         <h3 class="font-bold text-gray-900 text-lg text-main">Recent Branch Activity</h3>
-        <a href="?role=branch_admin&page=branch-xray-cases"
+        <a href="/<?= PROJECT_DIR ?>/branch-xray-cases"
           class="text-xs font-bold text-red-600 hover:text-red-700">View All Cases</a>
       </div>
 
@@ -262,7 +262,7 @@
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col dash-card">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between dash-card-header">
         <h3 class="font-bold text-gray-900 text-lg text-main">System Audit Logs</h3>
-        <a href="?role=branch_admin&page=audit-logs" class="text-xs font-bold text-red-600 hover:text-red-700">View All
+        <a href="/<?= PROJECT_DIR ?>/audit-logs" class="text-xs font-bold text-red-600 hover:text-red-700">View All
           Logs</a>
       </div>
 

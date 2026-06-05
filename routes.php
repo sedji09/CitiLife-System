@@ -6,6 +6,7 @@
 
 // Root URL (Redirects to dashboard or login via middleware)
 $router->get('/', 'App\Controllers\PageController@dispatch', ['auth']);
+$router->post('/', 'App\Controllers\PageController@dispatch', ['auth']);
 $router->get('/index.php', 'App\Controllers\PageController@dispatch', ['auth']);
 $router->post('/index.php', 'App\Controllers\PageController@dispatch', ['auth']);
 
@@ -30,10 +31,10 @@ $router->post('/forgot-password', 'App\Controllers\AuthController@forgotPassword
 $router->get('/forgot-password.php', 'App\Controllers\AuthController@forgotPassword', ['guest']);
 $router->post('/forgot-password.php', 'App\Controllers\AuthController@forgotPassword', ['guest']);
 
-$router->get('/reset-password', 'App\Controllers\AuthController@resetPassword', ['guest']);
-$router->post('/reset-password', 'App\Controllers\AuthController@resetPassword', ['guest']);
-$router->get('/reset-password.php', 'App\Controllers\AuthController@resetPassword', ['guest']);
-$router->post('/reset-password.php', 'App\Controllers\AuthController@resetPassword', ['guest']);
+$router->get('/reset-password', 'App\Controllers\AuthController@resetPassword', []);
+$router->post('/reset-password', 'App\Controllers\AuthController@resetPassword', []);
+$router->get('/reset-password.php', 'App\Controllers\AuthController@resetPassword', []);
+$router->post('/reset-password.php', 'App\Controllers\AuthController@resetPassword', []);
 
 $router->get('/verify', 'App\Controllers\AuthController@verify', ['guest']);
 $router->get('/verify.php', 'App\Controllers\AuthController@verify', ['guest']);
@@ -76,10 +77,11 @@ $dashboardPages = [
     'branches',
     'patient-records',
     'audit-logs',
-    'user-role-defaults',
+    'user-role-settings',
     'settings',
     'security-settings',
-    'backup-maintenance'
+    'backup-maintenance',
+    'print-report'
 ];
 
 foreach ($dashboardPages as $page) {
@@ -95,3 +97,11 @@ $router->post('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->get('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->post('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');
+$router->post('/app/api/request_password_reset.php', 'App/Api/request_password_reset.php');
+$router->post('/app/config/update_patient.php', 'config/update_patient.php');
+
+// Temporary route to test the 500 error page
+$router->get('/test-500', function() {
+    loadView('errors/500');
+});
+

@@ -255,7 +255,7 @@ if (isset($caseNotFound) && $caseNotFound) {
 
             <?php if ($isReportReady): ?>
                 <a href="javascript:void(0)" 
-                    onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/app/views/pages/radtech/print-report.php?id=<?= $caseId ?>', 'Yes, Print', true, event)"
+                    onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
                     class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
                     <i data-lucide="printer" class="w-4 h-4"></i>
                     Print Result

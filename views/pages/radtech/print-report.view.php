@@ -308,10 +308,13 @@ if (!$isMultiExam) {
             letter-spacing: 2px;
             margin-top: 10px;
             margin-bottom: 10px;
+            padding: 4px;
         }
 
         .title-report h1 {
             color: #c0392b;
+            margin: 0;
+            font-size: 16pt;
         }
 
         .report-info {
@@ -360,19 +363,18 @@ if (!$isMultiExam) {
             display: block;
             font-size: 7.5pt;
             font-family: 'Raleway', sans-serif;
-            text-transform: uppercase;
+            font-weight: 700;
             color: #888;
+            text-transform: uppercase;
             letter-spacing: .5px;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .exam-type span {
-            font-size: 10.5pt;
-            font-weight: bold;
+            font-size: 14pt;
+            font-weight: 700;
             color: #c0392b;
             text-transform: uppercase;
-            text-decoration: underline;
-            line-height: 20px;
         }
 
         .exam-block h3 {
@@ -403,7 +405,6 @@ if (!$isMultiExam) {
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #000;
-            border-bottom: 1px solid #e0c0c0;
             padding-bottom: 3px;
             margin-bottom: 6px;
         }
@@ -810,7 +811,7 @@ if (!$isMultiExam) {
     <?php endif; ?>
 
     <!-- X-Ray Image Page (Only rendered when printing) -->
-    <?php if (!$isPreview && !empty($case['image_path'])):
+    <?php if (!$isPreview && !$isSnapshot && !empty($case['image_path'])):
         $savedPaths = [];
         $decoded = json_decode($case['image_path'], true);
         if (is_array($decoded)) {

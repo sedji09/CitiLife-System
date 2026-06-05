@@ -91,91 +91,64 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
 
         <!-- Findings Report -->
-        <div class="flex flex-col border border-gray-200 rounded-2xl overflow-hidden">
-            <div
-                class="bg-red-600 px-5 h-14 flex items-center gap-3 text-white shadow-lg z-10 w-full rounded-t-2xl">
-                <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+        <div class="flex flex-col border border-gray-200 rounded-2xl overflow-hidden h-[480px]">
+            <div class="shrink-0 bg-red-600 px-5 h-14 flex items-center gap-3 text-white shadow-lg z-10 w-full">
+                <div
+                    class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
                     <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
                 </div>
                 <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
             </div>
-            <div id="findings-viewer-container"
-                class="flex-1 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
+            <div id="findings-viewer-container" class="flex-1 bg-[#0a0a0a] relative overflow-hidden group flex items-center justify-center p-4">
                 <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed'])): ?>
                     <?php
                     // Clean JSON preparation for the previewer
                     // Look for static photo reports generated at Release
-                    $photoPattern = __DIR__ . "/../../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
+                    $photoPattern = __DIR__ . "/../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
                     $photos = glob($photoPattern);
                     $previewItems = [];
 
                     if (!empty($photos)) {
+                        // Sort pages naturally if not already
                         natsort($photos);
                         foreach ($photos as $photoFile) {
                             $baseUrl = "/" . PROJECT_DIR . "/public/uploads/reports/" . basename($photoFile);
                             $previewItems[] = ['type' => 'report_image', 'url' => $baseUrl, 'name' => "REPORT_" . $caseDetails['case_number']];
                         }
-                        $thumbnailUrl = $previewItems[0]['url'];
+                        $reportUrl = $previewItems[0]['url']; // Use first page as thumbnail
                     } else {
-                        $reportUrl = "/" . PROJECT_DIR . "/app/views/pages/radtech/print-report.php?id=" . $caseId . "&preview=true";
+                        // Fallback if photo not yet generated
+                        $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
                         $previewItems = [['type' => 'report', 'url' => $reportUrl, 'name' => "REPORT_" . $caseDetails['case_number']]];
-                        $thumbnailUrl = false;
-                        $miniUrl = $reportUrl . "&single_page=true";
                     }
 
                     $jsonItems = htmlspecialchars(json_encode($previewItems), ENT_QUOTES, 'UTF-8');
-                    $reportName = "REPORT_" . $caseDetails['case_number'] . ".jpg";
                     ?>
 
-                    <!-- GDrive Style Card -->
-                    <div
-                        class="flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group/card relative">
-                        <!-- Card Header -->
-                        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 diagnostic-card-header">
-                            <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0 border border-red-500/20">
-                                    <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>
-                                </div>
-                                <span class="text-[10px] font-black text-gray-900 uppercase tracking-widest truncate" id="findings-report-name"><?= $reportName ?></span>
-                            </div>
-                        </div>
-
-                        <!-- Card Body (The Floating Preview) -->
-                        <div class="flex-1 relative bg-white overflow-hidden cursor-zoom-in flex items-center justify-center p-4 group-hover/card:bg-gray-50 transition-colors diagnostic-card-body"
-                            onclick="if(window.DrivePreviewer) DrivePreviewer.open(<?= $jsonItems ?>, 0)">
-
-                            <?php if ($thumbnailUrl): ?>
-                                <img id="findings-main-img" src="<?= $thumbnailUrl ?>"
-                                    class="w-full h-full object-contain filter drop-shadow-2xl transform transition-transform group-hover/card:scale-105"
-                                    alt="Report Thumbnail">
-                            <?php else: ?>
-                                <div class="w-[900px] h-[1270px] origin-top transform scale-[0.25] pointer-events-none absolute top-4">
-                                    <iframe src="<?= $miniUrl ?>" class="w-full h-full border-none bg-transparent"
-                                        title="Findings Report Preview"></iframe>
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity bg-black/20">
-                                <div class="bg-red-600 p-3 rounded-full shadow-2xl transform scale-90 group-hover/card:scale-100 transition-transform">
-                                    <i data-lucide="maximize" class="w-5 h-5 text-white"></i>
-                                </div>
-                            </div>
-                        </div>
+                    <img src="<?= $reportUrl ?>" 
+                         class="max-w-full max-h-full object-contain filter drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 cursor-pointer bg-white"
+                         alt="Findings Report"
+                         data-preview-items="<?= $jsonItems ?>"
+                         onclick="if(window.DrivePreviewer) DrivePreviewer.open(JSON.parse(this.getAttribute('data-preview-items')), 0)">
+                    
+                    <!-- Hover Overlay -->
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
+                         <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full">
+                             <i data-lucide="maximize" class="w-8 h-8 text-white"></i>
+                         </div>
                     </div>
                 <?php else: ?>
-                    <div
-                        class="flex-1 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
-                        <i data-lucide="clock-3" class="w-10 h-10 mb-3 text-red-300"></i>
-                        <p class="font-bold text-gray-800">Waiting for Radiologist</p>
-                        <p class="text-sm text-gray-500 mt-1 max-w-[250px]">The findings report will appear here once the
-                            radiologist submits their evaluation.</p>
+                    <div class="text-center">
+                        <i data-lucide="clock-3" class="w-12 h-12 mb-4 text-gray-600 mx-auto opacity-50"></i>
+                        <p class="font-bold text-gray-400">Waiting for Radiologist</p>
+                        <p class="text-sm text-gray-500 mt-1 max-w-[250px] mx-auto">The findings report will appear here once the radiologist submits their evaluation.</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
 
         <!-- Enhanced X-Ray Viewer -->
-        <div class="flex flex-col">
+        <div class="flex flex-col min-h-0">
             <?php
             $savedPaths = [];
             if (!empty($caseDetails['image_path'])) {
@@ -190,58 +163,72 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
             ?>
 
             <div id="xray-viewer-container"
-                class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[480px] relative transition-all w-full">
+                class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-0 h-[480px] relative transition-all w-full">
                 <?php if (!empty($savedPaths)): ?>
                     <!-- Classic Integrated Header Toolbar -->
                     <div class="bg-red-600 px-5 h-14 flex justify-between items-center text-white z-20 w-full select-none shadow-lg"
                         id="xray-toolbar">
-                        
+
                         <div class="flex items-center gap-4">
-                            <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+                            <div
+                                class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
                                 <i data-lucide="scan-line" class="w-5 h-5"></i>
                             </div>
                             <div class="flex flex-col">
                                 <span class="font-black text-xs uppercase tracking-widest leading-none">X-ray Viewer</span>
                                 <?php if (count($savedPaths) > 1): ?>
-                                    <span id="xray-counter" class="text-[9px] font-bold text-white/60 tracking-tighter uppercase mt-1">
+                                    <span id="xray-counter"
+                                        class="text-[9px] font-bold text-white/60 tracking-tighter uppercase mt-1">
                                         Image 1 of <?= count($savedPaths) ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
                         </div>
 
+                        <!-- Central Navigation -->
+                        <?php if (count($savedPaths) > 1): ?>
+                            <div class="flex items-center bg-black/20 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
+                                <button id="btn-prev-img"
+                                    class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20"
+                                    title="Previous Image">
+                                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                                </button>
+                                <div class="w-px h-4 bg-white/10 mx-1"></div>
+                                <button id="btn-next-img"
+                                    class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20"
+                                    title="Next Image">
+                                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        <?php endif; ?>
 
                         <!-- Zoom Controls -->
-                        <div class="flex items-center gap-3 bg-black/20 rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
-                            <button id="btn-zoom-out" class="text-white/60 hover:text-white transition-colors" title="Zoom Out">
+                        <div
+                            class="flex items-center gap-3 bg-black/20 rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
+                            <button id="btn-zoom-out" class="text-white/60 hover:text-white transition-colors"
+                                title="Zoom Out">
                                 <i data-lucide="minus-circle" class="w-4 h-4"></i>
                             </button>
-                            <span id="zoom-level" class="text-[10px] font-black text-white min-w-[35px] text-center tabular-nums"><?= isset($isZoomed) ? $isZoomed : '100%' ?></span>
-                            <button id="btn-zoom-in" class="text-white/60 hover:text-white transition-colors" title="Zoom In">
+                            <span id="zoom-level"
+                                class="text-[10px] font-black text-white min-w-[35px] text-center tabular-nums"><?= isset($isZoomed) ? $isZoomed : '100%' ?></span>
+                            <button id="btn-zoom-in" class="text-white/60 hover:text-white transition-colors"
+                                title="Zoom In">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
 
                     <!-- Main Viewing Area -->
-                    <div class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer">
+                    <div
+                        class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer">
                         <img id="xray-main-image" src="<?= htmlspecialchars($savedPaths[0] ?? '') ?>"
                             class="max-w-full max-h-full object-contain transition-transform duration-100 ease-out origin-center"
                             alt="X-ray" draggable="false">
 
-                        <!-- Floating Side Navigation (Fullscreen Only) -->
-                        <?php if (count($savedPaths) > 1): ?>
-                            <button id="btn-prev-side" class="hidden absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md border border-white/10 transition-all active:scale-90 z-[30] group" title="Previous Image">
-                                <i data-lucide="chevron-left" class="w-7 h-7 group-hover:-translate-x-0.5 transition-transform"></i>
-                            </button>
-                            <button id="btn-next-side" class="hidden absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md border border-white/10 transition-all active:scale-90 z-[30] group" title="Next Image">
-                                <i data-lucide="chevron-right" class="w-7 h-7 group-hover:translate-x-0.5 transition-transform"></i>
-                            </button>
-                        <?php endif; ?>
-
                         <!-- Classic Bottom Thumbnails -->
                         <?php if (count($savedPaths) > 1): ?>
-                            <div id="xray-thumb-strip" class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
+                            <div id="xray-thumb-strip"
+                                class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
                                 <?php foreach ($savedPaths as $index => $path): ?>
                                     <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
                                         data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>">
@@ -252,12 +239,13 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         <?php endif; ?>
 
                         <!-- Expand Button -->
-                        <div id="btn-fullscreen"
-                            class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white/90 hover:text-white p-2.5 rounded-xl cursor-pointer backdrop-blur-md transition-all active:scale-90 border border-white/10 shadow-2xl z-30 flex items-center justify-center"
+                        <button type="button" id="btn-fullscreen"
+                            class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-xl cursor-pointer backdrop-blur-md transition-all active:scale-90 border border-white/10 shadow-2xl z-30 flex items-center justify-center"
                             title="Toggle Fullscreen">
                             <span id="fullscreen-icon-wrapper"></span>
-                        </div>
+                        </button>
                     </div>
+
                 <?php else: ?>
                     <!-- Empty State -->
                     <div class="flex-1 flex flex-col items-center justify-center p-6 bg-gray-50">
@@ -277,8 +265,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         const zoomLevelText = document.getElementById('zoom-level');
                         const btnFullscreen = document.getElementById('btn-fullscreen');
                         const fsIconWrapper = document.getElementById('fullscreen-icon-wrapper');
-                        const btnPrev = document.getElementById('btn-prev-side');
-                        const btnNext = document.getElementById('btn-next-side');
+                        const btnPrev = document.getElementById('btn-prev-img');
+                        const btnNext = document.getElementById('btn-next-img');
                         const counter = document.getElementById('xray-counter');
                         const thumbnails = document.querySelectorAll('.thumbnail-wrapper');
                         const thumbStripItems = document.querySelectorAll('.xray-thumb-item');
@@ -314,7 +302,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
                             // Update Counter
                             if (counter) counter.textContent = (currentIndex + 1) + ' / ' + imagePaths.length;
-                            
+
                             // Update Filename
                             const filenameEl = document.getElementById('xray-filename');
                             if (filenameEl) {
@@ -397,7 +385,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                             if (!fsIconWrapper) return;
                             const isZoomed = Math.abs(scale - 1) > 0.01;
                             const isFull = !!document.fullscreenElement;
-                            
+
                             fsIconWrapper.innerHTML = (isZoomed || isFull) ? SVG_SHRINK : SVG_EXPAND;
                             btnFullscreen.title = isZoomed ? 'Reset Zoom' : (isFull ? 'Exit Fullscreen' : 'Toggle Fullscreen');
                         }
@@ -407,42 +395,24 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         zoomLevelText.addEventListener('click', () => { scale = 1; translateX = 0; translateY = 0; updateTransform(); });
 
                         btnFullscreen.addEventListener('click', () => {
-                            if (Math.abs(scale - 1) > 0.01) {
-                                // Reset Zoom if currently zoomed (in or out)
-                                scale = 1; translateX = 0; translateY = 0;
-                                updateTransform();
+                            if (!document.fullscreenElement) {
+                                viewer.requestFullscreen().catch(() => { });
                             } else {
-                                // Toggle Fullscreen if at 100%
-                                if (!document.fullscreenElement) {
-                                    viewer.requestFullscreen().catch(() => { });
-                                } else {
-                                    document.exitFullscreen();
-                                }
+                                document.exitFullscreen();
                             }
                         });
 
                         document.addEventListener('fullscreenchange', () => {
                             const isFull = !!document.fullscreenElement;
                             if (isFull && document.fullscreenElement === viewer) {
-                                viewer.classList.remove('h-[480px]', 'rounded-xl', 'border');
+                                viewer.classList.remove('h-[480px]', 'rounded-2xl', 'border');
                                 viewer.classList.add('h-screen', 'rounded-none');
                             } else if (!isFull) {
-                                viewer.classList.add('h-[480px]', 'rounded-xl', 'border');
+                                viewer.classList.add('h-[480px]', 'rounded-2xl', 'border');
                                 viewer.classList.remove('h-screen', 'rounded-none');
                             }
-                            
-                            // Toggle Side Arrows visibility based on Fullscreen state
-                            if (btnPrev) btnPrev.classList.toggle('hidden', !isFull);
-                            if (btnNext) btnNext.classList.toggle('hidden', !isFull);
-                            
                             updateIconState();
                         });
-                        <?php
-                            $previewItems = [
-                                ['type' => 'report', 'url' => $reportUrl, 'name' => $reportName]
-                            ];
-                            $jsonItems = htmlspecialchars(json_encode($previewItems), ENT_QUOTES, 'UTF-8');
-                            ?>
 
                         // Panning logic
                         img.addEventListener('mousedown', (e) => {
@@ -456,10 +426,11 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         });
 
                         document.addEventListener('mousemove', (e) => {
-                            if (!isDragging) return;
-                            translateX = e.clientX - startX;
-                            translateY = e.clientY - startY;
-                            updateTransform();
+                            if (isDragging) {
+                                translateX = e.clientX - startX;
+                                translateY = e.clientY - startY;
+                                updateTransform();
+                            }
                         });
 
                         document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; updateTransform(); } });

@@ -2,12 +2,53 @@
  * reports.js - Branch Admin Reports Logic
  */
 
+let priorityChart = null;
 let philhealthChart = null;
 let trendChart = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadStats();
     
+    // Initialize Case Priority Doughnut Chart
+    const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+    priorityChart = new Chart(priorityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Emergency', 'Urgent / Priority', 'Routine / Normal'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#EF4444', '#F97316', '#3B82F6'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    padding: 10,
+                    bodyFont: { size: 13, weight: 'bold' },
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f8fafc',
+                    borderColor: 'rgba(255,255,255,0.05)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function (context) {
+                            const total = priorityChart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            let pct = total > 0 ? Math.round((context.raw / total) * 100) : 0;
+                            return ' ' + context.raw + ' cases (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
     // Initialize PhilHealth Doughnut Chart
     const ctx = document.getElementById('philhealthChart').getContext('2d');
     philhealthChart = new Chart(ctx, {
@@ -18,15 +59,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: [0, 0],
                 backgroundColor: ['#EF4444', '#3B82F6'],
                 borderWidth: 0,
-                cutout: '75%'
+                hoverOffset: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '70%',
             plugins: {
                 legend: { display: false },
-                tooltip: { enabled: true }
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    padding: 10,
+                    bodyFont: { size: 13, weight: 'bold' },
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f8fafc',
+                    borderColor: 'rgba(255,255,255,0.05)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function (context) {
+                            const total = philhealthChart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            let pct = total > 0 ? Math.round((context.raw / total) * 100) : 0;
+                            return ' ' + context.raw + ' patients (' + pct + '%)';
+                        }
+                    }
+                }
             }
         }
     });
@@ -128,21 +186,36 @@ function updateUI(data, monthlyData) {
     document.getElementById('stat-emergency').innerText = Number(data.emergency_count).toLocaleString();
     document.getElementById('stat-urgent').innerText = Number(data.urgent_count).toLocaleString();
 
-    // Table Rows
-    document.getElementById('row-emergency').innerText = Number(data.emergency_count).toLocaleString();
-    document.getElementById('row-urgent').innerText = Number(data.urgent_count).toLocaleString();
-    document.getElementById('row-routine').innerText = Number(data.routine_count).toLocaleString();
+    // Table Rows / Labels
+    const emergencyVal = Number(data.emergency_count || 0);
+    const urgentVal = Number(data.urgent_count || 0);
+    const routineVal = Number(data.routine_count || 0);
 
-    // PhilHealth Labels
+    document.getElementById('row-emergency').innerText = emergencyVal.toLocaleString();
+    document.getElementById('row-urgent').innerText = urgentVal.toLocaleString();
+    document.getElementById('row-routine').innerText = routineVal.toLocaleString();
+
     const phWithVal = Number(data.with_philhealth || 0);
     const phWithoutVal = Number(data.without_philhealth || 0);
 
     document.getElementById('label-philhealth-with').innerText = phWithVal.toLocaleString();
     document.getElementById('label-philhealth-without').innerText = phWithoutVal.toLocaleString();
 
-    // Charts
+    // Priority Chart
+    const priorityTotal = emergencyVal + urgentVal + routineVal;
+    document.getElementById('priority-total-text').innerText = priorityTotal.toLocaleString();
+
+    if (priorityChart) {
+        priorityChart.data.datasets[0].data = [emergencyVal, urgentVal, routineVal];
+        priorityChart.update();
+    }
+
+    // PhilHealth Chart
+    const philhealthTotal = phWithVal + phWithoutVal;
+    document.getElementById('philhealth-total-text').innerText = philhealthTotal.toLocaleString();
+
     if (philhealthChart) {
-        philhealthChart.data.datasets[0].data = [data.with_philhealth || 0, data.without_philhealth || 0];
+        philhealthChart.data.datasets[0].data = [phWithVal, phWithoutVal];
         philhealthChart.update();
     }
 

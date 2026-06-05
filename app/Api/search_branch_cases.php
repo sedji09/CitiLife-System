@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../config/database.php';
 global $pdo;
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -34,19 +35,18 @@ try {
             c.approval_status = 'Approved' AND
             c.status = 'Completed' AND
             c.exam_type != 'To be determined' AND
-            (CONCAT(p.first_name, ' ', p.last_name) LIKE :name_full 
-             OR p.first_name LIKE :name_part 
-             OR p.last_name LIKE :name_part)
+            (REPLACE(REPLACE(CONCAT(p.first_name, ' ', p.last_name), '-', ''), ' ', '') LIKE :name_clean
+             OR REPLACE(p.first_name, '-', '') LIKE :name_clean
+             OR REPLACE(p.last_name, '-', '') LIKE :name_clean)
         ORDER BY c.created_at DESC
         LIMIT 50
     ");
     
-    $searchLike = "%{$patientName}%";
+    $searchClean = '%' . str_replace([' ', '-'], '', $patientName) . '%';
     
     $stmt->execute([
         'branch' => $branch,
-        'name_full' => $searchLike,
-        'name_part' => $searchLike
+        'name_clean' => $searchClean
     ]);
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);

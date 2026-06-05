@@ -93,12 +93,12 @@
                 </div>
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
-                    <a href="/<?= PROJECT_DIR ?>/app/views/pages/radtech/print-report.php?id=<?= $caseDetails['id'] ?>&download=true"
+                    <a href="/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseDetails['id'] ?>&download=true"
                         target="_blank"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
                         <i data-lucide="download" class="w-4 h-4"></i> Download PDF
                     </a>
-                    <a href="/<?= PROJECT_DIR ?>/app/views/pages/radtech/print-report.php?id=<?= $caseDetails['id'] ?>"
+                    <a href="/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseDetails['id'] ?>"
                         target="_blank"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#1f2937] text-sm font-semibold rounded-lg shadow-sm border border-gray-300 transition">
                         <i data-lucide="printer" class="w-4 h-4"></i> Print
@@ -117,7 +117,7 @@
                         <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
                     </div>
                     <div id="findings-viewer-container"
-                        class="flex-1 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
+                        class="flex-1 min-h-0 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
                         <?php if ($caseDetails['status'] === 'Completed'): ?>
                             <?php
                             // Clean JSON preparation for the previewer
@@ -125,7 +125,7 @@
                             $patientName = str_replace(' ', '_', $request['patient_name']);
 
                             // Look for static photo reports generated at Release
-                            $photoPattern = __DIR__ . "/../../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
+                            $photoPattern = __DIR__ . "/../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
                             $photos = glob($photoPattern);
                             $previewItems = [];
 
@@ -138,7 +138,7 @@
                                 $thumbnailUrl = $previewItems[0]['url']; // Use first page as thumbnail
                             } else {
                                 // Fallback if photo not yet generated
-                                $reportUrl = "/" . PROJECT_DIR . "/app/views/pages/radtech/print-report.php?id=" . $caseDetails['id'] . "&preview=true";
+                                $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseDetails['id'] . "&preview=true";
                                 $previewItems = [['type' => 'report', 'url' => $reportUrl, 'name' => "REPORT_" . $caseNum . "_" . $patientName]];
                                 $thumbnailUrl = false;
                                 $miniUrl = $reportUrl . "&single_page=true";
@@ -150,7 +150,7 @@
 
                             <!-- GDrive Style Card -->
                             <div
-                                class="flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group/card relative">
+                                class="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group/card relative">
                                 <!-- Card Header -->
                                 <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 diagnostic-card-header">
                                     <div class="flex items-center gap-3 overflow-hidden">
@@ -161,15 +161,15 @@
                                     </div>
                                 </div>
 
-                                <!-- Card Body (The Floating Preview) -->
-                                <div class="flex-1 relative bg-white overflow-hidden cursor-zoom-in flex items-center justify-center p-4 group-hover/card:bg-gray-50 transition-colors diagnostic-card-body"
+                                <!-- Card Body -->
+                                <div class="flex-1 min-h-0 relative bg-white overflow-hidden cursor-zoom-in flex items-center justify-center p-4 group-hover/card:bg-gray-50 transition-colors diagnostic-card-body"
                                     onclick="if(window.DrivePreviewer) DrivePreviewer.open(<?= $jsonItems ?>, 0)">
 
                                     <?php if ($thumbnailUrl): ?>
-                                        <img id="findings-main-img" src="<?= $thumbnailUrl ?>"
-                                            class="w-full h-full object-contain filter drop-shadow-2xl transform transition-transform group-hover/card:scale-105"
-                                            alt="Report Thumbnail">
-                                    <?php else: ?>
+                                    <img id="findings-main-img" src="<?= $thumbnailUrl ?>"
+                                        class="w-full h-full object-contain filter drop-shadow-md transform transition-transform group-hover/card:scale-105 p-4"
+                                        alt="Report Thumbnail">
+                                <?php else: ?>
                                         <div class="w-[900px] h-[1270px] origin-top transform scale-[0.25] pointer-events-none absolute top-4">
                                             <iframe src="<?= $miniUrl ?>" class="w-full h-full border-none bg-transparent"
                                                 title="Findings Report Preview"></iframe>
@@ -196,7 +196,7 @@
                 </div>
 
                 <!-- Enhanced X-Ray Viewer -->
-                <div class="flex flex-col">
+                <div class="flex flex-col min-h-0">
                     <?php
                     $savedPaths = [];
                     if (!empty($caseDetails['image_path'])) {
@@ -211,8 +211,8 @@
                     ?>
 
                         <div id="xray-viewer-container"
-                            class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[480px] relative transition-all w-full">
-                            <?php if (!empty($savedPaths)): ?>
+                        class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-0 h-[480px] relative transition-all w-full">
+                        <?php if (!empty($savedPaths)): ?>
                                 <!-- Classic Integrated Header Toolbar -->
                                 <div class="bg-red-600 px-5 h-14 flex justify-between items-center text-white z-20 w-full select-none shadow-lg"
                                     id="xray-toolbar">
@@ -273,12 +273,12 @@
                                 <?php endif; ?>
 
                                 <!-- Expand Button -->
-                                <div id="btn-fullscreen"
-                                    class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white/90 hover:text-white p-2.5 rounded-xl cursor-pointer backdrop-blur-md transition-all active:scale-90 border border-white/10 shadow-2xl z-30 flex items-center justify-center"
-                                    title="Toggle Fullscreen">
-                                    <span id="fullscreen-icon-wrapper"></span>
-                                </div>
-                            </div>
+                            <button type="button" id="btn-fullscreen"
+                                class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-xl cursor-pointer backdrop-blur-md transition-all active:scale-90 border border-white/10 shadow-2xl z-30 flex items-center justify-center"
+                                title="Toggle Fullscreen">
+                                <span id="fullscreen-icon-wrapper"></span>
+                            </button>
+                        </div>
 
                         <?php else: ?>
                             <!-- Empty State -->
@@ -429,27 +429,20 @@
                                 zoomLevelText.addEventListener('click', () => { scale = 1; translateX = 0; translateY = 0; updateTransform(); });
 
                                 btnFullscreen.addEventListener('click', () => {
-                                    if (Math.abs(scale - 1) > 0.01) {
-                                        // Reset Zoom if currently zoomed (in or out)
-                                        scale = 1; translateX = 0; translateY = 0;
-                                        updateTransform();
+                                    if (!document.fullscreenElement) {
+                                        viewer.requestFullscreen().catch(() => { });
                                     } else {
-                                        // Toggle Fullscreen if at 100%
-                                        if (!document.fullscreenElement) {
-                                            viewer.requestFullscreen().catch(() => { });
-                                        } else {
-                                            document.exitFullscreen();
-                                        }
+                                        document.exitFullscreen();
                                     }
                                 });
 
                                 document.addEventListener('fullscreenchange', () => {
                                     const isFull = !!document.fullscreenElement;
                                     if (isFull && document.fullscreenElement === viewer) {
-                                        viewer.classList.remove('h-[480px]', 'rounded-xl', 'border');
+                                        viewer.classList.remove('h-[480px]', 'rounded-2xl', 'border');
                                         viewer.classList.add('h-screen', 'rounded-none');
                                     } else if (!isFull) {
-                                        viewer.classList.add('h-[480px]', 'rounded-xl', 'border');
+                                        viewer.classList.add('h-[480px]', 'rounded-2xl', 'border');
                                         viewer.classList.remove('h-screen', 'rounded-none');
                                     }
 

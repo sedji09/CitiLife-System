@@ -107,7 +107,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <!-- Stats -->
     <div id="radio-dashboard-top-stats" class="grid grid-cols-1 gap-4 sm:grid-cols-2 realtime-update">
         <!-- Card 1 -->
-        <a href="?role=radiologist&page=worklist&priority=Emergency"
+        <a href="/<?= PROJECT_DIR ?>/worklist?priority=Emergency"
             class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md transition decoration-none">
             <div id="emergency-count"
                 class="bg-red-100 text-red-600 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
@@ -120,7 +120,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 2 -->
-        <a href="?role=radiologist&page=worklist"
+        <a href="/<?= PROJECT_DIR ?>/worklist"
             class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition decoration-none">
             <div id="pending-count"
                 class="bg-gray-100 text-gray-700 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
@@ -274,7 +274,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         const firstPoint = exactElements[0];
                         const label = chart.data.labels[firstPoint.index];
                         const datasetLabel = chart.data.datasets[firstPoint.datasetIndex].label;
-                        window.location.href = '?role=radiologist&page=worklist&branch=' + encodeURIComponent(label) + '&priority=' + encodeURIComponent(datasetLabel);
+                        window.location.href = '/<?= PROJECT_DIR ?>/worklist?branch=' + encodeURIComponent(label) + '&priority=' + encodeURIComponent(datasetLabel);
                     }
                 },
                 onHover: (e, activeElements) => {
@@ -338,7 +338,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     if (exactElements.length > 0) {
                         const firstPoint = exactElements[0];
                         const label = chart.data.labels[firstPoint.index]; // Branch
-                        window.location.href = '?role=radiologist&page=worklist&branch=' + encodeURIComponent(label);
+                        window.location.href = '/<?= PROJECT_DIR ?>/worklist?branch=' + encodeURIComponent(label);
                     }
                 },
                 onHover: (e, activeElements) => {

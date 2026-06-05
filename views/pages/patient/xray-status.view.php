@@ -15,7 +15,7 @@ $userAccountStatus = $stmtU->fetchColumn() ?: 'Pending';
 if (isset($_GET['case_id'])) {
     $cId = (int) $_GET['case_id'];
     $_SESSION['active_status_case_id'] = $cId;
-    header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=xray-status");
+    echo "<script>window.location.href = '/" . PROJECT_DIR . "/xray-status';</script>";
     exit;
 }
 
@@ -53,70 +53,35 @@ if ($patientId) {
     }
 }
 
-$caseRow = null;
-$radtechName = null;
+$casesToDisplay = [];
 
 // 2. Fetch Case Info (Backend logic)
 if ($patientId) {
+    $activeCases = $caseModel->getActiveCasesByPatient($patientId);
+    
     if ($caseId) {
-        $caseRow = $caseModel->getCaseById($caseId);
-        // Security check: ensure case belongs to patient
-        if ($caseRow && $caseRow['patient_id'] != $patientId) {
-            $caseRow = null;
+        $specificCase = $caseModel->getCaseById($caseId);
+        if ($specificCase && $specificCase['patient_id'] == $patientId) {
+            $casesToDisplay[] = $specificCase;
+            unset($_SESSION['active_status_case_id']);
         }
-    } else {
-        $caseRow = $caseModel->getLatestCaseByPatient($patientId);
     }
-
-    if ($caseRow) {
-        $radtechName = $caseModel->getRadTechName($caseRow['radtech_id'] ?? null);
-    }
-}
-
-$currentStep = 0;
-$displayStatus = 'Pending';
-$isRejected = ($userAccountStatus === 'Rejected');
-
-if ($caseRow) {
-    if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Rejected') {
-        $currentStep = 0;
-        $displayStatus = 'Rejected';
-        $isRejected = true;
-    } elseif ($caseRow['status'] === 'Pending') {
-        if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Pending') {
-            $currentStep = 2; // Step 1 Done. Step 2 Active waiting for approval.
-            $displayStatus = 'Pending';
-        } elseif (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Approved') {
-            if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
-                $currentStep = 4; // Step 3 Done. Step 4 Active waiting for radiologist.
-                $displayStatus = 'X-ray Taken';
-            } else {
-                $currentStep = 3; // Step 2 Done. Step 3 Active waiting for X-ray to be taken.
-                $displayStatus = 'Approved';
+    
+    foreach ($activeCases as $ac) {
+        $found = false;
+        foreach ($casesToDisplay as $c) {
+            if ($c['id'] == $ac['id']) {
+                $found = true;
+                break;
             }
-        } else {
-            $currentStep = 2;
-            $displayStatus = 'Pending';
         }
-    } elseif ($caseRow['status'] === 'Under Reading') {
-        $currentStep = 4;
-        $displayStatus = 'Under Reading';
-    } elseif ($caseRow['status'] === 'Report Ready') {
-        $currentStep = 5;
-        $displayStatus = 'Report Ready';
-    } elseif (in_array($caseRow['status'], ['Released', 'Completed'])) {
-        $currentStep = 6;
-        $displayStatus = $caseRow['status'];
-    } elseif ($caseRow['status'] === 'Rejected') {
-        $currentStep = 0;
-        $displayStatus = 'Rejected';
-        $isRejected = true;
-    } else {
-        $currentStep = 2;
-        $displayStatus = $caseRow['status'] ?: 'Pending';
+        if (!$found) {
+            $casesToDisplay[] = $ac;
+        }
     }
 }
 
+$isRejectedGlobal = ($userAccountStatus === 'Rejected');
 
 $statusColors = [
     'Pending' => ['bg' => '#FFF7ED', 'border' => '#FED7AA', 'text' => '#C2410C', 'label' => 'Pending Review'],
@@ -165,7 +130,7 @@ $statusDescriptions = [
 
     <?php if (isset($_GET['registered'])): ?>
         <!-- Success banner shown immediately after registration -->
-        <div class="rounded-xl bg-green-50 border border-green-200 p-4 flex items-start gap-3">
+        <div id="success-banner" class="rounded-xl bg-green-50 border border-green-200 p-4 flex items-start gap-3 transition-all duration-500">
             <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600 shrink-0 mt-0.5"></i>
             <div>
                 <p class="text-sm font-bold text-green-800">Registration Submitted!</p>
@@ -175,20 +140,65 @@ $statusDescriptions = [
         </div>
     <?php endif; ?>
 
-    <?php if (!$caseRow): ?>
+    <?php if (empty($casesToDisplay)): ?>
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-6 sm:p-10 text-center">
             <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                 <i data-lucide="inbox" class="w-8 h-8 text-gray-400"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">No Case Found</h3>
-            <p class="text-sm text-gray-500 mb-5">You don't have any X-ray case linked to your account yet.</p>
-            <a href="?role=patient&page=registration"
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">No Active Case Found</h3>
+            <p class="text-sm text-gray-500 mb-5">You don't have any active X-ray case at the moment.</p>
+            <a href="/<?= PROJECT_DIR ?>/registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
             </a>
         </div>
-    <?php elseif ($caseRow): ?>
-        
+    <?php else: ?>
+        <?php foreach ($casesToDisplay as $caseRow): ?>
+            <?php
+            $radtechName = $caseModel->getRadTechName($caseRow['radtech_id'] ?? null);
+            $currentStep = 0;
+            $displayStatus = 'Pending';
+            $isRejected = $isRejectedGlobal;
+            
+            if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Rejected') {
+                $currentStep = 0;
+                $displayStatus = 'Rejected';
+                $isRejected = true;
+            } elseif ($caseRow['status'] === 'Pending') {
+                if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Pending') {
+                    $currentStep = 2;
+                    $displayStatus = 'Pending';
+                } elseif (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Approved') {
+                    if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
+                        $currentStep = 4;
+                        $displayStatus = 'X-ray Taken';
+                    } else {
+                        $currentStep = 3;
+                        $displayStatus = 'Approved';
+                    }
+                } else {
+                    $currentStep = 2;
+                    $displayStatus = 'Pending';
+                }
+            } elseif ($caseRow['status'] === 'Under Reading') {
+                $currentStep = 4;
+                $displayStatus = 'Under Reading';
+            } elseif ($caseRow['status'] === 'Report Ready') {
+                $currentStep = 5;
+                $displayStatus = 'Report Ready';
+            } elseif (in_array($caseRow['status'], ['Released', 'Completed'])) {
+                $currentStep = 6;
+                $displayStatus = $caseRow['status'];
+            } elseif ($caseRow['status'] === 'Rejected') {
+                $currentStep = 0;
+                $displayStatus = 'Rejected';
+                $isRejected = true;
+            } else {
+                $currentStep = 2;
+                $displayStatus = $caseRow['status'] ?: 'Pending';
+            }
+            ?>
+            <div class="mb-10">
         <?php if (in_array($caseRow['status'], ['Released', 'Completed'])): ?>
         <!-- Completed / Released State Banner -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4">
@@ -200,7 +210,7 @@ $statusDescriptions = [
                 <p class="text-sm text-gray-600">Your X-ray report for case <span
                         class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
                     has been released. You may view your result below.</p>
-                <a href="/<?= PROJECT_DIR ?>/index.php?role=patient&page=view-report&ref=<?= base64_encode('CitiLife_Case_' . $caseRow['id']) ?>"
+                <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $caseRow['id']) ?>"
                     class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
                     style="background: linear-gradient(135deg, #15803d, #16a34a);">
                     <i data-lucide="eye" class="w-4 h-4"></i>
@@ -340,7 +350,9 @@ $statusDescriptions = [
             </div>
         </div>
 
-        <?php if (in_array($caseRow['status'], ['Released', 'Completed'])): ?>
+        </div> <!-- End mb-10 wrapper -->
+        <?php endforeach; ?>
+        
         <!-- New Request CTA -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-6 text-center mt-5">
             <div class="mx-auto h-14 w-14 rounded-full bg-red-50 flex items-center justify-center mb-3">
@@ -348,13 +360,11 @@ $statusDescriptions = [
             </div>
             <h3 class="text-base font-bold text-gray-800 mb-1">Want to register a new X-ray request?</h3>
             <p class="text-sm text-gray-500 mb-4">You can submit a new X-ray examination request anytime.</p>
-            <a href="?role=patient&page=registration"
+            <a href="/<?= PROJECT_DIR ?>/registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-6 transition shadow-sm">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> New X-ray Request
             </a>
         </div>
-        <?php endif; ?>
-
     <?php endif; ?>
 </div>
 
@@ -362,5 +372,14 @@ $statusDescriptions = [
     // Stealth Mode: Immediately clean the URL bar to hide all parameters from users
     if (window.history && window.history.replaceState) {
         window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    // Auto-hide success banner after 8 seconds
+    const successBanner = document.getElementById('success-banner');
+    if (successBanner) {
+        setTimeout(() => {
+            successBanner.style.opacity = '0';
+            setTimeout(() => successBanner.remove(), 500);
+        }, 8000);
     }
 </script>

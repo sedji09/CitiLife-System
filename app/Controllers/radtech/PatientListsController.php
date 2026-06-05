@@ -42,7 +42,7 @@ if (isset($_GET['action'])) {
             if ($caseData['released'] == 0) {
                 // Save images
                 if (!empty($images)) {
-                    $uploadDir = __DIR__ . '/../../../../public/uploads/reports';
+                    $uploadDir = __DIR__ . '/../../../public/uploads/reports';
                     if (!is_dir($uploadDir))
                         mkdir($uploadDir, 0777, true);
 

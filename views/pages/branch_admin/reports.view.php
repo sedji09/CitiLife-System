@@ -51,6 +51,11 @@ $branchName = $branchData['name'] ?? 'Your Branch';
     .theme-dark #card-routine:hover span {
         color: #93c5fd !important; /* text-blue-300 */
     }
+    
+    .theme-dark #priority-total-text,
+    .theme-dark #philhealth-total-text {
+        color: #f8fafc !important;
+    }
 </style>
 
 <!-- Include Chart.js -->
@@ -175,8 +180,18 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                 <h3 class="font-bold text-gray-800">Case Priority Breakdown</h3>
                 <i data-lucide="trending-up" class="w-4 h-4 text-gray-400"></i>
             </div>
-            <div class="p-6 flex flex-col justify-center flex-grow">
-                <div class="space-y-2">
+            <div class="p-6 flex flex-col sm:flex-row items-center justify-center gap-8 flex-grow">
+                <!-- Left: Chart -->
+                <div class="relative w-40 h-40 flex-shrink-0">
+                    <canvas id="priorityChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
+                        <span class="text-xs font-bold text-gray-400 leading-none">Total</span>
+                        <span id="priority-total-text" class="text-xl font-black text-gray-900 leading-tight">0</span>
+                    </div>
+                </div>
+
+                <!-- Right: Legend Cards -->
+                <div class="w-full sm:w-auto flex-grow space-y-2 max-w-[260px]">
                     <div id="card-emergency"
                         class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border hover:border-red-500 hover:bg-red-50 transition-all duration-200 cursor-pointer group priority-card priority-card-red">
                         <div class="flex items-center gap-3">
@@ -193,8 +208,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-orange-500 shadow-sm shadow-orange-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-orange-700 transition-colors">Urgent
-                                / Priority</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-orange-700 transition-colors">Urgent / Priority</span>
                         </div>
                         <span id="row-urgent"
                             class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">0</span>
@@ -205,8 +219,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Routine
-                                / Normal</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Routine / Normal</span>
                         </div>
                         <span id="row-routine"
                             class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">0</span>
@@ -221,21 +234,24 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                 <h3 class="font-bold text-gray-800">PhilHealth Distribution</h3>
                 <i data-lucide="pie-chart" class="w-4 h-4 text-gray-400"></i>
             </div>
-            <div class="p-6 flex flex-col items-center flex-grow">
-                <!-- Chart Container -->
-                <div class="relative w-40 h-40 mb-6">
+            <div class="p-6 flex flex-col sm:flex-row items-center justify-center gap-8 flex-grow">
+                <!-- Left: Chart -->
+                <div class="relative w-40 h-40 flex-shrink-0">
                     <canvas id="philhealthChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
+                        <span class="text-xs font-bold text-gray-400 leading-none">Total</span>
+                        <span id="philhealth-total-text" class="text-xl font-black text-gray-900 leading-tight">0</span>
+                    </div>
                 </div>
 
-                <!-- Custom Legend -->
-                <div class="w-full space-y-2">
+                <!-- Right: Legend Cards -->
+                <div class="w-full sm:w-auto flex-grow space-y-2 max-w-[260px]">
                     <div id="card-with"
                         class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border hover:border-red-500 hover:bg-red-50 transition-all duration-200 cursor-pointer group priority-card priority-card-red">
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">With
-                                Card</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">With Card</span>
                         </div>
                         <span id="label-philhealth-with"
                             class="text-sm font-bold text-gray-900 group-hover:text-red-700 transition-colors">0</span>
@@ -246,8 +262,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Without
-                                Card</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Without Card</span>
                         </div>
                         <span id="label-philhealth-without"
                             class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">0</span>
@@ -270,4 +285,4 @@ $branchName = $branchData['name'] ?? 'Your Branch';
     </div>
 </div>
 
-<script src="/<?= PROJECT_DIR ?>/app/views/pages/branch_admin/reports.js?v=<?= time() ?>"></script>
+<script src="/<?= PROJECT_DIR ?>/views/pages/branch_admin/reports.js?v=<?= time() ?>"></script>

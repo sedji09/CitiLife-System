@@ -36,7 +36,7 @@
                 </div>
             </div>
 
-            <form method="POST" class="space-y-4">
+            <form method="POST" action="/<?= PROJECT_DIR ?>/index.php?role=patient&page=registration" class="space-y-4">
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>

@@ -224,7 +224,7 @@
                                     <?php if ($isReportReady): ?>
                                         <!-- Print Result — active when Report Ready -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/app/views/pages/radtech/print-report.php?id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                             class="text-green-500 hover:text-green-700 transition" title="Print Report">
                                             <i data-lucide="printer"
                                                 class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
@@ -456,7 +456,7 @@
             iframe.style.border = 'none';
 
             // Use snapshot=1 to skip auto-print in the iframe
-            iframe.src = `${baseDir}/app/views/pages/radtech/print-report.php?id=${caseId}&no_shadow=1&snapshot=1`;
+            iframe.src = `${baseDir}/index.php?page=print-report&id=${caseId}&no_shadow=1&snapshot=1`;
             document.body.appendChild(iframe);
 
             iframe.onload = async () => {

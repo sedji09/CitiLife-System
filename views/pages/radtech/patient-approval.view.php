@@ -150,7 +150,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                                             class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
                                     </a>
                                     <button
-                                        onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', <?= $patient['age'] ?>, '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
+                                        onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
                                         class="text-sm font-medium text-blue-600 hover:text-blue-700 transition" title="Edit">
                                         <i data-lucide="edit"
                                             class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
@@ -184,8 +184,8 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Age</label>
-                        <input type="number" min="1" id="modalAge"
+                        <label class="block text-sm font-medium text-gray-700">Birthdate</label>
+                        <input type="date" id="modalBirthdate"
                             class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full" required>
                     </div>
                     <div>
@@ -228,7 +228,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
 </div>
 
 <script
-    src="/<?= PROJECT_DIR ?>/app/views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
+    src="/<?= PROJECT_DIR ?>/views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
     // ── Highlight row from notification ───────────────────────────────────────────

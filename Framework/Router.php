@@ -3,6 +3,7 @@
 namespace Framework;
 
 use Exception;
+use Framework\middleware\Authorize;
 
 class Router
 {
@@ -49,9 +50,9 @@ class Router
         // Parse the URL to get the path
         $path = parse_url($uri, PHP_URL_PATH);
 
-        // Strip project root prefix if it is present
+        // Strip project root prefix if it is present (case-insensitive for compatibility)
         $projectPrefix = '/' . PROJECT_DIR;
-        if (strpos($path, $projectPrefix) === 0) {
+        if (stripos($path, $projectPrefix) === 0) {
             $path = substr($path, strlen($projectPrefix));
         }
 
@@ -122,23 +123,7 @@ class Router
      */
     private function runMiddleware($name)
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        if ($name === 'auth') {
-            if (!isset($_SESSION['role'])) {
-                header("Location: /" . PROJECT_DIR . "/login");
-                exit;
-            }
-        }
-
-        if ($name === 'guest') {
-            if (isset($_SESSION['role'])) {
-                header("Location: /" . PROJECT_DIR . "/dashboard");
-                exit;
-            }
-        }
+        (new Authorize())->handle($name);
     }
 
     /**

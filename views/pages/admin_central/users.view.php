@@ -244,7 +244,8 @@
                 <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
                 <div class="relative">
                     <i data-lucide="mail" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="email" id="email" name="email" required placeholder="staff@citilife.com" autocomplete="off"
+                    <input type="email" id="email" name="email" required placeholder="staff@citilife.com"
+                        autocomplete="off"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
@@ -253,7 +254,8 @@
                 <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Initial Password</label>
                 <div class="relative">
                     <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="new-password"
+                    <input type="password" id="password" name="password" required placeholder="••••••••"
+                        autocomplete="new-password"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
@@ -375,37 +377,37 @@
     /* ── Dark-mode theming via JS inline styles ── */
     function applyUserModalTheme(modalId) {
         const isDark = document.documentElement.classList.contains('theme-dark');
-        const modal  = document.getElementById(modalId);
+        const modal = document.getElementById(modalId);
         if (!modal) return;
 
-        const card      = modal.querySelector(':scope > div');
-        const header    = card  ? card.querySelector(':scope > div:first-child') : null;
-        const title     = header ? header.querySelector('h3') : null;
-        const inputs    = modal.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
-        const selects   = modal.querySelectorAll('select');
-        const labels    = modal.querySelectorAll('label');
-        const footer    = modal.querySelector('form > div:last-child');
+        const card = modal.querySelector(':scope > div');
+        const header = card ? card.querySelector(':scope > div:first-child') : null;
+        const title = header ? header.querySelector('h3') : null;
+        const inputs = modal.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
+        const selects = modal.querySelectorAll('select');
+        const labels = modal.querySelectorAll('label');
+        const footer = modal.querySelector('form > div:last-child');
         const cancelBtn = footer ? footer.querySelector('button:first-of-type') : null;
-        const icons     = modal.querySelectorAll('form i[data-lucide]');
+        const icons = modal.querySelectorAll('form i[data-lucide]');
 
         if (isDark) {
-            if (card)   { card.style.backgroundColor   = '#1e293b'; }
+            if (card) { card.style.backgroundColor = '#1e293b'; }
             if (header) { header.style.backgroundColor = '#1e293b'; header.style.borderBottomColor = '#334155'; }
-            if (title)  { title.style.color = '#f1f5f9'; }
-            labels.forEach(l  => { l.style.color = '#cbd5e1'; });
-            inputs.forEach(i  => { i.style.backgroundColor = '#0f172a'; i.style.borderColor = '#475569'; i.style.color = '#f1f5f9'; });
+            if (title) { title.style.color = '#f1f5f9'; }
+            labels.forEach(l => { l.style.color = '#cbd5e1'; });
+            inputs.forEach(i => { i.style.backgroundColor = '#0f172a'; i.style.borderColor = '#475569'; i.style.color = '#f1f5f9'; });
             selects.forEach(s => { s.style.backgroundColor = '#0f172a'; s.style.borderColor = '#475569'; s.style.color = '#f1f5f9'; });
-            if (footer)    { footer.style.borderTopColor = '#334155'; }
+            if (footer) { footer.style.borderTopColor = '#334155'; }
             if (cancelBtn) { cancelBtn.style.borderColor = '#64748b'; cancelBtn.style.color = '#f1f5f9'; cancelBtn.style.backgroundColor = 'transparent'; }
             icons.forEach(ic => { ic.style.color = '#64748b'; });
         } else {
-            if (card)   { card.style.backgroundColor   = ''; }
+            if (card) { card.style.backgroundColor = ''; }
             if (header) { header.style.backgroundColor = ''; header.style.borderBottomColor = ''; }
-            if (title)  { title.style.color = ''; }
-            labels.forEach(l  => { l.style.color = ''; });
-            inputs.forEach(i  => { i.style.backgroundColor = ''; i.style.borderColor = ''; i.style.color = ''; });
+            if (title) { title.style.color = ''; }
+            labels.forEach(l => { l.style.color = ''; });
+            inputs.forEach(i => { i.style.backgroundColor = ''; i.style.borderColor = ''; i.style.color = ''; });
             selects.forEach(s => { s.style.backgroundColor = ''; s.style.borderColor = ''; s.style.color = ''; });
-            if (footer)    { footer.style.borderTopColor = ''; }
+            if (footer) { footer.style.borderTopColor = ''; }
             if (cancelBtn) { cancelBtn.style.borderColor = ''; cancelBtn.style.color = ''; cancelBtn.style.backgroundColor = ''; }
             icons.forEach(ic => { ic.style.color = ''; });
         }
@@ -417,7 +419,7 @@
         document.getElementById('password').value = '';
         document.getElementById('role').value = '';
         document.getElementById('branch_id').value = '';
-        
+
         document.getElementById('addUserModal').classList.remove('hidden');
         applyUserModalTheme('addUserModal');
     }
@@ -463,22 +465,22 @@
     }
 
     async function confirmDelete(id, email) {
-        const result = await confirmAlert('Delete Account', `Are you sure you want to delete the account for ${email}? This action cannot be undone.`, 'Yes, Delete');
+        const result = await confirmAlert('Delete Account', `Are you sure you want to delete this account?`, 'Yes, Delete');
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '';
-            
+
             const actionInput = document.createElement('input');
             actionInput.type = 'hidden';
             actionInput.name = 'action';
             actionInput.value = 'delete';
-            
+
             const idInput = document.createElement('input');
             idInput.type = 'hidden';
             idInput.name = 'user_id';
             idInput.value = id;
-            
+
             form.appendChild(actionInput);
             form.appendChild(idInput);
             document.body.appendChild(form);

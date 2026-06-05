@@ -40,7 +40,7 @@ return [
   "it_admin" => [
     ["label" => "Dashboard", "icon" => "layout-dashboard", "href" => "/dashboard", "perm_key" => "dashboard"],
     ["label" => "Security Settings", "icon" => "shield-check", "href" => "/security-settings", "perm_key" => "system_security"],
-    ["label" => "User Role Defaults", "icon" => "user-check", "href" => "/user-role-defaults", "perm_key" => "system_security"],
+    ["label" => "User Role Settings", "icon" => "user-check", "href" => "/user-role-settings", "perm_key" => "system_security"],
     ["label" => "Backup & Maintenance", "icon" => "database-backup", "href" => "/backup-maintenance", "perm_key" => "backup_mgmt"],
     ["label" => "Audit Logs", "icon" => "file-search", "href" => "/audit-logs", "perm_key" => "audit_logs"],
   ],

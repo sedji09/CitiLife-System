@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'patient_id'        => $_POST['existing-patient-id'] ?? null,
             'first_name'        => trim($_POST['first-name'] ?? ''),
             'last_name'         => trim($_POST['last-name'] ?? ''),
-            'age'               => (int) ($_POST['age'] ?? 0),
+            'birthdate'         => $_POST['birthdate'] ?? '',
             'sex'               => $_POST['sex'] ?? 'Male',
             'contact_number'    => str_replace(['-', ' '], '', trim($_POST['contact'] ?? '')),
             'branch_id'         => $branchId,
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Validation moved from View to Controller
         if (empty($regData['exam_type'])) {
             $error = "Please select at least one Exam Type.";
-        } elseif ($regData['form_mode'] === 'new-patient' && (!$regData['first_name'] || !$regData['last_name'] || $regData['age'] <= 0)) {
+        } elseif ($regData['form_mode'] === 'new-patient' && (!$regData['first_name'] || !$regData['last_name'] || empty($regData['birthdate']))) {
             $error = "Please fill in all required patient fields.";
         } elseif ($regData['form_mode'] === 'new-patient' && !preg_match('/^[0-9]{11}$/', $regData['contact_number'])) {
             $error = "Contact Number must be exactly 11 digits.";

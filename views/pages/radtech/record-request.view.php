@@ -299,4 +299,4 @@
 </div>
 
 
-<script src="/<?= PROJECT_DIR ?>/app/views/pages/radtech/record-request.js?v=<?= time() ?>"></script>
+<script src="/<?= PROJECT_DIR ?>/views/pages/radtech/record-request.js?v=<?= time() ?>"></script>

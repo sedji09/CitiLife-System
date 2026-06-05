@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $caseId = isset($_POST['id']) ? (int)$_POST['id'] : 0;
     $name = isset($_POST['name']) ? trim($_POST['name']) : '';
-    $age = isset($_POST['age']) ? (int)$_POST['age'] : 0;
+    $birthdate = isset($_POST['birthdate']) ? trim($_POST['birthdate']) : '';
     $sex = isset($_POST['sex']) ? $_POST['sex'] : '';
     $contact = isset($_POST['contact']) ? trim($_POST['contact']) : '';
     $philhealth = isset($_POST['philhealth']) ? $_POST['philhealth'] : '';
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = $nameParts[0] ?? '';
     $lastName = $nameParts[1] ?? '';
 
-    if ($caseId && $firstName && $age && $sex && $contact) {
+    if ($caseId && $firstName && $birthdate && $sex && $contact) {
         try {
             $branchId = $_SESSION['branch_id'] ?? 1;
             $case = $caseModel->getCaseById($caseId);
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $patientData = [
                     'first_name' => $firstName,
                     'last_name' => $lastName,
-                    'age' => $age,
+                    'birthdate' => $birthdate,
                     'sex' => $sex,
                     'contact_number' => $contact
                 ];

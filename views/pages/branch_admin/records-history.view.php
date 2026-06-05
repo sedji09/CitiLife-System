@@ -100,12 +100,12 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                 <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
             </div>
             <div id="findings-viewer-container"
-                class="flex-1 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
+                class="flex-1 min-h-0 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
                 <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed'])): ?>
                     <?php
                     // Clean JSON preparation for the previewer
                     // Look for static photo reports generated at Release
-                    $photoPattern = __DIR__ . "/../../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
+                    $photoPattern = __DIR__ . "/../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
                     $photos = glob($photoPattern);
                     $previewItems = [];
 
@@ -119,7 +119,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         $thumbnailUrl = $previewItems[0]['url']; // Use first page as thumbnail
                     } else {
                         // Fallback if photo not yet generated
-                        $reportUrl = "/" . PROJECT_DIR . "/app/views/pages/radtech/print-report.php?id=" . $caseId . "&preview=true";
+                        $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
                         $previewItems = [['type' => 'report', 'url' => $reportUrl, 'name' => "REPORT_" . $caseDetails['case_number']]];
                         $thumbnailUrl = false;
                         $miniUrl = $reportUrl . "&single_page=true";
@@ -131,7 +131,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
                     <!-- GDrive Style Card -->
                     <div
-                        class="flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group/card relative">
+                        class="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group/card relative">
                         <!-- Card Header -->
                         <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 diagnostic-card-header">
                             <div class="flex items-center gap-3 overflow-hidden">
@@ -143,13 +143,13 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         </div>
 
                         <!-- Card Body (The Floating Preview) -->
-                        <div class="flex-1 relative bg-white overflow-hidden cursor-zoom-in flex items-center justify-center p-4 group-hover/card:bg-gray-50 transition-colors diagnostic-card-body"
-                            onclick="if(window.DrivePreviewer) DrivePreviewer.open(<?= $jsonItems ?>, 0)">
+                        <div class="flex-1 min-h-0 relative bg-white overflow-hidden cursor-zoom-in flex items-center justify-center p-4 group-hover/card:bg-gray-50 transition-colors diagnostic-card-body"
+                            data-preview-items="<?= $jsonItems ?>"
+                            onclick="if(window.DrivePreviewer) DrivePreviewer.open(JSON.parse(this.getAttribute('data-preview-items')), 0)">
 
                             <?php if ($thumbnailUrl): ?>
-                                <!-- Static Image Thumbnail -->
                                 <img id="findings-main-img" src="<?= $thumbnailUrl ?>"
-                                    class="w-full h-full object-contain filter drop-shadow-md transform transition-transform group-hover/card:scale-105"
+                                    class="w-full h-full object-contain filter drop-shadow-md transform transition-transform group-hover/card:scale-105 p-4"
                                     alt="Report Thumbnail">
                             <?php else: ?>
                                 <!-- Fallback Iframe if Image is Missing -->
@@ -214,7 +214,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
         </div>
 
         <!-- Enhanced X-Ray Viewer -->
-        <div class="flex flex-col">
+        <div class="flex flex-col min-h-0">
             <?php
             $savedPaths = [];
             if (!empty($caseDetails['image_path'])) {
@@ -229,7 +229,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
             ?>
 
             <div id="xray-viewer-container"
-                class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[480px] relative transition-all w-full">
+                class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-h-0 h-[480px] relative transition-all w-full">
                 <?php if (!empty($savedPaths)): ?>
                     <!-- Classic Integrated Header Toolbar -->
                     <div class="bg-red-600 px-5 h-14 flex justify-between items-center text-white z-20 w-full select-none shadow-lg"
@@ -293,12 +293,12 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         <?php endif; ?>
 
                         <!-- Expand Button -->
-                        <div id="btn-fullscreen"
-                            class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white/90 hover:text-white p-2.5 rounded-xl cursor-pointer backdrop-blur-md transition-all active:scale-90 border border-white/10 shadow-2xl z-30 flex items-center justify-center"
+                        <button type="button" id="btn-fullscreen"
+                            class="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-xl cursor-pointer backdrop-blur-md transition-all active:scale-90 border border-white/10 shadow-2xl z-30 flex items-center justify-center"
                             title="Toggle Fullscreen">
                             <span id="fullscreen-icon-wrapper"></span>
-                        </div>
-                </div>
+                        </button>
+                    </div>
 
                 <?php else: ?>
                     <!-- Empty State -->
@@ -449,27 +449,20 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         zoomLevelText.addEventListener('click', () => { scale = 1; translateX = 0; translateY = 0; updateTransform(); });
 
                         btnFullscreen.addEventListener('click', () => {
-                            if (Math.abs(scale - 1) > 0.01) {
-                                // Reset Zoom if currently zoomed (in or out)
-                                scale = 1; translateX = 0; translateY = 0;
-                                updateTransform();
+                            if (!document.fullscreenElement) {
+                                viewer.requestFullscreen().catch(() => { });
                             } else {
-                                // Toggle Fullscreen if at 100%
-                                if (!document.fullscreenElement) {
-                                    viewer.requestFullscreen().catch(() => { });
-                                } else {
-                                    document.exitFullscreen();
-                                }
+                                document.exitFullscreen();
                             }
                         });
 
                         document.addEventListener('fullscreenchange', () => {
                             const isFull = !!document.fullscreenElement;
                             if (isFull && document.fullscreenElement === viewer) {
-                                viewer.classList.remove('h-[480px]', 'rounded-xl', 'border');
+                                viewer.classList.remove('h-[480px]', 'rounded-2xl', 'border');
                                 viewer.classList.add('h-screen', 'rounded-none');
                             } else if (!isFull) {
-                                viewer.classList.add('h-[480px]', 'rounded-xl', 'border');
+                                viewer.classList.add('h-[480px]', 'rounded-2xl', 'border');
                                 viewer.classList.remove('h-screen', 'rounded-none');
                             }
                             updateIconState();

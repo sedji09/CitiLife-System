@@ -128,7 +128,7 @@ $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
     class="rounded-xl bg-white border border-gray-200 shadow-sm xl:col-span-2 overflow-hidden hover:shadow-md transition">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
       <h3 class="font-bold text-gray-900 text-lg">Recent Cases added</h3>
-      <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
+      <a href="/<?= PROJECT_DIR ?>/patient-lists"
         class="text-sm font-semibold text-red-600 hover:text-red-700 hover:underline">View all</a>
     </div>
 

@@ -21,7 +21,7 @@ class PageController
         $uri = $_SERVER['REQUEST_URI'];
         $path = parse_url($uri, PHP_URL_PATH);
         $projectPrefix = '/' . PROJECT_DIR;
-        if (strpos($path, $projectPrefix) === 0) {
+        if (stripos($path, $projectPrefix) === 0) {
             $path = substr($path, strlen($projectPrefix));
         }
         $page = trim($path, '/');
@@ -58,10 +58,11 @@ class PageController
             'branches',
             'patient-records',
             'audit-logs',
-            'user-role-defaults',
+            'user-role-settings',
             'settings',
             'security-settings',
             'backup-maintenance',
+            'print-report',
         ];
 
         // Fallback for page parameter
@@ -80,7 +81,7 @@ class PageController
             'audit-logs'          => 'audit_logs',
             'reports'             => 'global_reports',
             'security-settings'   => 'system_security',
-            'user-role-defaults'  => 'system_security',
+            'user-role-settings'  => 'system_security',
             'settings'            => 'system_security',
             'backup-maintenance'  => 'backup_mgmt'
         ];
@@ -89,16 +90,43 @@ class PageController
             guardPermission($role, $pagePermMap[$page]);
         }
 
-        // 3. Require the procedural controller if exists
+        // 3. Resolve and run controller (Class-based OOP if exists, fallback to procedural)
         $controllerName = str_replace('-', '', ucwords($page, '-')) . 'Controller.php';
         $controllerFile = basePath("app/Controllers/{$role}/{$controllerName}");
+        $className = "App\\Controllers\\{$role}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
 
+        // Read file to check if it's class-based to avoid triggering class loader on legacy procedural files
+        $isClassBased = false;
         if (file_exists($controllerFile)) {
-            require $controllerFile;
+            $content = file_get_contents($controllerFile);
+            if (strpos($content, 'class ' . str_replace('-', '', ucwords($page, '-')) . 'Controller') !== false) {
+                $isClassBased = true;
+            }
+        }
+
+        $controllerVars = [];
+        if ($isClassBased && class_exists($className)) {
+            $controller = new $className();
+            if (method_exists($controller, 'handle')) {
+                $controllerVars = $controller->handle();
+            }
+        } else {
+            if (file_exists($controllerFile)) {
+                require $controllerFile;
+            }
+        }
+
+        // Merge variables returned from OOP controller handle()
+        if (is_array($controllerVars) && !empty($controllerVars)) {
+            extract($controllerVars);
         }
 
         // 4. Render View
-        $contentView = "pages/{$role}/{$page}";
+        if ($page === 'print-report') {
+            $contentView = "pages/radtech/print-report";
+        } else {
+            $contentView = "pages/{$role}/{$page}";
+        }
 
         // Intercept specific AJAX requests before loading the layout
         if (isset($_GET['ajax_polling']) || ($page === 'patient-registration' && isset($_GET['ajax_search']))) {
@@ -107,7 +135,7 @@ class PageController
         }
 
         // Load layout
-        if ($page === 'view-report') {
+        if ($page === 'view-report' || $page === 'print-report') {
             loadView($contentView, get_defined_vars());
         } else {
             loadLayoutView($contentView, get_defined_vars());

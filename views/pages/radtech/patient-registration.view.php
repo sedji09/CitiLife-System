@@ -74,9 +74,9 @@
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
-                            <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age <span
+                            <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-2">Birthdate <span
                                     class="text-red-500">*</span></label>
-                            <input type="number" id="age" name="age" min="1" max="110"
+                            <input type="date" id="birthdate" name="birthdate" required
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>

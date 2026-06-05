@@ -135,7 +135,7 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                     <h3 class="font-bold text-gray-900 text-sm">Recent System Activity</h3>
-                    <a href="?page=audit-logs"
+                    <a href="/<?= PROJECT_DIR ?>/audit-logs"
                         class="text-xs font-bold text-red-600 hover:text-red-700 hover:underline">View All Logs</a>
                 </div>
                 <div class="overflow-x-auto">
@@ -223,7 +223,7 @@
 
                 <h3 class="font-bold text-white text-sm mb-4 relative z-10">Quick Management</h3>
                 <div class="space-y-3 relative z-10">
-                    <a href="?page=security-settings"
+                    <a href="/<?= PROJECT_DIR ?>/security-settings"
                         class="flex items-center gap-3 w-full p-3 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition group/item">
                         <i data-lucide="shield-lock" class="w-4 h-4 text-red-500"></i>
                         <span class="text-xs font-semibold">Security Settings</span>

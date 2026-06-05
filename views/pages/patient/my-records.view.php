@@ -25,7 +25,13 @@ if ($patientId) {
 
 // 2. Fetch Cases (Backend logic)
 if ($patientRow && isset($patientRow['patient_number'])) {
-    $allCases = $caseModel->getPatientHistory($patientRow['patient_number']);
+    $rawCases = $caseModel->getPatientHistory($patientRow['patient_number']);
+    // Only show Completed or Released cases in My Records
+    foreach ($rawCases as $c) {
+        if (in_array($c['status'], ['Completed', 'Released'])) {
+            $allCases[] = $c;
+        }
+    }
 }
 
 $statusBadge = [
@@ -92,7 +98,7 @@ $statusBadge = [
                     <p class="text-sm text-gray-500 mb-5">Your X-ray examination history will appear here once you have a
                         case.
                     </p>
-                    <a href="?role=patient&page=registration"
+                    <a href="/<?= PROJECT_DIR ?>/registration"
                         class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
                     </a>
@@ -182,7 +188,7 @@ $statusBadge = [
                                             <td class="px-5 py-3.5 whitespace-nowrap">
                                                 <div class="flex items-center gap-2 justify-center lg:justify-start">
                                                     <!-- View Status -->
-                                                    <a href="?role=patient&page=xray-status&case_id=<?= $c['id'] ?>"
+                                                    <a href="/<?= PROJECT_DIR ?>/xray-status?case_id=<?= $c['id'] ?>"
                                                         class="group transition-all" title="View Status">
                                                         <div
                                                             class="hidden lg:flex items-center justify-center p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors shadow-sm">
@@ -196,7 +202,7 @@ $statusBadge = [
 
                                                     <?php if (in_array($c['status'], ['Released', 'Completed'])): ?>
                                                         <!-- View Report -->
-                                                        <a href="?role=patient&page=view-report&ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
+                                                        <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
                                                             class="group transition-all" title="View Report">
                                                             <div
                                                                 class="hidden lg:flex items-center justify-center p-2 rounded-lg bg-green-50 border border-green-200 text-green-600 hover:bg-green-600 hover:text-white transition-colors shadow-sm">
@@ -268,12 +274,12 @@ $statusBadge = [
                                     </span>
                                 </div>
                                 <div class="flex items-center justify-between pt-2 border-t border-gray-50">
-                                    <a href="?role=patient&page=xray-status&case_id=<?= $c['id'] ?>"
+                                    <a href="/<?= PROJECT_DIR ?>/xray-status?case_id=<?= $c['id'] ?>"
                                         class="inline-flex items-center gap-1.5 text-gray-600 hover:text-red-600 text-xs font-bold transition">
                                         <i data-lucide="activity" class="w-3.5 h-3.5"></i> View Status
                                     </a>
                                     <?php if (in_array($c['status'], ['Released', 'Completed'])): ?>
-                                        <a href="?role=patient&page=view-report&ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
+                                        <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
                                             class="inline-flex items-center gap-1.5 text-green-600 hover:text-green-800 text-xs font-bold transition">
                                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Report
                                         </a>
@@ -304,6 +310,6 @@ $statusBadge = [
             <?php endif; ?>
         </div>
         <?php if (!empty($allCases)): ?>
-            <script src="app/views/pages/patient/my-records.js"></script>
+            <script src="/<?= PROJECT_DIR ?>/views/pages/patient/my-records.js"></script>
         <?php endif; ?>
     </div>

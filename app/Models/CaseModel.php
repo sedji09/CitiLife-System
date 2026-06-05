@@ -262,7 +262,7 @@ class CaseModel
     public function getCaseById($id)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, p.age, p.sex, p.contact_number, p.patient_number,
+            SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number,
                    b.name AS branch_name,
                    COALESCE(NULLIF(u.full_name_report, ''), NULLIF(u.name, ''), SUBSTRING_INDEX(u.email, '@', 1)) AS radtech_name, u.professional_title AS radtech_title, u.signature AS radtech_signature,
                    COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name, ur.professional_title AS radiologist_title, ur.signature AS radiologist_signature
@@ -330,6 +330,24 @@ class CaseModel
         ");
         $stmt->execute([$patientId]);
         return $stmt->fetch();
+    }
+
+    /**
+     * Get all active cases for a patient.
+     */
+    public function getActiveCasesByPatient($patientId)
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT c.*, b.name AS branch_name
+            FROM cases c
+            LEFT JOIN branches b ON c.branch_id = b.id
+            WHERE c.patient_id = ?
+              AND c.status NOT IN ('Released', 'Completed', 'Rejected')
+              AND (c.approval_status IS NULL OR c.approval_status != 'Rejected')
+            ORDER BY c.created_at DESC
+        ");
+        $stmt->execute([$patientId]);
+        return $stmt->fetchAll();
     }
 
     /**
@@ -422,7 +440,7 @@ class CaseModel
         $year = date('Y');
         $prefix = "CX-{$year}-"; // System standard uses CX-YYYY-XXXX
 
-        $stmtLast = $this->pdo->prepare("SELECT case_number FROM cases WHERE case_number LIKE ? ORDER BY id DESC LIMIT 1");
+        $stmtLast = $this->pdo->prepare("SELECT case_number FROM cases WHERE case_number LIKE ? AND case_number NOT LIKE '%-REJ' ORDER BY id DESC LIMIT 1");
         $stmtLast->execute(["CX-{$year}-%"]);
         $lastCase = $stmtLast->fetchColumn();
 
@@ -461,7 +479,7 @@ class CaseModel
         if (!$userId)
             return null;
         $stmt = $this->pdo->prepare("
-            SELECT p.*, b.name as branch_name 
+            SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, b.name as branch_name 
             FROM patients p 
             INNER JOIN users u ON u.patient_id = p.id 
             LEFT JOIN branches b ON p.branch_id = b.id
@@ -476,7 +494,7 @@ class CaseModel
      */
     public function getPatientByUserId($userId)
     {
-        $stmt = $this->pdo->prepare("SELECT p.* FROM patients p JOIN users u ON u.patient_id = p.id WHERE u.id = ?");
+        $stmt = $this->pdo->prepare("SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age FROM patients p JOIN users u ON u.patient_id = p.id WHERE u.id = ?");
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }
@@ -523,7 +541,7 @@ class CaseModel
     public function getCaseByNumber($caseNumber)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, p.age, p.sex, p.contact_number, p.patient_number as p_num
+            SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number as p_num
             FROM cases c
             JOIN patients p ON c.patient_id = p.id
             WHERE c.case_number = ?
@@ -583,7 +601,7 @@ class CaseModel
      */
     public function rejectCase($id)
     {
-        $stmt = $this->pdo->prepare("UPDATE cases SET approval_status = 'Rejected', status = 'Rejected' WHERE id = ? AND approval_status = 'Pending'");
+        $stmt = $this->pdo->prepare("UPDATE cases SET approval_status = 'Rejected', status = 'Rejected', case_number = CONCAT(case_number, '-REJ') WHERE id = ? AND approval_status = 'Pending'");
         $stmt->execute([$id]);
         return $stmt->rowCount() > 0;
     }
@@ -605,13 +623,13 @@ class CaseModel
     {
         $hasApprovalStatus = $this->hasColumn('cases', 'approval_status');
         if ($hasApprovalStatus) {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.age, p.sex, p.contact_number 
+            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number 
                     FROM cases c 
                     JOIN patients p ON c.patient_id = p.id 
                     WHERE c.approval_status = 'Pending' AND c.branch_id = ?
                     ORDER BY c.created_at DESC";
         } else {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.age, p.sex, p.contact_number 
+            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number 
                     FROM cases c 
                     JOIN patients p ON c.patient_id = p.id 
                     WHERE c.status = 'Pending' AND c.branch_id = ?

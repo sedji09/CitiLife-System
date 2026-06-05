@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../config/database.php';
 global $pdo;
 
 if (session_status() === PHP_SESSION_NONE) {

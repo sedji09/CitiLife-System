@@ -204,7 +204,7 @@ $statusDescriptions = [
         </div>
 
         <!-- Request New X-ray Button -->
-        <a href="?role=patient&page=registration"
+        <a href="/<?= PROJECT_DIR ?>/registration"
             class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3.5 px-4 transition shadow-sm">
             <i data-lucide="plus-circle" class="w-5 h-5"></i> New X-ray Request
         </a>
@@ -217,7 +217,7 @@ $statusDescriptions = [
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Get Started</h3>
             <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your
                 results.</p>
-            <a href="?role=patient&page=registration"
+            <a href="/<?= PROJECT_DIR ?>/registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Register as Patient
             </a>
@@ -300,7 +300,7 @@ $statusDescriptions = [
 
             <!-- View Full Status button -->
             <div class="px-5 pb-5">
-                <a href="?role=patient&page=xray-status&case_id=<?= $latestCase['id'] ?>"
+                <a href="/<?= PROJECT_DIR ?>/xray-status?case_id=<?= $latestCase['id'] ?>"
                     class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-4 transition shadow-sm">
                     View Full Status <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </a>
