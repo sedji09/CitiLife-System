@@ -7,6 +7,7 @@ $patientModel = new PatientModel($pdo);
 $branchModel = new BranchModel($pdo);
 $auditLogModel = new AuditLogModel($pdo);
 $currentUserId = $_SESSION['user_id'] ?? 0;
+$currentBranchId = $_SESSION['branch_id'] ?? null;
 
 $success = '';
 $error = '';

@@ -619,5 +619,21 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Auto-format contact numbers
+        const contactInputs = document.querySelectorAll('input[name^="contact_number"]');
+        contactInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                let val = this.value.replace(/\D/g, ''); // Remove non-digits
+                if (val.length > 11) val = val.substring(0, 11); // Limit to 11 digits
+                
+                let formatted = '';
+                if (val.length > 0) formatted = val.substring(0, 4);
+                if (val.length > 4) formatted += '-' + val.substring(4, 7);
+                if (val.length > 7) formatted += '-' + val.substring(7, 11);
+                
+                this.value = formatted;
+            });
+        });
     });
 </script>

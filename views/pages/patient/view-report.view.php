@@ -893,6 +893,15 @@ if (!$isMultiExam) {
                                     </div>
                                 </div>
                             <?php endif; ?>
+                            <?php if (!empty($bInfoMatch['contact3'])): ?>
+                                <div class="icon-row">
+                                    <i class="bi bi-telephone-fill"
+                                        style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
+                                    <div class="text-col" style="font-weight:bold;color:#333;">
+                                        <span><?= htmlspecialchars($bInfoMatch['contact3']) ?></span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
