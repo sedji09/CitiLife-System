@@ -36,7 +36,7 @@ if (!$id || !$patientId) {
 
 // Access control:
 $case = $caseModel->getCaseById($id);
-if (!$case || (int)$case['patient_id'] !== (int)$patientId) {
+if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
     header("Location: /" . PROJECT_DIR . "/view-report?ref=" . $refToken);
     exit;
 }
@@ -51,7 +51,7 @@ if (!$patientId) {
 // Fetch the case via Model
 $case = $caseModel->getCaseById($id);
 
-if (!$case || (int)$case['patient_id'] !== (int)$patientId) {
+if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
     die('<p style="font-family:sans-serif;padding:2rem;color:red;">Case not found or access denied.</p>');
 }
 
@@ -64,7 +64,18 @@ $isPreview = false;
 $isDownload = true;
 
 // Fetch Radiologist Name via Model
-$radName = $userModel->getRadTechName($case['radiologist_id']) ?: 'Radiologist on Duty';
+$radName = $case['radiologist_name'] ?? 'Radiologist on Duty';
+$radTitle = $case['radiologist_title'] ?? '';
+$radSignature = $case['radiologist_signature'] ?? '';
+
+$radFullNameWithTitle = htmlspecialchars($radName);
+if (!empty($radTitle)) {
+    $radFullNameWithTitle .= ', ' . htmlspecialchars($radTitle);
+}
+// Add DR. prefix if not present for non-placeholder names
+if ($radName !== 'Radiologist on Duty' && !str_contains(strtoupper($radFullNameWithTitle), 'DR.')) {
+    $radFullNameWithTitle = 'DR. ' . $radFullNameWithTitle;
+}
 
 $fullName = htmlspecialchars(strtoupper($case['first_name'] . ' ' . $case['last_name']));
 $examType = $case['exam_type'];
@@ -76,7 +87,20 @@ $sex = htmlspecialchars(ucfirst($case['sex']));
 $branch = htmlspecialchars($case['branch_name']);
 $dateExam = $case['date_completed'] ?? $case['created_at'];
 $dateStr = date('F d, Y', strtotime($dateExam));
-$radtechName = htmlspecialchars('Fransisco Dela Cruz, RXT, RRT');
+
+$radtechName = $case['radtech_name'] ?? '';
+$radtechTitle = $case['radtech_title'] ?? '';
+$radtechSignature = $case['radtech_signature'] ?? '';
+
+// Final fallback if still empty
+if (empty($radtechName))
+    $radtechName = 'Radiologic Technologist';
+
+// Combine name and titles for the display
+$radtechFullNameWithTitle = htmlspecialchars($radtechName);
+if (!empty($radtechTitle)) {
+    $radtechFullNameWithTitle .= ', ' . htmlspecialchars($radtechTitle);
+}
 
 // Get Branch Metadata via Model (Address, Contacts)
 $bInfoMatch = $branchModel->getBranchMetadata($branch);
@@ -123,6 +147,7 @@ if (!$isMultiExam) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radiology Report — <?= $caseNum ?></title>
+    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <style>
         /* ── Google Fonts ── */
         @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
@@ -141,6 +166,28 @@ if (!$isMultiExam) {
             font-size: 11pt;
             color: #1a1a1a;
             background: #f0f0f0;
+        }
+
+        /* ── Watermark ── */
+        .watermark {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: 900px;
+            opacity: 0.12;
+            z-index: 0;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .watermark img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
         }
 
         /* ── Page Shell ── */
@@ -273,7 +320,8 @@ if (!$isMultiExam) {
         }
 
         .title-report {
-            border: 1px solid #000000ff;
+            border: 4px double #777;
+            padding: 5px 4px;
             text-align: center;
             font-size: 8px;
             font-weight: bold;
@@ -367,13 +415,13 @@ if (!$isMultiExam) {
         }
 
         .section-title {
-            font-family: Arial, sans-serif;
+            font-family: 'Raleway', sans-serif;
             font-size: 8pt;
-            font-weight: bold;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #c0392b;
-            border-bottom: 1px solid #e0c0c0;
+            color: #000;
+            border-bottom: 1px solid #cccccc;
             padding-bottom: 3px;
             margin-bottom: 6px;
         }
@@ -599,14 +647,38 @@ if (!$isMultiExam) {
     <?php if (!$isPreview): ?>
         <!-- Print toolbar (hidden when printing) -->
         <div class="print-bar">
-            <button class="btn-print" onclick="window.print()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
-            <button class="btn-download" onclick="downloadPDF()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF</button>
-            <button class="btn-close" onclick="window.close()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Close</button>
+            <button class="btn-print" onclick="window.print()"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                    height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="display:inline-block;vertical-align:middle;margin-right:6px;">
+                    <polyline points="6 9 6 2 18 2 18 9" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                </svg> Print</button>
+            <button class="btn-download" onclick="downloadPDF()"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                    height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="display:inline-block;vertical-align:middle;margin-right:6px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg> Download PDF</button>
+            <button class="btn-close" onclick="window.close()"><svg xmlns="http://www.w3.org/2000/svg" width="16"
+                    height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="display:inline-block;vertical-align:middle;margin-right:4px;">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg> Close</button>
         </div>
     <?php endif; ?>
 
     <!-- Report Page -->
     <div class="page">
+        <!-- Watermark -->
+        <div class="watermark">
+            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/logo-template.png" alt="Watermark">
+        </div>
 
         <!-- Header -->
         <div class="report-header">
@@ -620,7 +692,8 @@ if (!$isMultiExam) {
             </div>
             <div class="header-right">
                 <div class="icon-row" style="margin-bottom: 6px;">
-                    <i style="color:#8b0000; display:flex; align-items:center; margin-top: 1px;"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="min-width:13px; margin-right: 2px;"><path d="M8 1a2 2 0 1 0 0 4 2 2 0 0 0 0-4M5.93 4.964l-2.817 4.873A2 2 0 0 0 4.836 13h6.328a2 2 0 0 0 1.723-2.163l-2.817-4.873A2.98 2.98 0 0 1 8 7a2.98 2.98 0 0 1-2.07-1.036M8 0a3 3 0 0 1 2.13.886l.327-.327a.5.5 0 1 1 .708.708l-.328.327A3 3 0 0 1 11 3.5a3 3 0 0 1-.886 2.13l3.35 5.801A3 3 0 0 1 10.836 16H5.164a3 3 0 0 1-2.528-4.57l3.35-5.8A3 3 0 0 1 5 3.5a3 3 0 0 1 .886-2.13l-.328-.327a.5.5 0 1 1 .708-.708l.327.327A3 3 0 0 1 8 0"/></svg></i>
+                    <i class="bi bi-radioactive"
+                        style="color:#8b0000; font-size:13px; margin-right:7px; margin-top:1px; flex-shrink:0;"></i>
                     <div class="text-col">
                         <?php foreach ($bAddressRows as $row): ?>
                             <span <?= strpos($row, '(') !== false ? 'style="font-size:7.5pt;color:#777;"' : 'style="font-weight:bold;color:#8b0000;"' ?>><?= htmlspecialchars($row) ?></span>
@@ -628,16 +701,27 @@ if (!$isMultiExam) {
                     </div>
                 </div>
                 <div class="icon-row">
-                    <i style="color:#666; display:flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width:13px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></i>
+                    <i class="bi bi-telephone-fill"
+                        style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
                     <div class="text-col" style="font-weight:bold;color:#333;">
                         <span><?= htmlspecialchars($bInfoMatch['contact1']) ?></span>
                     </div>
                 </div>
                 <?php if (!empty($bInfoMatch['contact2'])): ?>
                     <div class="icon-row">
-                        <i style="color:#666; display:flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width:13px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></i>
+                        <i class="bi bi-telephone-fill"
+                            style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
                         <div class="text-col" style="font-weight:bold;color:#333;">
                             <span><?= htmlspecialchars($bInfoMatch['contact2']) ?></span>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($bInfoMatch['contact3'])): ?>
+                    <div class="icon-row">
+                        <i class="bi bi-telephone-fill"
+                            style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
+                        <div class="text-col" style="font-weight:bold;color:#333;">
+                            <span><?= htmlspecialchars($bInfoMatch['contact3']) ?></span>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -683,19 +767,6 @@ if (!$isMultiExam) {
             </div>
         </div>
         <div class="report-info">
-            <!-- Clinical Information -->
-            <div class="exam-type">
-                <label>Exam Type</label>
-                <div class="exam-type-chips">
-                    <?php if (empty($examTypeArray)): ?>
-                        <span class="exam-type-chip">—</span>
-                    <?php else: ?>
-                        <?php foreach ($examTypeArray as $et): ?>
-                            <span class="exam-type-chip"><?= htmlspecialchars($et) ?></span>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
             <?php if ($isMultiExam && !empty($parsedData)): ?>
                 <?php
                 $count = 0;
@@ -707,8 +778,10 @@ if (!$isMultiExam) {
                     <div
                         style="margin-top: 15px; margin-bottom: 20px; <?= !$isLast ? 'border-bottom: 1.5px dashed #e0e0e0; padding-bottom: 20px;' : '' ?>">
                         <h3
-                            style="font-family: 'Raleway', sans-serif; font-size: 11pt; color: #1a1a1a; margin-bottom: 14px; text-transform: uppercase; font-weight: bold;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="#c0392b" style="display:inline-block;vertical-align:middle;margin-right:4px;min-width:12px;"><polygon points="5 3 19 12 5 21 5 3"/></svg> <?= htmlspecialchars($examName) ?>
+                            style="font-family:'Raleway',sans-serif;font-size:11pt;color:#c0392b;margin-bottom:14px;text-transform:uppercase;display:flex;align-items:center;">
+                            <span
+                                style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><span
+                                style="border-bottom: 1.5px solid #c0392b; padding-bottom: 2px; font-family: 'Times New Roman', Times, serif;"><?= htmlspecialchars($examName) ?></span>
                         </h3>
 
                         <div class="section" style="margin-left: 14px;">
@@ -723,34 +796,68 @@ if (!$isMultiExam) {
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <!-- Findings -->
-                <div class="section">
-                    <div class="section-title">Radiographic Findings</div>
-                    <div class="section-body"><?= $findingsStr ?></div>
-                </div>
+                <div class="exam-block">
+                    <h3
+                        style="font-family:'Raleway',sans-serif;font-size:11pt;color:#c0392b;margin-bottom:14px;text-transform:uppercase;display:flex;align-items:center;">
+                        <span
+                            style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><span
+                            style="border-bottom: 1.5px solid #c0392b; padding-bottom: 2px; font-family: 'Times New Roman', Times, serif;"><?= htmlspecialchars($examType) ?></span>
+                    </h3>
+                    <!-- Findings -->
+                    <div class="section" style="margin-left: 14px;">
+                        <div class="section-title">Radiographic Findings</div>
+                        <div class="section-body"><?= $findingsStr ?></div>
+                    </div>
 
-                <!-- Impression -->
-                <div class="section">
-                    <div class="section-title">Impression</div>
-                    <div class="section-body"><?= $impressionStr ?></div>
+                    <!-- Impression -->
+                    <div class="section" style="margin-left: 14px;">
+                        <div class="section-title">Impression</div>
+                        <div class="section-body"><?= $impressionStr ?></div>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
 
+        <div
+            style="border: 1px solid #111; padding: 4px 8px; font-family: 'Times New Roman', Times, serif; font-size: 8pt; font-weight: bold; width: fit-content; margin-bottom: 12px;">
+            *Results are purely based on radiographic findings. Please correlate clinically.
+        </div>
         <!-- Signature -->
         <div class="signature-block">
             <div class="sig-inner">
-                <div style="height:40px;"></div>
-                <div class="sig-name"><?= $radtechName ?></div>
-                <div class="sig-line"></div>
+                <?php if (!empty($radtechSignature)): ?>
+                    <div class="sig-image"
+                        style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
+                        <img src="<?= $radtechSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
+                    </div>
+                <?php else: ?>
+                    <div style="height:40px;"></div>
+                <?php endif; ?>
+                <div class="sig-name"
+                    style="display:inline-block; border-bottom:1.5px solid #333; padding-bottom:2px; margin-bottom:4px;">
+                    <?= $radtechFullNameWithTitle ?>
+                </div>
                 <div class="sig-title">Radiologic Technologist</div>
             </div>
             <div class="sig-inner">
-                <div style="height:40px;"></div>
-                <div class="sig-name"><?= $radName ?></div>
-                <div class="sig-line"></div>
+                <?php if (!empty($radSignature)): ?>
+                    <div class="sig-image"
+                        style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
+                        <img src="<?= $radSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
+                    </div>
+                <?php else: ?>
+                    <div style="height:40px;"></div>
+                <?php endif; ?>
+                <div class="sig-name"
+                    style="display:inline-block; border-bottom:1.5px solid #333; padding-bottom:2px; margin-bottom:4px;">
+                    <?= $radFullNameWithTitle ?>
+                </div>
                 <div class="sig-title">Radiologist</div>
             </div>
+        </div>
+        <div style="text-align: center; margin: 18px auto 12px; max-width: 92%; padding: 12px 18px; border: 1.5px dashed #c0392b; background-color: #fffdfd; border-radius: 4px;">
+            <strong style="color: #c0392b; font-family: 'Raleway', sans-serif; font-size: 11pt; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">CONFIDENTIAL MEDICAL RECORD</strong>
+            <p style="font-family: Arial, sans-serif; font-size: 8.5pt; color: #555; line-height: 1.4; margin: 0;">This document contains sensitive patient information. Unauthorized access, screenshotting, copying, sharing, or distribution is prohibited.</p>
         </div>
 
         <div class="branches">

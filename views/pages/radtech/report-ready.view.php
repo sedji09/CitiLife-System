@@ -5,10 +5,10 @@
  */
 ?>
 <style>
-  html.theme-dark .priority-badge,
-  html.theme-dark .status-badge {
-    background-color: transparent !important;
-  }
+    html.theme-dark .priority-badge,
+    html.theme-dark .status-badge {
+        background-color: transparent !important;
+    }
 </style>
 
 
@@ -143,18 +143,34 @@
                             </td>
                             <td class="py-3 px-3">
                                 <?php
-                                $pBorder = '1.5px solid #60a5fa'; $pBg = '#eff6ff'; $pColor = '#1d4ed8';
-                                if ($row['priority'] === 'Emergency') { $pBorder = '1.5px solid #f87171'; $pBg = '#fef2f2'; $pColor = '#b91c1c'; }
-                                if ($row['priority'] === 'Urgent')    { $pBorder = '1.5px solid #facc15'; $pBg = '#fefce8'; $pColor = '#a16207'; }
-                                if ($row['priority'] === 'Priority')  { $pBorder = '1.5px solid #fb923c'; $pBg = '#fff7ed'; $pColor = '#c2410c'; }
+                                $pBorder = '1.5px solid #60a5fa';
+                                $pBg = '#eff6ff';
+                                $pColor = '#1d4ed8';
+                                if ($row['priority'] === 'Emergency') {
+                                    $pBorder = '1.5px solid #f87171';
+                                    $pBg = '#fef2f2';
+                                    $pColor = '#b91c1c';
+                                }
+                                if ($row['priority'] === 'Urgent') {
+                                    $pBorder = '1.5px solid #facc15';
+                                    $pBg = '#fefce8';
+                                    $pColor = '#a16207';
+                                }
+                                if ($row['priority'] === 'Priority') {
+                                    $pBorder = '1.5px solid #fb923c';
+                                    $pBg = '#fff7ed';
+                                    $pColor = '#c2410c';
+                                }
                                 ?>
-                                <span class="priority-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                <span
+                                    class="priority-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
                                     style="border:<?= $pBorder ?>;background-color:<?= $pBg ?>;color:<?= $pColor ?>">
                                     <?= htmlspecialchars($row['priority']) ?>
                                 </span>
                             </td>
                             <td class="py-3 px-3">
-                                <span class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                <span
+                                    class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
                                     style="border:1.5px solid #818cf8;background-color:#eef2ff;color:#4338ca">
                                     Report Ready
                                 </span>
@@ -173,10 +189,9 @@
                                     </a>
 
                                     <!-- Print Result -->
-                                    <a href="javascript:void(0)" 
-                                        onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)" 
-                                        class="text-green-500 hover:text-green-700 transition"
-                                        title="Print Report">
+                                    <a href="javascript:void(0)"
+                                        onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                        class="text-green-500 hover:text-green-700 transition" title="Print Report">
                                         <i data-lucide="printer"
                                             class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
                                     </a>
@@ -225,7 +240,7 @@
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
             const priorityMap = { 'Emergency': 3, 'Urgent': 2, 'Routine': 1 };
-            
+
             rows.sort((a, b) => {
                 const scoreA = priorityMap[a.dataset.priority] || 0;
                 const scoreB = priorityMap[b.dataset.priority] || 0;

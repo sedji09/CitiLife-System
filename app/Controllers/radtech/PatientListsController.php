@@ -71,7 +71,7 @@ if (isset($_GET['action'])) {
                     $notificationModel->add(
                         "Report Released",
                         "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.",
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$id}",
+                        "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
                         $patientUserId
                     );
                 }
@@ -106,7 +106,7 @@ if (isset($_GET['action'])) {
                     $notificationModel->add(
                         "Report Released",
                         "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.",
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$id}",
+                        "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
                         $patientUserId
                     );
                 }

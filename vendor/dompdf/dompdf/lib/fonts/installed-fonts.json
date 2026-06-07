@@ -1,0 +1,22 @@
+{
+    "raleway": {
+        "100_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_100_italic_a95b5ffc68c2214e410aef549b8a2353",
+        "200_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_200_italic_b6d7b9f887053edafc6d4dd8f4a06a34",
+        "300_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_300_italic_1063744ef3eb01a84fdfec4d708922c7",
+        "italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_italic_e0d558c21037b86aa19f2bd3c8506575",
+        "500_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_500_italic_a631b52f158c3e5c17fda1001edea227",
+        "600_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_600_italic_6a11c4f3ba82f5c5e216350671b6f94b",
+        "bold_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_bold_italic_c3fea31323ffc53ede68d918044585b5",
+        "800_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_800_italic_f35b9396d6702617529d307ffbd24500",
+        "900_italic": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_900_italic_d495261aebe87c5a3ac5d6b1542034b1",
+        "100": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_100_155e81ae5fbe469e5bfc800fbc3393c9",
+        "200": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_200_ff72ecfd7e11adddaae802b1400a89bb",
+        "300": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_300_239338e1dba61ad0d70dfd11d33f7b8c",
+        "normal": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_normal_ebd88fef4ec167144869826d5b5bee06",
+        "500": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_500_c99c78e180b36296be899e0fb7d9fd7d",
+        "600": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_600_66f2d061bc5654952330a2f8d4f536e6",
+        "bold": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_bold_eaad0b6681e32f7107193d5db7c7c55f",
+        "800": "C:\\xampp\\htdocs\\CitiLife-System\\vendor\\dompdf\\dompdf\/lib\/fonts\/raleway_800_42f678b56983b843c02d54652f3a71c7",
+        "900": "raleway_900_e45da1b6c35b2e295a811ee866215fbd"
+    }
+}

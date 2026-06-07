@@ -95,10 +95,13 @@
                 <thead class="sticky top-0 z-10">
                     <tr class="bg-gray-50 text-gray-600 border-b border-gray-200">
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Case No.</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Patient Name</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Patient Name
+                        </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Type</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Form Branch</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Date Requested</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Form Branch
+                        </th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Date Requested
+                        </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Status</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Action</th>
                     </tr>
@@ -267,7 +270,8 @@
                         <i data-lucide="file-scan" class="w-3.5 h-3.5"></i> <span id="display_selected_exam"></span>
                     </p>
                     <p class="text-xs font-semibold text-blue-500 mt-1 flex items-center gap-1.5">
-                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> X-ray Date: <span id="display_selected_date"></span>
+                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> X-ray Date: <span
+                            id="display_selected_date"></span>
                     </p>
                 </div>
 

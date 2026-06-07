@@ -22,7 +22,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2">
-    <a href="?role=branch_admin&page=branch-xray-cases&tab=records" class="text-gray-500 hover:text-gray-900 transition mt-1">
+    <a href="?role=branch_admin&page=branch-xray-cases&tab=records"
+        class="text-gray-500 hover:text-gray-900 transition mt-1">
         <i data-lucide="arrow-left" class="w-6 h-6"></i>
     </a>
     <div>
@@ -92,9 +93,9 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
         <!-- Findings Report -->
         <div class="flex flex-col border border-gray-200 rounded-2xl overflow-hidden">
-            <div
-                class="bg-red-600 px-5 h-14 flex items-center gap-3 text-white shadow-lg z-10 w-full rounded-t-2xl">
-                <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+            <div class="bg-red-600 px-5 h-14 flex items-center gap-3 text-white shadow-lg z-10 w-full rounded-t-2xl">
+                <div
+                    class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
                     <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
                 </div>
                 <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
@@ -103,104 +104,17 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                 class="flex-1 min-h-0 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
                 <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed'])): ?>
                     <?php
-                    // Clean JSON preparation for the previewer
-                    // Look for static photo reports generated at Release
-                    $photoPattern = __DIR__ . "/../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
-                    $photos = glob($photoPattern);
-                    $previewItems = [];
-
-                    if (!empty($photos)) {
-                        // Sort pages naturally if not already
-                        natsort($photos);
-                        foreach ($photos as $photoFile) {
-                            $baseUrl = "/" . PROJECT_DIR . "/public/uploads/reports/" . basename($photoFile);
-                            $previewItems[] = ['type' => 'report_image', 'url' => $baseUrl, 'name' => "REPORT_" . $caseDetails['case_number']];
-                        }
-                        $thumbnailUrl = $previewItems[0]['url']; // Use first page as thumbnail
-                    } else {
-                        // Fallback if photo not yet generated
-                        $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
-                        $previewItems = [['type' => 'report', 'url' => $reportUrl, 'name' => "REPORT_" . $caseDetails['case_number']]];
-                        $thumbnailUrl = false;
-                        $miniUrl = $reportUrl . "&single_page=true";
-                    }
-
-                    $jsonItems = htmlspecialchars(json_encode($previewItems), ENT_QUOTES, 'UTF-8');
-                    $reportName = "REPORT_" . $caseDetails['case_number'] . ".jpg";
+                    $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
                     ?>
 
-                    <!-- GDrive Style Card -->
-                    <div
-                        class="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group/card relative">
-                        <!-- Card Header -->
-                        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 diagnostic-card-header">
-                            <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0 border border-red-500/20">
-                                    <i data-lucide="image" class="w-4 h-4 text-red-500"></i>
-                                </div>
-                                <span class="text-[10px] font-black text-gray-900 uppercase tracking-widest truncate" id="findings-report-name"><?= $reportName ?></span>
-                            </div>
+                    <a href="<?= $reportUrl ?>" target="_blank"
+                        class="group relative w-full h-full flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-400 hover:bg-red-50 transition-all cursor-pointer">
+                        <div class="bg-white p-4 rounded-full shadow-md mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="file-text" class="w-10 h-10 text-red-500"></i>
                         </div>
-
-                        <!-- Card Body (The Floating Preview) -->
-                        <div class="flex-1 min-h-0 relative bg-white overflow-hidden cursor-zoom-in flex items-center justify-center p-4 group-hover/card:bg-gray-50 transition-colors diagnostic-card-body"
-                            data-preview-items="<?= $jsonItems ?>"
-                            onclick="if(window.DrivePreviewer) DrivePreviewer.open(JSON.parse(this.getAttribute('data-preview-items')), 0)">
-
-                            <?php if ($thumbnailUrl): ?>
-                                <img id="findings-main-img" src="<?= $thumbnailUrl ?>"
-                                    class="w-full h-full object-contain filter drop-shadow-md transform transition-transform group-hover/card:scale-105 p-4"
-                                    alt="Report Thumbnail">
-                            <?php else: ?>
-                                <!-- Fallback Iframe if Image is Missing -->
-                                <div class="w-[900px] h-[1270px] origin-top transform scale-[0.25] pointer-events-none absolute top-4">
-                                    <iframe src="<?= $miniUrl ?>" class="w-full h-full border-none bg-transparent"
-                                        title="Findings Report Preview"></iframe>
-                                </div>
-                            <?php endif; ?>
-
-                            <!-- Transparent Click Overlay with Expand Icon -->
-                            <div
-                                class="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity bg-black/10">
-                                <div
-                                    class="bg-red-600 p-3 rounded-full shadow-2xl transform scale-90 group-hover/card:scale-100 transition-transform">
-                                    <i data-lucide="maximize" class="w-5 h-5 text-white"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bottom Thumbnails for Multi-page Reports -->
-                        <?php if (count($previewItems) > 1): ?>
-                            <div class="bg-gray-50 px-3 py-2 flex items-center justify-start gap-2 overflow-x-auto border-t border-gray-100">
-                                <?php foreach ($previewItems as $fix => $item): ?>
-                                    <div class="findings-thumb shrink-0 w-10 h-10 rounded border-2 cursor-pointer transition-all <?= $fix === 0 ? 'border-red-500' : 'border-transparent opacity-60 hover:opacity-100' ?>"
-                                         data-url="<?= $item['url'] ?>" data-index="<?= $fix ?>">
-                                        <img src="<?= $item['url'] ?>" class="w-full h-full object-cover">
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <script>
-                                document.addEventListener('DOMContentLoaded', () => {
-                                    const thumbs = document.querySelectorAll('.findings-thumb');
-                                    const mainImg = document.getElementById('findings-main-img');
-                                    
-                                    thumbs.forEach(thumb => {
-                                        thumb.addEventListener('click', (e) => {
-                                            e.stopPropagation();
-                                            const url = thumb.getAttribute('data-url');
-                                            if(mainImg) mainImg.src = url;
-                                            
-                                            // Update visual state
-                                            thumbs.forEach(t => t.classList.remove('border-red-500'));
-                                            thumbs.forEach(t => t.classList.add('border-transparent', 'opacity-60'));
-                                            thumb.classList.add('border-red-500');
-                                            thumb.classList.remove('border-transparent', 'opacity-60');
-                                        });
-                                    });
-                                });
-                            </script>
-                        <?php endif; ?>
-                    </div>
+                        <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Open HTML Preview</span>
+                        <span class="text-sm text-gray-500 mt-1">View the report document in a new tab</span>
+                    </a>
                 <?php else: ?>
                     <div
                         class="flex-1 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
@@ -234,15 +148,17 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                     <!-- Classic Integrated Header Toolbar -->
                     <div class="bg-red-600 px-5 h-14 flex justify-between items-center text-white z-20 w-full select-none shadow-lg"
                         id="xray-toolbar">
-                        
+
                         <div class="flex items-center gap-4">
-                            <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+                            <div
+                                class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
                                 <i data-lucide="scan-line" class="w-5 h-5"></i>
                             </div>
                             <div class="flex flex-col">
                                 <span class="font-black text-xs uppercase tracking-widest leading-none">X-ray Viewer</span>
                                 <?php if (count($savedPaths) > 1): ?>
-                                    <span id="xray-counter" class="text-[9px] font-bold text-white/60 tracking-tighter uppercase mt-1">
+                                    <span id="xray-counter"
+                                        class="text-[9px] font-bold text-white/60 tracking-tighter uppercase mt-1">
                                         Image 1 of <?= count($savedPaths) ?>
                                     </span>
                                 <?php endif; ?>
@@ -252,37 +168,47 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         <!-- Central Navigation -->
                         <?php if (count($savedPaths) > 1): ?>
                             <div class="flex items-center bg-black/20 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
-                                <button id="btn-prev-img" class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20" title="Previous Image">
+                                <button id="btn-prev-img"
+                                    class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20"
+                                    title="Previous Image">
                                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                                 </button>
                                 <div class="w-px h-4 bg-white/10 mx-1"></div>
-                                <button id="btn-next-img" class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20" title="Next Image">
+                                <button id="btn-next-img"
+                                    class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20"
+                                    title="Next Image">
                                     <i data-lucide="chevron-right" class="w-5 h-5"></i>
                                 </button>
                             </div>
                         <?php endif; ?>
 
                         <!-- Zoom Controls -->
-                        <div class="flex items-center gap-3 bg-black/20 rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
-                            <button id="btn-zoom-out" class="text-white/60 hover:text-white transition-colors" title="Zoom Out">
+                        <div
+                            class="flex items-center gap-3 bg-black/20 rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
+                            <button id="btn-zoom-out" class="text-white/60 hover:text-white transition-colors"
+                                title="Zoom Out">
                                 <i data-lucide="minus-circle" class="w-4 h-4"></i>
                             </button>
-                            <span id="zoom-level" class="text-[10px] font-black text-white min-w-[35px] text-center tabular-nums"><?= isset($isZoomed) ? $isZoomed : '100%' ?></span>
-                            <button id="btn-zoom-in" class="text-white/60 hover:text-white transition-colors" title="Zoom In">
+                            <span id="zoom-level"
+                                class="text-[10px] font-black text-white min-w-[35px] text-center tabular-nums"><?= isset($isZoomed) ? $isZoomed : '100%' ?></span>
+                            <button id="btn-zoom-in" class="text-white/60 hover:text-white transition-colors"
+                                title="Zoom In">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
 
                     <!-- Main Viewing Area -->
-                    <div class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer">
+                    <div
+                        class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer">
                         <img id="xray-main-image" src="<?= htmlspecialchars($savedPaths[0] ?? '') ?>"
                             class="max-w-full max-h-full object-contain transition-transform duration-100 ease-out origin-center"
                             alt="X-ray" draggable="false">
 
                         <!-- Classic Bottom Thumbnails -->
                         <?php if (count($savedPaths) > 1): ?>
-                            <div id="xray-thumb-strip" class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
+                            <div id="xray-thumb-strip"
+                                class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
                                 <?php foreach ($savedPaths as $index => $path): ?>
                                     <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
                                         data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>">
@@ -356,7 +282,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
                             // Update Counter
                             if (counter) counter.textContent = (currentIndex + 1) + ' / ' + imagePaths.length;
-                            
+
                             // Update Filename
                             const filenameEl = document.getElementById('xray-filename');
                             if (filenameEl) {
@@ -439,7 +365,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                             if (!fsIconWrapper) return;
                             const isZoomed = Math.abs(scale - 1) > 0.01;
                             const isFull = !!document.fullscreenElement;
-                            
+
                             fsIconWrapper.innerHTML = (isZoomed || isFull) ? SVG_SHRINK : SVG_EXPAND;
                             btnFullscreen.title = isZoomed ? 'Reset Zoom' : (isFull ? 'Exit Fullscreen' : 'Toggle Fullscreen');
                         }

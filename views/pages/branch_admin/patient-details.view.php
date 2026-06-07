@@ -67,6 +67,13 @@ if (isset($caseNotFound) && $caseNotFound) {
                     <span
                         class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['branch_name'] ?? '—') ?></span>
                 </div>
+                <?php if (($caseDetails['philhealth_status'] ?? '') === 'With PhilHealth Card' && !empty($caseDetails['philhealth_id'])): ?>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">PhilHealth Number</span>
+                        <span
+                            class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['philhealth_id']) ?></span>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -11,10 +11,10 @@ window.DrivePreviewer = {
     nextBtn: null,
     zoomValEl: null,
     panOverlay: null,
-    
+
     galleryContents: [],
     currentIndex: 0,
-    
+
     scale: 1,
     baseFitScale: 1, // Store the initial fit-to-screen scale
     isDragging: false,
@@ -23,7 +23,7 @@ window.DrivePreviewer = {
 
     init() {
         if (this.modal) return;
-        
+
         this.modal = document.getElementById('drive-preview-modal');
         if (!this.modal) return;
 
@@ -39,15 +39,15 @@ window.DrivePreviewer = {
         // Bind Events
         const closeBtn = document.getElementById('drive-close-btn');
         if (closeBtn) closeBtn.onclick = () => this.close();
-        
+
         if (this.prevBtn) this.prevBtn.onclick = (e) => { e.stopPropagation(); this.prev(); };
         if (this.nextBtn) this.nextBtn.onclick = (e) => { e.stopPropagation(); this.next(); };
-        
+
         const zoomInBtn = document.getElementById('drive-zoom-in');
         const zoomOutBtn = document.getElementById('drive-zoom-out');
         if (zoomInBtn) zoomInBtn.onclick = () => this.zoom(0.2);
         if (zoomOutBtn) zoomOutBtn.onclick = () => this.zoom(-0.2);
-        
+
         this.contentWrapper.ondblclick = () => this.toggleZoom();
 
         window.addEventListener('keydown', (e) => {
@@ -67,15 +67,15 @@ window.DrivePreviewer = {
 
         this.modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-        
+
         this.galleryContents = Array.isArray(items) ? [...items] : [items];
         this.currentIndex = Math.min(Math.max(0, startIndex), this.galleryContents.length - 1);
-        
+
         if (!this._resizeHandler) {
             this._resizeHandler = () => this.fitToScreen();
             window.addEventListener('resize', this._resizeHandler);
         }
-        
+
         this.loadCurrentItem();
     },
 
@@ -95,16 +95,16 @@ window.DrivePreviewer = {
             const div = document.createElement('div');
             const isActive = index === this.currentIndex;
             div.className = `drive-thumb-item ${isActive ? 'active' : ''}`;
-            
+
             const isPage = item.reportPageIndex !== undefined;
             const iconName = item.type === 'report' || isPage ? 'file-text' : 'image';
-            
+
             if (item.type === 'image' && item.url) {
                 div.innerHTML = `<img src="${item.url}" alt="thumb" class="w-full h-full object-cover">`;
             } else {
                 div.innerHTML = `<i data-lucide="${iconName}" class="w-6 h-6"></i>`;
             }
-            
+
             div.onclick = () => this.jumpTo(index);
             this.thumbStrip.appendChild(div);
 
@@ -118,7 +118,7 @@ window.DrivePreviewer = {
 
     jumpTo(index) {
         if (index === this.currentIndex) return;
-        
+
         const prevItem = this.galleryContents[this.currentIndex];
         const nextItem = this.galleryContents[index];
         this.currentIndex = index;
@@ -145,19 +145,19 @@ window.DrivePreviewer = {
         const fallbackTitle = item.type === 'report' ? 'Findings Report' : 'X-ray Image';
         const displayTitle = item.name || fallbackTitle;
         if (this.filenameEl) this.filenameEl.textContent = displayTitle;
-        
+
         this.contentWrapper.innerHTML = '';
         if (!preserveState) this.contentWrapper.style.opacity = '0';
 
         if (item.type === 'report') {
-            this.scale = 0.5; 
+            this.scale = 0.5;
             const iframe = document.createElement('iframe');
-            iframe.style.width = '814px'; 
+            iframe.style.width = '814px';
             iframe.style.height = '1142px';
             iframe.style.transformOrigin = 'center top';
             iframe.style.transform = `translate(-50%, 0) scale(${this.scale})`;
             iframe.className = 'border-none report-frame-container absolute top-[80px] left-[50%]';
-            
+
             iframe.onload = () => {
                 this.contentWrapper.style.opacity = '1';
                 if (!preserveState) this.fitToScreen();
@@ -180,7 +180,7 @@ window.DrivePreviewer = {
                 // Fix for regular X-ray images (Diagnostic Image)
                 img.className = 'max-w-full max-h-full object-contain report-frame-container shadow-2xl absolute top-[50%] left-[50%]';
             }
-            
+
             img.onload = () => {
                 this.contentWrapper.style.opacity = '1';
                 this.fitToScreen(); // Compute fit for ALL items now
@@ -208,21 +208,21 @@ window.DrivePreviewer = {
                 `;
                 doc.head.appendChild(style);
             }
-        } catch(e) {}
+        } catch (e) { }
     },
 
     fitToScreen() {
         const item = this.galleryContents[this.currentIndex];
         if (!item || !this.contentWrapper) return;
-        
+
         // Account for top header (64)
-        const vh = window.innerHeight - 80; 
+        const vh = window.innerHeight - 80;
         // Account for right-side strip (approx 100px)
         const vw = window.innerWidth - 120;
 
         if (item.type === 'report' || item.type === 'report_image') {
             // Document height is 1142px. We want it to fit in vh.
-            this.scale = Math.min(0.5, vh / 1142); 
+            this.scale = Math.min(0.5, vh / 1142);
         } else {
             const el = this.contentWrapper.querySelector('img');
             if (el) {
@@ -259,7 +259,7 @@ window.DrivePreviewer = {
                     attempts++;
                     setTimeout(check, 100);
                 }
-            } catch(e) {}
+            } catch (e) { }
         };
         check();
     },
@@ -293,7 +293,7 @@ window.DrivePreviewer = {
                 p.classList.toggle('report-page-hidden', i !== item.reportPageIndex);
             });
             doc.documentElement.scrollTop = 0;
-        } catch(e) {}
+        } catch (e) { }
     },
 
     updatePageCounter() {
@@ -342,7 +342,7 @@ window.DrivePreviewer = {
 
     togglePanningOverlay() {
         // Enable panning whenever scale is greater than the initial fit scale
-        const shouldPan = this.scale > (this.baseFitScale + 0.01); 
+        const shouldPan = this.scale > (this.baseFitScale + 0.01);
         if (this.panOverlay) {
             this.panOverlay.classList.toggle('active', shouldPan);
         }

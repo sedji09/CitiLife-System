@@ -180,6 +180,65 @@
         });
 
         renderPage();
+        
+        // Handle URL highlighting
+        function handleHighlight() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightId = urlParams.get('highlight_case');
+            if (!highlightId) return;
+
+            const { desktop } = getFilteredRows();
+            const index = desktop.findIndex(row => row.dataset.caseId === highlightId);
+
+            if (index !== -1) {
+                currentPage = Math.floor(index / ROWS_PER_PAGE) + 1;
+                renderPage();
+
+                setTimeout(() => {
+                    const targetRow = document.querySelector(`tr[data-case-id="${highlightId}"]`);
+                    const targetCard = document.querySelector(`div.record-card[data-case-id="${highlightId}"]`);
+                    
+                    const flashEffect = (el, isMobile) => {
+                        if (!el || el.style.display === 'none') return;
+                        
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        if (isMobile) {
+                            el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
+                        }
+
+                        // Staff-like flashing effect
+                        el.style.transition = 'background-color 0.4s ease';
+                        el.style.backgroundColor = '#fef08a';
+                        setTimeout(() => {
+                            el.style.backgroundColor = '#fde047';
+                            setTimeout(() => {
+                                el.style.backgroundColor = '#fef08a';
+                                setTimeout(() => {
+                                    el.style.backgroundColor = '#fde047';
+                                    setTimeout(() => {
+                                        el.style.transition = 'background-color 1.5s ease';
+                                        el.style.backgroundColor = '';
+                                        if (isMobile) {
+                                            el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative');
+                                        }
+                                    }, 300);
+                                }, 300);
+                            }, 300);
+                        }, 200);
+                    };
+
+                    flashEffect(targetRow, false);
+                    flashEffect(targetCard, true);
+                    
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.delete('highlight_case');
+                    window.history.replaceState({}, document.title, newUrl.toString());
+                }, 200);
+            }
+        }
+        
+        handleHighlight();
     }
 
     // Handle initial load

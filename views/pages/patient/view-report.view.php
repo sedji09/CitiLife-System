@@ -16,7 +16,8 @@ $branchModel = new \BranchModel($pdo);
 
 $patientId = $_SESSION['patient_id'] ?? 0;
 
-function showSecureError($message) {
+function showSecureError($message)
+{
     echo '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,7 +91,18 @@ if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
 }
 
 // Fetch Radiologist Name via Model
-$radName = $userModel->getRadTechName($case['radiologist_id']) ?: 'Jiar Maglaque M.D. FPCR';
+$radName = $case['radiologist_name'] ?? 'Radiologist on Duty';
+$radTitle = $case['radiologist_title'] ?? '';
+$radSignature = $case['radiologist_signature'] ?? '';
+
+$radFullNameWithTitle = htmlspecialchars($radName);
+if (!empty($radTitle)) {
+    $radFullNameWithTitle .= ', ' . htmlspecialchars($radTitle);
+}
+// Add DR. prefix if not present for non-placeholder names
+if ($radName !== 'Radiologist on Duty' && !str_contains(strtoupper($radFullNameWithTitle), 'DR.')) {
+    $radFullNameWithTitle = 'DR. ' . $radFullNameWithTitle;
+}
 
 $fullName = htmlspecialchars(strtoupper($case['first_name'] . ' ' . $case['last_name']));
 $caseNum = htmlspecialchars($case['case_number']);
@@ -100,7 +112,20 @@ $sex = htmlspecialchars(ucfirst($case['sex'] ?? '—'));
 $branch = htmlspecialchars($case['branch_name']);
 $dateExam = $case['date_completed'] ?? $case['created_at'];
 $dateStr = date('F d, Y', strtotime($dateExam));
-$radtechName = htmlspecialchars('Fransisco Dela Cruz, RXT, RRT');
+
+$radtechName = $case['radtech_name'] ?? '';
+$radtechTitle = $case['radtech_title'] ?? '';
+$radtechSignature = $case['radtech_signature'] ?? '';
+
+// Final fallback if still empty
+if (empty($radtechName))
+    $radtechName = 'Radiologic Technologist';
+
+// Combine name and titles for the display
+$radtechFullNameWithTitle = htmlspecialchars($radtechName);
+if (!empty($radtechTitle)) {
+    $radtechFullNameWithTitle .= ', ' . htmlspecialchars($radtechTitle);
+}
 
 // Get Branch Metadata via Model (Address, Contacts)
 $bInfoMatch = $branchModel->getBranchMetadata($branch);
@@ -350,6 +375,27 @@ if (!$isMultiExam) {
             transition: transform 0.1s ease-out;
         }
 
+        .watermark {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: 900px;
+            opacity: 0.12;
+            z-index: 0;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .watermark img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
         .page {
             width: 210mm;
             min-height: 297mm;
@@ -450,7 +496,8 @@ if (!$isMultiExam) {
         }
 
         .title-report {
-            border: 1px solid #000;
+            border: 4px double #777;
+            padding: 5px 4px;
             text-align: center;
             font-size: 10px;
             font-weight: bold;
@@ -532,13 +579,13 @@ if (!$isMultiExam) {
         }
 
         .section-title {
-            font-family: Arial, sans-serif;
+            font-family: 'Raleway', sans-serif;
             font-size: 8.5pt;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #000;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #cccccc;
             padding-bottom: 4px;
             margin-bottom: 8px;
         }
@@ -718,12 +765,15 @@ if (!$isMultiExam) {
             border-color: #374151;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
         }
+
         body.theme-dark .custom-alert-icon {
             background: rgba(220, 38, 38, 0.15);
         }
+
         body.theme-dark .custom-alert-title {
             color: #f9fafb;
         }
+
         body.theme-dark .custom-alert-text {
             color: #9ca3af;
         }
@@ -766,8 +816,10 @@ if (!$isMultiExam) {
                 <i class="bi bi-shield-lock-fill"></i>
             </div>
             <h3 class="custom-alert-title">Screenshots Restricted</h3>
-            <p class="custom-alert-text">For your privacy and data security, taking screenshots or downloading the medical report is restricted in this view.</p>
-            <button class="custom-alert-btn" onclick="document.getElementById('screenshot-alert').classList.remove('show')">I Understand</button>
+            <p class="custom-alert-text">For your privacy and data security, taking screenshots or downloading the
+                medical report is restricted in this view.</p>
+            <button class="custom-alert-btn"
+                onclick="document.getElementById('screenshot-alert').classList.remove('show')">I Understand</button>
         </div>
     </div>
 
@@ -802,6 +854,10 @@ if (!$isMultiExam) {
             <div id="document-root">
                 <!-- Main Report Page -->
                 <div class="page" id="main-report-page">
+                    <!-- Watermark -->
+                    <div class="watermark">
+                        <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/logo-template.png" alt="Watermark">
+                    </div>
 
                     <div class="report-header">
                         <div class="header-left">
@@ -812,23 +868,31 @@ if (!$isMultiExam) {
                             </div>
                         </div>
                         <div class="header-right">
-                            <div class="icon-row">
+                            <div class="icon-row" style="margin-bottom: 6px;">
                                 <i class="bi bi-radioactive"
-                                    style="color:#8b0000; font-size:13px; margin-right:7px; margin-top:2px;"></i>
+                                    style="color:#8b0000; font-size:13px; margin-right:7px; margin-top:1px; flex-shrink:0;"></i>
                                 <div class="text-col">
                                     <?php foreach ($bAddressRows as $row): ?>
-                                        <span
-                                            style="<?= strpos($row, '(') !== false ? 'font-size:7.5pt;color:#777;' : 'font-weight:bold;color:#8b0000;' ?>"><?= htmlspecialchars($row) ?></span>
+                                        <span <?= strpos($row, '(') !== false ? 'style="font-size:7.5pt;color:#777;"' : 'style="font-weight:bold;color:#8b0000;"' ?>><?= htmlspecialchars($row) ?></span>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
                             <div class="icon-row">
                                 <i class="bi bi-telephone-fill"
-                                    style="color:#666; font-size:12px; margin-right:7px; margin-top:2px;"></i>
+                                    style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
                                 <div class="text-col" style="font-weight:bold;color:#333;">
                                     <span><?= htmlspecialchars($bInfoMatch['contact1']) ?></span>
                                 </div>
                             </div>
+                            <?php if (!empty($bInfoMatch['contact2'])): ?>
+                                <div class="icon-row">
+                                    <i class="bi bi-telephone-fill"
+                                        style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
+                                    <div class="text-col" style="font-weight:bold;color:#333;">
+                                        <span><?= htmlspecialchars($bInfoMatch['contact2']) ?></span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -851,8 +915,11 @@ if (!$isMultiExam) {
                         <?php if ($isMultiExam): ?>
                             <?php foreach ($parsedData as $examName => $data): ?>
                                 <div class="exam-block">
-                                    <h3><span
-                                            style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><?= htmlspecialchars($examName) ?>
+                                    <h3
+                                        style="font-family:'Raleway',sans-serif;font-size:11pt;color:#c0392b;margin-bottom:14px;text-transform:uppercase;display:flex;align-items:center;">
+                                        <span
+                                            style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><span
+                                            style="border-bottom: 1.5px solid #c0392b; padding-bottom: 2px; font-family: 'Times New Roman', Times, serif;"><?= htmlspecialchars($examName) ?></span>
                                     </h3>
                                     <div class="section" style="margin-left:14px;">
                                         <div class="section-title">Radiographic Findings</div>
@@ -867,8 +934,11 @@ if (!$isMultiExam) {
                             <?php endforeach; ?>
                         <?php else: ?>
                             <div class="exam-block">
-                                <h3><span
-                                        style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><?= htmlspecialchars($case['exam_type'] ?? 'Examination') ?>
+                                <h3
+                                    style="font-family:'Raleway',sans-serif;font-size:11pt;color:#c0392b;margin-bottom:14px;text-transform:uppercase;display:flex;align-items:center;">
+                                    <span
+                                        style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><span
+                                        style="border-bottom: 1.5px solid #c0392b; padding-bottom: 2px; font-family: 'Times New Roman', Times, serif;"><?= htmlspecialchars($case['exam_type'] ?? 'Examination') ?></span>
                                 </h3>
                                 <div class="section" style="margin-left:14px;">
                                     <div class="section-title">Radiographic Findings</div>
@@ -883,19 +953,45 @@ if (!$isMultiExam) {
                     </div>
 
                     <div class="footer-group">
+                        <div
+                            style="border: 1px solid #111; padding: 4px 8px; font-family: 'Times New Roman', Times, serif; font-size: 8pt; font-weight: bold; width: fit-content; margin-bottom: 12px;">
+                            *Results are purely based on radiographic findings. Please correlate clinically.
+                        </div>
                         <div class="signature-block">
                             <div class="sig-inner">
-                                <div style="height:40px;"></div>
-                                <div class="sig-name"><?= $radtechName ?></div>
-                                <div class="sig-line"></div>
+                                <?php if (!empty($radtechSignature)): ?>
+                                    <div class="sig-image"
+                                        style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
+                                        <img src="<?= $radtechSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
+                                    </div>
+                                <?php else: ?>
+                                    <div style="height:40px;"></div>
+                                <?php endif; ?>
+                                <div class="sig-name"
+                                    style="display:inline-block; border-bottom:1.5px solid #333; padding-bottom:2px; margin-bottom:4px;">
+                                    <?= $radtechFullNameWithTitle ?>
+                                </div>
                                 <div class="sig-title">Radiologic Technologist</div>
                             </div>
                             <div class="sig-inner">
-                                <div style="height:40px;"></div>
-                                <div class="sig-name"><?= $radName ?></div>
-                                <div class="sig-line"></div>
+                                <?php if (!empty($radSignature)): ?>
+                                    <div class="sig-image"
+                                        style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
+                                        <img src="<?= $radSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
+                                    </div>
+                                <?php else: ?>
+                                    <div style="height:40px;"></div>
+                                <?php endif; ?>
+                                <div class="sig-name"
+                                    style="display:inline-block; border-bottom:1.5px solid #333; padding-bottom:2px; margin-bottom:4px;">
+                                    <?= $radFullNameWithTitle ?>
+                                </div>
                                 <div class="sig-title">Radiologist</div>
                             </div>
+                        </div>
+                        <div style="text-align: center; margin: 18px auto 12px; max-width: 92%; padding: 12px 18px; border: 1.5px dashed #c0392b; background-color: #fffdfd; border-radius: 4px;">
+                            <strong style="color: #c0392b; font-family: 'Raleway', sans-serif; font-size: 11pt; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">CONFIDENTIAL MEDICAL RECORD</strong>
+                            <p style="font-family: Arial, sans-serif; font-size: 8.5pt; color: #555; line-height: 1.4; margin: 0;">This document contains sensitive patient information. Unauthorized access, screenshotting, copying, sharing, or distribution is prohibited.</p>
                         </div>
                         <div class="branches">
                             GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO
@@ -1099,11 +1195,11 @@ if (!$isMultiExam) {
                 e.preventDefault(); showScreenshotAlert(); return false;
             }
         });
-        window.addEventListener('keyup', (e) => { 
-            if (e.key === 'PrintScreen') { 
-                navigator.clipboard.writeText(''); 
-                showScreenshotAlert(); 
-            } 
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'PrintScreen') {
+                navigator.clipboard.writeText('');
+                showScreenshotAlert();
+            }
         });
 
         function autoSplitPages() {
@@ -1139,6 +1235,7 @@ if (!$isMultiExam) {
             if (pack.length) pagePacks.push(pack);
             if (pagePacks.length <= 1) return;
 
+            const watermarkHTML = page.querySelector('.watermark')?.outerHTML ?? '';
             const headerHTML = els.header?.outerHTML ?? '';
             const titleHTML = els.title?.outerHTML ?? '';
             const infoHTML = els.infoBox?.outerHTML ?? '';
@@ -1151,7 +1248,7 @@ if (!$isMultiExam) {
                 const newPage = document.createElement('div');
                 newPage.className = 'page';
                 const examsHTML = indices.map(i => blockHTML[i]).join('');
-                newPage.innerHTML = `${headerHTML}${titleHTML}${infoHTML}<div class="report-info" style="min-height:${idx === pagePacks.length - 1 ? '400px' : 'auto'}">${examsHTML}</div>${footerHTML}`;
+                newPage.innerHTML = `${watermarkHTML}${headerHTML}${titleHTML}${infoHTML}<div class="report-info" style="min-height:${idx === pagePacks.length - 1 ? '400px' : 'auto'}">${examsHTML}</div>${footerHTML}`;
                 root.appendChild(newPage);
             });
         }

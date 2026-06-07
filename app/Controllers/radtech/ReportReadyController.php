@@ -27,23 +27,25 @@ if (!empty($_SESSION['flash_success'])) {
 
 // 2. Handle Actions
 if (isset($_GET['action'])) {
-    
+
     // 2A. Release and Upload Photos via AJAX
     if ($_GET['action'] === 'release_and_upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Content-Type: application/json');
         $id = (int) ($_POST['id'] ?? 0);
         $images = json_decode($_POST['images'] ?? '[]', true);
-        
+
         try {
             $caseData = $caseModel->getCaseById($id);
-            if (!$caseData) throw new Exception("Case not found.");
+            if (!$caseData)
+                throw new Exception("Case not found.");
 
             if ($caseData['released'] == 0) {
                 // Save images
                 if (!empty($images)) {
                     $uploadDir = __DIR__ . '/../../../public/uploads/reports';
-                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-                    
+                    if (!is_dir($uploadDir))
+                        mkdir($uploadDir, 0777, true);
+
                     // Clean up any existing report pages for this case
                     $existingPhotos = glob($uploadDir . '/' . $caseData['case_number'] . '_page_*.jpg');
                     if ($existingPhotos) {
@@ -53,12 +55,12 @@ if (isset($_GET['action'])) {
                             }
                         }
                     }
-                    
+
                     foreach ($images as $index => $base64) {
                         list($type, $data) = explode(';', $base64);
-                        list(, $data)      = explode(',', $data);
+                        list(, $data) = explode(',', $data);
                         $data = base64_decode($data);
-                        
+
                         $pageNum = $index + 1;
                         $filename = $uploadDir . '/' . $caseData['case_number'] . '_page_' . $pageNum . '.jpg';
                         file_put_contents($filename, $data);
@@ -77,14 +79,14 @@ if (isset($_GET['action'])) {
                 $patientUserId = $caseModel->getPatientUserId($id);
                 if ($patientUserId) {
                     $notificationModel->add(
-                        "Report Released", 
-                        "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.", 
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$id}", 
+                        "Report Released",
+                        "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.",
+                        "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
                         $patientUserId
                     );
                 }
             }
-            
+
             echo json_encode(['success' => true]);
             exit;
         } catch (Exception $e) {
@@ -112,9 +114,9 @@ if (isset($_GET['action'])) {
                 $patientUserId = $caseModel->getPatientUserId($id);
                 if ($patientUserId) {
                     $notificationModel->add(
-                        "Report Released", 
-                        "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.", 
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$id}", 
+                        "Report Released",
+                        "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.",
+                        "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
                         $patientUserId
                     );
                 }
@@ -129,11 +131,11 @@ if (isset($_GET['action'])) {
 
 // 3. Fetch Data
 $branchId = $_SESSION['branch_id'] ?? 1;
-$allPatients = $caseModel->getWorklist($branchId, null, null); 
+$allPatients = $caseModel->getWorklist($branchId, null, null);
 
 // Filter logic: Not Released + Approved + Status is Report Ready
-$patients = array_filter($allPatients, function($p) {
-    return $p['released'] == 0 
-           && $p['approval_status'] === 'Approved'
-           && $p['status'] === 'Report Ready';
+$patients = array_filter($allPatients, function ($p) {
+    return $p['released'] == 0
+        && $p['approval_status'] === 'Approved'
+        && $p['status'] === 'Report Ready';
 });

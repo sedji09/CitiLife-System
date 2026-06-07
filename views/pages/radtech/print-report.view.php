@@ -77,7 +77,8 @@ if (empty($radtechName) && $sessionUserId > 0) {
 }
 
 // Final fallback if still empty
-if (empty($radtechName)) $radtechName = 'Radiologic Technologist';
+if (empty($radtechName))
+    $radtechName = 'Radiologic Technologist';
 
 // Combine name and titles for the display
 $radtechFullNameWithTitle = htmlspecialchars($radtechName);
@@ -149,17 +150,36 @@ if (!$isMultiExam) {
             font-family: 'Times New Roman', Times, serif;
             font-size: 11pt;
             color: #1a1a1a;
-            background:
-                <?= $isPreview ? 'transparent !important' : '#f0f0f0' ?>
-            ;
+            background: #d4d4d8;
+            /* Dark grey background */
             margin: 0;
-            padding:
-                <?= $isPreview ? '40px 0' : '0' ?>
-            ;
+            padding: 0 0 40px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+        }
+
+        /* ── Watermark ── */
+        .watermark {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: 900px;
+            opacity: 0.12;
+            z-index: 0;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .watermark img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
         }
 
         /* ── Page Shell ── */
@@ -167,7 +187,7 @@ if (!$isMultiExam) {
             width: 210mm;
             /* A4 */
             min-height: 297mm;
-            margin: 0 auto 40px;
+            margin: 0 auto 30px auto;
             background: #fff;
             padding: 8mm 10mm;
             border:
@@ -216,6 +236,8 @@ if (!$isMultiExam) {
             align-items: center;
             justify-content: space-between;
             border-bottom: 1.5px solid #111;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .header-left {
@@ -300,7 +322,7 @@ if (!$isMultiExam) {
         }
 
         .title-report {
-            border: 1px solid #000000ff;
+            border: 4px double #777;
             text-align: center;
             font-size: 10px;
             font-weight: bold;
@@ -308,7 +330,9 @@ if (!$isMultiExam) {
             letter-spacing: 2px;
             margin-top: 10px;
             margin-bottom: 10px;
-            padding: 4px;
+            padding: 2px 4px;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .title-report h1 {
@@ -321,6 +345,8 @@ if (!$isMultiExam) {
             border: 1px solid #111;
             padding: 14px 18px;
             margin-bottom: 14px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* ── Patient Info Box ── */
@@ -328,9 +354,12 @@ if (!$isMultiExam) {
             background: #fafafa;
             border: 1px solid #ddd;
             border-left: 4px solid #c0392b;
-            border-radius: 3px;
+            border-radius: 0;
             padding: 10px 14px;
             margin-bottom: 16px;
+            margin-top: 12px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .info-grid {
@@ -379,6 +408,7 @@ if (!$isMultiExam) {
 
         .exam-block h3 {
             font-weight: 800;
+
         }
 
         .exam-block {
@@ -399,12 +429,13 @@ if (!$isMultiExam) {
         }
 
         .section-title {
-            font-family: Arial, sans-serif;
+            font-family: 'Raleway', sans-serif;
             font-size: 8pt;
-            font-weight: bold;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #000;
+            border-bottom: 1.5px solid #cccccc;
             padding-bottom: 3px;
             margin-bottom: 6px;
         }
@@ -431,17 +462,12 @@ if (!$isMultiExam) {
             min-width: 200px;
         }
 
-        .sig-line {
-            border-top: 1.5px solid #333;
-            margin-bottom: 4px;
-        }
-
         .sig-name {
             font-family: 'Times New Roman', serif;
             font-size: 10pt;
             font-weight: bold;
             color: #111;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             text-transform: uppercase;
         }
 
@@ -483,59 +509,49 @@ if (!$isMultiExam) {
 
         /* ── Print controls (screen only) ── */
         .print-bar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
             display: flex;
             justify-content: center;
             gap: 12px;
             padding: 14px;
-            background: #333;
+            background: #f4f4f5;
+            /* Light gray */
             width: 100%;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e4e4e7;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .btn-print {
-            background: #c0392b;
-            color: #fff;
-            border: none;
-            padding: 9px 28px;
-            font-size: 13px;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            letter-spacing: .5px;
-        }
-
-        .btn-print:hover {
-            background: #a93226;
-        }
-
-        .btn-download {
-            background: #2980b9;
-            color: #fff;
-            border: none;
-            padding: 9px 28px;
-            font-size: 13px;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            letter-spacing: .5px;
-        }
-
-        .btn-download:hover {
-            background: #1f618d;
-        }
-
+        .btn-print,
+        .btn-download,
         .btn-close {
-            background: #555;
-            color: #fff;
-            border: none;
-            padding: 9px 20px;
+            background: #ffffff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 8px 16px;
             font-size: 13px;
             font-family: Arial, sans-serif;
-            border-radius: 6px;
+            font-weight: 500;
+            border-radius: 4px;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-print i,
+        .btn-download i,
+        .btn-close i {
+            margin-right: 6px;
+        }
+
+        .btn-print:hover,
+        .btn-download:hover,
+        .btn-close:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
         }
 
         /* ── Print Media ── */
@@ -556,8 +572,9 @@ if (!$isMultiExam) {
                 padding: 0;
             }
 
-            .print-bar {
-                display: none;
+            .print-bar,
+            .no-print {
+                display: none !important;
             }
 
             .page {
@@ -565,8 +582,8 @@ if (!$isMultiExam) {
                 border: none;
                 box-shadow: none;
                 width: 210mm;
-                min-height: 297mm;
-                height: 297mm;
+                min-height: 296mm;
+                height: 296mm;
                 padding: 8mm 12mm;
                 display: flex;
                 flex-direction: column;
@@ -580,33 +597,25 @@ if (!$isMultiExam) {
         }
 
         <?php if ($isPreview): ?>
-            /* Preview mode styles */
-            body {
-                background: transparent;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                /* NO SCROLLING AT ALL */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
-                width: 100vw;
-            }
+            @media screen {
 
-            .page {
-                margin: 0;
-                border: 1px solid #ddd;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                zoom: 1 !important;
-                /* Reset any native zoom */
-                flex-shrink: 0;
-                /* Prevent flexbox from squishing the layout */
-                width: 794px;
-                /* A4 width at 96dpi */
-                min-height: 1123px;
-                /* A4 height at 96dpi */
-                position: relative;
+                /* Preview mode styles */
+                body {
+                    background: #f4f4f5;
+                    /* Light gray to match the rest of the UI */
+                }
+
+                .page {
+                    margin: 0 auto 30px auto;
+                    /* Ensure gap between pages */
+                    border: 1px solid #ddd;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                    zoom: 1 !important;
+                    flex-shrink: 0;
+                    width: 794px;
+                    min-height: 1123px;
+                    position: relative;
+                }
             }
 
         <?php endif; ?>
@@ -614,27 +623,50 @@ if (!$isMultiExam) {
 </head>
 
 <body>
+    <?php if ($isDownload): ?>
+        <div id="downloadOverlay"
+            style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif;">
+            <div id="loadingSpinner"
+                style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #c0392b; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;">
+            </div>
+            <div id="successCheck"
+                style="display: none; width: 50px; height: 50px; border-radius: 50%; background: #22c55e; color: white; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 20px; font-weight: bold;">
+                ✓</div>
+            <h2 id="loadingTitle" style="color:#333;">Generating PDF...</h2>
+            <p id="loadingDesc" style="color:#666;">Please wait while your document is being prepared. You will be
+                redirected shortly.</p>
+            <style>
+                @keyframes spin {
+                    0% {
+                        transform: rotate(0deg);
+                    }
 
-    <?php if (!$isPreview): ?>
-        <!-- Print toolbar (hidden when printing) -->
-        <div class="print-bar">
-            <button class="btn-print" onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', () => window.print(), 'Yes, Print')">
-                <i class="bi bi-printer" style="margin-right:7px;"></i> Print
-            </button>
-            <button class="btn-download" onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', () => downloadPDF(), 'Yes, Save')">
-                <i class="bi bi-file-earmark-pdf" style="margin-right:7px;"></i> Save as PDF
-            </button>
-            <button class="btn-close" onclick="window.close()">
-                <i class="bi bi-x-lg" style="margin-right:5px;"></i> Close
-            </button>
+                    100% {
+                        transform: rotate(360deg);
+                    }
+                }
+            </style>
         </div>
     <?php endif; ?>
+
+    <!-- Print toolbar (hidden when printing) -->
+    <div class="print-bar no-print">
+        <button type="button" class="btn-download" onclick="downloadPDF()"><i class="bi bi-file-earmark-pdf"></i>
+            Generate PDF</button>
+        <button type="button" class="btn-print" onclick="window.print()"><i class="bi bi-printer"></i> Print
+            Report</button>
+    </div>
 
     <?php
     // ── Helper: render the shared page header + patient info block ──
     function renderPageHeader($bAddressRows, $bInfoMatch, $fullName, $patientID, $age, $sex, $caseNum, $branch, $dateStr, $examType)
     {
         ?>
+        <!-- Watermark -->
+        <div class="watermark">
+            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/logo-template.png" alt="Watermark">
+        </div>
+
         <!-- Header -->
         <div class="report-header">
             <div class="header-left">
@@ -668,6 +700,15 @@ if (!$isMultiExam) {
                             style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
                         <div class="text-col" style="font-weight:bold;color:#333;">
                             <span><?= htmlspecialchars($bInfoMatch['contact2']) ?></span>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($bInfoMatch['contact3'])): ?>
+                    <div class="icon-row">
+                        <i class="bi bi-telephone-fill"
+                            style="color:#666; font-size:12px; margin-right:7px; flex-shrink:0;"></i>
+                        <div class="text-col" style="font-weight:bold;color:#333;">
+                            <span><?= htmlspecialchars($bInfoMatch['contact3']) ?></span>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -714,31 +755,43 @@ if (!$isMultiExam) {
     function renderFooterGroup($radtechFullNameWithTitle, $radtechSignature, $radFullNameWithTitle, $radSignature, $branch, $caseNum)
     {
         ?>
-        <!-- Footer Group (margin-top:auto pushes it to the bottom in flex column layout) -->
-        <div class="footer-group" style="margin-top: auto; page-break-inside: avoid; width: 100%;">
+        <!-- Spacer to push footer to bottom -->
+        <div style="flex-grow: 1;"></div>
+        <!-- Footer Group -->
+        <div class="footer-group" style="page-break-inside: avoid; width: 100%;">
+            <div
+                style="border: 1px solid #111; padding: 4px 8px; font-family: 'Times New Roman', Times, serif; font-size: 8pt; font-weight: bold; width: fit-content; margin-bottom: 12px;">
+                *Results are purely based on radiographic findings. Please correlate clinically.
+            </div>
             <div class="signature-block">
                 <div class="sig-inner">
                     <?php if (!empty($radtechSignature)): ?>
-                        <div class="sig-image" style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
+                        <div class="sig-image"
+                            style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
                             <img src="<?= $radtechSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
                         </div>
                     <?php else: ?>
                         <div style="height:30px;"></div>
                     <?php endif; ?>
-                    <div class="sig-name"><?= $radtechFullNameWithTitle ?></div>
-                    <div class="sig-line"></div>
+                    <div class="sig-name"
+                        style="display:inline-block; border-bottom:1px solid #111; padding-bottom:2px; margin-bottom:4px;">
+                        <?= $radtechFullNameWithTitle ?>
+                    </div>
                     <div class="sig-title">Radiologic Technologist</div>
                 </div>
                 <div class="sig-inner">
                     <?php if (!empty($radSignature)): ?>
-                        <div class="sig-image" style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
+                        <div class="sig-image"
+                            style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
                             <img src="<?= $radSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
                         </div>
                     <?php else: ?>
                         <div style="height:30px;"></div>
                     <?php endif; ?>
-                    <div class="sig-name"><?= $radFullNameWithTitle ?></div>
-                    <div class="sig-line"></div>
+                    <div class="sig-name"
+                        style="display:inline-block; border-bottom:1px solid #111; padding-bottom:2px; margin-bottom:4px;">
+                        <?= $radFullNameWithTitle ?>
+                    </div>
                     <div class="sig-title">Radiologist</div>
                 </div>
             </div>
@@ -769,7 +822,8 @@ if (!$isMultiExam) {
                         <h3
                             style="font-family:'Raleway',sans-serif;font-size:11pt;color:#c0392b;margin-bottom:14px;text-transform:uppercase;display:flex;align-items:center;">
                             <span
-                                style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><?= htmlspecialchars($examName) ?>
+                                style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><span
+                                style="border-bottom: 1.5px solid #c0392b; padding-bottom: 2px; font-family: 'Times New Roman', Times, serif;"><?= htmlspecialchars($examName) ?></span>
                         </h3>
                         <div class="section" style="margin-left:14px;">
                             <div class="section-title">Radiographic Findings</div>
@@ -790,19 +844,23 @@ if (!$isMultiExam) {
             <?php renderPageHeader($bAddressRows, $bInfoMatch, $fullName, $patientID, $age, $sex, $caseNum, $branch, $dateStr, $examType); ?>
 
             <div class="report-info">
-                <div class="exam-type">
-                    <label>Exam Type</label>
-                    <span><?= $examType ?></span>
-                </div>
-                <!-- Findings -->
-                <div class="section">
-                    <div class="section-title">Radiographic Findings</div>
-                    <div class="section-body"><?= $findingsStr ?></div>
-                </div>
-                <!-- Impression -->
-                <div class="section">
-                    <div class="section-title">Impression</div>
-                    <div class="section-body"><?= $impressionStr ?></div>
+                <div class="exam-block">
+                    <h3
+                        style="font-family:'Raleway',sans-serif;font-size:11pt;color:#c0392b;margin-bottom:14px;text-transform:uppercase;display:flex;align-items:center;">
+                        <span
+                            style="color:#c0392b;font-size:16pt;margin-right:8px;line-height:0;margin-top:-2px;">&bull;</span><span
+                            style="border-bottom: 1.5px solid #c0392b; padding-bottom: 2px; font-family: 'Times New Roman', Times, serif;"><?= htmlspecialchars($examType) ?></span>
+                    </h3>
+                    <!-- Findings -->
+                    <div class="section" style="margin-left:14px;">
+                        <div class="section-title">Radiographic Findings</div>
+                        <div class="section-body"><?= $findingsStr ?></div>
+                    </div>
+                    <!-- Impression -->
+                    <div class="section" style="margin-left:14px;">
+                        <div class="section-title">Impression</div>
+                        <div class="section-body"><?= $impressionStr ?></div>
+                    </div>
                 </div>
             </div>
 
@@ -847,93 +905,93 @@ if (!$isMultiExam) {
         <?php endforeach; ?>
     <?php endif; ?>
 
-    <?php if (!$isPreview): ?>
-        <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/html2canvas/html2canvas.min.js"></script>
-        <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/jspdf/jspdf.umd.min.js"></script>
-        <script>
-            const _IS_MULTI = <?= $isMultiExam ? 'true' : 'false' ?>;
-            const _BRANCH = '<?= addslashes($branch) ?>';
-            const _CASENUM = '<?= addslashes($caseNum) ?>';
-            const _GENDATE = '<?= date('M d, Y h:i A') ?>';
+    <!-- Load PDF generation scripts regardless of preview mode -->
+    <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/html2canvas/html2canvas.min.js"></script>
+    <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/jspdf/jspdf.umd.min.js"></script>
+    <script>
+        const _IS_MULTI = <?= $isMultiExam ? 'true' : 'false' ?>;
+        const _BRANCH = '<?= addslashes($branch) ?>';
+        const _CASENUM = '<?= addslashes($caseNum) ?>';
+        const _GENDATE = '<?= date('M d, Y h:i A') ?>';
 
-            /**
-             * autoSplitPages()
-             * Reads all .exam-block heights and checks if they overflow an A4 page.
-             * If overflow is detected, the single page is rebuilt as multiple pages,
-             * each with the FULL template (header + patient info + signature + footer).
-             */
-            function autoSplitPages() {
-                if (!_IS_MULTI) return;
+        /**
+         * autoSplitPages()
+         * Reads all .exam-block heights and checks if they overflow an A4 page.
+         * If overflow is detected, the single page is rebuilt as multiple pages,
+         * each with the FULL template (header + patient info + signature + footer).
+         */
+        function autoSplitPages() {
+            if (!_IS_MULTI) return;
 
-                const page = document.getElementById('main-report-page');
-                if (!page) return;
+            const page = document.getElementById('main-report-page');
+            if (!page) return;
 
-                const examBlocks = [...page.querySelectorAll('.exam-block')];
-                if (examBlocks.length <= 1) return;
+            const examBlocks = [...page.querySelectorAll('.exam-block')];
+            if (examBlocks.length <= 1) return;
 
-                // A4 usable height in CSS pixels (96 dpi):
-                // 297mm total − 8mm top − 8mm bottom = 281mm ≈ 1062 px
-                const A4_USABLE = Math.round(281 * 96 / 25.4);
+            // A4 usable height in CSS pixels (96 dpi):
+            // 297mm total − 8mm top − 8mm bottom = 281mm ≈ 1062 px
+            const A4_USABLE = Math.round(281 * 96 / 25.4);
 
-                // Measure fixed elements overhead (present on every page)
-                const els = {
-                    header: page.querySelector('.report-header'),
-                    title: page.querySelector('.title-report'),
-                    infoBox: page.querySelector('.info-box'),
-                    examLabel: page.querySelector('.report-info .exam-type'),
-                    footer: page.querySelector('.footer-group'),
-                };
+            // Measure fixed elements overhead (present on every page)
+            const els = {
+                header: page.querySelector('.report-header'),
+                title: page.querySelector('.title-report'),
+                infoBox: page.querySelector('.info-box'),
+                examLabel: page.querySelector('.report-info .exam-type'),
+                footer: page.querySelector('.footer-group'),
+            };
 
-                let overhead = 50; // buffer for gaps, border, misc
-                Object.values(els).forEach(el => {
-                    if (el) overhead += el.offsetHeight + 14;
-                });
+            let overhead = 50; // buffer for gaps, border, misc
+            Object.values(els).forEach(el => {
+                if (el) overhead += el.offsetHeight + 14;
+            });
 
-                const availForExams = A4_USABLE - overhead;
+            const availForExams = A4_USABLE - overhead;
 
-                // Measure each exam block (include bottom separator gap)
-                const blockH = examBlocks.map(b => b.offsetHeight + 24);
+            // Measure each exam block (include bottom separator gap)
+            const blockH = examBlocks.map(b => b.offsetHeight + 24);
 
-                // Greedy packing: fill pages until overflow
-                const pagePacks = [];
-                let pack = [], packH = 0;
-                blockH.forEach((h, i) => {
-                    if (packH + h > availForExams && pack.length > 0) {
-                        pagePacks.push([...pack]);
-                        pack = [i];
-                        packH = h;
-                    } else {
-                        pack.push(i);
-                        packH += h;
-                    }
-                });
-                if (pack.length) pagePacks.push(pack);
+            // Greedy packing: fill pages until overflow
+            const pagePacks = [];
+            let pack = [], packH = 0;
+            blockH.forEach((h, i) => {
+                if (packH + h > availForExams && pack.length > 0) {
+                    pagePacks.push([...pack]);
+                    pack = [i];
+                    packH = h;
+                } else {
+                    pack.push(i);
+                    packH += h;
+                }
+            });
+            if (pack.length) pagePacks.push(pack);
 
-                if (pagePacks.length <= 1) return; // Fits on one page — nothing to do!
+            if (pagePacks.length <= 1) return; // Fits on one page — nothing to do!
 
-                // ── Capture template HTML snippets ──
-                const watermarkHTML = page.querySelector('.watermark')?.outerHTML ?? '';
-                const reportHeaderHTML = page.querySelector('.report-header').outerHTML;
-                const titleReportHTML = page.querySelector('.title-report').outerHTML;
-                const infoBoxHTML = page.querySelector('.info-box').outerHTML;
-                const examTypeHTML = els.examLabel?.outerHTML ?? '';
-                const footerGroupHTML = els.footer?.outerHTML ?? '';
-                const blockHTML = examBlocks.map(b => b.outerHTML);
+            // ── Capture template HTML snippets ──
+            const watermarkHTML = page.querySelector('.watermark')?.outerHTML ?? '';
+            const reportHeaderHTML = page.querySelector('.report-header').outerHTML;
+            const titleReportHTML = page.querySelector('.title-report').outerHTML;
+            const infoBoxHTML = page.querySelector('.info-box').outerHTML;
+            const examTypeHTML = els.examLabel?.outerHTML ?? '';
+            const footerGroupHTML = els.footer?.outerHTML ?? '';
+            const blockHTML = examBlocks.map(b => b.outerHTML);
 
-                // Remove original page, remember insertion point
-                const parent = page.parentNode;
-                const nextSib = page.nextSibling;
-                page.remove();
+            // Remove original page, remember insertion point
+            const parent = page.parentNode;
+            const nextSib = page.nextSibling;
+            page.remove();
 
-                const total = pagePacks.length;
+            const total = pagePacks.length;
 
-                pagePacks.forEach((indices, pi) => {
-                    const newPage = document.createElement('div');
-                    newPage.className = 'page report-page';
+            pagePacks.forEach((indices, pi) => {
+                const newPage = document.createElement('div');
+                newPage.className = 'page report-page';
 
-                    const examsHTML = indices.map(i => blockHTML[i]).join('');
+                const examsHTML = indices.map(i => blockHTML[i]).join('');
 
-                    newPage.innerHTML = `
+                newPage.innerHTML = `
                         ${watermarkHTML}
                         ${reportHeaderHTML}
                         ${titleReportHTML}
@@ -945,100 +1003,104 @@ if (!$isMultiExam) {
                         ${footerGroupHTML}
                     `;
 
-                    parent.insertBefore(newPage, nextSib);
-                });
-            }
-
-            // ── Load: split first, then print / download ──
-            window.addEventListener('load', () => {
-                autoSplitPages();
-                if (<?= $isSnapshot ? 'true' : 'false' ?>) return; // Skip automatic print/download in snapshot mode
-                setTimeout(() => {
-                    <?php if ($isDownload): ?>
-                        downloadPDF();
-                    <?php else: ?>
-                        window.print();
-                    <?php endif; ?>
-                }, 700); // slightly longer to allow DOM reflow after split
+                parent.insertBefore(newPage, nextSib);
             });
+        }
 
-            // ── Download PDF ──
-            // Renders each .page element from the live DOM one-by-one using
-            // html2canvas (with onclone to strip margins/shadows) then stitches
-            // them into a single A4 PDF via jsPDF — no print dialog.
-            async function downloadPDF() {
-                const btnBar = document.querySelector('.print-bar');
-                if (btnBar) btnBar.style.display = 'none';
+        // ── Load: split first ──
+        window.addEventListener('load', () => {
+            autoSplitPages();
+            <?php if ($isDownload): ?>
+                setTimeout(() => {
+                    downloadPDF();
+                }, 500); // Give DOM a moment to settle
+            <?php endif; ?>
+        });
 
-                const pages = [...document.querySelectorAll('.page')];
-                if (pages.length === 0) {
-                    if (btnBar) btnBar.style.display = 'flex';
-                    return;
-                }
+        // ── Download PDF ──
+        // Renders each .page element from the live DOM one-by-one using
+        // html2canvas (with onclone to strip margins/shadows) then stitches
+        // them into a single A4 PDF via jsPDF — no print dialog.
+        async function downloadPDF() {
+            const btnBar = document.querySelector('.print-bar');
+            if (btnBar) btnBar.style.display = 'none';
 
-                try {
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-                    for (let i = 0; i < pages.length; i++) {
-                        const canvas = await html2canvas(pages[i], {
-                            scale: 2,
-                            useCORS: true,
-                            logging: false,
-                            onclone: (clonedDoc) => {
-                                // Strip screen-only decorations from the cloned render
-                                // without touching the visible page
-                                clonedDoc.querySelectorAll('.page').forEach(el => {
-                                    el.style.margin = '0';
-                                    el.style.boxShadow = 'none';
-                                    el.style.border = 'none';
-                                    el.style.background = '#fff';
-                                });
-                            }
-                        });
-
-                        const imgData = canvas.toDataURL('image/jpeg', 0.97);
-                        if (i > 0) pdf.addPage();
-                        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-                    }
-
-                    pdf.save('Radiology_Report_<?= htmlspecialchars($caseNum) ?>.pdf');
-                } catch (err) {
-                    console.error('PDF generation failed:', err);
-                    alert('PDF generation failed. Falling back to print dialog — choose "Save as PDF" as destination.');
-                    window.print();
-                }
-
+            const pages = [...document.querySelectorAll('.page')];
+            if (pages.length === 0) {
                 if (btnBar) btnBar.style.display = 'flex';
-            }
-        </script>
-    <?php else: ?>
-        <script>
-            // Fit the entire report inside the container seamlessly (like object-fit: contain)
-            function fitToContainer() {
-                const page = document.querySelector('.page');
-                const containerWidth = window.innerWidth;
-                const containerHeight = window.innerHeight;
-
-                // Allow a small padding inside the iframe
-                const padding = 16;
-                const availWidth = containerWidth - padding;
-                const availHeight = containerHeight - padding;
-
-                const pageWidth = 794;  // A4 210mm at 96dpi
-                const pageHeight = 1123; // A4 297mm at 96dpi
-
-                const scale = Math.min(availWidth / pageWidth, availHeight / pageHeight);
-
-                page.style.transformOrigin = 'center center';
-                page.style.transform = `scale(${scale})`;
+                return;
             }
 
-            window.addEventListener('resize', fitToContainer);
-            window.addEventListener('DOMContentLoaded', fitToContainer);
-            window.addEventListener('load', fitToContainer);
-        </script>
-    <?php endif; ?>
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+                for (let i = 0; i < pages.length; i++) {
+                    const canvas = await html2canvas(pages[i], {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        onclone: (clonedDoc) => {
+                            // Strip screen-only decorations from the cloned render
+                            // without touching the visible page
+                            clonedDoc.querySelectorAll('.page').forEach(el => {
+                                el.style.margin = '0';
+                                el.style.boxShadow = 'none';
+                                el.style.border = 'none';
+                                el.style.background = '#fff';
+                            });
+                        }
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.97);
+                    if (i > 0) pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                }
+
+                pdf.save('Radiology_Report_<?= htmlspecialchars($caseNum) ?>.pdf');
+
+                <?php if ($isDownload): ?>
+                    const spinner = document.getElementById('loadingSpinner');
+                    const check = document.getElementById('successCheck');
+                    const title = document.getElementById('loadingTitle');
+                    const desc = document.getElementById('loadingDesc');
+
+                    if (spinner) spinner.style.display = 'none';
+                    if (check) check.style.display = 'flex';
+                    if (title) title.textContent = 'Download Complete!';
+                    if (desc) desc.textContent = 'Returning to patient records...';
+
+                    setTimeout(() => {
+                        if (window.history.length > 1) {
+                            window.history.back();
+                        } else {
+                            window.close();
+                        }
+                        // Fallback if history.back or close fails
+                        setTimeout(() => {
+                            window.location.href = '<?= PROJECT_DIR ?>/index.php?page=xray-patient-records';
+                        }, 500);
+                    }, 1500); // 1.5 second delay so they see the checkmark
+                <?php endif; ?>
+            } catch (err) {
+                console.error('PDF generation failed:', err);
+                alert('PDF generation failed. Falling back to print dialog — choose "Save as PDF" as destination.');
+
+                <?php if ($isDownload): ?>
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        window.close();
+                        setTimeout(() => window.location.href = '<?= PROJECT_DIR ?>/index.php?page=xray-patient-records', 500);
+                    }
+                <?php else: ?>
+                    window.print();
+                <?php endif; ?>
+            }
+
+            if (btnBar) btnBar.style.display = 'flex';
+        }
+    </script>
 </body>
 
 </html>

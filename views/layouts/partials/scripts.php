@@ -690,17 +690,24 @@
               });
             },
             markAsRead(id, link) {
-              fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'mark_read', notification_id: id })
-              }).then(() => {
-                if (link && link !== '#') {
-                  window.location.href = link;
-                } else {
+              if (link && link !== '#') {
+                // Navigate immediately to avoid perceived delay ("hindi agad napupunta")
+                fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'mark_read', notification_id: id }),
+                  keepalive: true
+                });
+                window.location.href = link;
+              } else {
+                fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'mark_read', notification_id: id })
+                }).then(() => {
                   this.fetchNotifications();
-                }
-              });
+                });
+              }
             },
             isActive(href) {
               try {
@@ -739,6 +746,9 @@
                   return true;
                 }
                 if (targetPage === 'branch-xray-cases' && ['branch-xray-cases', 'patient-details', 'records-history'].includes(currentPage)) {
+                  return true;
+                }
+                if (targetPage === 'my-records' && ['my-records', 'case-status', 'view-report', 'download-report'].includes(currentPage)) {
                   return true;
                 }
 

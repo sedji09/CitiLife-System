@@ -300,7 +300,10 @@ $statusDescriptions = [
 
             <!-- View Full Status button -->
             <div class="px-5 pb-5">
-                <a href="/<?= PROJECT_DIR ?>/xray-status?case_id=<?= $latestCase['id'] ?>"
+                <?php 
+                $statusLink = in_array($latestCase['status'], ['Completed', 'Released', 'Rejected']) ? 'case-status' : 'xray-status';
+                ?>
+                <a href="/<?= PROJECT_DIR ?>/<?= $statusLink ?>?case_id=<?= $latestCase['id'] ?>"
                     class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-4 transition shadow-sm">
                     View Full Status <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </a>

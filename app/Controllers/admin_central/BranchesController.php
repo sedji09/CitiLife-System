@@ -17,6 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $name = trim($_POST['name'] ?? '');
         $address = trim($_POST['address'] ?? '');
+        $additionalAddress = trim($_POST['additional_address'] ?? '');
+        $contact1 = trim($_POST['contact_number_1'] ?? '');
+        $contact2 = trim($_POST['contact_number_2'] ?? '');
+        $contact3 = trim($_POST['contact_number_3'] ?? '');
 
         if (empty($name)) {
             $error = "Branch name is required.";
@@ -24,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Check for duplicate branch (Same Name AND Same Address)
             if ($branchModel->getBranchByNameAndAddress($name, $address)) {
                 $error = "A branch named '" . htmlspecialchars($name) . "' already exists at this address.";
-            } else if ($branchModel->createBranch($name, $address)) {
+            } else if ($branchModel->createBranch($name, $address, $additionalAddress, $contact1, $contact2, $contact3)) {
                 $success = "Branch created successfully!";
                 $newBranchId = $pdo->lastInsertId();
                 $auditLogModel->addLog($currentUserId, "Added new branch: $name", 'Branch Management', 'Branch', $newBranchId, "Address: $address", $newBranchId);
@@ -48,13 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $_POST['branch_id'] ?? null;
         $name = trim($_POST['name'] ?? '');
         $address = trim($_POST['address'] ?? '');
+        $additionalAddress = trim($_POST['additional_address'] ?? '');
+        $contact1 = trim($_POST['contact_number_1'] ?? '');
+        $contact2 = trim($_POST['contact_number_2'] ?? '');
+        $contact3 = trim($_POST['contact_number_3'] ?? '');
 
         if ($id && !empty($name)) {
             // Check for duplicate branch (Same Name AND Same Address, excluding current ID)
             $existing = $branchModel->getBranchByNameAndAddress($name, $address);
             if ($existing && $existing['id'] != $id) {
                 $error = "Another branch with the name '" . htmlspecialchars($name) . "' already exists at this location.";
-            } else if ($branchModel->updateBranch($id, $name, $address)) {
+            } else if ($branchModel->updateBranch($id, $name, $address, $additionalAddress, $contact1, $contact2, $contact3)) {
                 $success = "Branch updated successfully!";
                 $auditLogModel->addLog($currentUserId, "Updated branch details", 'Branch Management', 'Branch', $id, "New Name: $name, New Address: $address", $id);
             } else {

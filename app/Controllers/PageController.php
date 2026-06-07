@@ -46,6 +46,7 @@ class PageController
             'patient-history',
             'patient-records-history',
             'xray-status',
+            'case-status',
             'my-records',
             'registration',
             'download-report',

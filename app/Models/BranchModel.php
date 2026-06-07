@@ -70,17 +70,17 @@ class BranchModel {
     /**
      * Create a new branch.
      */
-    public function createBranch($name, $address = null) {
-        $stmt = $this->pdo->prepare("INSERT INTO branches (name, address) VALUES (?, ?)");
-        return $stmt->execute([$name, $address]);
+    public function createBranch($name, $address = null, $additionalAddress = null, $contact1 = null, $contact2 = null, $contact3 = null) {
+        $stmt = $this->pdo->prepare("INSERT INTO branches (name, address, additional_address, contact_number_1, contact_number_2, contact_number_3) VALUES (?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([$name, $address, $additionalAddress, $contact1, $contact2, $contact3]);
     }
 
     /**
      * Update an existing branch name.
      */
-    public function updateBranch($id, $name, $address = null) {
-        $stmt = $this->pdo->prepare("UPDATE branches SET name = ?, address = ? WHERE id = ?");
-        return $stmt->execute([$name, $address, $id]);
+    public function updateBranch($id, $name, $address = null, $additionalAddress = null, $contact1 = null, $contact2 = null, $contact3 = null) {
+        $stmt = $this->pdo->prepare("UPDATE branches SET name = ?, address = ?, additional_address = ?, contact_number_1 = ?, contact_number_2 = ?, contact_number_3 = ? WHERE id = ?");
+        return $stmt->execute([$name, $address, $additionalAddress, $contact1, $contact2, $contact3, $id]);
     }
 
     /**
@@ -103,23 +103,35 @@ class BranchModel {
      * Get branch metadata (address, contacts) for reports.
      */
     public function getBranchMetadata($branchName) {
-        $branchMapping = [
-            'BONGABON' => ['address' => "L. DE LARA STREET, BONGABON NUEVA ECIJA\n(BESIDE BONGABON DISTRICT HOSPITAL)", 'contact1' => '0919-230-5384', 'contact2' => '0954-305-1164'],
-            'GAPAN' => ['address' => "BGRY. BAYAHANIHAN, GAPAN CITY, NUEVA ECIJA\n(IN FRONT OF GAPAN DISTRICT HOSPITAL)", 'contact1' => '0933-866-6617', 'contact2' => '0926-048-7980'],
-            'PEÑARANDA' => ['address' => "PEÑARANDA, NUEVA ECIJA", 'contact1' => '0919-234-5678', 'contact2' => '0954-234-5678'],
-            'GENERAL TINIO' => ['address' => "GENERAL TINIO, NUEVA ECIJA", 'contact1' => '0919-345-6789', 'contact2' => '0954-345-6789'],
-            'STO DOMINGO' => ['address' => "STO. DOMINGO, NUEVA ECIJA", 'contact1' => '0919-456-7890', 'contact2' => '0954-456-7890'],
-            'SAN ANTONIO' => ['address' => "SAN ANTONIO, NUEVA ECIJA", 'contact1' => '0919-567-8901', 'contact2' => '0954-567-8901'],
-            'PANTABANGAN' => ['address' => "PANTABANGAN, NUEVA ECIJA", 'contact1' => '0919-678-9012', 'contact2' => '0954-678-9012']
-        ];
+        // Fetch directly from the database
+        $stmt = $this->pdo->prepare("SELECT * FROM branches WHERE name LIKE ? LIMIT 1");
+        $stmt->execute(['%' . trim($branchName) . '%']);
+        $branch = $stmt->fetch();
 
-        $metadata = ['address' => strtoupper($branchName) . " BRANCH", 'contact1' => "0900-000-0000", 'contact2' => ""];
-        foreach ($branchMapping as $key => $info) {
-            if (stripos($branchName, $key) !== false || stripos($key, $branchName) !== false) {
-                $metadata = $info;
-                break;
+        if ($branch) {
+            $addr = trim($branch['address'] ?? '');
+            $add_addr = trim($branch['additional_address'] ?? '');
+            
+            // Format address: Add additional address in parentheses if it exists
+            $fullAddress = strtoupper($addr ?: $branch['name'] . ' BRANCH');
+            if (!empty($add_addr)) {
+                $fullAddress .= "\n(" . strtoupper($add_addr) . ")";
             }
+
+            return [
+                'address' => $fullAddress,
+                'contact1' => !empty($branch['contact_number_1']) ? $branch['contact_number_1'] : '',
+                'contact2' => !empty($branch['contact_number_2']) ? $branch['contact_number_2'] : '',
+                'contact3' => !empty($branch['contact_number_3']) ? $branch['contact_number_3'] : ''
+            ];
         }
-        return $metadata;
+
+        // Fallback if branch is somehow not found
+        return [
+            'address' => strtoupper($branchName) . " BRANCH", 
+            'contact1' => "0900-000-0000", 
+            'contact2' => "",
+            'contact3' => ""
+        ];
     }
 }

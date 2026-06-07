@@ -99,49 +99,27 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                 </div>
                 <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
             </div>
-            <div id="findings-viewer-container" class="flex-1 bg-[#0a0a0a] relative overflow-hidden group flex items-center justify-center p-4">
+            <div id="findings-viewer-container"
+                class="flex-1 bg-[#0a0a0a] relative overflow-hidden group flex items-center justify-center p-4">
                 <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed'])): ?>
                     <?php
-                    // Clean JSON preparation for the previewer
-                    // Look for static photo reports generated at Release
-                    $photoPattern = __DIR__ . "/../../../public/uploads/reports/{$caseDetails['case_number']}_page_*.jpg";
-                    $photos = glob($photoPattern);
-                    $previewItems = [];
-
-                    if (!empty($photos)) {
-                        // Sort pages naturally if not already
-                        natsort($photos);
-                        foreach ($photos as $photoFile) {
-                            $baseUrl = "/" . PROJECT_DIR . "/public/uploads/reports/" . basename($photoFile);
-                            $previewItems[] = ['type' => 'report_image', 'url' => $baseUrl, 'name' => "REPORT_" . $caseDetails['case_number']];
-                        }
-                        $reportUrl = $previewItems[0]['url']; // Use first page as thumbnail
-                    } else {
-                        // Fallback if photo not yet generated
-                        $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
-                        $previewItems = [['type' => 'report', 'url' => $reportUrl, 'name' => "REPORT_" . $caseDetails['case_number']]];
-                    }
-
-                    $jsonItems = htmlspecialchars(json_encode($previewItems), ENT_QUOTES, 'UTF-8');
+                    $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
                     ?>
 
-                    <img src="<?= $reportUrl ?>" 
-                         class="max-w-full max-h-full object-contain filter drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 cursor-pointer bg-white"
-                         alt="Findings Report"
-                         data-preview-items="<?= $jsonItems ?>"
-                         onclick="if(window.DrivePreviewer) DrivePreviewer.open(JSON.parse(this.getAttribute('data-preview-items')), 0)">
-                    
-                    <!-- Hover Overlay -->
-                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
-                         <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full">
-                             <i data-lucide="maximize" class="w-8 h-8 text-white"></i>
-                         </div>
-                    </div>
+                    <button type="button" onclick="openReportViewer('<?= $reportUrl ?>')"
+                        class="group relative w-full h-full flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-400 hover:bg-red-50 transition-all cursor-pointer">
+                        <div class="bg-white p-4 rounded-full shadow-md mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="file-text" class="w-10 h-10 text-red-500"></i>
+                        </div>
+                        <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Download / Print Report</span>
+                        <span class="text-sm text-gray-500 mt-1">Open report in a popup window</span>
+                    </button>
                 <?php else: ?>
                     <div class="text-center">
                         <i data-lucide="clock-3" class="w-12 h-12 mb-4 text-gray-600 mx-auto opacity-50"></i>
                         <p class="font-bold text-gray-400">Waiting for Radiologist</p>
-                        <p class="text-sm text-gray-500 mt-1 max-w-[250px] mx-auto">The findings report will appear here once the radiologist submits their evaluation.</p>
+                        <p class="text-sm text-gray-500 mt-1 max-w-[250px] mx-auto">The findings report will appear here
+                            once the radiologist submits their evaluation.</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -458,5 +436,16 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
             <?php endif; ?>
         </div>
 
-    </div>
 </div>
+
+<script>
+    function openReportViewer(url) {
+        // Open the report in a popup window similar to the COR viewer
+        const popupWidth = 850;
+        const popupHeight = 800;
+        const left = (screen.width - popupWidth) / 2;
+        const top = (screen.height - popupHeight) / 2;
+        
+        window.open(url, 'ReportViewer', `width=${popupWidth},height=${popupHeight},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+    }
+</script>

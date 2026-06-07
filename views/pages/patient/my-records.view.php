@@ -26,9 +26,10 @@ if ($patientId) {
 // 2. Fetch Cases (Backend logic)
 if ($patientRow && isset($patientRow['patient_number'])) {
     $rawCases = $caseModel->getPatientHistory($patientRow['patient_number']);
-    // Only show Completed or Released cases in My Records
+    // Only show Completed, Released, or Rejected cases in My Records
     foreach ($rawCases as $c) {
-        if (in_array($c['status'], ['Completed', 'Released'])) {
+        $isRejected = (isset($c['approval_status']) && $c['approval_status'] === 'Rejected') || (isset($c['status']) && $c['status'] === 'Rejected');
+        if (in_array($c['status'], ['Completed', 'Released']) || $isRejected) {
             $allCases[] = $c;
         }
     }
@@ -162,6 +163,7 @@ $statusBadge = [
                                         ?>
                                         <tr class="hover:bg-gray-100 transition-colors record-row"
                                             data-id="<?= htmlspecialchars($c['case_number']) ?>"
+                                            data-case-id="<?= $c['id'] ?>"
                                             data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>"
                                             data-branch="<?= htmlspecialchars($branchName) ?>"
                                             data-date="<?= htmlspecialchars($c['created_at']) ?>">
@@ -188,7 +190,7 @@ $statusBadge = [
                                             <td class="px-5 py-3.5 whitespace-nowrap">
                                                 <div class="flex items-center gap-2 justify-center lg:justify-start">
                                                     <!-- View Status -->
-                                                    <a href="/<?= PROJECT_DIR ?>/xray-status?case_id=<?= $c['id'] ?>"
+                                                    <a href="/<?= PROJECT_DIR ?>/case-status?case_id=<?= $c['id'] ?>"
                                                         class="group transition-all" title="View Status">
                                                         <div
                                                             class="hidden lg:flex items-center justify-center p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors shadow-sm">
@@ -200,7 +202,7 @@ $statusBadge = [
                                                         </span>
                                                     </a>
 
-                                                    <?php if (in_array($c['status'], ['Released', 'Completed'])): ?>
+                                                    <?php if (in_array($displayStatus, ['Released', 'Completed'])): ?>
                                                         <!-- View Report -->
                                                         <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
                                                             class="group transition-all" title="View Report">
@@ -248,8 +250,9 @@ $statusBadge = [
                             $badge = $statusBadge[$displayStatus] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'border' => 'border-gray-200', 'label' => $displayStatus];
                             $branchName = $c['branch_name'] ?? $c['branch'] ?? '—';
                             ?>
-                            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm space-y-3 record-card"
+                            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm space-y-3 record-card transition-all"
                                 data-id="<?= htmlspecialchars($c['case_number']) ?>"
+                                data-case-id="<?= $c['id'] ?>"
                                 data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>"
                                 data-branch="<?= htmlspecialchars($branchName) ?>"
                                 data-date="<?= htmlspecialchars($c['created_at']) ?>">
@@ -274,11 +277,11 @@ $statusBadge = [
                                     </span>
                                 </div>
                                 <div class="flex items-center justify-between pt-2 border-t border-gray-50">
-                                    <a href="/<?= PROJECT_DIR ?>/xray-status?case_id=<?= $c['id'] ?>"
+                                    <a href="/<?= PROJECT_DIR ?>/case-status?case_id=<?= $c['id'] ?>"
                                         class="inline-flex items-center gap-1.5 text-gray-600 hover:text-red-600 text-xs font-bold transition">
                                         <i data-lucide="activity" class="w-3.5 h-3.5"></i> View Status
                                     </a>
-                                    <?php if (in_array($c['status'], ['Released', 'Completed'])): ?>
+                                    <?php if (in_array($displayStatus, ['Released', 'Completed'])): ?>
                                         <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
                                             class="inline-flex items-center gap-1.5 text-green-600 hover:text-green-800 text-xs font-bold transition">
                                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Report

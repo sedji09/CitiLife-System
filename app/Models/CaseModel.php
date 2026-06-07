@@ -198,7 +198,7 @@ class CaseModel
                 $notificationModel->add(
                     "Report Ready",
                     "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). Awaiting release.",
-                    "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id={$caseId}",
+                    "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
                     null,
                     'radtech',
                     $cData['branch_id']
