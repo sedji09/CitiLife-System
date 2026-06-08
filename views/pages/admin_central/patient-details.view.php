@@ -10,7 +10,7 @@
         <!-- Breadcrumbs & Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <a href="?page=patient-records" class="p-2 rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all shadow-sm">
+                <a href="/<?= PROJECT_DIR ?>/patient-records" class="p-2 rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-100 transition-all shadow-sm">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </a>
                 <div>
@@ -19,7 +19,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <a href="?page=patient-history&patient_number=<?= urlencode($patient['patient_number']) ?>" 
+                <a href="/<?= PROJECT_DIR ?>/patient-history?patient_number=<?= urlencode($patient['patient_number']) ?>" 
                    class="inline-flex items-center gap-2 rounded-lg bg-white border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
                     <i data-lucide="history" class="w-4 h-4 text-blue-500"></i>
                     View Clinical History

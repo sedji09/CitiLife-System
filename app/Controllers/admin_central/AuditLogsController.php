@@ -21,7 +21,7 @@ $filters = [
 
 $page_num = isset($_GET['p']) ? (int)$_GET['p'] : 1;
 if ($page_num < 1) $page_num = 1;
-$limit = 6;
+$limit = 10;
 $offset = ($page_num - 1) * $limit;
 
 $currentRole = $_SESSION['role'] ?? 'admin_central';
@@ -40,3 +40,5 @@ try {
     $distinctModules = [];
     $distinctRoles = [];
 }
+
+$total_pages = ceil($total_count / $limit) ?: 1;

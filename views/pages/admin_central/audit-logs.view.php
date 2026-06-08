@@ -1,7 +1,7 @@
 <?php
 /**
  * audit-logs.php
- * View for system audit logs - redesigned to match user reference.
+ * View for system audit logs (Central Admin)
  */
 ?>
 
@@ -41,93 +41,111 @@
 
 <div class="mx-auto max-w-6xl space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">System Audit Logs</h1>
-            <p class="text-sm text-gray-500">Track and monitor all system activities and user actions</p>
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">System Audit Logs</h1>
+            <p class="text-sm text-gray-500 mt-1">Real-time global monitoring of all system events and administrative actions.</p>
         </div>
-        <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role'])): ?>
-            <a href="?page=audit-logs"
-                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                Clear Filters
-            </a>
-        <?php endif; ?>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span class="text-[10px] font-black text-red-700 uppercase tracking-widest leading-none">Live Monitoring</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Search & Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-        <!-- Search Field -->
-        <div class="relative md:col-span-6 w-full group">
-            <form method="GET" action="index.php">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
-                <input type="hidden" name="role" value="<?= htmlspecialchars($filters['role']) ?>">
-                <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
-                    placeholder="Search by action, user, or details..."
-                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-                <i data-lucide="search"
-                    class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors"></i>
-                <button type="submit" class="hidden">Search</button>
-            </form>
-        </div>
+    <!-- Filter Bar -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <input type="hidden" name="page" value="audit-logs">
 
-        <!-- Module Filter -->
-        <div class="md:col-span-3">
-            <form method="GET" action="index.php">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
-                <input type="hidden" name="role" value="<?= htmlspecialchars($filters['role']) ?>">
-                <select name="module" onchange="this.form.submit()"
-                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50">
+            <!-- Search -->
+            <div class="lg:col-span-2">
+                <div class="relative group">
+                    <i data-lucide="search"
+                        class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors"></i>
+                    <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
+                        placeholder="Search action, user, or details..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all">
+                </div>
+            </div>
+
+            <!-- Module Filter -->
+            <div>
+                <select name="module"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
                     <option value="">All Modules</option>
                     <?php foreach ($distinctModules as $mod): ?>
-                        <option value="<?= htmlspecialchars($mod) ?>" <?= ($filters['module'] == $mod) ? 'selected' : '' ?>>
+                        <option value="<?= htmlspecialchars($mod) ?>" <?= $filters['module'] == $mod ? 'selected' : '' ?>>
                             <?= htmlspecialchars($mod) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-            </form>
-        </div>
+            </div>
 
-        <!-- Role Filter -->
-        <div class="md:col-span-3">
-            <form method="GET" action="index.php">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
-                <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
-                <select name="role" onchange="this.form.submit()"
-                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50">
+            <!-- Role Filter -->
+            <div>
+                <select name="role"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
                     <option value="">All Roles</option>
                     <?php foreach ($distinctRoles as $rl): ?>
-                        <option value="<?= htmlspecialchars($rl) ?>" <?= ($filters['role'] == $rl) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars(array_map('ucfirst', explode('_', $rl))[0] . (isset(explode('_', $rl)[1]) ? ' ' . ucfirst(explode('_', $rl)[1]) : '')) ?>
+                        <option value="<?= htmlspecialchars($rl) ?>" <?= $filters['role'] == $rl ? 'selected' : '' ?>>
+                            <?= strtoupper(str_replace('_', ' ', $rl)) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-            </form>
-        </div>
+            </div>
+
+            <!-- Start Date -->
+            <div>
+                <input type="date" name="start_date" value="<?= htmlspecialchars($filters['start_date']) ?>"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
+                    placeholder="Start Date">
+            </div>
+
+            <!-- End Date -->
+            <div class="flex gap-2">
+                <input type="date" name="end_date" value="<?= htmlspecialchars($filters['end_date']) ?>"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
+                    placeholder="End Date">
+            </div>
+            
+            <!-- Submit Button & Reset -->
+            <div class="lg:col-span-6 flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <a href="/<?= PROJECT_DIR ?>/audit-logs"
+                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+                    title="Reset Filters">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    Reset
+                </a>
+                <button type="submit"
+                    class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center gap-2 transition shadow-sm text-xs font-bold uppercase tracking-wider">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    Apply Filters
+                </button>
+            </div>
+        </form>
     </div>
 
-    <!-- Audit Logs Table Card -->
-    <div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
+    <!-- Logs Table Card -->
+    <div class="rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden mb-12">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
-                <thead class="sticky top-0 z-10">
+                <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
-                        <th class="text-left font-semibold px-4 py-4 whitespace-nowrap">Date</th>
-                        <th class="text-left font-semibold px-4 py-4 truncate">User</th>
-                        <th class="text-left font-semibold px-4 py-4">Role</th>
+                        <th class="text-left font-semibold px-4 py-4 whitespace-nowrap">Timestamp</th>
+                        <th class="text-left font-semibold px-4 py-4 truncate">Actor</th>
+                        <th class="text-left font-semibold px-4 py-4">Branch</th>
+                        <th class="text-left font-semibold px-4 py-4">Category</th>
                         <th class="text-left font-semibold px-4 py-4">Action</th>
                         <th class="text-left font-semibold px-4 py-4">Status</th>
-                        <th class="text-left font-semibold px-4 py-4">Module</th>
-                        <th class="text-left font-semibold px-4 py-4">Branch</th>
+                        <th class="text-center font-semibold px-4 py-4">Info</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-800 bg-white divide-y divide-gray-100">
                     <?php if (empty($logs)): ?>
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center gap-3">
                                     <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
                                         <i data-lucide="search-x" class="w-8 h-8 text-gray-300"></i>
@@ -141,35 +159,40 @@
                         <?php foreach ($logs as $log): ?>
                             <tr class="hover:bg-gray-50 transition-colors group">
                                 <td class="px-4 py-4 whitespace-nowrap">
-                                    <div class="text-[13px] text-gray-500">
+                                    <div class="text-[13px] text-gray-500 font-medium tabular-nums">
                                         <?= date('M j, Y', strtotime($log['created_at'])) ?>
-                                        <span
-                                            class="block text-[11px] text-gray-400"><?= date('g:i A', strtotime($log['created_at'])) ?></span>
+                                        <span class="block text-[11px] text-gray-400 mt-0.5"><?= date('g:i:s A', strtotime($log['created_at'])) ?></span>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <div class="font-bold text-gray-800">
-                                        <?= htmlspecialchars($log['user_name'] ?? ($log['user_email'] ? explode('@', $log['user_email'])[0] : 'System')) ?>
-                                    </div>
-                                    <div class="text-[11px] text-gray-400 truncate max-w-[150px]">
-                                        <?= htmlspecialchars($log['user_email'] ?? '') ?>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-600 font-extrabold text-xs shrink-0">
+                                            <?= strtoupper(substr($log['user_name'] ?? 'S', 0, 1)) ?>
+                                        </div>
+                                        <div class="flex flex-col min-w-0">
+                                            <span class="text-xs font-bold text-gray-800 tracking-tight leading-none mb-1 truncate">
+                                                <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
+                                            </span>
+                                            <span class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
+                                                <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
+                                            </span>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="text-xs font-medium px-2 py-1 rounded-md bg-gray-100 text-gray-600">
-                                        <?php
-                                        $roleDisplay = str_replace('_', ' ', $log['user_role'] ?? 'System');
-                                        echo ucwords($roleDisplay);
-                                        ?>
+                                    <span class="px-2.5 py-0.5 bg-gray-100 rounded text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                        <?= htmlspecialchars($log['branch_name'] ?? 'GLOBAL') ?>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <div class="text-gray-700 font-medium leading-tight">
+                                    <span class="text-[11px] font-bold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars($log['module'] ?? 'System') ?></span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="text-gray-700 font-semibold leading-tight max-w-xs truncate" title="<?= htmlspecialchars($log['action']) ?>">
                                         <?= htmlspecialchars($log['action']) ?>
                                     </div>
                                     <?php if (!empty($log['details'])): ?>
-                                        <div class="text-[11px] text-gray-400 mt-1 line-clamp-1"
-                                            title="<?= htmlspecialchars($log['details']) ?>">
+                                        <div class="text-[11px] text-gray-400 mt-1 line-clamp-1 truncate max-w-xs" title="<?= htmlspecialchars($log['details']) ?>">
                                             <?php
                                             $displayDetails = preg_replace('/,?\s*Exam:\s*.*$/', '', $log['details']);
                                             $displayDetails = trim($displayDetails, " ,");
@@ -185,26 +208,23 @@
                                     if (stripos($log['action'], 'Rejected') !== false || (isset($log['details']) && stripos($log['details'], 'Rejected') !== false)) {
                                         $statusLabel = 'Unsuccessful';
                                         $sColor = 'red';
-                                    } elseif ($log['module'] === 'Patient Management' && strpos($log['action'], 'Registered') !== false) {
+                                    } elseif (($log['module'] ?? '') === 'Patient Management' && strpos($log['action'], 'Registered') !== false) {
                                         $statusLabel = 'Pending';
                                         $sColor = 'red';
                                     } elseif (strpos($log['action'], 'Password Reset') !== false) {
                                         $sColor = 'gray';
                                     }
                                     ?>
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-<?= $sColor ?>-50 text-<?= $sColor ?>-700 border border-<?= $sColor === 'red' ? 'red-500' : $sColor . '-400' ?> status-badge status-badge-<?= $sColor ?>">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-<?= $sColor ?>-50 text-<?= $sColor ?>-700 border border-<?= $sColor === 'red' ? 'red-500' : $sColor . '-400' ?> status-badge status-badge-<?= $sColor ?>">
                                         <?= htmlspecialchars($statusLabel) ?>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
-                                    <span class="text-gray-600"><?= htmlspecialchars($log['module'] ?? 'N/A') ?></span>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <div class="font-medium text-gray-600 flex items-center gap-1.5">
-                                        <i data-lucide="map-pin" class="w-3 h-3 text-gray-400"></i>
-                                        <?= htmlspecialchars($log['branch_name'] ?? 'System-wide') ?>
-                                    </div>
+                                <td class="px-4 py-4 text-center">
+                                    <button type="button" onclick="showDetails(<?= htmlspecialchars(json_encode($log)) ?>)"
+                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                        title="View Details">
+                                        <i data-lucide="info" class="w-4 h-4"></i>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -218,23 +238,22 @@
             <?php
             $start = $offset + 1;
             $end = min($offset + $limit, $total_count);
-            $totalPages = ceil($total_count / $limit) ?: 1;
             ?>
             <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <div class="text-xs text-gray-500">
-                    Showing <span class="font-medium"><?= $start ?></span>-<span class="font-medium"><?= $end ?></span> of
-                    <span class="font-medium"><?= $total_count ?></span> records
+                    Showing <span class="font-semibold"><?= $start ?></span>-<span class="font-semibold"><?= $end ?></span> of
+                    <span class="font-semibold"><?= $total_count ?></span> records
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="?page=audit-logs&p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>"
+                    <a href="/<?= PROJECT_DIR ?>/audit-logs?p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>&start_date=<?= urlencode($filters['start_date']) ?>&end_date=<?= urlencode($filters['end_date']) ?>"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition <?= $page_num <= 1 ? 'pointer-events-none opacity-40 cursor-not-allowed' : '' ?>">
                         <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
                     </a>
                     <span class="text-xs font-medium text-gray-600 min-w-[90px] text-center">
-                        Page <?= $page_num ?> of <?= $totalPages ?>
+                        Page <?= $page_num ?> of <?= $total_pages ?>
                     </span>
-                    <a href="?page=audit-logs&p=<?= $page_num + 1 ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>"
-                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition <?= $page_num >= $totalPages ? 'pointer-events-none opacity-40 cursor-not-allowed' : '' ?>">
+                    <a href="/<?= PROJECT_DIR ?>/audit-logs?p=<?= min($total_pages, $page_num + 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>&start_date=<?= urlencode($filters['start_date']) ?>&end_date=<?= urlencode($filters['end_date']) ?>"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition <?= $page_num >= $total_pages ? 'pointer-events-none opacity-40 cursor-not-allowed' : '' ?>">
                         Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                     </a>
                 </div>
@@ -242,10 +261,61 @@
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Details Modal -->
+<div id="logModal" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <h3 class="text-sm font-black text-gray-900 uppercase tracking-widest">Action Details</h3>
+            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition p-1">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">IP Address</p>
+                    <p id="modalIp" class="text-xs font-bold text-gray-700 tabular-nums">0.0.0.0</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Target Module</p>
+                    <p id="modalModule" class="text-xs font-bold text-gray-700"></p>
+                </div>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-wider">Detailed Logs</p>
+                <div id="modalDetails"
+                    class="bg-gray-50 rounded-xl p-3 border border-gray-100 text-[11px] text-gray-600 font-semibold leading-relaxed whitespace-pre-wrap">
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50/50 flex justify-end border-t border-gray-100">
+            <button type="button" onclick="closeModal()"
+                class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition">Close</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    if (window.lucide) {
-        lucide.createIcons();
+    function showDetails(log) {
+        document.getElementById('modalIp').textContent = log.ip_address || 'Unknown';
+        document.getElementById('modalModule').textContent = log.module || 'System';
+        document.getElementById('modalDetails').textContent = log.details || 'No additional parameters provided.';
+
+        const modal = document.getElementById('logModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
+
+    function closeModal() {
+        const modal = document.getElementById('logModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
 </script>

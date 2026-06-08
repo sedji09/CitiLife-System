@@ -27,10 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
 
         if ($id && !empty($data['first_name']) && !empty($data['last_name'])) {
+            $existingPatient = $patientModel->getPatientById($id);
+            $patientBranchId = $existingPatient['branch_id'] ?? null;
             if ($patientModel->updatePatient($id, $data)) {
                 $success = "Patient information updated successfully!";
                 $details = "Updated patient: " . $data['first_name'] . " " . $data['last_name'];
-                $auditLogModel->addLog($currentUserId, "Updated patient record", 'Patient Records', 'Patient', $id, $details, $_POST['branch_id'] ?? $currentBranchId);
+                $auditLogModel->addLog($currentUserId, "Updated patient record", 'Patient Records', 'Patient', $id, $details, $patientBranchId ?? $currentBranchId);
             } else {
                 $error = "Failed to update patient information.";
             }

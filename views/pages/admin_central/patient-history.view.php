@@ -10,7 +10,7 @@
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <a href="?page=patient-records" class="p-2 rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-600 transition-all shadow-sm">
+                <a href="/<?= PROJECT_DIR ?>/patient-records" class="p-2 rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-600 transition-all shadow-sm">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </a>
                 <div>
@@ -76,7 +76,7 @@
                                     <div class="space-y-3">
                                         <div class="flex items-start gap-4">
                                             <div class="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
-                                                <i data-lucide="<?= $case['modality'] === 'X-Ray' ? 'scan' : 'scan-face' ?>" class="w-5 h-5"></i>
+                                                <i data-lucide="<?= ($case['modality'] ?? 'X-Ray') === 'X-Ray' ? 'scan' : 'scan-face' ?>" class="w-5 h-5"></i>
                                             </div>
                                             <div>
                                                 <h4 class="text-sm font-bold text-gray-900"><?= htmlspecialchars($case['exam_type'] ?? 'General Diagnostic') ?></h4>

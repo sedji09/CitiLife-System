@@ -138,19 +138,19 @@
                                     </td>
                                     <td class="py-3 px-3 text-left">
                                         <div class="flex items-center justify-start gap-2">
-                                            <button type="button" class="opacity-80" title="View Profile (Coming Soon)">
+                                            <a href="/<?= PROJECT_DIR ?>/patient-details?id=<?= $p['id'] ?>" class="opacity-80" title="View Profile">
                                                 <i data-lucide="eye"
                                                     class="w-6 h-6 bg-blue-100 px-1 py-1 rounded-md border border-blue-500 text-blue-500"></i>
-                                            </button>
+                                            </a>
                                             <button type="button" class="opacity-80" title="Edit Patient"
                                                 onclick='openEditModal(<?= json_encode($p) ?>)'>
                                                 <i data-lucide="edit-3"
                                                     class="w-6 h-6 bg-green-100 px-1 py-1 rounded-md border border-green-500 text-green-500"></i>
                                             </button>
-                                            <button type="button" class="opacity-80" title="Medical History (Coming Soon)">
+                                            <a href="/<?= PROJECT_DIR ?>/patient-history?patient_number=<?= urlencode($p['patient_number']) ?>" class="opacity-80" title="Medical History">
                                                 <i data-lucide="file-text"
                                                     class="w-6 h-6 bg-yellow-100 px-1 py-1 rounded-md border border-yellow-500 text-yellow-500"></i>
-                                            </button>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

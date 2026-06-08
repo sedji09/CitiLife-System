@@ -1,4 +1,34 @@
 <!-- IT Dynamic User Role Matrix -->
+<?php
+$roleApplicablePermissions = [
+    'it_admin' => ['system_security', 'backup_mgmt', 'audit_logs', 'dashboard'],
+    'admin_central' => ['system_security', 'branch_mgmt', 'user_mgmt', 'patient_history', 'global_reports', 'audit_logs', 'dashboard'],
+    'branch_admin' => ['record_requests', 'patient_history', 'audit_logs', 'global_reports', 'dashboard'],
+    'radtech' => ['patient_reg', 'worklist', 'patient_history', 'record_requests', 'dashboard'],
+    'radiologist' => ['worklist', 'patient_history', 'dashboard', 'case_review', 'write_report'],
+    'patient' => ['patient_reg', 'dashboard']
+];
+
+function getRoleIcon($roleKey)
+{
+    switch ($roleKey) {
+        case 'it_admin':
+            return 'shield-alert';
+        case 'admin_central':
+            return 'building-2';
+        case 'branch_admin':
+            return 'folder-sync';
+        case 'radtech':
+            return 'user-plus';
+        case 'radiologist':
+            return 'activity';
+        case 'patient':
+            return 'user';
+        default:
+            return 'circle';
+    }
+}
+?>
 <div class="max-w-6xl mx-auto space-y-6">
 
     <!-- Header -->
@@ -11,8 +41,11 @@
         <div class="flex items-center gap-4">
             <div id="save-status"
                 class="hidden items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
-                <i data-lucide="loader-2" class="w-3 h-3 text-green-600 animate-spin"></i>
-                <span class="text-[10px] font-bold text-green-700 uppercase tracking-widest leading-none">Saving
+                <span id="save-status-icon">
+                    <i data-lucide="loader-2" class="w-3 h-3 text-green-600 animate-spin"></i>
+                </span>
+                <span id="save-status-text"
+                    class="text-[10px] font-bold text-green-700 uppercase tracking-widest leading-none">Saving
                     Changes...</span>
             </div>
             <div class="flex items-center gap-2 px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-full">
@@ -54,8 +87,103 @@
         </div>
     </div>
 
-    <!-- Permission Matrix Table -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden transition-all">
+    <!-- View Switcher -->
+    <div
+        class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-4 rounded-2xl border border-gray-200 shadow-sm gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <i data-lucide="settings-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-sm font-extrabold text-gray-900">View Mode</p>
+                <p class="text-xs text-gray-500">Choose between a focused role-by-role setup or the full matrix grid.
+                </p>
+            </div>
+        </div>
+        <div class="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200 w-full sm:w-auto">
+            <button onclick="setViewMode('role')" id="btn-view-role"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                Role-Focused
+            </button>
+            <button onclick="setViewMode('grid')" id="btn-view-grid"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                <i data-lucide="grid" class="w-3.5 h-3.5"></i>
+                Full Matrix
+            </button>
+        </div>
+    </div>
+
+    <!-- ROLE-FOCUSED VIEW CONTAINER -->
+    <div id="rbac-role-container" class="hidden space-y-6">
+        <!-- Role Selection Tabs -->
+        <div class="flex flex-wrap gap-4 mb-2">
+            <?php foreach ($roles as $roleKey => $roleLabel): ?>
+                <button onclick="setActiveRoleTab('<?= $roleKey ?>')" id="role-tab-<?= $roleKey ?>"
+                    class="role-tab flex items-center gap-2.5 px-5 py-3.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all shadow-sm">
+                    <i data-lucide="<?= getRoleIcon($roleKey) ?>" class="w-4 h-4"></i>
+                    <?= htmlspecialchars($roleLabel) ?>
+                </button>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Role Contents Pane -->
+        <?php foreach ($roles as $roleKey => $roleLabel): ?>
+            <div id="role-content-<?= $roleKey ?>" class="role-content-pane hidden space-y-6">
+                <?php foreach ($permissions as $category => $categoryPerms): ?>
+                    <?php
+                    $hasApplicableInCat = false;
+                    foreach ($categoryPerms as $permKey => $permInfo) {
+                        if (isset($roleApplicablePermissions[$roleKey]) && in_array($permKey, $roleApplicablePermissions[$roleKey])) {
+                            $hasApplicableInCat = true;
+                            break;
+                        }
+                    }
+                    ?>
+                    <?php if ($hasApplicableInCat): ?>
+                        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+                            <h3 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                                <?= $category ?> Control
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <?php foreach ($categoryPerms as $permKey => $permInfo): ?>
+                                    <?php if (isset($roleApplicablePermissions[$roleKey]) && in_array($permKey, $roleApplicablePermissions[$roleKey])): ?>
+                                        <?php $currentLevel = $activeMatrix[$roleKey][$permKey] ?? 0; ?>
+                                        <div
+                                            class="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-all gap-4">
+                                            <div class="flex flex-col min-w-0">
+                                                <span
+                                                    class="text-sm font-extrabold text-gray-900 truncate leading-snug"><?= $permInfo['label'] ?></span>
+                                                <span
+                                                    class="text-[10px] text-gray-400 font-bold mt-1 leading-relaxed"><?= $permInfo['desc'] ?></span>
+                                            </div>
+                                            <div class="relative inline-block w-full max-w-[120px] shrink-0">
+                                                <select onchange="updatePermission('<?= $roleKey ?>', '<?= $permKey ?>', this.value)"
+                                                    class="w-full pl-3 pr-8 py-2 rounded-xl border-2 border-transparent bg-white text-xs font-black uppercase tracking-tighter transition-all focus:border-indigo-500 appearance-none cursor-pointer shadow-sm
+                                                     <?= $currentLevel == 1 ? 'text-green-600 border-green-200 bg-green-50/30' : ($currentLevel == 2 ? 'text-amber-600 border-amber-200 bg-amber-50/30' : 'text-gray-400 border-gray-200') ?>">
+                                                    <option value="0" <?= $currentLevel == 0 ? 'selected' : '' ?>>No Access</option>
+                                                    <option value="1" <?= $currentLevel == 1 ? 'selected' : '' ?>>Full</option>
+                                                    <option value="2" <?= $currentLevel == 2 ? 'selected' : '' ?>>Branch</option>
+                                                </select>
+                                                <i data-lucide="chevron-down"
+                                                    class="absolute right-3 top-3 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- FULL MATRIX VIEW CONTAINER -->
+    <div id="rbac-grid-container"
+        class="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden transition-all hidden">
         <div class="overflow-x-auto">
             <table class="w-full border-collapse">
                 <thead>
@@ -103,17 +231,21 @@
                                 <?php foreach ($roles as $roleKey => $roleLabel): ?>
                                     <?php $currentLevel = $activeMatrix[$roleKey][$permKey] ?? 0; ?>
                                     <td class="px-4 py-5 text-center">
-                                        <div class="relative inline-block w-full max-w-[100px]">
-                                            <select onchange="updatePermission('<?= $roleKey ?>', '<?= $permKey ?>', this.value)"
-                                                class="w-full pl-2 pr-6 py-1.5 rounded-lg border-2 border-transparent bg-gray-50 text-[10px] font-black uppercase tracking-tighter transition-all focus:bg-white focus:border-indigo-500 appearance-none cursor-pointer
-                                        <?= $currentLevel == 1 ? 'text-green-600 bg-green-50' : ($currentLevel == 2 ? 'text-amber-600 bg-amber-50' : 'text-gray-400') ?>">
-                                                <option value="0" <?= $currentLevel == 0 ? 'selected' : '' ?>>No Access</option>
-                                                <option value="1" <?= $currentLevel == 1 ? 'selected' : '' ?>>Full</option>
-                                                <option value="2" <?= $currentLevel == 2 ? 'selected' : '' ?>>Branch</option>
-                                            </select>
-                                            <i data-lucide="chevron-down"
-                                                class="absolute right-2 top-2 w-3 h-3 text-gray-300 pointer-events-none"></i>
-                                        </div>
+                                        <?php if (isset($roleApplicablePermissions[$roleKey]) && in_array($permKey, $roleApplicablePermissions[$roleKey])): ?>
+                                            <div class="relative inline-block w-full max-w-[100px]">
+                                                <select onchange="updatePermission('<?= $roleKey ?>', '<?= $permKey ?>', this.value)"
+                                                    class="w-full pl-2 pr-6 py-1.5 rounded-lg border-2 border-transparent bg-gray-50 text-[10px] font-black uppercase tracking-tighter transition-all focus:bg-white focus:border-indigo-500 appearance-none cursor-pointer
+                                             <?= $currentLevel == 1 ? 'text-green-600 bg-green-50' : ($currentLevel == 2 ? 'text-amber-600 bg-amber-50' : 'text-gray-400') ?>">
+                                                    <option value="0" <?= $currentLevel == 0 ? 'selected' : '' ?>>No Access</option>
+                                                    <option value="1" <?= $currentLevel == 1 ? 'selected' : '' ?>>Full</option>
+                                                    <option value="2" <?= $currentLevel == 2 ? 'selected' : '' ?>>Branch</option>
+                                                </select>
+                                                <i data-lucide="chevron-down"
+                                                    class="absolute right-2 top-2 w-3 h-3 text-gray-300 pointer-events-none"></i>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest">—</span>
+                                        <?php endif; ?>
                                     </td>
                                 <?php endforeach; ?>
                             </tr>
@@ -145,16 +277,35 @@
 
             const data = await response.json();
             if (data.success) {
+                // Sync all select dropdowns with the same role and permission in both views
+                document.querySelectorAll('select').forEach(select => {
+                    const onchangeAttr = select.getAttribute('onchange');
+                    if (onchangeAttr && onchangeAttr.includes(`'${role}'`) && onchangeAttr.includes(`'${perm}'`)) {
+                        select.value = level;
+
+                        // Update classes based on which view container it belongs to
+                        if (select.classList.contains('text-[10px]')) {
+                            // Grid select classes
+                            select.className = "w-full pl-2 pr-6 py-1.5 rounded-lg border-2 border-transparent bg-gray-50 text-[10px] font-black uppercase tracking-tighter transition-all focus:bg-white focus:border-indigo-500 appearance-none cursor-pointer " +
+                                (level == 1 ? 'text-green-600 bg-green-50' : (level == 2 ? 'text-amber-600 bg-amber-50' : 'text-gray-400'));
+                        } else {
+                            // Role-focused select classes
+                            select.className = "w-full pl-3 pr-8 py-2 rounded-xl border-2 border-transparent bg-white text-xs font-black uppercase tracking-tighter transition-all focus:border-indigo-500 appearance-none cursor-pointer shadow-sm " +
+                                (level == 1 ? 'text-green-600 border-green-200 bg-green-50/30' : (level == 2 ? 'text-amber-600 border-amber-200 bg-amber-50/30' : 'text-gray-400 border-gray-200'));
+                        }
+                    }
+                });
+
                 // Flash success color
-                statusEl.querySelector('span').textContent = 'Changes Saved';
-                statusEl.querySelector('i').setAttribute('data-lucide', 'check-circle');
+                document.getElementById('save-status-text').textContent = 'Changes Saved';
+                document.getElementById('save-status-icon').innerHTML = '<i data-lucide="check-circle" class="w-3 h-3 text-green-600"></i>';
                 lucide.createIcons();
 
                 setTimeout(() => {
                     statusEl.classList.add('hidden');
                     statusEl.classList.remove('flex');
-                    statusEl.querySelector('span').textContent = 'Saving Changes...';
-                    statusEl.querySelector('i').setAttribute('data-lucide', 'loader-2');
+                    document.getElementById('save-status-text').textContent = 'Saving Changes...';
+                    document.getElementById('save-status-icon').innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 text-green-600 animate-spin"></i>';
                     lucide.createIcons();
                 }, 2000);
             } else {
@@ -166,7 +317,69 @@
         }
     }
 
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+    function setViewMode(mode) {
+        localStorage.setItem('citilife_rbac_view_mode', mode);
+        const gridContainer = document.getElementById('rbac-grid-container');
+        const roleContainer = document.getElementById('rbac-role-container');
+        const btnGrid = document.getElementById('btn-view-grid');
+        const btnRole = document.getElementById('btn-view-role');
+
+        if (mode === 'grid') {
+            gridContainer.classList.remove('hidden');
+            roleContainer.classList.add('hidden');
+            btnGrid.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-700 hover:text-gray-900 bg-white shadow-sm border border-gray-200/50";
+            btnRole.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-500 hover:text-gray-700";
+        } else {
+            gridContainer.classList.add('hidden');
+            roleContainer.classList.remove('hidden');
+            btnRole.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-700 hover:text-gray-900 bg-white shadow-sm border border-gray-200/50";
+            btnGrid.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all text-gray-500 hover:text-gray-700";
+        }
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
+
+    function setActiveRoleTab(roleKey) {
+        localStorage.setItem('citilife_rbac_active_role', roleKey);
+
+        // Hide all contents
+        document.querySelectorAll('.role-content-pane').forEach(el => el.classList.add('hidden'));
+
+        // Show active content
+        const activePane = document.getElementById('role-content-' + roleKey);
+        if (activePane) activePane.classList.remove('hidden');
+
+        // Deactivate all tabs
+        document.querySelectorAll('.role-tab').forEach(el => {
+            el.className = "role-tab flex items-center gap-2.5 px-5 py-3.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all shadow-sm bg-white text-gray-500 border-gray-200 hover:text-gray-700 hover:border-gray-300";
+        });
+
+        // Activate active tab
+        const activeTab = document.getElementById('role-tab-' + roleKey);
+        if (activeTab) {
+            activeTab.className = "role-tab flex items-center gap-2.5 px-5 py-3.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all shadow-sm bg-indigo-600 text-white border-indigo-600";
+        }
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    // Initialize View & Role Tab from LocalStorage
+    (function () {
+        const savedMode = localStorage.getItem('citilife_rbac_view_mode') || 'role';
+        const savedRole = localStorage.getItem('citilife_rbac_active_role') || 'it_admin';
+
+        // Run after DOM is ready or immediately
+        const init = () => {
+            setViewMode(savedMode);
+            setActiveRoleTab(savedRole);
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
 </script>
