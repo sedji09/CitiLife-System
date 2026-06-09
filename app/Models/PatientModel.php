@@ -204,7 +204,7 @@ class PatientModel {
                 $patientId = $this->registerPatient([
                     'first_name'     => $data['first_name'],
                     'last_name'      => $data['last_name'],
-                    'age'            => $data['age'],
+                    'birthdate'      => $data['birthdate'] ?? null,
                     'sex'            => $data['sex'],
                     'contact_number' => $data['contact_number'],
                     'branch_id'      => $branchId
