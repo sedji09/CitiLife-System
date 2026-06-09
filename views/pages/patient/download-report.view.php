@@ -55,6 +55,13 @@ if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
     die('<p style="font-family:sans-serif;padding:2rem;color:red;">Case not found or access denied.</p>');
 }
 
+// 3-Month Availability Check
+$isExpired = strtotime($case['created_at']) < strtotime('-3 months');
+if ($isExpired) {
+    header("Location: /" . PROJECT_DIR . "/my-records?expired=1");
+    exit;
+}
+
 $isReleased = in_array($case['status'], ['Released', 'Completed']) || !empty($case['released']);
 if (!$isReleased) {
     die('<p style="font-family:sans-serif;padding:2rem;color:red;">Report is not yet available for download.</p>');
@@ -204,6 +211,21 @@ if (!$isMultiExam) {
             overflow: hidden;
         }
 
+        .page::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.15;
+            /* Adjusted opacity to ensure readability under larger text */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Ctext x='200' y='200' font-family='Arial, sans-serif' font-size='55' font-weight='900' fill='%23000000' fill-opacity='0.6' text-anchor='middle' transform='rotate(-45 200 200)'%3ECONFIDENTIAL%3C/text%3E%3C/svg%3E");
+            background-repeat: repeat;
+        }
+
 
         .image-page {
             display: flex;
@@ -225,7 +247,6 @@ if (!$isMultiExam) {
         .signature-block,
         .report-footer {
             position: relative;
-            z-index: 1;
         }
 
         /* ── Header ── */
@@ -855,9 +876,14 @@ if (!$isMultiExam) {
                 <div class="sig-title">Radiologist</div>
             </div>
         </div>
-        <div style="text-align: center; margin: 18px auto 12px; max-width: 92%; padding: 12px 18px; border: 1.5px dashed #c0392b; background-color: #fffdfd; border-radius: 4px;">
-            <strong style="color: #c0392b; font-family: 'Raleway', sans-serif; font-size: 11pt; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">CONFIDENTIAL MEDICAL RECORD</strong>
-            <p style="font-family: Arial, sans-serif; font-size: 8.5pt; color: #555; line-height: 1.4; margin: 0;">This document contains sensitive patient information. Unauthorized access, screenshotting, copying, sharing, or distribution is prohibited.</p>
+        <div
+            style="text-align: center; margin: 18px auto 12px; max-width: 92%; padding: 12px 18px; border: 1.5px dashed #c0392b; background-color: #fffdfd; border-radius: 4px;">
+            <strong
+                style="color: #c0392b; font-family: 'Raleway', sans-serif; font-size: 11pt; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">CONFIDENTIAL
+                MEDICAL RECORD</strong>
+            <p style="font-family: Arial, sans-serif; font-size: 8.5pt; color: #555; line-height: 1.4; margin: 0;">This
+                document contains sensitive patient information. Unauthorized access, screenshotting, copying, sharing,
+                or distribution is prohibited.</p>
         </div>
 
         <div class="branches">

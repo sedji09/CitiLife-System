@@ -58,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 } else if (isset($user['status']) && $user['status'] === 'Inactive') {
                     $error = 'Your account has been deactivated. Please contact the clinic.';
                 } else {
+
                     // Check if device is remembered (Skip OTP if valid token exists)
                     $rememberToken = $_COOKIE['remember_device'] ?? null;
                     if ($rememberToken) {

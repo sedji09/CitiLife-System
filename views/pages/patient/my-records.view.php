@@ -204,7 +204,12 @@ $statusBadge = [
 
                                                     <?php if (in_array($displayStatus, ['Released', 'Completed'])): ?>
                                                         <!-- View Report -->
-                                                        <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
+                                                        <?php
+                                                        $isExpired = strtotime($c['created_at']) < strtotime('-3 months');
+                                                        $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $c['id']);
+                                                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
+                                                        ?>
+                                                        <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                                                             class="group transition-all" title="View Report">
                                                             <div
                                                                 class="hidden lg:flex items-center justify-center p-2 rounded-lg bg-green-50 border border-green-200 text-green-600 hover:bg-green-600 hover:text-white transition-colors shadow-sm">
@@ -282,7 +287,12 @@ $statusBadge = [
                                         <i data-lucide="activity" class="w-3.5 h-3.5"></i> View Status
                                     </a>
                                     <?php if (in_array($displayStatus, ['Released', 'Completed'])): ?>
-                                        <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $c['id']) ?>"
+                                        <?php
+                                        $isExpired = strtotime($c['created_at']) < strtotime('-3 months');
+                                        $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $c['id']);
+                                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
+                                        ?>
+                                        <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                                             class="inline-flex items-center gap-1.5 text-green-600 hover:text-green-800 text-xs font-bold transition">
                                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Report
                                         </a>
@@ -312,6 +322,48 @@ $statusBadge = [
                 </div>
             <?php endif; ?>
         </div>
+        <!-- Custom Expiry Alert Modal -->
+        <div class="custom-alert-overlay" id="expired-alert-modal">
+            <div class="custom-alert-box">
+                <div class="custom-alert-icon-container">
+                    <!-- Shield with lock/keyhole icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" fill="currentColor" opacity="0.15"/>
+                        <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"/>
+                        <circle cx="12" cy="11" r="3"/>
+                        <path d="M12 14v4"/>
+                    </svg>
+                </div>
+                <h3 class="custom-alert-title">Result Access Expired</h3>
+                <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance</p>
+                <div class="custom-alert-buttons-container">
+                    <button class="custom-alert-btn-secondary" onclick="void(0)">Contact Us</button>
+                    <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function showExpiredAlert(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                document.getElementById('expired-alert-modal').classList.add('show');
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('expired')) {
+                    showExpiredAlert();
+                    // clean up the URL parameter
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.delete('expired');
+                    window.history.replaceState({}, document.title, newUrl.toString());
+                }
+            });
+        </script>
+
         <?php if (!empty($allCases)): ?>
             <script src="/<?= PROJECT_DIR ?>/views/pages/patient/my-records.js"></script>
         <?php endif; ?>

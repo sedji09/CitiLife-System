@@ -210,7 +210,12 @@ $statusDescriptions = [
                 <p class="text-sm text-gray-600">Your X-ray report for case <span
                         class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
                     has been released. You may view your result below.</p>
-                <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $caseRow['id']) ?>"
+                <?php
+                $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
+                $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $caseRow['id']);
+                $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
+                ?>
+                <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                     class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
                     style="background: linear-gradient(135deg, #15803d, #16a34a);">
                     <i data-lucide="eye" class="w-4 h-4"></i>
@@ -381,5 +386,36 @@ $statusDescriptions = [
             successBanner.style.opacity = '0';
             setTimeout(() => successBanner.remove(), 500);
         }, 8000);
+    }
+</script>
+
+<!-- Custom Expiry Alert Modal -->
+<div class="custom-alert-overlay" id="expired-alert-modal">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon-container">
+            <!-- Shield with lock/keyhole icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" fill="currentColor" opacity="0.15"/>
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"/>
+                <circle cx="12" cy="11" r="3"/>
+                <path d="M12 14v4"/>
+            </svg>
+        </div>
+        <h3 class="custom-alert-title">Result Access Expired</h3>
+        <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance</p>
+        <div class="custom-alert-buttons-container">
+            <button class="custom-alert-btn-secondary" onclick="void(0)">Contact Us</button>
+            <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showExpiredAlert(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        document.getElementById('expired-alert-modal').classList.add('show');
     }
 </script>

@@ -102,7 +102,7 @@ $router->post('/app/api/request_password_reset.php', 'App/Api/request_password_r
 $router->post('/app/config/update_patient.php', 'config/update_patient.php');
 
 // Temporary route to test the 500 error page
-$router->get('/test-500', function() {
+$router->get('/test-500', function () {
     loadView('errors/500');
 });
 
