@@ -34,19 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
-        $role = $_POST['role'] ?? '';
+        $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
 
-        if (empty($email) || empty($password) || empty($role)) {
+        if (empty($email) || empty($password) || empty($inputRole)) {
             $error = "All fields are required.";
         } else {
             if ($userModel->getUserByEmail($email)) {
                 $error = "The email '" . htmlspecialchars($email) . "' is already registered.";
             } else if (strlen($password) < $minPassLength) {
                 $error = "Password must be at least $minPassLength characters long.";
-            } else if ($userModel->createStaffUser($email, $password, $role, $branchId)) {
+            } else if ($userModel->createStaffUser($email, $password, $inputRole, $branchId)) {
                 $success = "User account created successfully!";
-                $auditLogModel->addLog($currentAdminId, "Created $role account: $email", 'User Management', 'User', $pdo->lastInsertId(), "Email: $email, Role: $role, Branch: $branchId", $currentBranchId);
+                $auditLogModel->addLog($currentAdminId, "Created $inputRole account: $email", 'User Management', 'User', $pdo->lastInsertId(), "Email: $email, Role: $inputRole, Branch: $branchId", $currentBranchId);
             } else {
                 $error = "Failed to create user account.";
             }
@@ -70,18 +70,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update') {
         $userId = $_POST['user_id'] ?? null;
         $email = trim($_POST['email'] ?? '');
-        $role = $_POST['role'] ?? '';
+        $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
         $password = $_POST['password'] ?? null;
 
-        if ($userId && !empty($email) && !empty($role)) {
+        if ($userId && !empty($email) && !empty($inputRole)) {
+            $existing = $userModel->getUserByEmail($email);
             if ($existing && $existing['id'] != $userId) {
                 $error = "The email '" . htmlspecialchars($email) . "' is already taken by another account.";
             } else if ($password && strlen($password) < $minPassLength) {
                 $error = "The new password must be at least $minPassLength characters long.";
-            } else if ($userModel->updateStaffUser($userId, $email, $role, $branchId, $password)) {
+            } else if ($userModel->updateStaffUser($userId, $email, $inputRole, $branchId, $password)) {
                 $success = "User account updated successfully!";
-                $details = "Updated user $email (Role: $role)";
+                $details = "Updated user $email (Role: $inputRole)";
                 if ($password) $details .= " - Password reset performed.";
                 $auditLogModel->addLog($currentAdminId, "Updated staff account details", 'User Management', 'User', $userId, $details, $currentBranchId);
             } else {

@@ -150,7 +150,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                                             class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
                                     </a>
                                     <button
-                                        onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
+                                        onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
                                         class="text-sm font-medium text-blue-600 hover:text-blue-700 transition" title="Edit">
                                         <i data-lucide="edit"
                                             class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
@@ -201,6 +201,10 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                     <label class="block text-sm font-medium text-gray-700">Contact Number</label>
                     <input type="tel" id="modalContact" class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full"
                         required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Home Address</label>
+                    <input type="text" id="modalAddress" class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">PhilHealth Status</label>

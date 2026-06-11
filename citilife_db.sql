@@ -1,4 +1,4 @@
--- phpMyAdmin SQL Dump
+﻿-- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
@@ -58,7 +58,7 @@ CREATE TABLE `cases` (
   `patient_id` int(11) NOT NULL,
   `branch_id` int(11) DEFAULT NULL,
   `exam_type` varchar(100) NOT NULL,
-  `priority` enum('Normal','Priority','Emergency','Urgent','Routine') NOT NULL DEFAULT 'Normal',
+  `priority` enum('Normal','Priority','STAT','Urgent','Routine') NOT NULL DEFAULT 'Normal',
   `philhealth_status` enum('With PhilHealth Card','Without PhilHealth Card') NOT NULL,
   `philhealth_id` varchar(50) DEFAULT NULL,
   `status` enum('Pending','Under Reading','Report Ready','Completed') NOT NULL DEFAULT 'Pending',
@@ -90,6 +90,7 @@ CREATE TABLE `patients` (
   `age` int(11) NOT NULL,
   `sex` enum('Male','Female') NOT NULL,
   `contact_number` varchar(50) DEFAULT NULL,
+  `home_address` varchar(255) DEFAULT NULL,
   `branch_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -98,37 +99,37 @@ CREATE TABLE `patients` (
 -- Dumping data for table `patients`
 --
 
-INSERT INTO `patients` (`id`, `patient_number`, `first_name`, `last_name`, `age`, `sex`, `contact_number`, `branch_id`, `created_at`) VALUES
-(2, NULL, 'Jolina', 'Magdangal', 21, 'Female', '09153504355', 1, '2026-03-22 10:00:12'),
-(3, NULL, 'Jiar', 'Maglaque', 21, 'Male', '09153504355', 3, '2026-03-22 12:19:30'),
-(4, 'PAT-GAP-2026-001', 'Seigi', 'Pascual', 22, 'Male', '09676585644', 1, '2026-03-27 08:19:47'),
-(6, 'PAT-GAP-2026-003', 'Sherlyn', 'Pascual', 24, 'Female', '09758291987', 1, '2026-03-27 08:53:34'),
-(7, 'PAT-GAP-2026-004', 'Francheska Claire', 'Lopez', 21, 'Female', '09123456789', 1, '2026-03-27 08:54:42'),
-(8, 'PAT-GAP-2026-005', 'Seigi', 'Pascual', 22, 'Male', '09676585644', 1, '2026-03-27 11:27:06'),
-(9, 'PAT-GEN-2026-001', 'Sherlyn', 'Pascual', 24, 'Female', '09123456789', NULL, '2026-03-27 11:29:55'),
-(14, 'PAT-GAP-2026-006', 'Sherlyn', 'Pascual', 24, 'Female', '09676585644', 1, '2026-03-27 11:46:59'),
-(15, 'PAT-GAP-2026-007', 'Sedji', 'Pascual', 22, 'Male', '09676585644', 1, '2026-03-27 12:03:29'),
-(16, 'PAT-GAP-2026-008', 'Merlyn', 'Pascual', 40, 'Female', '09676585644', 1, '2026-03-27 12:30:03'),
-(17, 'PAT-GAP-2026-009', 'Seigi', 'Pascual', 22, 'Male', '091019191', 1, '2026-03-27 13:38:36'),
-(18, 'PAT-GAP-2026-010', 'Seigi', 'Pascual', 22, 'Male', '09676585644', 1, '2026-03-27 13:42:30'),
-(19, 'PAT-GAP-2026-011', 'Seigi', 'Pascual', 22, 'Male', '09676585644', 1, '2026-03-27 13:44:11'),
-(20, 'PAT-GAP-2026-012', 'Seigi', 'Pascual', 22, 'Male', '09676585644', 1, '2026-03-27 14:52:40'),
-(21, 'PAT-GAP-2026-013', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-27 16:01:43'),
-(22, 'PAT-GAP-2026-014', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-28 02:40:30'),
-(23, 'PAT-GAP-2026-015', 'Seiji', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-28 02:40:40'),
-(24, 'PAT-GAP-2026-016', 'SEIGI', 'PASCUAL', 22, 'Male', '09857673975', 1, '2026-03-28 02:40:48'),
-(25, 'PAT-GAP-2026-017', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-28 02:40:55'),
-(26, 'PAT-GAP-2026-018', 'Seigi', 'Pascual', 2, 'Male', '09676585644', 1, '2026-03-28 02:41:09'),
-(27, 'PAT-GAP-2026-019', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-28 02:41:17'),
-(28, 'PAT-GAP-2026-020', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-28 09:18:46'),
-(29, 'PAT-GAP-2026-021', 'Seigi', 'Pascual', 22, 'Male', '09176871675', 1, '2026-03-28 11:27:10'),
-(30, 'PAT-GAP-2026-022', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-29 00:06:08'),
-(31, 'PAT-BNG-2026-001', 'Franchisika', 'Lopez', 21, 'Female', '09128101978', 2, '2026-03-29 04:44:13'),
-(32, 'PAT-BNG-2026-002', 'Sedji', 'Pascual', 23, 'Male', '09128101978', 2, '2026-03-29 06:59:30'),
-(33, 'PAT-GAP-2026-023', 'Sedji', 'Pascual', 25, 'Male', '09128101978', 1, '2026-03-29 07:01:30'),
-(34, 'PAT-GAP-2026-024', 'Margie', 'Manabat', 23, 'Female', '01917892136', 1, '2026-03-29 14:19:41'),
-(35, 'PAT-GAP-2026-025', 'Merlyn', 'Pascual', 40, 'Female', '09676585644', 1, '2026-03-29 14:40:21'),
-(36, 'PAT-GAP-2026-026', 'Seigi', 'Pascual', 22, 'Male', '09676585641', 1, '2026-03-30 03:31:04');
+INSERT INTO `patients` (`id`, `patient_number`, `first_name`, `last_name`, `age`, `sex`, `contact_number`, `home_address`, `branch_id`, `created_at`) VALUES
+(2, NULL, 'Jolina', 'Magdangal', 21, 'Female', '09153504355', NULL, 1, '2026-03-22 10:00:12'),
+(3, NULL, 'Jiar', 'Maglaque', 21, 'Male', '09153504355', NULL, 3, '2026-03-22 12:19:30'),
+(4, 'PAT-GAP-2026-001', 'Seigi', 'Pascual', 22, 'Male', '09676585644', NULL, 1, '2026-03-27 08:19:47'),
+(6, 'PAT-GAP-2026-003', 'Sherlyn', 'Pascual', 24, 'Female', '09758291987', NULL, 1, '2026-03-27 08:53:34'),
+(7, 'PAT-GAP-2026-004', 'Francheska Claire', 'Lopez', 21, 'Female', '09123456789', NULL, 1, '2026-03-27 08:54:42'),
+(8, 'PAT-GAP-2026-005', 'Seigi', 'Pascual', 22, 'Male', '09676585644', NULL, 1, '2026-03-27 11:27:06'),
+(9, 'PAT-GEN-2026-001', 'Sherlyn', 'Pascual', 24, 'Female', '09123456789', NULL, NULL, '2026-03-27 11:29:55'),
+(14, 'PAT-GAP-2026-006', 'Sherlyn', 'Pascual', 24, 'Female', '09676585644', NULL, 1, '2026-03-27 11:46:59'),
+(15, 'PAT-GAP-2026-007', 'Sedji', 'Pascual', 22, 'Male', '09676585644', NULL, 1, '2026-03-27 12:03:29'),
+(16, 'PAT-GAP-2026-008', 'Merlyn', 'Pascual', 40, 'Female', '09676585644', NULL, 1, '2026-03-27 12:30:03'),
+(17, 'PAT-GAP-2026-009', 'Seigi', 'Pascual', 22, 'Male', '091019191', NULL, 1, '2026-03-27 13:38:36'),
+(18, 'PAT-GAP-2026-010', 'Seigi', 'Pascual', 22, 'Male', '09676585644', NULL, 1, '2026-03-27 13:42:30'),
+(19, 'PAT-GAP-2026-011', 'Seigi', 'Pascual', 22, 'Male', '09676585644', NULL, 1, '2026-03-27 13:44:11'),
+(20, 'PAT-GAP-2026-012', 'Seigi', 'Pascual', 22, 'Male', '09676585644', NULL, 1, '2026-03-27 14:52:40'),
+(21, 'PAT-GAP-2026-013', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-27 16:01:43'),
+(22, 'PAT-GAP-2026-014', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-28 02:40:30'),
+(23, 'PAT-GAP-2026-015', 'Seiji', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-28 02:40:40'),
+(24, 'PAT-GAP-2026-016', 'SEIGI', 'PASCUAL', 22, 'Male', '09857673975', NULL, 1, '2026-03-28 02:40:48'),
+(25, 'PAT-GAP-2026-017', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-28 02:40:55'),
+(26, 'PAT-GAP-2026-018', 'Seigi', 'Pascual', 2, 'Male', '09676585644', NULL, 1, '2026-03-28 02:41:09'),
+(27, 'PAT-GAP-2026-019', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-28 02:41:17'),
+(28, 'PAT-GAP-2026-020', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-28 09:18:46'),
+(29, 'PAT-GAP-2026-021', 'Seigi', 'Pascual', 22, 'Male', '09176871675', NULL, 1, '2026-03-28 11:27:10'),
+(30, 'PAT-GAP-2026-022', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-29 00:06:08'),
+(31, 'PAT-BNG-2026-001', 'Franchisika', 'Lopez', 21, 'Female', '09128101978', NULL, 2, '2026-03-29 04:44:13'),
+(32, 'PAT-BNG-2026-002', 'Sedji', 'Pascual', 23, 'Male', '09128101978', NULL, 2, '2026-03-29 06:59:30'),
+(33, 'PAT-GAP-2026-023', 'Sedji', 'Pascual', 25, 'Male', '09128101978', NULL, 1, '2026-03-29 07:01:30'),
+(34, 'PAT-GAP-2026-024', 'Margie', 'Manabat', 23, 'Female', '01917892136', NULL, 1, '2026-03-29 14:19:41'),
+(35, 'PAT-GAP-2026-025', 'Merlyn', 'Pascual', 40, 'Female', '09676585644', NULL, 1, '2026-03-29 14:40:21'),
+(36, 'PAT-GAP-2026-026', 'Seigi', 'Pascual', 22, 'Male', '09676585641', NULL, 1, '2026-03-30 03:31:04');
 
 -- --------------------------------------------------------
 

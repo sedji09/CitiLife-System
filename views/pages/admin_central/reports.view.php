@@ -141,12 +141,12 @@ $branchId = $_SESSION['branch_id'] ?? null;
 
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium text-gray-500 tracking-tight">Emergency</span>
+                <span class="text-sm font-medium text-gray-500 tracking-tight">STAT</span>
                 <div class="p-2 bg-red-50 rounded-lg text-red-600">
                     <i data-lucide="alert-circle" class="w-5 h-5"></i>
                 </div>
             </div>
-            <div id="stat-emergency" class="text-3xl font-bold text-gray-900">0</div>
+            <div id="stat-stat" class="text-3xl font-bold text-gray-900">0</div>
         </div>
 
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -179,7 +179,7 @@ $branchId = $_SESSION['branch_id'] ?? null;
                         <tr>
                             <th class="px-6 py-4 font-bold">Branch Name</th>
                             <th class="px-6 py-4 font-bold text-center">Total</th>
-                            <th class="px-6 py-4 font-bold text-center">Emergency</th>
+                            <th class="px-6 py-4 font-bold text-center">STAT</th>
                             <th class="px-6 py-4 font-bold text-center">Urgent</th>
                             <th class="px-6 py-4 font-bold text-center">Routine</th>
                             <th class="px-6 py-4 font-bold text-center">PhilHealth</th>

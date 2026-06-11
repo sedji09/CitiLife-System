@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $birthdate = isset($_POST['birthdate']) ? trim($_POST['birthdate']) : '';
     $sex = isset($_POST['sex']) ? $_POST['sex'] : '';
     $contact = isset($_POST['contact']) ? trim($_POST['contact']) : '';
+    $homeAddress = isset($_POST['home_address']) ? trim($_POST['home_address']) : '';
     $philhealth = isset($_POST['philhealth']) ? $_POST['philhealth'] : '';
     $philhealthId = isset($_POST['philhealth_id']) ? trim($_POST['philhealth_id']) : '';
 
@@ -34,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'last_name' => $lastName,
                     'birthdate' => $birthdate,
                     'sex' => $sex,
-                    'contact_number' => $contact
+                    'contact_number' => $contact,
+                    'home_address' => $homeAddress
                 ];
                 $patientModel->updatePatient($case['patient_id'], $patientData);
 

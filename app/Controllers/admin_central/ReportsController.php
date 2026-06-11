@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * ReportsController.php
  * Handles report generation for Admin Central.
@@ -58,7 +58,7 @@ if (isset($_GET['export_pdf'])) {
         'total' => 0,
         'philhealth' => 0,
         'without_philhealth' => 0,
-        'emergency' => 0,
+        'stat' => 0,
         'urgent' => 0,
         'routine' => 0
     ];
@@ -66,7 +66,7 @@ if (isset($_GET['export_pdf'])) {
         $grandTotal['total'] += ($s['total_patients'] ?? 0);
         $grandTotal['philhealth'] += ($s['with_philhealth'] ?? 0);
         $grandTotal['without_philhealth'] += ($s['without_philhealth'] ?? 0);
-        $grandTotal['emergency'] += ($s['emergency_count'] ?? 0);
+        $grandTotal['stat'] += ($s['emergency_count'] ?? 0);
         $grandTotal['urgent'] += ($s['urgent_count'] ?? 0);
         $grandTotal['routine'] += ($s['routine_count'] ?? 0);
     }
@@ -331,8 +331,8 @@ if (isset($_GET['export_pdf'])) {
                 </td>
                 <td style="width: 19%;">
                     <div class="summary-card red-accent">
-                        <div class="card-label">Emergency</div>
-                        <div class="card-value"><?= number_format($grandTotal['emergency']) ?></div>
+                        <div class="card-label">STAT</div>
+                        <div class="card-value"><?= number_format($grandTotal['stat']) ?></div>
                     </div>
                 </td>
                 <td style="width: 19%;">
@@ -362,10 +362,10 @@ if (isset($_GET['export_pdf'])) {
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Emergency / Critical</strong></td>
-                    <td class="text-right"><?= number_format($grandTotal['emergency']) ?></td>
+                    <td><strong>STAT / Critical</strong></td>
+                    <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
                     <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['emergency'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['stat'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
                     </td>
                 </tr>
                 <tr>
@@ -426,7 +426,7 @@ if (isset($_GET['export_pdf'])) {
                     <th style="width: 25%;">Branch Location</th>
                     <th class="text-right">Total</th>
                     <th class="text-right">% Share</th>
-                    <th class="text-right">Emergency</th>
+                    <th class="text-right">STAT</th>
                     <th class="text-right">Urgent</th>
                     <th class="text-right">Routine</th>
                     <th class="text-right">PhilHealth</th>
@@ -452,7 +452,7 @@ if (isset($_GET['export_pdf'])) {
                     <td>SYSTEM TOTAL</td>
                     <td class="text-right"><?= number_format($grandTotal['total']) ?></td>
                     <td class="text-right">100%</td>
-                    <td class="text-right"><?= number_format($grandTotal['emergency']) ?></td>
+                    <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
                     <td class="text-right"><?= number_format($grandTotal['urgent']) ?></td>
                     <td class="text-right"><?= number_format($grandTotal['routine']) ?></td>
                     <td class="text-right"><?= number_format($grandTotal['philhealth']) ?></td>
@@ -556,7 +556,7 @@ if (isset($_GET['export_excel'])) {
     $grand = [
         'total' => 0,
         'philhealth' => 0,
-        'emergency' => 0,
+        'stat' => 0,
         'urgent' => 0,
         'routine' => 0
     ];
@@ -572,7 +572,7 @@ if (isset($_GET['export_excel'])) {
         // Summation
         $grand['total'] += ($s['total_patients'] ?? 0);
         $grand['philhealth'] += ($s['with_philhealth'] ?? 0);
-        $grand['emergency'] += ($s['emergency_count'] ?? 0);
+        $grand['stat'] += ($s['emergency_count'] ?? 0);
         $grand['urgent'] += ($s['urgent_count'] ?? 0);
         $grand['routine'] += ($s['routine_count'] ?? 0);
 
@@ -588,7 +588,7 @@ if (isset($_GET['export_excel'])) {
     $sheet->setCellValue('A' . $currentRow, "GRAND TOTAL");
     $sheet->setCellValue('B' . $currentRow, $grand['total']);
     $sheet->setCellValue('C' . $currentRow, $grand['philhealth']);
-    $sheet->setCellValue('D' . $currentRow, $grand['emergency']);
+    $sheet->setCellValue('D' . $currentRow, $grand['stat']);
     $sheet->setCellValue('E' . $currentRow, $grand['urgent']);
     $sheet->setCellValue('F' . $currentRow, $grand['routine']);
     $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray($totalRowStyle);

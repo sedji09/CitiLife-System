@@ -1,11 +1,12 @@
 let currentEditId = null;
 
-function openEditModal(id, name, birthdate, sex, contact, philhealth, philhealthId) {
+function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId) {
     currentEditId = id;
     document.getElementById('modalName').value = name;
     document.getElementById('modalBirthdate').value = birthdate;
     document.getElementById('modalSex').value = sex;
     document.getElementById('modalContact').value = contact;
+    document.getElementById('modalAddress').value = homeAddress || '';
     document.getElementById('modalPhilHealth').value = philhealth;
     document.getElementById('modalPhilHealthId').value = philhealthId || '';
     document.getElementById('editModal').classList.remove('hidden');
@@ -53,6 +54,7 @@ function saveEditModal() {
     const birthdate = document.getElementById('modalBirthdate').value;
     const sex = document.getElementById('modalSex').value;
     const contact = document.getElementById('modalContact').value;
+    const homeAddress = document.getElementById('modalAddress').value;
     const philhealth = document.getElementById('modalPhilHealth').value;
     const philhealthId = document.getElementById('modalPhilHealthId').value;
 
@@ -88,6 +90,7 @@ function saveEditModal() {
         { name: 'birthdate', value: birthdate },
         { name: 'sex', value: sex },
         { name: 'contact', value: contact },
+        { name: 'home_address', value: homeAddress },
         { name: 'philhealth', value: philhealth },
         { name: 'philhealth_id', value: philhealthId, required: true }
     ];

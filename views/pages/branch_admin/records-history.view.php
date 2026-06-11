@@ -78,6 +78,24 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         } ?>
                     </span>
                 </div>
+
+                <!-- Radiologist -->
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Radiologist</span>
+                    <span class="text-sm font-medium text-gray-900">
+                        <?php
+                        if (!empty($caseDetails['radiologist_name'])) {
+                            $radDisplay = ucwords(str_replace('.', ' ', $caseDetails['radiologist_name']));
+                            if (!empty($caseDetails['radiologist_title'])) {
+                                $radDisplay .= ', ' . $caseDetails['radiologist_title'];
+                            }
+                            echo 'Dr. ' . htmlspecialchars($radDisplay);
+                        } else {
+                            echo '<span class="text-gray-400 font-normal italic">Waiting for assignment</span>';
+                        }
+                        ?>
+                    </span>
+                </div>
             </div>
 
             <div class="text-right md:w-1/3">

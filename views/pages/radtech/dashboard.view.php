@@ -24,7 +24,7 @@ $stats = $caseModel->getDashboardStats($branchId, $dateCondition);
 $totalPatients = $stats['total'];
 $pendingApprovals = $stats['pending'];
 $priorityCases = $stats['priority'];
-$emergencyCases = $stats['emergency'];
+$emergencyCases = $stats['stat'];
 $completedCases = $stats['completed'];
 
 // Fetch Recent Cases
@@ -181,7 +181,7 @@ $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
                     'background' => '#eff6ff',
                     'color' => '#1d4ed8',
                   ];
-                  if ($case['priority'] === 'Emergency')
+                  if ($case['priority'] === 'STAT')
                     $pStyles = ['border' => '1.5px solid #f87171', 'background' => '#fef2f2', 'color' => '#b91c1c'];
                   if ($case['priority'] === 'Urgent')
                     $pStyles = ['border' => '1.5px solid #facc15', 'background' => '#fefce8', 'color' => '#a16207'];

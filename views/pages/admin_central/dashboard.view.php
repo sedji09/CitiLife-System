@@ -54,13 +54,13 @@
             </div>
         </div>
 
-        <!-- Emergency -->
+        <!-- STAT -->
         <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
             <div class="text-red-500 mb-2"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
             <div class="text-2xl font-black text-gray-900">
-                <?= number_format($dashboardData['totals']['emergency']) ?>
+                <?= number_format($dashboardData['totals']['stat']) ?>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">Emergency Cases
+            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">STAT Cases
             </div>
         </div>
 

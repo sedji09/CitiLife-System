@@ -104,7 +104,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <div>
                     <label class="block text-gray-600 text-sm font-medium mb-1.5">Priority</label>
                     <?php
-                    $priorities = ['Routine', 'Urgent', 'Emergency'];
+                    $priorities = ['Routine', 'Urgent', 'STAT'];
                     $currentPriority = $caseDetails['priority'] ?? '';
                     $priorityHasMatch = !empty($currentPriority) && in_array($currentPriority, $priorities);
                     ?>
@@ -242,13 +242,68 @@ if (isset($caseNotFound) && $caseNotFound) {
             <?php endif; ?>
         <?php endif; ?>
 
+        <!-- Validation Error Banner -->
+        <div id="rad-selection-error" class="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mt-6 hidden flex items-start gap-3 shadow-sm transition-opacity duration-300" role="alert">
+            <i data-lucide="info" class="w-5 h-5 text-orange-500 mt-0.5 shrink-0"></i>
+            <div>
+                <strong class="font-medium text-sm">Selection Required</strong>
+                <span class="block sm:inline text-sm mt-0.5 opacity-90">Please select a radiologist from the dropdown before submitting the case.</span>
+            </div>
+        </div>
+
         <!-- Action Buttons -->
         <?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed']); ?>
-        <div class="mt-8 flex gap-4">
+        <div class="mt-4 flex gap-4 items-center">
             <?php if (!$isReadOnly): ?>
+                <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 p-2 rounded-lg shadow-sm">
+                    <label for="radiologist_id" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i data-lucide="user-check" class="w-4 h-4 inline mr-1 text-red-500"></i>Send to:</label>
+                    <div class="relative inline-block" id="custom-radiologist-select" style="min-width: 260px;">
+                        <input type="hidden" name="radiologist_id" id="radiologist_id" required>
+                        <button type="button" class="w-full text-left text-sm border border-gray-300 rounded-md py-1.5 pl-3 pr-8 bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm" onclick="document.getElementById('rad-options').classList.toggle('hidden')">
+                            <span id="rad-selected-text" class="text-gray-700">-- Select Radiologist --</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 pointer-events-none"></i>
+                        </button>
+                        <ul id="rad-options" class="absolute z-50 mb-1 bottom-full w-full bg-white border border-gray-200 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
+                            <?php foreach ($radiologistsList ?? [] as $rad): ?>
+                                <?php 
+                                    $caseCount = isset($rad['active_case_count']) ? (int)$rad['active_case_count'] : 0; 
+                                    $isAvailable = isset($rad['is_available']) ? (int)$rad['is_available'] === 1 : true;
+                                ?>
+                                <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors <?= $isAvailable ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed opacity-60 bg-gray-50' ?>"
+                                    <?= $isAvailable ? "onclick=\"
+                                        document.getElementById('radiologist_id').value = '{$rad['id']}';
+                                        document.getElementById('rad-selected-text').innerHTML = 'Dr. " . addslashes(htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name'])))) . "';
+                                        document.getElementById('rad-options').classList.add('hidden');
+                                        document.getElementById('rad-selection-error').classList.add('hidden');
+                                    \"" : '' ?>>
+                                    <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-500' ?>">Dr. <?= htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name']))) ?></span>
+                                    <?php if ($isAvailable): ?>
+                                        <span class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2" title="<?= $caseCount ?> pending cases">
+                                            <?= $caseCount ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 shadow-sm ml-2" title="Unavailable">
+                                            Unavailable
+                                        </span>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+
+                    <script>
+                    document.addEventListener('click', function(event) {
+                        const selectWrap = document.getElementById('custom-radiologist-select');
+                        const options = document.getElementById('rad-options');
+                        if (selectWrap && !selectWrap.contains(event.target)) {
+                            options.classList.add('hidden');
+                        }
+                    });
+                    </script>
+                </div>
                 <button type="button" 
-                    onclick="confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case to the Radiologist?', 'submit_radiologist', event)"
-                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm">
+                    onclick="if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case?', 'submit_radiologist', event)"
+                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm h-full">
                     <i data-lucide="send" class="w-4 h-4"></i>
                     Submit to Radiologist
                 </button>

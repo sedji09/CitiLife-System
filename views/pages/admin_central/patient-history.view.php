@@ -58,7 +58,7 @@
                                     <div class="flex items-center gap-2">
                                         <?php
                                         $priorityClass = 'bg-gray-100 text-gray-600';
-                                        if ($case['priority'] === 'Emergency') $priorityClass = 'bg-red-50 text-red-600 border-red-100';
+                                        if ($case['priority'] === 'STAT') $priorityClass = 'bg-red-50 text-red-600 border-red-100';
                                         elseif ($case['priority'] === 'Urgent') $priorityClass = 'bg-orange-50 text-orange-600 border-orange-100';
                                         elseif ($case['priority'] === 'Routine') $priorityClass = 'bg-blue-50 text-blue-600 border-blue-100';
                                         ?>
@@ -84,16 +84,22 @@
                                             </div>
                                         </div>
                                         <div class="pt-2">
-                                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Accession No.</p>
-                                            <p class="text-xs font-mono font-medium text-gray-700"><?= htmlspecialchars($case['accession_number'] ?? 'N/A') ?></p>
+                                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">PhilHealth ID</p>
+                                            <p class="text-xs font-mono font-medium text-gray-700">
+                                                <?= (!empty($case['philhealth_id']) && ($case['philhealth_status'] ?? '') === 'With PhilHealth Card') 
+                                                    ? htmlspecialchars($case['philhealth_id']) 
+                                                    : 'Without PhilHealth ID' ?>
+                                            </p>
                                         </div>
                                     </div>
 
                                     <!-- Status & Clinical Info -->
                                     <div class="space-y-3 md:border-l md:border-gray-50 md:pl-6">
                                         <div>
-                                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-2">Requesting Physician</p>
-                                            <p class="text-sm font-bold text-gray-800">Dr. <?= htmlspecialchars($case['physician'] ?? 'General Physician') ?></p>
+                                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-2">Radiologist</p>
+                                            <p class="text-sm font-bold text-gray-800">
+                                                <?= !empty($case['radiologist_name']) ? 'Dr. ' . htmlspecialchars($case['radiologist_name']) : 'Not Assigned' ?>
+                                            </p>
                                         </div>
                                         <div>
                                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-2">Examination Status</p>

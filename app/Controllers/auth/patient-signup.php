@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $birthdate = trim($_POST['birthdate'] ?? '');
     $sex = $_POST['sex'] ?? 'Male';
     $contactNumber = trim($_POST['contact_number'] ?? '');
+    $homeAddress = trim($_POST['home_address'] ?? '');
     $branchId = $_POST['branch_id'] ?? '';
     if ($branchId === '')
         $branchId = null;
@@ -93,13 +94,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo->beginTransaction();
 
-                 // Generate patient number
+                // Generate patient number
                 require_once basePath('app/Helpers/patient_helper.php');
                 $patientNumber = generatePatientNumber($pdo, $branchId);
 
                 // Insert into patients table
-                $stmt = $pdo->prepare("INSERT INTO patients (patient_number, first_name, last_name, birthdate, sex, contact_number, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate, $sex, $contactNumber, $branchId]);
+                $stmt = $pdo->prepare("INSERT INTO patients (patient_number, first_name, last_name, birthdate, sex, contact_number, home_address, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate, $sex, $contactNumber, $homeAddress, $branchId]);
                 $patientId = $pdo->lastInsertId();
 
                 // Generate verification token
@@ -120,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 require_once basePath('app/Helpers/mailer_helper.php');
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
                 $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
-                
+
                 $emailBody = "
                     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
                         <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
@@ -305,20 +306,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <!-- Birthdate -->
                         <div>
-                            <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate *</label>
+                            <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate
+                                *</label>
                             <input id="d_birthdate" name="birthdate" type="date" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 value="<?= htmlspecialchars($birthdate ?? '') ?>">
                         </div>
 
                         <!-- Sex -->
-                        <div>
+                        <div class="relative">
                             <label for="d_sex" class="block text-sm font-semibold text-gray-700 mb-1">Sex *</label>
                             <select id="d_sex" name="sex" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
+                                class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                                 <option value="Male" <?= (($sex ?? '') === 'Male') ? 'selected' : '' ?>>Male</option>
                                 <option value="Female" <?= (($sex ?? '') === 'Female') ? 'selected' : '' ?>>Female</option>
                             </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 top-6 flex items-center px-3 text-gray-500">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Home Address -->
+                        <div class="col-span-2">
+                            <label for="d_home_address" class="block text-sm font-semibold text-gray-700 mb-1">Home
+                                Address</label>
+                            <input id="d_home_address" name="home_address" type="text"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="123 Main St, Brgy, City" value="<?= htmlspecialchars($homeAddress ?? '') ?>">
                         </div>
 
                         <!-- Contact Number -->
@@ -328,22 +348,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input id="d_contact_number" name="contact_number" type="text" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="Ex: 09123456789" value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                pattern="09[0-9]{9}" maxlength="11" minlength="11" title="Contact number must be 11 digits and start with 09"
+                                pattern="09[0-9]{9}" maxlength="11" minlength="11"
+                                title="Contact number must be 11 digits and start with 09"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
 
                         <!-- Branch -->
-                        <div>
+                        <div class="relative">
                             <label for="d_branch_id" class="block text-sm font-semibold text-gray-700 mb-1">Preferred
                                 Validating Branch *</label>
                             <select id="d_branch_id" name="branch_id" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
+                                class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                                 <option value="" disabled <?= empty($branchId) ? 'selected' : '' ?> hidden>Select Branch
                                 </option>
                                 <?php foreach ($branches as $branch): ?>
                                     <option value="<?= $branch['id'] ?>" <?= (($branchId ?? '') == $branch['id']) ? 'selected' : '' ?>><?= htmlspecialchars($branch['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 top-6 flex items-center px-3 text-gray-500">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
 
@@ -477,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <p class="text-sm text-gray-600">
                             Already registered? <a href="patient-login"
                                 class="font-bold text-red-600 hover:text-red-500 hover:underline">Log in to Patient
-                                Portal</a>
+                            </a>
                         </p>
                     </div>
                 </form>
@@ -588,8 +618,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 4: Mobile Number -->
+                        <!-- Step 4: Home Address -->
                         <div class="step" id="step4">
+                            <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">What's your home address?</h2>
+                            <p class="text-[15px] text-gray-800 mb-6">Enter your complete home address.</p>
+
+                            <div class="relative mb-6">
+                                <input type="text" id="m_home_address" name="home_address"
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                    placeholder=" " value="<?= htmlspecialchars($homeAddress ?? '') ?>" />
+                                <label for="m_home_address"
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Home
+                                    Address</label>
+                            </div>
+                            <button type="button" onclick="nextStep(4)"
+                                class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
+                        </div>
+
+                        <!-- Step 5: Mobile Number -->
+                        <div class="step" id="step5">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">What's your mobile number?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter the mobile number where you can be contacted. No
                                 one will see this on your profile.</p>
@@ -598,41 +645,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" id="m_contact_number" name="contact_number" required
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
                                     placeholder=" " value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                    pattern="09[0-9]{9}" maxlength="11" minlength="11" title="Contact number must be 11 digits and start with 09"
+                                    pattern="09[0-9]{9}" maxlength="11" minlength="11"
+                                    title="Contact number must be 11 digits and start with 09"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                                 <label for="m_contact_number"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Mobile
                                     number</label>
                             </div>
-                            <button type="button" onclick="nextStep(4)"
+                            <button type="button" onclick="nextStep(5)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 5: Validating Clinic -->
-                        <div class="step" id="step5">
+                        <!-- Step 6: Validating Clinic -->
+                        <div class="step" id="step6">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Where's your preferred clinic?
                             </h2>
                             <p class="text-[15px] text-gray-800 mb-6">Select the branch nearest to you for account
                                 validation.</p>
 
-                            <div class="relative mb-6">
-                                <select id="m_branch_id" name="branch_id" required
-                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all">
-                                    <option value="" disabled <?= empty($branchId) ? 'selected' : '' ?> hidden></option>
-                                    <?php foreach ($branches as $branch): ?>
-                                        <option value="<?= $branch['id'] ?>" <?= (($branchId ?? '') == $branch['id']) ? 'selected' : '' ?>><?= htmlspecialchars($branch['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <label for="m_branch_id"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Validating
+                            <div class="relative mb-6" id="m_branch_dropdown_container">
+                                <!-- Hidden input for actual value -->
+                                <input type="hidden" id="m_branch_id" name="branch_id"
+                                    value="<?= htmlspecialchars($branchId ?? '') ?>">
+
+                                <!-- Readonly input for display and validation -->
+                                <?php
+                                $selectedBranchName = '';
+                                if (!empty($branchId)) {
+                                    foreach ($branches as $b) {
+                                        if ($b['id'] == $branchId)
+                                            $selectedBranchName = $b['name'];
+                                    }
+                                }
+                                ?>
+                                <input type="text" id="m_branch_display" readonly
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all cursor-pointer caret-transparent"
+                                    placeholder=" " value="<?= htmlspecialchars($selectedBranchName) ?>" />
+
+                                <label for="m_branch_display"
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all cursor-pointer">Validating
                                     Branch</label>
+
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">
+                                    <svg id="m_branch_icon" class="h-5 w-5 transition-transform duration-200"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+
+                                <!-- Dropdown options list -->
+                                <div id="m_branch_options"
+                                    class="absolute z-50 mt-2 w-full rounded-xl bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 opacity-0 invisible transition-all duration-200 transform origin-top scale-95 overflow-hidden">
+                                    <ul class="max-h-60 overflow-auto py-2 text-[15px] text-gray-700">
+                                        <?php foreach ($branches as $branch): ?>
+                                            <li class="cursor-pointer select-none py-2.5 px-4 hover:bg-red-50 hover:text-red-700 font-medium transition-colors flex items-center justify-between group"
+                                                data-value="<?= $branch['id'] ?>">
+                                                <?= htmlspecialchars($branch['name']) ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
                             </div>
-                            <button type="button" onclick="nextStep(5)"
+                            <button type="button" onclick="nextStep(6)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 6: Account Details -->
-                        <div class="step" id="step6">
+                        <!-- Step 7: Account Details -->
+                        <div class="step" id="step7">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Set up your account</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Create a password to securely log in to your portal.
                             </p>
@@ -768,7 +850,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script>
         let currentStep = 1;
-        const totalSteps = 6;
+        const totalSteps = 7;
 
         function showStep(step) {
             document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
@@ -818,6 +900,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (step === 6) {
+                const branchHidden = document.getElementById('m_branch_id');
+                if (branchHidden && !branchHidden.value) {
+                    toast("Please select your preferred clinic.", "error");
+                    isValid = false;
+                }
+            }
+
+            if (step === 7) {
                 const pw = document.getElementById('m_password').value;
                 const cpw = document.getElementById('m_confirm_password').value;
                 if (pw !== cpw) {
@@ -838,7 +928,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (currentStep < totalSteps) {
                         nextStep(currentStep);
                     } else {
-                        if (validateStep(6)) {
+                        if (validateStep(7)) {
                             this.submit();
                         }
                     }
@@ -965,6 +1055,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             initPwChecker('m_password', 'm_pw_checker');
             initMatchChecker('d_password', 'd_confirm_password', 'd_match_indicator');
             initMatchChecker('m_password', 'm_confirm_password', 'm_match_indicator');
+
+            // Custom Dropdown Init for Mobile Branch
+            const branchDisplay = document.getElementById('m_branch_display');
+            const branchHidden = document.getElementById('m_branch_id');
+            const branchOptions = document.getElementById('m_branch_options');
+            const branchIcon = document.getElementById('m_branch_icon');
+            const container = document.getElementById('m_branch_dropdown_container');
+
+            if (branchDisplay && branchOptions) {
+                function toggleDropdown() {
+                    const isClosed = branchOptions.classList.contains('invisible');
+                    if (isClosed) {
+                        branchOptions.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                        branchOptions.classList.add('opacity-100', 'scale-100');
+                        branchIcon.classList.add('rotate-180');
+                    } else {
+                        closeDropdown();
+                    }
+                }
+
+                function closeDropdown() {
+                    branchOptions.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                    branchOptions.classList.remove('opacity-100', 'scale-100');
+                    branchIcon.classList.remove('rotate-180');
+                }
+
+                branchDisplay.addEventListener('click', toggleDropdown);
+
+                const items = branchOptions.querySelectorAll('li');
+                items.forEach(item => {
+                    item.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        branchHidden.value = this.getAttribute('data-value');
+                        branchDisplay.value = this.textContent.trim();
+                        closeDropdown();
+                        // Trigger input event for validation/styling updates
+                        branchDisplay.dispatchEvent(new Event('input'));
+                    });
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!container.contains(e.target)) {
+                        closeDropdown();
+                    }
+                });
+            }
         });
     </script>
 </body>

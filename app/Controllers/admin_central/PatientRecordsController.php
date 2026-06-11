@@ -23,7 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'last_name' => trim($_POST['last_name'] ?? ''),
             'birthdate' => trim($_POST['birthdate'] ?? ''),
             'sex' => $_POST['sex'] ?? '',
-            'contact_number' => trim($_POST['contact_number'] ?? '')
+            'contact_number' => trim($_POST['contact_number'] ?? ''),
+            'home_address' => trim($_POST['home_address'] ?? '')
         ];
 
         if ($id && !empty($data['first_name']) && !empty($data['last_name'])) {

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * reports.js - Admin Central Reports Logic
  */
 
@@ -195,7 +195,7 @@ async function loadStats() {
  */
 function renderDashboard(data, trends) {
     const summary = {
-        total: 0, philhealth: 0, emergency: 0, urgent: 0, routine: 0, withoutPH: 0
+        total: 0, philhealth: 0, stat: 0, urgent: 0, routine: 0, withoutPH: 0
     };
 
     let tableHtml = "";
@@ -214,7 +214,7 @@ function renderDashboard(data, trends) {
             summary.total += total;
             summary.philhealth += ph;
             summary.withoutPH += wph;
-            summary.emergency += emg;
+            summary.stat += emg;
             summary.urgent += urg;
             summary.routine += rtn;
 
@@ -235,7 +235,7 @@ function renderDashboard(data, trends) {
     // Update Summary Cards
     document.getElementById('stat-total').innerText = summary.total.toLocaleString();
     document.getElementById('stat-philhealth').innerText = summary.philhealth.toLocaleString();
-    document.getElementById('stat-emergency').innerText = summary.emergency.toLocaleString();
+    document.getElementById('stat-stat').innerText = summary.stat.toLocaleString();
     document.getElementById('stat-urgent').innerText = summary.urgent.toLocaleString();
 
     // Update PhilHealth Legend

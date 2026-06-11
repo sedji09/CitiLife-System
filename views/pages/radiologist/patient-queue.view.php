@@ -13,7 +13,8 @@ $branch = $branchModel->getBranchById($branchId);
 $branchName = $branch['name'] ?? 'Unknown Branch';
 
 // Fetch cases for this branch that are 'Pending' or 'Under Reading' and images are 'Uploaded'
-$records = $caseModel->getWorklist($branchId, null, ['Pending', 'Under Reading'], true);
+$radiologistId = $_SESSION['user_id'] ?? null;
+$records = $caseModel->getWorklist($branchId, null, ['Pending', 'Under Reading'], true, $radiologistId);
 
 // Extract unique exam types for the filter dropdown
 $examTypes = array_unique(array_column($records, 'exam_type'));
@@ -100,7 +101,7 @@ sort($examTypes);
                     <td class="py-3 px-3">
                         <?php
                             $pColor = 'blue';
-                            if ($row['priority'] === 'Emergency') $pColor = 'red';
+                            if ($row['priority'] === 'STAT') $pColor = 'red';
                             if ($row['priority'] === 'Urgent') $pColor = 'yellow';
                             if ($row['priority'] === 'Priority') $pColor = 'orange';
                         ?>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * CaseModel.php
  * Handles all database interactions related to cases.
@@ -43,7 +43,7 @@ class CaseModel
     }
 
     /**
-     * Get dashboard stats (total, pending, priority, emergency, completed)
+     * Get dashboard stats (total, pending, priority, stat, completed)
      */
     public function getDashboardStats($branchId, $dateCondition)
     {
@@ -62,10 +62,10 @@ class CaseModel
         $stmt->execute([$branchId]);
         $priority = $stmt->fetchColumn();
 
-        // Emergency
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE priority = 'Emergency' AND $dateCondition AND branch_id = ?");
+        // STAT
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE priority = 'STAT' AND $dateCondition AND branch_id = ?");
         $stmt->execute([$branchId]);
-        $emergency = $stmt->fetchColumn();
+        $stat = $stmt->fetchColumn();
 
         // Completed
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status = 'Completed' AND $dateCondition AND branch_id = ?");
@@ -76,7 +76,7 @@ class CaseModel
             'total' => $total,
             'pending' => $pending,
             'priority' => $priority,
-            'emergency' => $emergency,
+            'stat' => $stat,
             'completed' => $completed
         ];
     }
@@ -100,15 +100,16 @@ class CaseModel
     /**
      * Get statistics for the Radiologist Dashboard.
      */
-    public function getRadiologistStats($dateCondition)
+    public function getRadiologistStats($dateCondition, $radiologistId = null)
     {
+        $radFilter = $radiologistId ? " AND radiologist_id = " . (int)$radiologistId : "";
         // Total Pending (All Branches)
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition $radFilter");
         $stmt->execute();
         $totalPending = $stmt->fetchColumn() ?: 0;
 
-        // Emergency Cases (All Branches)
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND priority = 'Emergency' AND $dateCondition");
+        // STAT Cases (All Branches)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND priority = 'STAT' AND $dateCondition $radFilter");
         $stmt->execute();
         $emergencyCases = $stmt->fetchColumn() ?: 0;
 
@@ -121,11 +122,12 @@ class CaseModel
     /**
      * Get branch priority breakdown for charts.
      */
-    public function getBranchPriorityStats($dateCondition)
+    public function getBranchPriorityStats($dateCondition, $radiologistId = null)
     {
+        $radFilter = $radiologistId ? " AND radiologist_id = " . (int)$radiologistId : "";
         $stmt = $this->pdo->prepare("SELECT branch_id, priority, COUNT(*) as count 
                                FROM cases 
-                               WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition 
+                               WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition $radFilter
                                GROUP BY branch_id, priority");
         $stmt->execute();
         return $stmt->fetchAll();
@@ -355,10 +357,12 @@ class CaseModel
      */
     public function getPatientHistory($patientNumber, $excludeCaseId = null)
     {
-        $sql = "SELECT c.*, b.name as branch_name
+        $sql = "SELECT c.*, b.name as branch_name, 
+                       COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name
                 FROM cases c
                 JOIN branches b ON c.branch_id = b.id
                 JOIN patients p ON c.patient_id = p.id
+                LEFT JOIN users ur ON c.radiologist_id = ur.id
                 WHERE p.patient_number = ?";
         $params = [$patientNumber];
 
@@ -376,7 +380,7 @@ class CaseModel
     /**
      * Get worklist for radiologists.
      */
-    public function getWorklist($branchId = null, $priority = null, $status = null, $imageUploadedOnly = false)
+    public function getWorklist($branchId = null, $priority = null, $status = null, $imageUploadedOnly = false, $radiologistId = null)
     {
         $sql = "SELECT c.*, p.first_name, p.last_name, p.patient_number, b.name as branch_name 
                 FROM cases c 
@@ -407,8 +411,12 @@ class CaseModel
         if ($imageUploadedOnly) {
             $sql .= " AND c.image_status = 'Uploaded'";
         }
+        if ($radiologistId) {
+            $sql .= " AND c.radiologist_id = ?";
+            $params[] = $radiologistId;
+        }
 
-        $sql .= " ORDER BY CASE WHEN c.priority = 'Emergency' THEN 1 ELSE 2 END, c.created_at DESC";
+        $sql .= " ORDER BY CASE WHEN c.priority = 'STAT' THEN 1 ELSE 2 END, c.created_at DESC";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -659,6 +667,11 @@ class CaseModel
             $data['radtech_id'] ?? null
         ];
 
+        if (!empty($data['radiologist_id'])) {
+            $sql .= ", radiologist_id = ?";
+            $params[] = $data['radiologist_id'];
+        }
+
         if (isset($data['image_path'])) {
             $sql .= ", image_path = ?";
             $params[] = $data['image_path'];
@@ -722,7 +735,8 @@ class CaseModel
             'priority' => $data['priority'],
             'report_template' => $data['report_template'],
             'image_path' => json_encode($uploadedPaths),
-            'radtech_id' => $data['radtech_id'] ?? null
+            'radtech_id' => $data['radtech_id'] ?? null,
+            'radiologist_id' => $data['radiologist_id'] ?? null
         ];
 
         if ($this->submitToRadiologist($caseId, $submitData)) {
@@ -733,7 +747,7 @@ class CaseModel
                     "New X-ray Uploaded",
                     "X-ray image uploaded for Case {$cData['case_number']} and is ready for reading.",
                     "/" . PROJECT_DIR . "/index.php?role=radiologist&page=patient-queue&branch_id={$cData['branch_id']}&highlight=" . urlencode($cData['case_number']),
-                    null,
+                    $data['radiologist_id'] ?? null,
                     'radiologist'
                 );
             }
@@ -794,7 +808,7 @@ class CaseModel
                        COUNT(c.id) as total_patients,
                        SUM(CASE WHEN c.philhealth_status = 'With PhilHealth Card' THEN 1 ELSE 0 END) as with_philhealth,
                        SUM(CASE WHEN c.philhealth_status = 'Without PhilHealth Card' THEN 1 ELSE 0 END) as without_philhealth,
-                       SUM(CASE WHEN c.priority = 'Emergency' THEN 1 ELSE 0 END) as emergency_count,
+                       SUM(CASE WHEN c.priority = 'STAT' THEN 1 ELSE 0 END) as emergency_count,
                        SUM(CASE WHEN c.priority IN ('Urgent', 'Priority') THEN 1 ELSE 0 END) as urgent_count,
                        SUM(CASE WHEN c.priority IN ('Routine', 'Normal') THEN 1 ELSE 0 END) as routine_count
                 FROM branches b
@@ -842,7 +856,7 @@ class CaseModel
                     COUNT(*) as total_patients,
                     SUM(CASE WHEN philhealth_status = 'With PhilHealth Card' THEN 1 ELSE 0 END) as with_philhealth,
                     SUM(CASE WHEN philhealth_status = 'Without PhilHealth Card' THEN 1 ELSE 0 END) as without_philhealth,
-                    SUM(CASE WHEN priority = 'Emergency' THEN 1 ELSE 0 END) as emergency_count,
+                    SUM(CASE WHEN priority = 'STAT' THEN 1 ELSE 0 END) as emergency_count,
                     SUM(CASE WHEN priority IN ('Urgent', 'Priority') THEN 1 ELSE 0 END) as urgent_count,
                     SUM(CASE WHEN priority IN ('Routine', 'Normal') THEN 1 ELSE 0 END) as routine_count
                 FROM cases

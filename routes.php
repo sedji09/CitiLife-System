@@ -97,6 +97,8 @@ $router->get('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->post('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->get('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->post('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
+$router->get('/app/api/messages.php', 'App/Api/messages.php');
+$router->post('/app/api/messages.php', 'App/Api/messages.php');
 $router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');
 $router->post('/app/api/request_password_reset.php', 'App/Api/request_password_reset.php');
 $router->post('/app/config/update_patient.php', 'config/update_patient.php');

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * DashboardController.php
  * Handles the Admin Central dashboard metrics and charts.
@@ -107,7 +107,7 @@ foreach ($allStaff as $u) {
 $dashboardData = [
     'totals' => [
         'patients' => $totalPatients,
-        'emergency' => $totalEmergency,
+        'stat' => $totalEmergency,
         'urgent' => $totalUrgent,
         'routine' => $totalRoutine,
         'philhealth' => $totalPhilHealth,

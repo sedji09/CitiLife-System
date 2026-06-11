@@ -231,11 +231,19 @@
             </div>
 
             <div>
-                <label for="contact_number" class="block text-sm font-semibold text-gray-700 mb-1.5">Contact
-                    Number</label>
+                <label for="contact_number" class="block text-sm font-semibold text-gray-700 mb-1.5">Contact Number</label>
                 <div class="relative">
                     <i data-lucide="phone" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="contact_number" name="contact_number" required placeholder="09xxxxxxxxx"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label for="home_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Home Address</label>
+                <div class="relative">
+                    <i data-lucide="map-pin" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                    <input type="text" id="home_address" name="home_address" placeholder="e.g. 123 Main St."
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
@@ -266,6 +274,7 @@
         document.getElementById('birthdate').value = patient.birthdate;
         document.getElementById('sex').value = patient.sex;
         document.getElementById('contact_number').value = patient.contact_number;
+        document.getElementById('home_address').value = patient.home_address || '';
         document.getElementById('editPatientModal').classList.remove('hidden');
     }
 

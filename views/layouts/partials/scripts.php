@@ -8,6 +8,7 @@
       <script>
         window.__APP__ = {
           role: <?= json_encode($role) ?>,
+          userId: <?= json_encode($_SESSION['user_id'] ?? null) ?>,
           menuItems: <?= json_encode($menuItems) ?>,
           currentPath: <?= json_encode($currentPath) ?>,
           basePath: <?= json_encode($basePath) ?>,
@@ -18,11 +19,13 @@
           userSignature: <?= json_encode($userSignature) ?>,
           userProfessionalTitle: <?= json_encode($userProfessionalTitle) ?>,
           userFullNameReport: <?= json_encode($userFullNameReport) ?>,
+          userIsAvailable: <?= json_encode((bool)$userIsAvailable) ?>,
           userFirstName: <?= json_encode($userFirstName) ?>,
           userLastName: <?= json_encode($userLastName) ?>,
           userBirthdate: <?= json_encode($userBirthdate) ?>,
           userSex: <?= json_encode($userSex) ?>,
-          userContactNumber: <?= json_encode($userContactNumber) ?>
+          userContactNumber: <?= json_encode($userContactNumber) ?>,
+          userHomeAddress: <?= json_encode($userHomeAddress ?? '') ?>
         };
       </script>
 
@@ -70,6 +73,7 @@
               userSignature: window.__APP__.userSignature,
               userProfessionalTitle: window.__APP__.userProfessionalTitle,
               userFullNameReport: window.__APP__.userFullNameReport,
+              editIsAvailable: window.__APP__.userIsAvailable !== false,
               editFullName: window.__APP__.userFullNameReport || window.__APP__.userDisplayName,
               editProfessionalTitle: window.__APP__.userProfessionalTitle || '',
               signatureFile: null,
@@ -86,12 +90,27 @@
               editBirthdate: '',
               editSex: 'Male',
               editContactNumber: '',
+              editHomeAddress: '',
               editPassword: '',
               editConfirmPassword: '',
               showNewPassword: false,
               showConfirmPassword: false,
               savingPassword: false,
               themeDropdownOpen: false,
+              // Chat Settings
+              userId: window.__APP__.userId || null,
+              chatMenuOpen: false,
+              chatSearchQuery: '',
+              chatSearchFocused: false,
+              recentSearches: [],
+              unreadMessageCount: 0,
+              conversations: [],
+              newMessageModalOpen: false,
+              staffSearchQuery: '',
+              staffSearchResults: [],
+              isSearchingStaff: false,
+              activeChats: [],
+              isGroupMenuOpen: false,
             };
           },
           computed: {
@@ -106,6 +125,18 @@
             },
             pwHasSpecial() {
               return /[^A-Za-z0-9]/.test(this.editPassword);
+            },
+            minimizedChats() {
+              return this.activeChats.filter(c => c.minimized);
+            },
+            visibleChats() {
+              return this.activeChats.filter(c => !c.minimized);
+            },
+            bubbleChats() {
+              // Visible windows are the first 3 non-minimized chats.
+              const visibleIds = this.visibleChats.slice(0, 3).map(c => String(c.id));
+              // Bubbles are everything else (minimized chats + overflow chats that didn't fit)
+              return this.activeChats.filter(c => !visibleIds.includes(String(c.id)));
             },
             pwPassedCount() {
               let count = 0;
@@ -134,6 +165,11 @@
             passwordsMatch() {
               if (!this.editConfirmPassword) return false;
               return this.editPassword === this.editConfirmPassword;
+            },
+            filteredConversations() {
+              if (!this.chatSearchQuery) return this.conversations;
+              const q = this.chatSearchQuery.toLowerCase();
+              return this.conversations.filter(c => c.name.toLowerCase().includes(q));
             }
           },
           mounted() {
@@ -165,6 +201,11 @@
 
             this.fetchNotifications(true);
             setInterval(() => this.fetchNotifications(false), 5000); // 5s fetch interval
+            
+            if (this.role !== 'patient') {
+                this.pollMessages();
+                setInterval(() => this.pollMessages(), 3000); // 3s message polling
+            }
 
             // Close profile menu and notifications when clicking outside
             document.addEventListener("mousedown", (e) => {
@@ -185,6 +226,9 @@
               }
               if (this.themeDropdownOpen && this.$refs.themeDropdownRef && !this.$refs.themeDropdownRef.contains(e.target)) {
                 this.themeDropdownOpen = false;
+              }
+              if (this.isGroupMenuOpen && !e.target.closest('.group-bubble-container')) {
+                this.isGroupMenuOpen = false;
               }
             });
 
@@ -208,6 +252,244 @@
             nextTick(() => this.renderIcons());
           },
           methods: {
+            toggleChatMenu() {
+                this.chatMenuOpen = !this.chatMenuOpen;
+                if (this.chatMenuOpen) {
+                    this.pollMessages();
+                }
+            },
+            formatTimeAgo(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return diffMins + 'm';
+                const diffHours = Math.floor(diffMins / 60);
+                if (diffHours < 24) return diffHours + 'h';
+                return Math.floor(diffHours / 24) + 'd';
+            },
+            pollMessages() {
+                if (this.role === 'patient') return;
+                
+                // Fetch unread count
+                fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_unread_count')
+                    .then(res => res.json())
+                    .then(data => { if(data.success) this.unreadMessageCount = data.count; })
+                    .catch(err => console.error(err));
+                    
+                // Fetch conversations
+                if (this.chatMenuOpen) {
+                    fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations')
+                        .then(res => res.json())
+                        .then(data => { if(data.success) this.conversations = data.conversations; })
+                        .catch(err => console.error(err));
+                }
+                
+                // Fetch active chats — only append NEW messages to avoid re-render stealing focus
+                this.activeChats.forEach(chat => {
+                    fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + chat.id)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success && data.messages.length > chat.messages.length) {
+                                // Only push the genuinely new messages (avoid full array replacement)
+                                const existingIds = new Set(chat.messages.map(m => m.id));
+                                const newMsgs = data.messages.filter(m => !existingIds.has(m.id));
+                                if (newMsgs.length > 0) {
+                                    newMsgs.forEach(m => chat.messages.push(m));
+                                    chat.loading = false;
+                                    nextTick(() => {
+                                        const body = this.$refs['chatBody_' + chat.id];
+                                        if (body && body[0]) {
+                                            body[0].scrollTop = body[0].scrollHeight;
+                                        }
+                                    });
+                                }
+                            }
+                        }).catch(err => console.error(err));
+                });
+            },
+            openNewMessageModal() {
+                this.chatMenuOpen = false;
+                this.newMessageModalOpen = true;
+                this.staffSearchQuery = '';
+                this.staffSearchResults = [];
+                this.searchStaff();
+            },
+            searchStaff() {
+                this.isSearchingStaff = true;
+                fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=search_staff&q=' + encodeURIComponent(this.staffSearchQuery))
+                    .then(res => res.json())
+                    .then(data => {
+                        this.isSearchingStaff = false;
+                        if (data.success) this.staffSearchResults = data.staff;
+                    }).catch(err => {
+                        this.isSearchingStaff = false;
+                        console.error(err);
+                    });
+            },
+            startNewChat(staff) {
+                this.newMessageModalOpen = false;
+                this.openChatWindow({
+                    id: staff.id,
+                    name: staff.name,
+                    initials: staff.initials,
+                    avatar: staff.avatar,
+                    role: staff.role
+                });
+            },
+            addToRecentSearches(conv) {
+                const existingIndex = this.recentSearches.findIndex(c => c.id === conv.id);
+                if (existingIndex > -1) {
+                    this.recentSearches.splice(existingIndex, 1);
+                }
+                this.recentSearches.unshift(conv);
+                if (this.recentSearches.length > 5) {
+                    this.recentSearches.pop();
+                }
+            },
+            removeRecentSearch(index) {
+                this.recentSearches.splice(index, 1);
+            },
+            toggleChatMinimize(chat) {
+                chat.minimized = !chat.minimized;
+            },
+            openChatWindow(conv) {
+                this.addToRecentSearches(conv);
+                const existing = this.activeChats.find(c => c.id == conv.id);
+                if (existing) {
+                    existing.minimized = false;
+                    this.bringChatToFront(existing);
+                } else {
+                    this.activeChats.unshift({
+                        ...conv,
+                        messages: [],
+                        newMessage: '',
+                        minimized: false,
+                        loading: true,
+                        sending: false,
+                        unreadCount: 0,
+                        selectedAttachment: null,
+                        attachmentPreview: null
+                    });
+                    
+                    fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + conv.id)
+                        .then(res => res.json())
+                        .then(data => {
+                            const chat = this.activeChats.find(c => c.id === conv.id);
+                            if (chat && data.success) {
+                                chat.messages = data.messages;
+                                chat.loading = false;
+                                nextTick(() => {
+                                    const body = this.$refs['chatBody_' + chat.id];
+                                    if (body && body[0]) {
+                                        body[0].scrollTop = body[0].scrollHeight;
+                                    }
+                                });
+                            }
+                        }).catch(err => console.error(err));
+                }
+                this.chatMenuOpen = false;
+            },
+            triggerChatAttachment(chatId) {
+                const fileInput = this.$refs['chatAttachment_' + chatId];
+                if (fileInput && fileInput[0]) {
+                    fileInput[0].click();
+                }
+            },
+            handleChatAttachment(chat, event) {
+                const file = event.target.files[0];
+                if (file) {
+                    // Check file size (max 25MB)
+                    if (file.size > 25 * 1024 * 1024) {
+                        alert("File exceeds 25MB limit.");
+                        return;
+                    }
+                    chat.selectedAttachment = file;
+                    // Create preview
+                    const reader = new window.FileReader();
+                    reader.onload = e => {
+                        chat.attachmentPreview = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            },
+            removeChatAttachment(chat) {
+                chat.selectedAttachment = null;
+                chat.attachmentPreview = null;
+                const fileInput = this.$refs['chatAttachment_' + chat.id];
+                if (fileInput && fileInput[0]) {
+                    fileInput[0].value = ''; // Reset input
+                }
+            },
+            bringChatToFront(chat) {
+                if (!chat) return;
+                try {
+                    this.isGroupMenuOpen = false;
+                    const targetId = String(chat.id);
+                    const idx = this.activeChats.findIndex(c => String(c.id) === targetId);
+                    
+                    if (idx > -1) {
+                        this.activeChats[idx].minimized = false;
+                        if (idx > 0) {
+                            const movedChat = this.activeChats.splice(idx, 1)[0];
+                            this.activeChats.unshift(movedChat);
+                        }
+                        // Force absolute reactivity refresh in ALL cases
+                        this.activeChats = [...this.activeChats];
+                    } else {
+                        chat.minimized = false;
+                    }
+                } catch (e) {
+                    console.error("bringChatToFront error:", e);
+                }
+            },
+            closeChatWindow(chat) {
+                this.activeChats = this.activeChats.filter(c => c.id != chat.id);
+            },
+            toggleChatMinimize(chat) {
+                chat.minimized = !chat.minimized;
+            },
+            sendMessage(chat) {
+                if ((!chat.newMessage.trim() && !chat.selectedAttachment) || chat.sending) return;
+                chat.sending = true;
+                
+                const formData = new window.FormData();
+                formData.append('action', 'send_message');
+                formData.append('contact_id', chat.id);
+                formData.append('message', chat.newMessage);
+                if (chat.selectedAttachment) {
+                    formData.append('attachment', chat.selectedAttachment);
+                }
+                
+                fetch('/<?= PROJECT_DIR ?>/app/api/messages.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    chat.sending = false;
+                    if (data.success) {
+                        chat.messages.push(data.message);
+                        chat.newMessage = '';
+                        this.removeChatAttachment(chat);
+                        nextTick(() => {
+                            const body = this.$refs['chatBody_' + chat.id];
+                            if (body && body[0]) {
+                                body[0].scrollTop = body[0].scrollHeight;
+                            }
+                        });
+                        this.pollMessages(); // update convos
+                    } else {
+                        alert(data.error || 'Failed to send message.');
+                    }
+                })
+                .catch(err => {
+                    chat.sending = false;
+                    console.error(err);
+                });
+            },
             requestPasswordReset() {
               if (this.isRequestingReset) return;
               if (!this.userEmail) {
@@ -263,6 +545,7 @@
                 this.editBirthdate = window.__APP__.userBirthdate || '';
                 this.editSex = window.__APP__.userSex || 'Male';
                 this.editContactNumber = window.__APP__.userContactNumber || '';
+                this.editHomeAddress = window.__APP__.userHomeAddress || '';
               }
               this.editPassword = '';
               this.editConfirmPassword = '';
@@ -304,6 +587,7 @@
               formData.append('action', 'update_radtech_settings');
               formData.append('report_full_name', this.editFullName);
               formData.append('professional_title', this.editProfessionalTitle);
+              formData.append('is_available', this.editIsAvailable ? 1 : 0);
               if (this.signatureFile) {
                 formData.append('signature', this.signatureFile);
               }
@@ -321,6 +605,11 @@
                     this.userProfessionalTitle = data.professional_title;
                     window.__APP__.userFullNameReport = data.full_name_report;
                     window.__APP__.userProfessionalTitle = data.professional_title;
+                    
+                    if (data.is_available !== undefined) {
+                      window.__APP__.userIsAvailable = data.is_available;
+                      this.editIsAvailable = data.is_available;
+                    }
 
                     if (data.signature) {
                       this.userSignature = data.signature;
@@ -349,6 +638,38 @@
                 reader.onload = e => this.uploadPreview = e.target.result;
                 reader.readAsDataURL(file);
               }
+            },
+            toggleAvailability() {
+              const formData = new window.FormData();
+              formData.append('action', 'update_radtech_settings');
+              formData.append('report_full_name', this.editFullName);
+              formData.append('professional_title', this.editProfessionalTitle);
+              formData.append('is_available', this.editIsAvailable ? 1 : 0);
+
+              fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
+                method: 'POST',
+                body: formData
+              })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.success) {
+                    if (data.is_available !== undefined) {
+                      window.__APP__.userIsAvailable = data.is_available;
+                      this.editIsAvailable = data.is_available;
+                    }
+                    if (window.showSuccess) {
+                      showSuccess(this.editIsAvailable ? 'You are now marked as available.' : 'You are now marked as unavailable.');
+                    }
+                  } else {
+                    alert(data.error || 'Failed to update availability.');
+                    this.editIsAvailable = !this.editIsAvailable; // Revert on failure
+                  }
+                })
+                .catch(err => {
+                  console.error(err);
+                  alert('A network error occurred.');
+                  this.editIsAvailable = !this.editIsAvailable; // Revert on failure
+                });
             },
             _applyThemeDark(isDark) {
               console.log("Vue _applyThemeDark called with:", isDark);
@@ -441,6 +762,7 @@
                 formData.append('birthdate', this.editBirthdate);
                 formData.append('sex', this.editSex);
                 formData.append('contact_number', this.editContactNumber);
+                formData.append('home_address', this.editHomeAddress);
               } else {
                 formData.append('system_name', this.editDisplayName);
               }
@@ -473,12 +795,14 @@
                       window.__APP__.userBirthdate = data.birthdate;
                       window.__APP__.userSex = data.sex;
                       window.__APP__.userContactNumber = data.contact_number;
+                      window.__APP__.userHomeAddress = data.home_address;
 
                       this.editFirstName = data.first_name;
                       this.editLastName = data.last_name;
                       this.editBirthdate = data.birthdate;
                       this.editSex = data.sex;
                       this.editContactNumber = data.contact_number;
+                      this.editHomeAddress = data.home_address;
                     }
 
                     this.settingsModalOpen = false;
@@ -737,6 +1061,9 @@
 
                 // Special case associations: keep sidebar item active for sub-pages
                 if (targetPage === 'patient-lists' && ['patient-lists', 'patient-approval', 'patient-details'].includes(currentPage)) {
+                  return true;
+                }
+                if (targetPage === 'patient-records' && ['patient-records', 'patient-details', 'patient-history'].includes(currentPage)) {
                   return true;
                 }
                 if (targetPage === 'xray-patient-records' && ['xray-patient-records', 'records-history'].includes(currentPage)) {

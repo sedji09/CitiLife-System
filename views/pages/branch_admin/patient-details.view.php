@@ -99,7 +99,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <label class="block text-gray-600 text-sm font-medium mb-1.5">Priority</label>
                 <?php
                 $pColor = 'blue';
-                if ($caseDetails['priority'] === 'Emergency') $pColor = 'red';
+                if ($caseDetails['priority'] === 'STAT') $pColor = 'red';
                 elseif ($caseDetails['priority'] === 'Urgent') $pColor = 'yellow';
                 ?>
                 <span class="inline-flex items-center rounded-full border border-<?= $pColor ?>-200 bg-<?= $pColor ?>-50/50 px-2.5 py-1 text-xs font-semibold text-<?= $pColor ?>-700">

@@ -41,6 +41,7 @@ $userAvatar = $displayInfo['avatar'];
 $userSignature = $currentUser['signature'] ?? '';
 $userProfessionalTitle = $currentUser['professional_title'] ?? '';
 $userFullNameReport = $currentUser['full_name_report'] ?? '';
+$userIsAvailable = $currentUser['is_available'] ?? 1;
 
 // AuthHelper is autoloaded via composer
 
@@ -51,6 +52,7 @@ $userLastName = '';
 $userBirthdate = '';
 $userSex = 'Male';
 $userContactNumber = '';
+$userHomeAddress = '';
 
 if ($isPatient) {
   $patientModel = new \PatientModel($pdo);
@@ -61,6 +63,7 @@ if ($isPatient) {
     $userBirthdate = $patientData['birthdate'] ?? '';
     $userSex = $patientData['sex'] ?? 'Male';
     $userContactNumber = $patientData['contact_number'] ?? '';
+    $userHomeAddress = $patientData['home_address'] ?? '';
   }
 }
 
@@ -153,6 +156,8 @@ try {
 
 
       <?php require __DIR__ . '/partials/drive_preview_modal.php'; ?>
+
+      <?php require __DIR__ . '/partials/chat_widget.php'; ?>
 
       <?php require __DIR__ . '/partials/scripts.php'; ?>
 </body>

@@ -11,7 +11,8 @@ $caseModel = new \CaseModel($pdo);
 $branchesList = $branchModel->getAllBranches();
 
 // Fetch all pending cases (Standardized via Model)
-$records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true);
+$radiologistId = $_SESSION['user_id'] ?? null;
+$records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
 
 // Extract unique priorities for filters
 $priorities = array_unique(array_column($records, 'priority'));
@@ -54,7 +55,7 @@ sort($priorities);
         <select id="filterPriority"
             class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
             <option value="">All Priorities</option>
-            <option value="Emergency">Emergency</option>
+            <option value="STAT">STAT</option>
             <option value="Urgent">Urgent</option>
             <option value="Routine">Routine</option>
         </select>
@@ -96,9 +97,9 @@ sort($priorities);
                         </tr>
                     <?php else: ?>
                         <?php foreach ($records as $row):
-                            // Map Priority Weight for sorting: Emergency > Urgent > Priority > Normal > Routine
+                            // Map Priority Weight for sorting: STAT > Urgent > Priority > Normal > Routine
                             $pWeight = 0;
-                            if ($row['priority'] === 'Emergency')
+                            if ($row['priority'] === 'STAT')
                                 $pWeight = 5;
                             elseif ($row['priority'] === 'Urgent')
                                 $pWeight = 4;
@@ -109,12 +110,12 @@ sort($priorities);
                             else
                                 $pWeight = 1;
 
-                            $isEmergency = ($row['priority'] === 'Emergency') ? 1 : 0;
+                            $isEmergency = ($row['priority'] === 'STAT') ? 1 : 0;
                             ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
-                                data-priority="<?= htmlspecialchars($row['priority']) ?>" data-emergency="<?= $isEmergency ?>"
+                                data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'])) ?>"
                                 data-date="<?= strtotime($row['created_at']) ?>">
@@ -136,7 +137,7 @@ sort($priorities);
                                 <td class="py-3 px-3">
                                     <?php
                                     $pColor = 'blue';
-                                    if ($row['priority'] === 'Emergency')
+                                    if ($row['priority'] === 'STAT')
                                         $pColor = 'red';
                                     if ($row['priority'] === 'Urgent')
                                         $pColor = 'yellow';
@@ -230,14 +231,14 @@ sort($priorities);
 
             // Sort rows
             allRows.sort((a, b) => {
-                // Emergency ALWAYS first overrides everything
-                const emA = parseInt(a.dataset.emergency);
-                const emB = parseInt(b.dataset.emergency);
+                // STAT ALWAYS first overrides everything
+                const emA = parseInt(a.dataset.stat);
+                const emB = parseInt(b.dataset.stat);
                 if (emA !== emB) {
                     return emB - emA; // 1 before 0
                 }
 
-                // Normal sorting if neither is emergency, or if both are emergency
+                // Normal sorting if neither is stat, or if both are stat
                 let val;
                 if (sortValue === 'date_desc') {
                     val = parseInt(b.dataset.date) - parseInt(a.dataset.date);

@@ -88,12 +88,19 @@
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number <span
-                                class="text-red-500">*</span></label>
-                        <input type="tel" id="contact" name="contact" pattern="[0-9]{11}" maxlength="11" minlength="11"
-                            title="Please enter exactly 11 digits" placeholder="e.g. 09123456789"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                        <div>
+                            <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number <span
+                                    class="text-red-500">*</span></label>
+                            <input type="tel" id="contact" name="contact" pattern="[0-9]{11}" maxlength="11" minlength="11"
+                                title="Please enter exactly 11 digits" placeholder="e.g. 09123456789"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
+                        </div>
+                        <div>
+                            <label for="home_address" class="block text-sm font-medium text-gray-700 mb-2">Home Address</label>
+                            <input type="text" id="home_address" name="home_address" placeholder="123 Main St, Brgy, City"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
                     </div>
                 </fieldset>
             </div>
@@ -152,7 +159,7 @@
                             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                             <option value="Routine">Routine</option>
                             <option value="Urgent">Urgent</option>
-                            <option value="Emergency">Emergency</option>
+                            <option value="STAT">STAT</option>
                         </select>
                     </div>
                 </div>
@@ -217,6 +224,35 @@
         input.setCustomValidity('');
     }
 
+    function clearExaminationDetails() {
+        // Clear Exam Type
+        document.querySelectorAll('.exam-ms-component').forEach(container => {
+            const hidden = container.querySelector('.exam-ms-hidden-input');
+            const reqCheck = container.querySelector('.exam-ms-required-check');
+            if (hidden) hidden.value = '';
+            if (reqCheck) reqCheck.value = '';
+            if (typeof renderChips === 'function') {
+                renderChips(container);
+            }
+        });
+        
+        // Clear Priority
+        const priority = document.getElementById('priority');
+        if (priority) priority.value = 'Routine';
+        
+        // Clear PhilHealth
+        const card = document.getElementById('card');
+        const idInput = document.getElementById('id-number');
+        if (card) {
+            card.value = 'With PhilHealth Card';
+            togglePhilHealthId();
+        }
+        if (idInput) {
+            idInput.value = '';
+            idInput.setCustomValidity('');
+        }
+    }
+
     function switchTab(tab) {
         const newSec = document.getElementById('new-patient-section');
         const existSec = document.getElementById('existing-patient-section');
@@ -224,6 +260,8 @@
         const btnExist = document.getElementById('tab-existing');
         const reqFields = document.querySelectorAll('.req-new');
         const formMode = document.getElementById('form-mode');
+
+        const isChanging = formMode.value !== tab;
 
         if (tab === 'new-patient') {
             formMode.value = 'new-patient';
@@ -250,6 +288,10 @@
 
             document.getElementById('btn-submit').innerText = "Create Case";
             reqFields.forEach(f => f.removeAttribute('required'));
+        }
+
+        if (isChanging) {
+            clearExaminationDetails();
         }
     }
 

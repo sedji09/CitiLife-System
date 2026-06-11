@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * ReportsController.php
  * Handles report generation and exporting for Branch Administrators.
@@ -320,7 +320,7 @@ if (isset($_GET['export_pdf'])) {
                 </td>
                 <td style="width: 19%;">
                     <div class="summary-card red-accent">
-                        <div class="card-label">Emergency</div>
+                        <div class="card-label">STAT</div>
                         <div class="card-value"><?= number_format($stats['emergency_count'] ?? 0) ?></div>
                     </div>
                 </td>
@@ -350,7 +350,7 @@ if (isset($_GET['export_pdf'])) {
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Emergency / Critical</strong></td>
+                    <td><strong>STAT / Critical</strong></td>
                     <td class="text-right"><?= number_format($stats['emergency_count'] ?? 0) ?></td>
                     <td class="text-right">
                         <?= ($stats['total_patients'] ?? 0) > 0 ? number_format(($stats['emergency_count'] ?? 0) / $stats['total_patients'] * 100, 1) . '%' : '0.0%' ?>
@@ -497,7 +497,7 @@ if (isset($_GET['export_excel'])) {
         ["General", "Total Registered Patients", $stats['total_patients'] ?? 0],
         ["PhilHealth", "Patients with PhilHealth", $stats['with_philhealth'] ?? 0],
         ["PhilHealth", "Patients without PhilHealth", $stats['without_philhealth'] ?? 0],
-        ["Case Priority", "Emergency / Critical Cases", $stats['emergency_count'] ?? 0],
+        ["Case Priority", "STAT / Critical Cases", $stats['emergency_count'] ?? 0],
         ["Case Priority", "Urgent / Priority Cases", $stats['urgent_count'] ?? 0],
         ["Case Priority", "Routine / Normal Cases", $stats['routine_count'] ?? 0],
     ];

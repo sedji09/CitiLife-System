@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'birthdate'         => $_POST['birthdate'] ?? '',
             'sex'               => $_POST['sex'] ?? 'Male',
             'contact_number'    => str_replace(['-', ' '], '', trim($_POST['contact'] ?? '')),
+            'home_address'      => trim($_POST['home_address'] ?? ''),
             'branch_id'         => $branchId,
             'exam_type'         => $_POST['exam-type'] ?? '',
             'priority'          => $_POST['priority'] ?? 'Routine',

@@ -11,7 +11,8 @@ $caseModel = new \CaseModel($pdo);
 $branchesList = $branchModel->getAllBranches();
 
 // Fetch Completed cases (Standardized via Model)
-$records = $caseModel->getWorklist(null, null, 'Completed');
+$radiologistId = $_SESSION['user_id'] ?? null;
+$records = $caseModel->getWorklist(null, null, 'Completed', false, $radiologistId);
 ?>
 
 <!-- Header -->

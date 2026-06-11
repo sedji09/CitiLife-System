@@ -134,7 +134,7 @@
                                 <td class="py-3 px-4">
                                     <?php
                                     $pColor = 'blue';
-                                    if ($row['priority'] === 'Emergency')
+                                    if ($row['priority'] === 'STAT')
                                         $pColor = 'red';
                                     elseif ($row['priority'] === 'Urgent')
                                         $pColor = 'yellow';

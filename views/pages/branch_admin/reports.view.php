@@ -15,7 +15,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
 
 <style>
     /* Premium Dark Mode Hover Overrides (Vivid Glow) */
-    .theme-dark #card-emergency:hover,
+    .theme-dark #card-stat:hover,
     .theme-dark #card-with:hover,
     .theme-dark #card-urgent:hover,
     .theme-dark #card-routine:hover,
@@ -23,13 +23,13 @@ $branchName = $branchData['name'] ?? 'Your Branch';
         transition: all 0.2s ease !important;
     }
 
-    .theme-dark #card-emergency:hover,
+    .theme-dark #card-stat:hover,
     .theme-dark #card-with:hover {
         background-color: rgba(239, 68, 68, 0.15) !important;
         border-color: #ef4444 !important;
         box-shadow: 0 0 0 1px #ef4444 !important;
     }
-    .theme-dark #card-emergency:hover span {
+    .theme-dark #card-stat:hover span {
         color: #fca5a5 !important; /* text-red-300 */
     }
 
@@ -152,12 +152,12 @@ $branchName = $branchData['name'] ?? 'Your Branch';
 
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium text-gray-500">Emergency</span>
+                <span class="text-sm font-medium text-gray-500">STAT</span>
                 <div class="p-2 bg-red-50 rounded-lg text-red-600">
                     <i data-lucide="alert-circle" class="w-5 h-5"></i>
                 </div>
             </div>
-            <div id="stat-emergency" class="text-3xl font-bold text-gray-900">0</div>
+            <div id="stat-stat" class="text-3xl font-bold text-gray-900">0</div>
         </div>
 
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -192,14 +192,14 @@ $branchName = $branchData['name'] ?? 'Your Branch';
 
                 <!-- Right: Legend Cards -->
                 <div class="w-full sm:w-auto flex-grow space-y-2 max-w-[260px]">
-                    <div id="card-emergency"
+                    <div id="card-stat"
                         class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border hover:border-red-500 hover:bg-red-50 transition-all duration-200 cursor-pointer group priority-card priority-card-red">
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">Emergency</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">STAT</span>
                         </div>
-                        <span id="row-emergency"
+                        <span id="row-stat"
                             class="text-sm font-bold text-gray-900 group-hover:text-red-700 transition-colors">0</span>
                     </div>
 

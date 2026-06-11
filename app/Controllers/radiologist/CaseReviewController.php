@@ -23,6 +23,10 @@ $isSubmitted = false;
 // 1. Pre-fetch case details so branch_id is available for audit logging
 $caseDetails = $caseModel->getCaseById($caseId);
 
+if ($caseDetails && $caseDetails['radiologist_id'] != $radiologistId) {
+    $caseDetails = false;
+}
+
 // 2. Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     try {

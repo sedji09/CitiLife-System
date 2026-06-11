@@ -22,13 +22,14 @@ if ($filter === 'daily') {
 }
 
 // 1. Fetch Stats (Backend logic)
-$stats = $caseModel->getRadiologistStats($dateCondition);
+$radiologistId = $_SESSION['user_id'] ?? null;
+$stats = $caseModel->getRadiologistStats($dateCondition, $radiologistId);
 $emergencyCases = $stats['emergencyCases'];
 $totalPending = $stats['totalPending'];
 
 // 2. Fetch Aggregated Chart Data (Backend logic)
 $branchesList = $branchModel->getAllBranches();
-$branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition);
+$branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition, $radiologistId);
 
 // Process for Chart.js (Frontend-specific formatting)
 $branchStats = [];
@@ -42,7 +43,7 @@ $branchColors = [];
 foreach ($branchesList as $b) {
     $branchStats[$b['id']] = [
         'name' => $b['name'],
-        'Emergency' => 0,
+        'STAT' => 0,
         'Urgent' => 0,
         'Routine' => 0
     ];
@@ -63,11 +64,11 @@ $colorIndex = 0;
 
 foreach ($branchStats as $stat) {
     $labels[] = $stat['name'];
-    $emergencyData[] = $stat['Emergency'];
+    $emergencyData[] = $stat['STAT'];
     $urgentData[] = $stat['Urgent'];
     $routineData[] = $stat['Routine'];
 
-    $total = $stat['Emergency'] + $stat['Urgent'] + $stat['Routine'];
+    $total = $stat['STAT'] + $stat['Urgent'] + $stat['Routine'];
     $branchTotals[] = $total;
     $branchColors[] = $availableColors[$colorIndex++ % count($availableColors)];
 }
@@ -107,14 +108,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <!-- Stats -->
     <div id="radio-dashboard-top-stats" class="grid grid-cols-1 gap-4 sm:grid-cols-2 realtime-update">
         <!-- Card 1 -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?priority=Emergency"
+        <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT"
             class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md transition decoration-none">
-            <div id="emergency-count"
+            <div id="stat-count"
                 class="bg-red-100 text-red-600 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
                 <?= $emergencyCases ?>
             </div>
             <div>
-                <p class="text-xs text-gray-500">Emergency Cases</p>
+                <p class="text-xs text-gray-500">STAT Cases</p>
                 <p class="text-sm font-semibold text-gray-800">Across all branches</p>
             </div>
         </a>
@@ -179,7 +180,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     return res.json();
                                 })
                                 .then(data => {
-                                    document.getElementById('emergency-count').innerText = data.emergencyCases;
+                                    document.getElementById('stat-count').innerText = data.emergencyCases;
                                     document.getElementById('pending-count').innerText = data.totalPending;
                                     document.getElementById('period-label').innerText = data.periodLabel;
 
@@ -246,7 +247,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 labels: <?= json_encode($labels) ?>,
                 datasets: [
                     {
-                        label: 'Emergency',
+                        label: 'STAT',
                         data: <?= json_encode($emergencyData) ?>,
                         backgroundColor: '#EF4444', // Red-500
                         borderRadius: 4,

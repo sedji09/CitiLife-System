@@ -9,8 +9,9 @@ $caseId = $_GET['id'] ?? 0;
 // Fetch case details (Backend logic)
 $caseDetails = $caseModel->getCaseById($caseId);
 
-if (!$caseDetails) {
-    echo "<div class='p-6 mt-10 text-center text-red-600 bg-red-50 rounded-lg'>Case not found or invalid ID.</div>";
+$radiologistId = $_SESSION['user_id'] ?? null;
+if (!$caseDetails || $caseDetails['radiologist_id'] != $radiologistId) {
+    echo "<div class='p-6 mt-10 text-center text-red-600 bg-red-50 rounded-lg border border-red-200 font-bold'>Case not found or unauthorized access. This case is assigned to another radiologist.</div>";
     exit;
 }
 
@@ -46,7 +47,7 @@ if (!empty($caseDetails['image_path'])) {
     <div class="flex items-center gap-2 mt-1">
         <?php
         $pColor = 'blue';
-        if ($caseDetails['priority'] === 'Emergency')
+        if ($caseDetails['priority'] === 'STAT')
             $pColor = 'red';
         if ($caseDetails['priority'] === 'Urgent')
             $pColor = 'orange';

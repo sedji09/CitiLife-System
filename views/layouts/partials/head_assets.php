@@ -506,7 +506,7 @@
       border-color: #6366f1 !important;
     }
 
-    /* Red / Emergency */
+    /* Red / STAT */
     body.theme-dark .bg-red-50 {
       background-color: rgba(239, 68, 68, 0.15) !important;
     }

@@ -72,13 +72,11 @@
                 class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
                 <option>Filter by Branch</option>
                 <option>All</option>
-                <option>Gapan</option>
-                <option>Bongabon</option>
-                <option>Peñaranda</option>
-                <option>General Tinio</option>
-                <option>Sto Domingo</option>
-                <option>San Antonio</option>
-                <option>Pantabangan</option>
+                <?php foreach ($allBranches as $branch): ?>
+                    <?php if ($branch['id'] != $_SESSION['branch_id']): ?>
+                        <option><?= htmlspecialchars($branch['name']) ?></option>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             </select>
             <select id="sort-date"
                 class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
@@ -210,13 +208,11 @@
                         <select id="search_request_branch"
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm">
                             <option value="" disabled selected>-- Select Branch --</option>
-                            <option value="Gapan">Gapan</option>
-                            <option value="Bongabon">Bongabon</option>
-                            <option value="Peñaranda">Peñaranda</option>
-                            <option value="General Tinio">General Tinio</option>
-                            <option value="Sto Domingo">Sto Domingo</option>
-                            <option value="San Antonio">San Antonio</option>
-                            <option value="Pantabangan">Pantabangan</option>
+                            <?php foreach ($allBranches as $branch): ?>
+                                <?php if ($branch['id'] != $_SESSION['branch_id']): ?>
+                                    <option value="<?= htmlspecialchars($branch['name']) ?>"><?= htmlspecialchars($branch['name']) ?></option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
