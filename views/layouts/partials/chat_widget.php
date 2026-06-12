@@ -1,4 +1,5 @@
 <!-- Global Chat Widget (Messenger Style) -->
+<div id="chat-widget-wrapper">
 <template v-if="role !== 'patient'">
 
   <!-- ── Visible Chat Windows (first 3) ──
@@ -8,21 +9,21 @@
     class="w-80 bg-white shadow-2xl rounded-t-xl border border-gray-200 flex flex-col transition-all duration-200">
     <!-- Header -->
     <div
-      class="flex items-center justify-between px-3 py-2 bg-blue-50 border-b border-blue-100 rounded-t-xl cursor-pointer select-none">
+      class="flex items-center justify-between px-3 py-2 bg-red-50 border-b border-red-100 rounded-t-xl cursor-pointer select-none">
       <div class="flex items-center gap-2 overflow-hidden">
         <div
-          class="h-8 w-8 rounded-full bg-blue-200 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden">
+          class="h-8 w-8 rounded-full bg-red-100 text-red-700 font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden">
           <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
           <span v-else>{{ chat.initials }}</span>
         </div>
         <div class="text-sm font-bold text-gray-800 truncate">{{ chat.name }}</div>
       </div>
-      <div class="flex items-center gap-0.5 text-blue-600">
-        <button @click.stop="toggleChatMinimize(chat)" class="p-1 hover:bg-blue-100 rounded transition"
+      <div class="flex items-center gap-0.5 text-red-600">
+        <button @click.stop="toggleChatMinimize(chat)" class="p-1 hover:bg-red-100 rounded transition"
           title="Minimize">
           <i data-lucide="minus" class="w-4 h-4"></i>
         </button>
-        <button @click.stop="closeChatWindow(chat)" class="p-1 hover:bg-blue-100 rounded transition" title="Close">
+        <button @click.stop="closeChatWindow(chat)" class="p-1 hover:bg-red-100 rounded transition" title="Close">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -33,7 +34,7 @@
 
       <!-- Loading -->
       <div v-if="chat.loading" class="flex-1 flex flex-col items-center justify-center gap-2">
-        <div class="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+        <div class="w-6 h-6 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
         <span class="text-xs text-gray-400">Loading...</span>
       </div>
 
@@ -44,47 +45,48 @@
         <div class="flex-1"></div>
 
         <!-- Conversation header (avatar + name + lock note) — always visible at top -->
-        <div class="flex flex-col items-center gap-2.5 text-center px-6 pt-6 pb-4">
-          <div class="h-16 w-16 rounded-full bg-blue-100 text-blue-700 font-bold text-xl flex items-center justify-center overflow-hidden shadow-md border border-gray-200">
+        <div class="flex flex-col items-center gap-4 text-center px-6 pt-6 pb-4">
+          <div
+            class="h-16 w-16 rounded-full bg-red-100 text-red-700 font-bold text-xl flex items-center justify-center overflow-hidden shadow-md border border-gray-200">
             <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
             <span v-else>{{ chat.initials }}</span>
           </div>
           <div>
             <div class="font-bold text-gray-900 text-sm leading-tight">{{ chat.name }}</div>
-            <div class="text-xs text-gray-400 mt-0.5 capitalize">{{ chat.role ? chat.role.replace(/_/g, ' ') : '' }}</div>
-          </div>
-          <div class="flex items-start gap-1.5 text-xs text-gray-400 max-w-[210px]">
-            <i data-lucide="lock" class="w-3 h-3 shrink-0 mt-0.5 text-gray-400"></i>
-            <span class="leading-relaxed text-left">Messages are private and only visible to staff members in this chat.</span>
+            <div class="text-xs text-gray-400 mt-0.5 capitalize">{{ chat.role ? chat.role.replace(/_/g, ' ') : '' }}
+            </div>
           </div>
         </div>
 
         <!-- Messages list -->
         <div class="flex flex-col gap-2 px-3 pb-3">
-          <div v-for="msg in chat.messages" :key="msg.id" class="flex w-full"
-            :class="msg.sender_id == userId ? 'justify-end' : 'justify-start'">
+          <div v-for="(msg, msgIndex) in chat.messages" :key="msg.id" class="flex w-full"
+            :class="[
+              msg.sender_id == userId ? 'justify-end' : 'justify-start',
+              (msgIndex === chat.messages.length - 1 || chat.messages[msgIndex + 1].sender_id !== msg.sender_id) ? 'mb-3' : ''
+            ]">
             <div class="flex flex-col max-w-[75%] gap-1" :class="msg.sender_id == userId ? 'items-end' : 'items-start'">
 
-            <!-- Attachment Rendering -->
-            <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
-              :src="'/<?= PROJECT_DIR ?>/' + msg.attachment"
-              class="rounded-xl max-w-full cursor-pointer shadow-sm border border-black/5"
-              style="max-height: 180px; object-fit: contain;">
-            <a v-else-if="msg.attachment" :href="'/<?= PROJECT_DIR ?>/' + msg.attachment" target="_blank"
-              class="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-xl text-sm hover:bg-gray-300 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-                <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
-              </svg>
-              View File
-            </a>
+              <!-- Attachment Rendering -->
+              <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
+                :src="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment"
+                class="rounded-xl max-w-full cursor-pointer shadow-sm border border-black/5"
+                style="max-height: 180px; object-fit: contain;">
+              <a v-else-if="msg.attachment" :href="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment" target="_blank"
+                class="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-xl text-sm hover:bg-gray-300 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                  <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
+                </svg>
+                View File
+              </a>
 
-            <!-- Text Message -->
-            <div v-if="msg.message" class="rounded-2xl px-3 py-1.5 text-[15px] break-words leading-snug"
-              :class="msg.sender_id == userId ? 'bg-blue-500 text-white rounded-br-[4px]' : 'bg-gray-100 text-gray-800 rounded-bl-[4px]'">
-              {{ msg.message }}
-            </div>
+              <!-- Text Message -->
+              <div v-if="msg.message" class="rounded-2xl px-3 py-1.5 text-[15px] break-words leading-snug"
+                :class="msg.sender_id == userId ? 'bg-red-600 text-white rounded-br-[4px]' : 'bg-gray-100 text-gray-800 rounded-bl-[4px]'">
+                {{ msg.message }}
+              </div>
 
             </div>
           </div>
@@ -112,16 +114,21 @@
         <!-- Attachment Button -->
         <div class="relative group">
           <button @click="triggerChatAttachment(chat.id)"
-            class="text-blue-500 hover:bg-blue-50 p-1.5 rounded-full transition flex-shrink-0" :disabled="chat.sending">
+            class="text-red-600 hover:bg-red-50 p-1.5 rounded-full transition flex-shrink-0" :disabled="chat.sending">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
               stroke="none">
               <path
                 d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
             </svg>
           </button>
+          <!-- Tooltip with downward arrow -->
           <div
-            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-3 py-1.5 text-white text-[13px] font-medium rounded-[8px] shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"
-            style="background-color: #333333;">Attach a file up to 25 MB</div>
+            class="absolute bottom-full left-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50 flex flex-col items-start">
+            <div class="px-3 py-1.5 text-white text-[13px] font-medium rounded-lg shadow-lg whitespace-nowrap"
+              style="background-color: #1a1a1a;">Attach a file up to 25 MB</div>
+            <!-- Arrow pointing down (aligned to button center ~10px from left) -->
+            <div style="margin-left:10px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #1a1a1a;"></div>
+          </div>
         </div>
         <input type="file" :ref="'chatAttachment_' + chat.id" class="hidden" accept="image/*,.pdf,.doc,.docx"
           @change="handleChatAttachment(chat, $event)">
@@ -129,7 +136,7 @@
         <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" placeholder="Aa"
           class="flex-1 bg-gray-100 rounded-full px-3 py-1.5 text-[15px] focus:outline-none border-0"
           style="pointer-events: auto !important; position: relative; z-index: 51;">
-        <button @click="sendMessage(chat)" class="text-blue-500 hover:text-blue-700 p-1 transition flex-shrink-0"
+        <button @click="sendMessage(chat)" class="text-red-600 hover:text-red-700 p-1 transition flex-shrink-0"
           :disabled="(!chat.newMessage && !chat.selectedAttachment) || chat.sending">
           <i data-lucide="send" class="w-5 h-5"
             :class="(chat.newMessage || chat.selectedAttachment) ? '' : 'opacity-50'"></i>
@@ -166,7 +173,7 @@
 
       <!-- Bubble -->
       <div @click="bringChatToFront(chat)"
-        class="w-full h-full rounded-full bg-blue-200 text-blue-700 font-bold text-lg flex items-center justify-center transition-transform duration-150 hover:scale-105 shadow-xl border border-gray-200 cursor-pointer overflow-hidden">
+        class="w-full h-full rounded-full bg-red-100 text-red-700 font-bold text-lg flex items-center justify-center transition-transform duration-150 hover:scale-105 shadow-xl border border-gray-200 cursor-pointer overflow-hidden">
         <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
         <span v-else>{{ chat.initials }}</span>
       </div>
@@ -193,16 +200,17 @@
     </div>
 
     <!-- Grouped '+N' Bubble — only shows when more than 5 bubbles exist -->
-    <div v-if="bubbleChats.length > 5"
-      class="relative flex items-center justify-end"
+    <div v-if="bubbleChats.length > 5" class="relative flex items-center justify-end"
       style="width: 56px; height: 56px;">
 
       <!-- Toggle button (separate from dropdown so clicks don't conflict) -->
       <div class="relative cursor-pointer w-full h-full" @click.stop="isGroupMenuOpen = !isGroupMenuOpen">
-        <div class="w-full h-full rounded-full overflow-hidden shadow-xl border border-gray-200 relative flex items-center justify-center transition-transform duration-150 hover:scale-105"
-          :class="isGroupMenuOpen ? 'ring-[3px] ring-gray-600 ring-offset-2' : ''">
+        <div
+          class="w-full h-full rounded-full overflow-hidden shadow-xl border border-gray-200 relative flex items-center justify-center transition-transform duration-150 hover:scale-105"
+          :class="isGroupMenuOpen ? 'ring-[3px] ring-red-600 ring-offset-2' : ''">
           <img v-if="bubbleChats[5].avatar" :src="bubbleChats[5].avatar" class="w-full h-full object-cover">
-          <div v-else class="w-full h-full bg-gray-700 text-white font-bold text-lg flex items-center justify-center">{{ bubbleChats[5].initials }}</div>
+          <div v-else class="w-full h-full bg-gray-700 text-white font-bold text-lg flex items-center justify-center">{{
+            bubbleChats[5].initials }}</div>
           <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span class="text-white font-bold text-lg">+{{ bubbleChats.length - 5 }}</span>
           </div>
@@ -210,8 +218,7 @@
       </div>
 
       <!-- Dropdown — OUTSIDE the toggle div so clicks don't bubble to toggle -->
-      <div v-show="isGroupMenuOpen"
-        class="absolute flex items-center"
+      <div v-show="isGroupMenuOpen" class="absolute flex items-center"
         style="right: 64px; top: 50%; transform: translateY(-50%); z-index: 9999; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.18));"
         @click.stop>
         <div class="bg-white rounded-xl p-2 flex flex-col shadow-lg" style="min-width: 240px; max-width: 300px;">
@@ -232,7 +239,9 @@
           </template>
         </div>
         <!-- Tooltip arrow pointing right -->
-        <div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 6px solid white;"></div>
+        <div
+          style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 6px solid white;">
+        </div>
       </div>
     </div>
 
@@ -263,7 +272,7 @@
         <div v-for="staff in staffSearchResults" :key="staff.id" @click="startNewChat(staff)"
           class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer rounded-lg transition">
           <div
-            class="h-10 w-10 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm flex items-center justify-center shrink-0 overflow-hidden">
+            class="h-10 w-10 rounded-full bg-red-100 text-red-700 font-semibold text-sm flex items-center justify-center shrink-0 overflow-hidden">
             <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover">
             <span v-else>{{ staff.initials }}</span>
           </div>
@@ -276,4 +285,5 @@
       <div v-else class="text-center py-4 text-sm text-gray-400">No staff found.</div>
     </div>
   </div>
+</div>
 </div>

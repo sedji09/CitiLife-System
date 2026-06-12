@@ -205,6 +205,42 @@
             if (this.role !== 'patient') {
                 this.pollMessages();
                 setInterval(() => this.pollMessages(), 3000); // 3s message polling
+
+                // ── Restore active chat windows from last session ──
+                try {
+                    const saved = JSON.parse(localStorage.getItem('citilife_active_chats') || '[]');
+                    if (Array.isArray(saved) && saved.length > 0) {
+                        saved.forEach(meta => {
+                            this.activeChats.push({
+                                ...meta,
+                                messages: [],
+                                newMessage: '',
+                                loading: true,
+                                sending: false,
+                                unreadCount: 0,
+                                selectedAttachment: null,
+                                attachmentPreview: null
+                            });
+                            // Fetch messages for restored chat
+                            fetch('/' + '<?= PROJECT_DIR ?>' + '/app/api/messages.php?action=fetch_chat&contact_id=' + meta.id)
+                                .then(r => r.json())
+                                .then(data => {
+                                    const chat = this.activeChats.find(c => c.id == meta.id);
+                                    if (chat && data.success) {
+                                        chat.messages = data.messages;
+                                        chat.loading = false;
+                                        nextTick(() => {
+                                            const body = this.$refs['chatBody_' + chat.id];
+                                            if (body && body[0]) body[0].scrollTop = body[0].scrollHeight;
+                                        });
+                                    }
+                                }).catch(() => {
+                                    const chat = this.activeChats.find(c => c.id == meta.id);
+                                    if (chat) chat.loading = false;
+                                });
+                        });
+                    }
+                } catch(e) { console.warn('Could not restore chats:', e); }
             }
 
             // Close profile menu and notifications when clicking outside
@@ -391,6 +427,7 @@
                         }).catch(err => console.error(err));
                 }
                 this.chatMenuOpen = false;
+                this.saveActiveChats();
             },
             triggerChatAttachment(chatId) {
                 const fileInput = this.$refs['chatAttachment_' + chatId];
@@ -447,9 +484,24 @@
             },
             closeChatWindow(chat) {
                 this.activeChats = this.activeChats.filter(c => c.id != chat.id);
+                this.saveActiveChats();
             },
             toggleChatMinimize(chat) {
                 chat.minimized = !chat.minimized;
+                this.saveActiveChats();
+            },
+            saveActiveChats() {
+                try {
+                    const toSave = this.activeChats.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        initials: c.initials,
+                        avatar: c.avatar,
+                        role: c.role,
+                        minimized: c.minimized
+                    }));
+                    localStorage.setItem('citilife_active_chats', JSON.stringify(toSave));
+                } catch(e) { console.warn('Could not save chats:', e); }
             },
             sendMessage(chat) {
                 if ((!chat.newMessage.trim() && !chat.selectedAttachment) || chat.sending) return;
