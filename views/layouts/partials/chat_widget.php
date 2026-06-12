@@ -70,8 +70,9 @@
               <!-- Attachment Rendering -->
               <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
                 :src="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment"
-                class="rounded-xl max-w-full cursor-pointer shadow-sm border border-black/5"
-                style="max-height: 180px; object-fit: contain;">
+                class="rounded-xl max-w-full cursor-pointer shadow-sm border border-black/5 hover:opacity-90 transition-opacity"
+                style="max-height: 180px; object-fit: contain;"
+                @click="openLightbox(chat, msg)">
               <a v-else-if="msg.attachment" :href="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment" target="_blank"
                 class="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-xl text-sm hover:bg-gray-300 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -94,12 +95,17 @@
       </div>
 
       <!-- Attachment Preview Area -->
-      <div v-if="chat.attachmentPreview"
-        class="px-3 pt-2 pb-1 border-t border-gray-100 bg-white flex items-center relative shrink-0">
-        <div class="relative inline-block">
-          <img :src="chat.attachmentPreview" class="h-16 w-16 object-cover rounded-lg border border-gray-200 shadow-sm">
-          <button @click="removeChatAttachment(chat)"
-            class="absolute -top-1.5 -right-1.5 bg-gray-800 hover:bg-black text-white rounded-full p-0.5 shadow-md border border-white">
+      <div v-if="chat.attachmentPreviews && chat.attachmentPreviews.length > 0"
+        class="px-3 pt-2 pb-1 border-t border-gray-100 bg-white flex flex-wrap items-center gap-2 relative shrink-0">
+        <div v-for="(preview, idx) in chat.attachmentPreviews" :key="idx" class="relative inline-block">
+          <img v-if="preview.isImage" :src="preview.url" class="h-16 w-16 object-cover rounded-lg border border-gray-200 shadow-sm">
+          <div v-else class="h-16 w-16 bg-gray-100 rounded-lg border border-gray-200 shadow-sm flex flex-col items-center justify-center text-[10px] text-gray-500 overflow-hidden px-1 text-center" :title="preview.name">
+             <i data-lucide="file" class="w-6 h-6 mb-1 text-gray-400"></i>
+             <span class="truncate w-full">{{ preview.name }}</span>
+          </div>
+          <button @click="removeChatAttachment(chat, idx)"
+            class="absolute bg-gray-800 hover:bg-black text-white rounded-full p-0.5 shadow-md border border-white z-10"
+            style="top: 4px; right: 4px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -130,16 +136,16 @@
             <div style="margin-left:10px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #1a1a1a;"></div>
           </div>
         </div>
-        <input type="file" :ref="'chatAttachment_' + chat.id" class="hidden" accept="image/*,.pdf,.doc,.docx"
+        <input type="file" :ref="'chatAttachment_' + chat.id" class="hidden" accept="image/*,.pdf,.doc,.docx" multiple
           @change="handleChatAttachment(chat, $event)">
 
         <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" placeholder="Aa"
           class="flex-1 bg-gray-100 rounded-full px-3 py-1.5 text-[15px] focus:outline-none border-0"
           style="pointer-events: auto !important; position: relative; z-index: 51;">
         <button @click="sendMessage(chat)" class="text-red-600 hover:text-red-700 p-1 transition flex-shrink-0"
-          :disabled="(!chat.newMessage && !chat.selectedAttachment) || chat.sending">
+          :disabled="(!chat.newMessage && (!chat.selectedAttachments || chat.selectedAttachments.length === 0)) || chat.sending">
           <i data-lucide="send" class="w-5 h-5"
-            :class="(chat.newMessage || chat.selectedAttachment) ? '' : 'opacity-50'"></i>
+            :class="(chat.newMessage || (chat.selectedAttachments && chat.selectedAttachments.length > 0)) ? '' : 'opacity-50'"></i>
         </button>
       </div>
     </div>
@@ -284,6 +290,64 @@
       </template>
       <div v-else class="text-center py-4 text-sm text-gray-400">No staff found.</div>
     </div>
+  </div>
+</div>
+
+<!-- ── Image Lightbox Gallery ── -->
+<div v-if="lightboxOpen && lightboxImages.length > 0" 
+  class="fixed inset-0 z-[9999] flex flex-col items-center justify-center select-none"
+  style="background-color: rgba(30, 30, 30, 0.98);">
+  
+  <!-- Top Right Actions -->
+  <div class="absolute top-4 right-4 flex items-center gap-4 z-10">
+    <!-- Download Button -->
+    <a :href="lightboxImages[lightboxIndex]" download target="_blank"
+      class="text-white hover:opacity-100 opacity-80 transition p-2 bg-black/40 hover:bg-black/60 rounded-full" title="Download">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    </a>
+    <!-- Close Button -->
+    <button @click.stop="lightboxOpen = false" 
+      class="text-white opacity-80 hover:opacity-100 transition p-2 bg-black/40 hover:bg-black/60 rounded-full" title="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Main Image Container -->
+  <div class="flex-1 w-full flex items-center justify-center relative overflow-hidden px-16 py-8">
+    <!-- Prev Button -->
+    <button v-if="lightboxImages.length > 1" @click.stop="prevLightboxImage()" 
+      class="absolute left-4 text-white opacity-60 hover:opacity-100 transition p-3 bg-black/20 hover:bg-black/50 rounded-full">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    
+    <!-- Image -->
+    <img :src="lightboxImages[lightboxIndex]" 
+      class="max-w-full max-h-full object-contain drop-shadow-2xl transition-transform duration-200">
+      
+    <!-- Next Button -->
+    <button v-if="lightboxImages.length > 1" @click.stop="nextLightboxImage()" 
+      class="absolute right-4 text-white opacity-60 hover:opacity-100 transition p-3 bg-black/20 hover:bg-black/50 rounded-full">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Thumbnails Row -->
+  <div v-if="lightboxImages.length > 1" class="h-24 w-full bg-black/40 flex items-center justify-center gap-2 px-4 py-2 overflow-x-auto flex-shrink-0" style="scrollbar-width: thin;">
+    <img v-for="(img, idx) in lightboxImages" :key="'thumb_' + idx" :src="img"
+      @click.stop="lightboxIndex = idx"
+      class="h-16 w-16 object-cover rounded cursor-pointer transition-all duration-200 flex-shrink-0"
+      :class="idx === lightboxIndex ? 'ring-2 ring-white opacity-100 scale-105' : 'opacity-50 hover:opacity-80'">
   </div>
 </div>
 </div>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * CaseModel.php
  * Handles all database interactions related to cases.

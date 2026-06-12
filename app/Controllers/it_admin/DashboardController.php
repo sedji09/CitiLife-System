@@ -61,4 +61,3 @@ $recentLogs = $pdo->query("
     ORDER BY al.created_at DESC 
     LIMIT 5
 ")->fetchAll(PDO::FETCH_ASSOC);
-?>

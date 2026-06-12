@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * DashboardController.php
  * Handles the Admin Central dashboard metrics and charts.

@@ -111,6 +111,10 @@
               isSearchingStaff: false,
               activeChats: [],
               isGroupMenuOpen: false,
+              // Lightbox state
+              lightboxOpen: false,
+              lightboxImages: [],
+              lightboxIndex: 0,
             };
           },
           computed: {
@@ -218,8 +222,8 @@
                                 loading: true,
                                 sending: false,
                                 unreadCount: 0,
-                                selectedAttachment: null,
-                                attachmentPreview: null
+                                selectedAttachments: [],
+                                attachmentPreviews: []
                             });
                             // Fetch messages for restored chat
                             fetch('/' + '<?= PROJECT_DIR ?>' + '/app/api/messages.php?action=fetch_chat&contact_id=' + meta.id)
@@ -275,6 +279,11 @@
                 this.mobileProfileMenuOpen = false;
                 this.notificationMenuOpen = false;
                 this.settingsModalOpen = false;
+                this.lightboxOpen = false;
+              }
+              if (this.lightboxOpen) {
+                if (e.key === "ArrowRight") this.nextLightboxImage();
+                if (e.key === "ArrowLeft") this.prevLightboxImage();
               }
             });
 
@@ -288,6 +297,22 @@
             nextTick(() => this.renderIcons());
           },
           methods: {
+            openLightbox(chat, clickedMsg) {
+                // Get all image messages from the chat
+                const images = chat.messages.filter(m => m.attachment && m.attachment.match(/\.(jpeg|jpg|gif|png)$/i));
+                this.lightboxImages = images.map(m => '/' + '<?= PROJECT_DIR ?>' + '/' + m.attachment);
+                this.lightboxIndex = images.findIndex(m => m.id === clickedMsg.id);
+                if (this.lightboxIndex === -1) this.lightboxIndex = 0;
+                this.lightboxOpen = true;
+            },
+            nextLightboxImage() {
+                if (this.lightboxImages.length === 0) return;
+                this.lightboxIndex = (this.lightboxIndex + 1) % this.lightboxImages.length;
+            },
+            prevLightboxImage() {
+                if (this.lightboxImages.length === 0) return;
+                this.lightboxIndex = (this.lightboxIndex - 1 + this.lightboxImages.length) % this.lightboxImages.length;
+            },
             toggleChatMenu() {
                 this.chatMenuOpen = !this.chatMenuOpen;
                 if (this.chatMenuOpen) {
@@ -406,8 +431,8 @@
                         loading: true,
                         sending: false,
                         unreadCount: 0,
-                        selectedAttachment: null,
-                        attachmentPreview: null
+                        selectedAttachments: [],
+                        attachmentPreviews: []
                     });
                     
                     fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + conv.id)
@@ -436,25 +461,47 @@
                 }
             },
             handleChatAttachment(chat, event) {
-                const file = event.target.files[0];
-                if (file) {
-                    // Check file size (max 25MB)
-                    if (file.size > 25 * 1024 * 1024) {
-                        alert("File exceeds 25MB limit.");
+                const files = Array.from(event.target.files);
+                if (files.length > 0) {
+                    if (!chat.selectedAttachments) chat.selectedAttachments = [];
+                    if (!chat.attachmentPreviews) chat.attachmentPreviews = [];
+                    
+                    let currentTotalSize = chat.selectedAttachments.reduce((sum, f) => sum + f.size, 0);
+                    let newFilesSize = files.reduce((sum, f) => sum + f.size, 0);
+                    
+                    if (currentTotalSize + newFilesSize > 25 * 1024 * 1024) {
+                        alert("Total file size exceeds 25MB limit.");
                         return;
                     }
-                    chat.selectedAttachment = file;
-                    // Create preview
-                    const reader = new window.FileReader();
-                    reader.onload = e => {
-                        chat.attachmentPreview = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                    
+                    files.forEach(file => {
+                        chat.selectedAttachments.push(file);
+                        
+                        // Create preview
+                        if (file.type.startsWith('image/')) {
+                            const reader = new window.FileReader();
+                            reader.onload = e => {
+                                chat.attachmentPreviews.push({ name: file.name, url: e.target.result, isImage: true });
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            chat.attachmentPreviews.push({ name: file.name, url: null, isImage: false });
+                        }
+                    });
+                    
+                    // Reset input so same files can be selected again if needed
+                    event.target.value = '';
                 }
             },
-            removeChatAttachment(chat) {
-                chat.selectedAttachment = null;
-                chat.attachmentPreview = null;
+            removeChatAttachment(chat, index) {
+                if (chat.selectedAttachments && chat.selectedAttachments.length > index) {
+                    chat.selectedAttachments.splice(index, 1);
+                    chat.attachmentPreviews.splice(index, 1);
+                }
+            },
+            removeAllChatAttachments(chat) {
+                chat.selectedAttachments = [];
+                chat.attachmentPreviews = [];
                 const fileInput = this.$refs['chatAttachment_' + chat.id];
                 if (fileInput && fileInput[0]) {
                     fileInput[0].value = ''; // Reset input
@@ -504,40 +551,56 @@
                 } catch(e) { console.warn('Could not save chats:', e); }
             },
             sendMessage(chat) {
-                if ((!chat.newMessage.trim() && !chat.selectedAttachment) || chat.sending) return;
+                const hasAttachments = chat.selectedAttachments && chat.selectedAttachments.length > 0;
+                if ((!chat.newMessage.trim() && !hasAttachments) || chat.sending) return;
                 chat.sending = true;
                 
-                const formData = new window.FormData();
-                formData.append('action', 'send_message');
-                formData.append('contact_id', chat.id);
-                formData.append('message', chat.newMessage);
-                if (chat.selectedAttachment) {
-                    formData.append('attachment', chat.selectedAttachment);
-                }
+                const messageText = chat.newMessage;
+                const files = hasAttachments ? chat.selectedAttachments : [null];
                 
-                fetch('/<?= PROJECT_DIR ?>/app/api/messages.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    chat.sending = false;
-                    if (data.success) {
-                        chat.messages.push(data.message);
-                        chat.newMessage = '';
-                        this.removeChatAttachment(chat);
-                        nextTick(() => {
-                            const body = this.$refs['chatBody_' + chat.id];
-                            if (body && body[0]) {
-                                body[0].scrollTop = body[0].scrollHeight;
-                            }
-                        });
-                        this.pollMessages(); // update convos
-                    } else {
-                        alert(data.error || 'Failed to send message.');
+                const sendPromises = files.map((file, index) => {
+                    const formData = new window.FormData();
+                    formData.append('action', 'send_message');
+                    formData.append('contact_id', chat.id);
+                    // Only attach the text message to the first request
+                    formData.append('message', index === 0 ? messageText : '');
+                    if (file) {
+                        formData.append('attachment', file);
                     }
-                })
-                .catch(err => {
+                    
+                    return fetch('/<?= PROJECT_DIR ?>/app/api/messages.php', {
+                        method: 'POST',
+                        body: formData
+                    }).then(res => res.json());
+                });
+
+                Promise.all(sendPromises).then(results => {
+                    chat.sending = false;
+                    let hasError = false;
+                    
+                    results.forEach(data => {
+                        if (data.success) {
+                            chat.messages.push(data.message);
+                        } else {
+                            hasError = true;
+                            console.error(data.error);
+                        }
+                    });
+                    
+                    if (hasError) {
+                        alert('Some messages/attachments failed to send.');
+                    }
+                    
+                    chat.newMessage = '';
+                    this.removeAllChatAttachments(chat);
+                    nextTick(() => {
+                        const body = this.$refs['chatBody_' + chat.id];
+                        if (body && body[0]) {
+                            body[0].scrollTop = body[0].scrollHeight;
+                        }
+                    });
+                    this.pollMessages();
+                }).catch(err => {
                     chat.sending = false;
                     console.error(err);
                 });

@@ -55,4 +55,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 header('Location: /' . PROJECT_DIR . '/index.php?role=radtech&page=patient-approval');
 exit;
-?>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * ReportsController.php
  * Handles report generation and exporting for Branch Administrators.
