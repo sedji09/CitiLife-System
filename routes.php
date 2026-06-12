@@ -37,7 +37,9 @@ $router->get('/reset-password.php', 'App\Controllers\AuthController@resetPasswor
 $router->post('/reset-password.php', 'App\Controllers\AuthController@resetPassword', []);
 
 $router->get('/verify', 'App\Controllers\AuthController@verify', ['guest']);
+$router->post('/verify', 'App\Controllers\AuthController@verify', ['guest']);
 $router->get('/verify.php', 'App\Controllers\AuthController@verify', ['guest']);
+$router->post('/verify.php', 'App\Controllers\AuthController@verify', ['guest']);
 
 $router->get('/otp-login', 'App\Controllers\AuthController@otpLogin', ['guest']);
 $router->post('/otp-login', 'App\Controllers\AuthController@otpLogin', ['guest']);

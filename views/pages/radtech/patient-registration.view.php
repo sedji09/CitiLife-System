@@ -60,7 +60,7 @@
             <div id="new-patient-section">
                 <fieldset class="space-y-4">
                     <legend class="text-lg font-medium text-gray-900 mb-2">Patient Information</legend>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div>
                             <label for="first-name" class="block text-sm font-medium text-gray-700 mb-2">First Name
                                 <span class="text-red-500">*</span></label>
@@ -68,11 +68,18 @@
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
+                            <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                            <input type="text" id="middle-name" name="middle-name"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                        <div>
                             <label for="last-name" class="block text-sm font-medium text-gray-700 mb-2">Last Name <span
                                     class="text-red-500">*</span></label>
                             <input type="text" id="last-name" name="last-name"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                         <div>
                             <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-2">Birthdate <span
                                     class="text-red-500">*</span></label>
@@ -97,6 +104,11 @@
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email" id="email" name="email" placeholder="patient@example.com"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                        <div class="sm:col-span-2">
                             <label for="home_address" class="block text-sm font-medium text-gray-700 mb-2">Home Address</label>
                             <input type="text" id="home_address" name="home_address" placeholder="123 Main St, Brgy, City"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">

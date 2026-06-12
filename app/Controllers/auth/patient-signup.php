@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -45,7 +45,9 @@ try {
     // Ignore error
 }
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $patientNumber = trim($_POST['patient_number'] ?? '');
     $firstName = trim($_POST['first_name'] ?? '');
     $lastName = trim($_POST['last_name'] ?? '');
     $birthdate = trim($_POST['birthdate'] ?? '');
@@ -53,100 +55,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contactNumber = trim($_POST['contact_number'] ?? '');
     $homeAddress = trim($_POST['home_address'] ?? '');
     $branchId = $_POST['branch_id'] ?? '';
-    if ($branchId === '')
-        $branchId = null;
+    if ($branchId === '') $branchId = null;
 
     $email = trim($_POST['email'] ?? '');
-    // SANITATION using filter_var();
     $email = filter_var($email, FILTER_SANITIZE_EMAIL);
 
-    $password = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
-
-    // VALIDATION using preg_match();
     $namePattern = "/^[a-zA-Z\s]+$/";
     $isNameValid = preg_match($namePattern, $firstName) && preg_match($namePattern, $lastName);
-
-    // VALIDATION using filter_var();
     $isEmailValid = filter_var($email, FILTER_VALIDATE_EMAIL);
-
-    // VALIDATION for contact number
     $contactPattern = "/^09\d{9}$/";
-    $isContactValid = preg_match($contactPattern, $contactNumber);
+    $isContactValid = empty($contactNumber) ? true : preg_match($contactPattern, $contactNumber);
 
-    if (empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($password) || empty($branchId)) {
+    if (empty($patientNumber) || empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($branchId)) {
         $error = 'Please fill out all required fields.';
     } elseif (!$isNameValid) {
         $error = 'Invalid Name. Please use letters only.';
-    } elseif (!$isContactValid) {
+    } elseif (!empty($contactNumber) && !$isContactValid) {
         $error = 'Invalid Contact Number. It must be 11 digits and start with 09.';
     } elseif (!$isEmailValid) {
         $error = 'Invalid Email format.';
-    } elseif ($password !== $confirmPassword) {
-        $error = 'Passwords do not match.';
     } else {
-        // Check if email already exists
-        $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
-        $stmt->execute(['email' => $email]);
-        if ($stmt->fetch()) {
-            $error = 'Email is already registered. Please log in.';
-        } else {
-            try {
-                $pdo->beginTransaction();
+        try {
+            $pdo->beginTransaction();
 
-                // Generate patient number
-                require_once basePath('app/Helpers/patient_helper.php');
-                $patientNumber = generatePatientNumber($pdo, $branchId);
+            $stmt = $pdo->prepare("
+                SELECT id FROM patients 
+                WHERE LOWER(patient_number) = LOWER(?) 
+                  AND LOWER(TRIM(first_name)) = LOWER(TRIM(?))
+                  AND LOWER(TRIM(last_name)) = LOWER(TRIM(?))
+                  AND birthdate = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate]);
+            $patient = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                // Insert into patients table
-                $stmt = $pdo->prepare("INSERT INTO patients (patient_number, first_name, last_name, birthdate, sex, contact_number, home_address, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate, $sex, $contactNumber, $homeAddress, $branchId]);
-                $patientId = $pdo->lastInsertId();
+            if (!$patient) {
+                $error = 'We could not find a matching patient record. Please check your Patient ID and details.';
+            } else {
+                $patientId = $patient['id'];
+                
+                $stmtUser = $pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
+                $stmtUser->execute([$patientId]);
+                if ($stmtUser->fetch()) {
+                    $error = 'This patient record is already linked to an active account. Please log in.';
+                } else {
+                    $updateStmt = $pdo->prepare("UPDATE patients SET sex = ?, contact_number = ?, home_address = ?, branch_id = ? WHERE id = ?");
+                    $updateStmt->execute([$sex, $contactNumber, $homeAddress, $branchId, $patientId]);
 
-                // Generate verification token
-                $verificationToken = bin2hex(random_bytes(32));
+                    $pdo->prepare("DELETE FROM account_verifications WHERE patient_id = ?")->execute([$patientId]);
 
-                // Insert into users table
-                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status, patient_id, is_email_verified, verification_token) VALUES (?, ?, 'patient', 'Pending', ?, 0, ?)");
-                $stmt->execute([$email, $hashedPassword, $patientId, $verificationToken]);
+                    $verificationToken = bin2hex(random_bytes(32));
+                    $insertStmt = $pdo->prepare("
+                        INSERT INTO account_verifications (token, patient_id, email, expires_at) 
+                        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
+                    ");
+                    $insertStmt->execute([$verificationToken, $patientId, $email]);
 
-                // Notify Branch Admin
-                $notifTitle = "New Patient Registration";
-                $notifMsg = "Patient " . $firstName . " " . $lastName . " has registered a new account.";
-                $notifStmt = $pdo->prepare("INSERT INTO notifications (role, branch_id, title, message, link) VALUES ('branch_admin', ?, ?, ?, '/" . PROJECT_DIR . "/patients')");
-                $notifStmt->execute([$branchId, $notifTitle, $notifMsg]);
+                    require_once basePath('app/Helpers/mailer_helper.php');
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                    $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
 
-                // Send Verification Email
-                require_once basePath('app/Helpers/mailer_helper.php');
-                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-                $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
-
-                $emailBody = "
-                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                        <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
-                        <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
-                        <p style='color: #4b5563; font-size: 16px;'>Thank you for registering. Please click the button below to verify your email address. This is required before you can log in to your account.</p>
-                        <div style='text-align: center; margin: 30px 0;'>
-                            <a href='{$verifyLink}' style='display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;'>Verify Email Address</a>
+                    $emailBody = "
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
+                            <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
+                            <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
+                            <p style='color: #4b5563; font-size: 16px;'>Thank you for registering. Please click the button below to verify your email address. You will be able to create your password and access your records afterwards.</p>
+                            <div style='text-align: center; margin: 30px 0;'>
+                                <a href='{$verifyLink}' style='display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;'>Verify Email Address</a>
+                            </div>
+                            <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, copy and paste this link into your browser:<br><a href='{$verifyLink}' style='color: #2563eb;'>{$verifyLink}</a></p>
                         </div>
-                        <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, you can copy and paste this link into your browser:<br><a href='{$verifyLink}' style='color: #2563eb;'>{$verifyLink}</a></p>
-                        <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
-                        <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
-                    </div>
-                ";
-                sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
+                    ";
+                    sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
 
-                $pdo->commit();
-                $success = 'Registration successful! Please check your email to verify your account.';
-            } catch (Exception $e) {
-                $pdo->rollBack();
-                $error = 'An error occurred during registration: ' . $e->getMessage();
+                    $pdo->commit();
+                    $success = 'We found your record! Please check your email for the verification link to create your password.';
+                }
             }
+            if (!empty($error) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $error = 'An error occurred: ' . $e->getMessage();
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -286,6 +284,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="hidden" name="form_type" value="desktop">
 
                     <div class="grid grid-cols-2 gap-y-6 gap-x-4">
+                        
+                    <!-- Patient ID -->
+                    <div class="col-span-2">
+                        <label for="d_patient_number" class="block text-sm font-semibold text-gray-700 mb-1">Patient ID *</label>
+                        <input id="d_patient_number" name="patient_number" type="text" required
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            placeholder="e.g. PAT-GAP-2026-001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
+                        <p class="text-xs text-gray-500 mt-1">Found on your clinic receipt or given by staff.</p>
+                    </div>
+
                         <!-- First Name -->
                         <div>
                             <label for="d_first_name" class="block text-sm font-semibold text-gray-700 mb-1">First Name
@@ -389,117 +397,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 placeholder="you@example.com" value="<?= htmlspecialchars($email ?? '') ?>">
                         </div>
 
-                        <!-- Password -->
-                        <div>
-                            <label for="d_password" class="block text-sm font-semibold text-gray-700 mb-1">Password
-                                *</label>
-                            <div class="relative">
-                                <input id="d_password" name="password" type="password" required autocomplete="new-password"
-                                    class="pr-10 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <button type="button" onclick="togglePassword('d_password', this)" tabindex="-1"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- DESKTOP CHECKER -->
-                            <div class="mt-2 text-left bg-gray-50 rounded-lg p-3 border border-gray-100 hidden"
-                                id="d_pw_checker">
-                                <div class="flex justify-between items-center mb-1.5">
-                                    <span class="text-xs font-semibold text-gray-500">Password Strength:</span>
-                                    <span class="text-xs font-bold pw-label text-red-500">Weak</span>
-                                </div>
-                                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-3">
-                                    <div class="h-full bg-red-500 transition-all duration-300 pw-bar" style="width: 0%">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs font-medium text-gray-600">
-                                    <div class="flex items-center gap-1.5 pw-req-length text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>8+ characters</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 pw-req-upper text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Uppercase letter</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 pw-req-number text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>At least one number</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 pw-req-special text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Special Character</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-
-                        <!-- Confirm Password -->
-                        <div>
-                            <label for="d_confirm_password" class="block text-sm font-semibold text-gray-700 mb-1">Confirm
-                                Password *</label>
-                            <div class="relative">
-                                <input id="d_confirm_password" name="confirm_password" type="password" required
-                                    autocomplete="new-password"
-                                    class="pr-10 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <button type="button" onclick="togglePassword('d_confirm_password', this)" tabindex="-1"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <p id="d_match_indicator" class="mt-1.5 text-xs font-semibold hidden"></p>
-                        </div>
-                    </div>
 
                     <div class="pt-4">
                         <button type="submit"
                             class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                            Create Account
+                            Verify Identity
                         </button>
                     </div>
 
@@ -556,6 +459,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="step active" id="step1">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight mt-2">What's your name?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter the name</p>
+
+                            
+                            <div class="relative mb-4 mt-2">
+                                <input type="text" id="m_patient_number" name="patient_number" required
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-3 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                    placeholder=" " value="<?= htmlspecialchars($patientNumber ?? '') ?>" />
+                                <label for="m_patient_number"
+                                    class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Patient ID (e.g. PAT-GAP-2026-001)</label>
+                            </div>
 
                             <div class="grid grid-cols-2 gap-3 mb-6">
                                 <div class="relative">
@@ -716,8 +628,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Step 7: Account Details -->
                         <div class="step" id="step7">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Set up your account</h2>
-                            <p class="text-[15px] text-gray-800 mb-6">Create a password to securely log in to your portal.
-                            </p>
+                            
 
                             <div class="space-y-4 mb-6">
                                 <div class="relative">
@@ -728,110 +639,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Email
                                         Address</label>
                                 </div>
-                                <div class="relative">
-                                    <input type="password" id="m_password" name="password" required
-                                        autocomplete="new-password"
-                                        class="peer pr-12 block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
-                                        placeholder=" " />
-                                    <label for="m_password"
-                                        class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Password</label>
-                                    <button type="button" onclick="togglePassword('m_password', this)" tabindex="-1"
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <!-- MOBILE CHECKER -->
-                                <div class="text-left bg-gray-50 rounded-lg p-3 border border-gray-100 hidden relative -mt-3"
-                                    id="m_pw_checker">
-                                    <div class="flex justify-between items-center mb-1.5">
-                                        <span class="text-xs font-semibold text-gray-500">Password Strength:</span>
-                                        <span class="text-xs font-bold pw-label text-red-500">Weak</span>
-                                    </div>
-                                    <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-3">
-                                        <div class="h-full bg-red-500 transition-all duration-300 pw-bar" style="width: 0%">
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[13px] font-medium text-gray-600">
-                                        <div class="flex items-center gap-1.5 pw-req-length text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>8+ characters</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 pw-req-upper text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>Uppercase letter</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 pw-req-number text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>At least one number</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 pw-req-special text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>Special Character</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <input type="password" id="m_confirm_password" name="confirm_password" required
-                                        autocomplete="new-password"
-                                        class="peer pr-12 block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
-                                        placeholder=" " />
-                                    <label for="m_confirm_password"
-                                        class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Confirm
-                                        Password</label>
-                                    <button type="button" onclick="togglePassword('m_confirm_password', this)" tabindex="-1"
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p id="m_match_indicator" class="text-xs font-semibold px-4 hidden"></p>
-                            </div>
+                                
                             <button type="submit"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition shadow-md">Sign
                                 Up</button>
@@ -944,118 +752,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         <?php endif; ?>
 
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const isPassword = input.getAttribute('type') === 'password';
-            input.setAttribute('type', isPassword ? 'text' : 'password');
-            btn.innerHTML = isPassword ?
-                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>' :
-                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>';
-        }
-
-        // Initialize password strengths
-        function initPwChecker(inputId, checkerId) {
-            const input = document.getElementById(inputId);
-            const checker = document.getElementById(checkerId);
-            if (!input || !checker) return;
-
-            const reqs = [
-                { class: '.pw-req-length', regex: /.{8,}/ },
-                { class: '.pw-req-upper', regex: /[A-Z]/ },
-                { class: '.pw-req-number', regex: /[0-9]/ },
-                { class: '.pw-req-special', regex: /[^A-Za-z0-9]/ }
-            ];
-
-            input.addEventListener('focus', function () {
-                checker.classList.remove('hidden');
-            });
-
-            input.addEventListener('input', function (e) {
-                const val = e.target.value;
-                let passed = 0;
-
-                reqs.forEach(req => {
-                    const el = checker.querySelector(req.class);
-                    const iconX = el.querySelector('.icon-x');
-                    const iconCheck = el.querySelector('.icon-check');
-                    if (req.regex.test(val)) {
-                        passed++;
-                        el.classList.remove('text-red-600');
-                        el.classList.add('text-green-600');
-                        iconX.classList.add('hidden');
-                        iconCheck.classList.remove('hidden');
-                    } else {
-                        el.classList.remove('text-green-600');
-                        el.classList.add('text-red-600');
-                        iconX.classList.remove('hidden');
-                        iconCheck.classList.add('hidden');
-                    }
-                });
-
-                const bar = checker.querySelector('.pw-bar');
-                const label = checker.querySelector('.pw-label');
-                const percent = (passed / reqs.length) * 100;
-
-                bar.style.width = percent + '%';
-                bar.className = 'h-full transition-all duration-300 pw-bar ';
-                label.className = 'text-xs font-bold pw-label ';
-
-                if (val.length === 0) {
-                    label.textContent = '';
-                    bar.style.backgroundColor = 'transparent';
-                } else if (passed <= 1) {
-                    bar.style.backgroundColor = '#ef4444'; // red-500
-                    label.style.color = '#ef4444';
-                    label.textContent = 'Weak';
-                } else if (passed <= 3) {
-                    bar.style.backgroundColor = '#eab308'; // yellow-500
-                    label.style.color = '#eab308';
-                    label.textContent = 'Medium';
-                } else {
-                    bar.style.backgroundColor = '#22c55e'; // green-500
-                    label.style.color = '#22c55e';
-                    label.textContent = 'Strong';
-                }
-            });
-        }
-
-        // Initialize password match checker
-        function initMatchChecker(pwdId, confirmId, indicatorId) {
-            const pwd = document.getElementById(pwdId);
-            const confirmPwd = document.getElementById(confirmId);
-            const indicator = document.getElementById(indicatorId);
-
-            if (!pwd || !confirmPwd || !indicator) return;
-
-            function checkMatch() {
-                const val1 = pwd.value;
-                const val2 = confirmPwd.value;
-
-                if (val2.length === 0) {
-                    indicator.classList.add('hidden');
-                    return;
-                }
-
-                indicator.classList.remove('hidden');
-                if (val1 === val2) {
-                    indicator.textContent = 'Passwords match';
-                    indicator.style.color = '#22c55e'; // green-500
-                } else {
-                    indicator.textContent = 'Passwords do not match';
-                    indicator.style.color = '#ef4444'; // red-500
-                }
-            }
-
-            pwd.addEventListener('input', checkMatch);
-            confirmPwd.addEventListener('input', checkMatch);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            initPwChecker('d_password', 'd_pw_checker');
-            initPwChecker('m_password', 'm_pw_checker');
-            initMatchChecker('d_password', 'd_confirm_password', 'd_match_indicator');
-            initMatchChecker('m_password', 'm_confirm_password', 'm_match_indicator');
-
+        
             // Custom Dropdown Init for Mobile Branch
             const branchDisplay = document.getElementById('m_branch_display');
             const branchHidden = document.getElementById('m_branch_id');
