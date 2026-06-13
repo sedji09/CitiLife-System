@@ -74,7 +74,6 @@
         </select>
         <select id="sort-date"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option>Sort by:</option>
             <option>Newest Case</option>
             <option>Oldest Case</option>
         </select>
@@ -278,7 +277,7 @@
     function applyFilters() {
         const search = (document.getElementById('search-input')?.value || '').toLowerCase();
         const priority = document.getElementById('filter-priority')?.value || 'Filter by Priority';
-        const sort = document.getElementById('sort-date')?.value || 'Sort by:';
+        const sort = document.getElementById('sort-date')?.value || 'Newest Case';
 
         const tbody = document.getElementById('table-body');
         if (!tbody) return;
@@ -344,11 +343,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Default Sort & Filter
         setTimeout(() => {
-            const sortSelect = document.getElementById('sort-date');
-            if (sortSelect && sortSelect.value === 'Sort by:') {
-                sortSelect.value = 'Newest Case';
-                applyFilters();
-            }
+            applyFilters();
         }, 100);
 
         // ── Highlight row from notification ───────────────────────────────

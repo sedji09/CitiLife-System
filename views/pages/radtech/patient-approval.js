@@ -124,7 +124,7 @@ document.addEventListener('change', (e) => {
 
 function applyFilters() {
     const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const sort = document.getElementById('sort-date')?.value || 'Sort by:';
+    const sort = document.getElementById('sort-date')?.value || 'Newest Request';
 
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
@@ -176,11 +176,7 @@ function applyFilters() {
 // Initial sorting on load and re-applying filters after real-time updates
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        const sortSelect = document.getElementById('sort-date');
-        if (sortSelect && sortSelect.value === 'Sort by:') {
-            sortSelect.value = 'Newest Request';
-            applyFilters();
-        }
+        applyFilters();
     }, 100);
 });
 

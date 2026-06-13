@@ -130,7 +130,7 @@ class PageController
         }
 
         // Intercept specific AJAX requests before loading the layout
-        if (isset($_GET['ajax_polling']) || ($page === 'patient-registration' && isset($_GET['ajax_search']))) {
+        if (isset($_GET['ajax']) || isset($_GET['ajax_polling']) || ($page === 'patient-registration' && isset($_GET['ajax_search']))) {
             loadView($contentView, get_defined_vars());
             exit;
         }

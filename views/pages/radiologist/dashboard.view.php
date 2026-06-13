@@ -8,28 +8,24 @@ $caseModel = new \CaseModel($pdo);
 $branchModel = new \BranchModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 
-$filter = $_GET['filter'] ?? 'daily';
-$selectedDate = $_GET['date'] ?? date('Y-m-d');
-$selectedMonth = $_GET['month'] ?? date('Y'); // Correcting from Y-m to match buildDateCondition
+$priorityFilter = $_GET['priority'] ?? 'all';
+$filter = $_GET['filter'] ?? 'today';
+$selectedMonth = $_GET['month'] ?? date('Y-m');
 $selectedYear = $_GET['year'] ?? date('Y');
-if ($filter === 'daily') {
-    $dateCondition = "DATE(created_at) = " . $pdo->quote($selectedDate);
-    $periodLabel = date('F j, Y', strtotime($selectedDate));
-} else {
-    $dateData = $caseModel->buildDateCondition($filter, $_GET['month'] ?? date('Y-m'), $_GET['year'] ?? date('Y'));
-    $dateCondition = $dateData['condition'];
-    $periodLabel = $dateData['label'];
-}
+
+$dateInfo = $caseModel->buildDateCondition($filter, $selectedMonth, $selectedYear);
+$dateCondition = $dateInfo['condition'];
+$periodLabel = $dateInfo['label'];
 
 // 1. Fetch Stats (Backend logic)
 $radiologistId = $_SESSION['user_id'] ?? null;
-$stats = $caseModel->getRadiologistStats($dateCondition, $radiologistId);
+$stats = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
 $emergencyCases = $stats['emergencyCases'];
 $totalPending = $stats['totalPending'];
 
 // 2. Fetch Aggregated Chart Data (Backend logic)
 $branchesList = $branchModel->getAllBranches();
-$branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition, $radiologistId);
+$branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition, $radiologistId, 'all');
 
 // Process for Chart.js (Frontend-specific formatting)
 $branchStats = [];
@@ -64,9 +60,9 @@ $colorIndex = 0;
 
 foreach ($branchStats as $stat) {
     $labels[] = $stat['name'];
-    $emergencyData[] = $stat['STAT'];
-    $urgentData[] = $stat['Urgent'];
-    $routineData[] = $stat['Routine'];
+    $emergencyData[] = ($priorityFilter === 'all' || $priorityFilter === 'STAT') ? $stat['STAT'] : 0;
+    $urgentData[] = ($priorityFilter === 'all' || $priorityFilter === 'Urgent') ? $stat['Urgent'] : 0;
+    $routineData[] = ($priorityFilter === 'all' || $priorityFilter === 'Routine') ? $stat['Routine'] : 0;
 
     $total = $stat['STAT'] + $stat['Urgent'] + $stat['Routine'];
     $branchTotals[] = $total;
@@ -75,7 +71,8 @@ foreach ($branchStats as $stat) {
 
 // Handle AJAX updates
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
-    ob_clean();
+    if (ob_get_length())
+        ob_clean();
     header('Content-Type: application/json');
     echo json_encode([
         'emergencyCases' => $emergencyCases,
@@ -97,11 +94,57 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 <div class="space-y-6">
 
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Radiologist Dashboard</h2>
-            <p class="text-sm text-gray-500 mt-1">Overview of pending patients for <span
+            <p class="text-sm text-gray-500 mt-1">Overview of patients for <span
                     id="period-label"><?= htmlspecialchars($periodLabel) ?></span> in all branches.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <select id="filterSelect" onchange="handleFilterChange()"
+                class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm">
+                <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
+                <option value="weekly" <?= $filter === 'weekly' ? 'selected' : '' ?>>This Week</option>
+                <option value="monthly" <?= $filter === 'monthly' ? 'selected' : '' ?>>Monthly</option>
+                <option value="yearly" <?= $filter === 'yearly' ? 'selected' : '' ?>>Yearly</option>
+            </select>
+
+            <input type="month" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>"
+                onchange="handleFilterChange()"
+                class="<?= $filter === 'monthly' ? '' : 'hidden' ?> bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
+
+            <input type="number" id="yearPicker" min="2000" max="2100" value="<?= htmlspecialchars($selectedYear) ?>"
+                onchange="handleFilterChange()"
+                class="<?= $filter === 'yearly' ? '' : 'hidden' ?> bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm w-24">
+
+            <script>
+                function handleFilterChange() {
+                    const filter = document.getElementById('filterSelect').value;
+                    const monthPicker = document.getElementById('monthPicker');
+                    const yearPicker = document.getElementById('yearPicker');
+                    
+                    if (filter === 'monthly') {
+                        monthPicker.classList.remove('hidden');
+                        yearPicker.classList.add('hidden');
+                    } else if (filter === 'yearly') {
+                        monthPicker.classList.add('hidden');
+                        yearPicker.classList.remove('hidden');
+                    } else {
+                        monthPicker.classList.add('hidden');
+                        yearPicker.classList.add('hidden');
+                    }
+                    
+                    let url = '?role=radiologist&page=dashboard&filter=' + filter;
+                    if (filter === 'monthly') url += '&month=' + monthPicker.value;
+                    if (filter === 'yearly') url += '&year=' + yearPicker.value;
+                    
+                    window.history.pushState({path: url}, '', url);
+                    
+                    if (typeof fetchDashboardData === 'function') {
+                        fetchDashboardData();
+                    }
+                }
+            </script>
         </div>
     </div>
 
@@ -115,7 +158,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <?= $emergencyCases ?>
             </div>
             <div>
-                <p class="text-xs text-gray-500">STAT Cases</p>
+                <p class="text-xs text-gray-500">Pending STAT Cases</p>
                 <p class="text-sm font-semibold text-gray-800">Across all branches</p>
             </div>
         </a>
@@ -143,38 +186,27 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 class="flex flex-col md:flex-row items-center justify-between px-6 py-4 border-b border-gray-300 gap-4">
                 <h3 class="font-bold text-gray-900 text-lg">Case Priority Overview</h3>
                 <div class="flex items-center gap-2">
-                    <select id="filterSelect" onchange="handleFilterChange()"
+                    <select id="priorityFilter" onchange="fetchDashboardData()"
                         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm">
-                        <option value="daily" <?= $filter === 'daily' ? 'selected' : '' ?>>Per Day</option>
-                        <option value="monthly" <?= $filter === 'monthly' ? 'selected' : '' ?>>Per Month</option>
-                        <option value="yearly" <?= $filter === 'yearly' ? 'selected' : '' ?>>Per Year</option>
+                        <option value="all" <?= $priorityFilter === 'all' ? 'selected' : '' ?>>All Priorities</option>
+                        <option value="STAT" <?= $priorityFilter === 'STAT' ? 'selected' : '' ?>>STAT Only</option>
+                        <option value="Urgent" <?= $priorityFilter === 'Urgent' ? 'selected' : '' ?>>Urgent Only</option>
+                        <option value="Routine" <?= $priorityFilter === 'Routine' ? 'selected' : '' ?>>Routine Only
+                        </option>
                     </select>
-
-                    <input type="date" id="datePicker" value="<?= htmlspecialchars($selectedDate) ?>"
-                        onchange="handleFilterChange()"
-                        class="<?= $filter === 'daily' ? '' : 'hidden' ?> bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
-
-                    <input type="month" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>"
-                        onchange="handleFilterChange()"
-                        class="<?= $filter === 'monthly' ? '' : 'hidden' ?> bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
-
-                    <input type="number" id="yearPicker" min="2000" max="2100"
-                        value="<?= htmlspecialchars($selectedYear) ?>" onchange="handleFilterChange()"
-                        class="<?= $filter === 'yearly' ? '' : 'hidden' ?> bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm w-24">
 
                     <script>
                         function fetchDashboardData() {
-                            const filter = document.getElementById('filterSelect').value;
-                            let url = '?role=radiologist&page=dashboard&filter=' + filter + '&ajax=1';
-                            if (filter === 'daily') {
-                                url += '&date=' + document.getElementById('datePicker').value;
-                            } else if (filter === 'monthly') {
-                                url += '&month=' + document.getElementById('monthPicker').value;
-                            } else if (filter === 'yearly') {
-                                url += '&year=' + document.getElementById('yearPicker').value;
-                            }
+                        const priority = document.getElementById('priorityFilter').value;
+                        const filter = document.getElementById('filterSelect').value;
+                        const month = document.getElementById('monthPicker').value;
+                        const year = document.getElementById('yearPicker').value;
+                        
+                        let url = '?role=radiologist&page=dashboard&priority=' + priority + '&filter=' + filter + '&ajax=1';
+                        if (filter === 'monthly' && month) url += '&month=' + month;
+                        if (filter === 'yearly' && year) url += '&year=' + year;
 
-                            fetch(url, { cache: 'no-store' })
+                        fetch(url, { cache: 'no-store' })
                                 .then(res => {
                                     if (!res.ok) throw new Error("Network response was not ok");
                                     return res.json();
@@ -202,19 +234,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                 .catch(err => console.error('Error fetching realtime dashboard data:', err));
                         }
 
-                        function handleFilterChange() {
-                            const filter = document.getElementById('filterSelect').value;
 
-                            document.getElementById('datePicker').classList.add('hidden');
-                            document.getElementById('monthPicker').classList.add('hidden');
-                            document.getElementById('yearPicker').classList.add('hidden');
-
-                            if (filter === 'daily') document.getElementById('datePicker').classList.remove('hidden');
-                            if (filter === 'monthly') document.getElementById('monthPicker').classList.remove('hidden');
-                            if (filter === 'yearly') document.getElementById('yearPicker').classList.remove('hidden');
-
-                            fetchDashboardData();
-                        }
                     </script>
                 </div>
             </div>

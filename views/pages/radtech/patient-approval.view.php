@@ -90,7 +90,6 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
             class="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring">
         <select id="sort-date"
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
-            <option>Sort by:</option>
             <option>Newest Request</option>
             <option>Oldest Request</option>
         </select>

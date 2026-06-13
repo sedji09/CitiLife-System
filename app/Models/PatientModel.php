@@ -22,10 +22,11 @@ class PatientModel
             return [];
 
         $searchTerm = '%' . $query . '%';
-        $stmt = $this->pdo->prepare("SELECT id, patient_number, first_name, middle_name, last_name, email, (YEAR(CURDATE()) - YEAR(birthdate)) AS age, sex, contact_number, home_address 
-                               FROM patients 
-                               WHERE patient_number LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ?
-                               ORDER BY first_name ASC 
+        $stmt = $this->pdo->prepare("SELECT p.id, p.patient_number, p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
+                               FROM patients p
+                               LEFT JOIN users u ON u.patient_id = p.id
+                               WHERE p.patient_number LIKE ? OR p.first_name LIKE ? OR p.last_name LIKE ? OR u.email LIKE ?
+                               ORDER BY p.first_name ASC 
                                LIMIT " . (int) $limit);
         $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         return $stmt->fetchAll();
@@ -73,7 +74,7 @@ class PatientModel
         $hasBranchId = $this->hasColumn('patients', 'branch_id');
 
         if ($hasBranchId) {
-            $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, email, home_address, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, home_address, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $patientNumber,
                 $data['first_name'],
@@ -82,12 +83,11 @@ class PatientModel
                 $data['birthdate'],
                 $data['sex'],
                 $data['contact_number'],
-                $data['email'] ?? null,
                 $data['home_address'] ?? null,
                 $data['branch_id']
             ]);
         } else {
-            $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, email, home_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, home_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $patientNumber,
                 $data['first_name'],
@@ -96,7 +96,6 @@ class PatientModel
                 $data['birthdate'],
                 $data['sex'],
                 $data['contact_number'],
-                $data['email'] ?? null,
                 $data['home_address'] ?? null
             ]);
         }
@@ -109,7 +108,7 @@ class PatientModel
      */
     public function updatePatient($id, $data)
     {
-        $stmt = $this->pdo->prepare("UPDATE patients SET first_name = ?, middle_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, email = ?, home_address = ? WHERE id = ?");
+        $stmt = $this->pdo->prepare("UPDATE patients SET first_name = ?, middle_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, home_address = ? WHERE id = ?");
         return $stmt->execute([
             $data['first_name'],
             $data['middle_name'] ?? null,
@@ -117,7 +116,6 @@ class PatientModel
             $data['birthdate'],
             $data['sex'],
             $data['contact_number'],
-            $data['email'] ?? null,
             $data['home_address'] ?? null,
             $id
         ]);
@@ -175,7 +173,7 @@ class PatientModel
     {
         $stmt = $this->pdo->prepare("
             SELECT u.id AS user_id, u.email as account_email, u.created_at, p.id AS patient_id, 
-                   p.first_name, p.middle_name, p.last_name, p.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
+                   p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
             FROM users u
             INNER JOIN patients p ON u.patient_id = p.id
             LEFT JOIN branches b ON p.branch_id = b.id
@@ -190,7 +188,7 @@ class PatientModel
     {
         $stmt = $this->pdo->prepare("
             SELECT u.id AS user_id, u.email as account_email, u.created_at, p.id AS patient_id, 
-                   p.first_name, p.middle_name, p.last_name, p.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
+                   p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
             FROM users u
             INNER JOIN patients p ON u.patient_id = p.id
             LEFT JOIN branches b ON p.branch_id = b.id

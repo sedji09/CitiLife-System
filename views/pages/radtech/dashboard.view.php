@@ -30,6 +30,9 @@ $completedCases = $stats['completed'];
 // Fetch Recent Cases
 $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
 
+// Fetch Radiologists Workload
+$radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $branchId);
+
 // 3. View Logic (Now pure Frontend follows)
 ?>
 <style>
@@ -45,7 +48,7 @@ $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
   <div class="flex items-center justify-between">
     <div>
       <h2 class="text-2xl font-bold text-gray-900 tracking-tight">RadTech Dashboard</h2>
-      <p class="text-sm text-gray-500 mt-1">Overview of activity for <?= htmlspecialchars($periodLabel) ?> and quick
+      <p class="text-sm text-gray-500 mt-1">Overview of activity for <span id="period-label" class="realtime-update"><?= htmlspecialchars($periodLabel) ?></span> and quick
         actions.</p>
     </div>
     <div class="flex items-center gap-2">
@@ -68,13 +71,42 @@ $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
       <script>
         function handleFilterChange() {
           const filter = document.getElementById('filterSelect').value;
-          let url = '?role=radtech&page=dashboard&filter=' + filter;
+          const monthPicker = document.getElementById('monthPicker');
+          const yearPicker = document.getElementById('yearPicker');
+
           if (filter === 'monthly') {
-            url += '&month=' + document.getElementById('monthPicker').value;
+            monthPicker.classList.remove('hidden');
+            yearPicker.classList.add('hidden');
           } else if (filter === 'yearly') {
-            url += '&year=' + document.getElementById('yearPicker').value;
+            monthPicker.classList.add('hidden');
+            yearPicker.classList.remove('hidden');
+          } else {
+            monthPicker.classList.add('hidden');
+            yearPicker.classList.add('hidden');
           }
-          window.location.href = url;
+
+          let url = '?role=radtech&page=dashboard&filter=' + filter;
+          if (filter === 'monthly') url += '&month=' + monthPicker.value;
+          if (filter === 'yearly') url += '&year=' + yearPicker.value;
+
+          window.history.pushState({path: url}, '', url);
+          if (window.__APP__) window.__APP__.currentPath = url; // Ensure global polling uses new URL
+
+          // Smooth fetch
+          let fetchUrl = url + '&ajax_polling=1';
+          fetch(fetchUrl)
+            .then(res => res.text())
+            .then(html => {
+              const doc = new DOMParser().parseFromString(html, 'text/html');
+              document.querySelectorAll('.realtime-update').forEach(el => {
+                if (el.id) {
+                  const newEl = doc.getElementById(el.id);
+                  if (newEl) el.innerHTML = newEl.innerHTML;
+                }
+              });
+              if (window.lucide) lucide.createIcons();
+            })
+            .catch(err => console.error(err));
         }
       </script>
     </div>
@@ -120,6 +152,41 @@ $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
         <i data-lucide="circle-check-big" class="w-5 h-5 text-green-400"></i>
       </div>
       <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($completedCases) ?></p>
+    </div>
+  </div>
+
+  <!-- Radiologists Status -->
+  <div>
+    <h3 class="font-bold text-gray-900 text-lg mb-4">Radiologist Workload Status</h3>
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 realtime-update" id="radiologist-workload">
+      <?php if (empty($radiologistsWorkload)): ?>
+        <p class="text-gray-500 text-sm">No active radiologists found.</p>
+      <?php else: ?>
+        <?php foreach ($radiologistsWorkload as $rad): ?>
+          <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition flex flex-col">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                <?= htmlspecialchars(strtoupper(substr($rad['radiologist_name'], 0, 1))) ?>
+              </div>
+              <div class="min-w-0">
+                <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name']) ?>"><?= htmlspecialchars($rad['radiologist_name']) ?></p>
+                <p class="text-xs text-gray-500 truncate">Radiologist</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-auto">
+              <div class="bg-orange-50/50 border border-orange-100 rounded-lg p-2 text-center">
+                <p class="text-xs text-orange-600/80 mb-0.5">Pending/Reading</p>
+                <p class="font-bold text-lg text-orange-600"><?= htmlspecialchars($rad['active_cases']) ?></p>
+              </div>
+              <div class="bg-blue-50/50 border border-blue-100 rounded-lg p-2 text-center">
+                <p class="text-xs text-blue-600/80 mb-0.5">Total Assigned</p>
+                <p class="font-bold text-lg text-blue-600"><?= htmlspecialchars($rad['total_assigned']) ?></p>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
   </div>
 

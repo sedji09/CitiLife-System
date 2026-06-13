@@ -100,11 +100,13 @@ class CaseModel
     /**
      * Get statistics for the Radiologist Dashboard.
      */
-    public function getRadiologistStats($dateCondition, $radiologistId = null)
+    public function getRadiologistStats($dateCondition, $radiologistId = null, $priorityFilter = 'all')
     {
-        $radFilter = $radiologistId ? " AND radiologist_id = " . (int)$radiologistId : "";
+        $radFilter = $radiologistId ? " AND radiologist_id = " . (int) $radiologistId : "";
+        $prioFilter = $priorityFilter !== 'all' ? " AND priority = " . $this->pdo->quote($priorityFilter) : "";
+        
         // Total Pending (All Branches)
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition $radFilter");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition $radFilter $prioFilter");
         $stmt->execute();
         $totalPending = $stmt->fetchColumn() ?: 0;
 
@@ -120,14 +122,47 @@ class CaseModel
     }
 
     /**
+     * Get real-time workload for all active radiologists.
+     */
+    public function getRadiologistsWorkload($dateCondition, $branchId)
+    {
+        // Adjust dateCondition for table alias
+        $cDateCondition = str_replace('created_at', 'c.created_at', $dateCondition);
+
+        $sql = "
+            SELECT 
+                u.id, 
+                COALESCE(NULLIF(u.full_name_report, ''), u.name) AS radiologist_name,
+                SUM(CASE WHEN c.branch_id = :branchId AND $cDateCondition THEN 1 ELSE 0 END) as total_assigned,
+                SUM(CASE WHEN c.status IN ('Pending', 'Under Reading') AND c.image_status = 'Uploaded' THEN 1 ELSE 0 END) as active_cases
+            FROM users u
+            LEFT JOIN cases c ON u.id = c.radiologist_id 
+                AND (
+                    (c.branch_id = :branchId AND $cDateCondition) 
+                    OR 
+                    (c.status IN ('Pending', 'Under Reading') AND c.image_status = 'Uploaded')
+                )
+            WHERE u.role = 'radiologist' AND u.status = 'Active'
+            GROUP BY u.id
+            ORDER BY active_cases DESC, radiologist_name ASC
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['branchId' => $branchId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Get branch priority breakdown for charts.
      */
-    public function getBranchPriorityStats($dateCondition, $radiologistId = null)
+    public function getBranchPriorityStats($dateCondition, $radiologistId = null, $priorityFilter = 'all')
     {
         $radFilter = $radiologistId ? " AND radiologist_id = " . (int)$radiologistId : "";
+        $prioFilter = $priorityFilter !== 'all' ? " AND priority = " . $this->pdo->quote($priorityFilter) : "";
+        
         $stmt = $this->pdo->prepare("SELECT branch_id, priority, COUNT(*) as count 
                                FROM cases 
-                               WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition $radFilter
+                               WHERE status IN ('Pending', 'Under Reading', 'Completed') AND image_status = 'Uploaded' AND $dateCondition $radFilter $prioFilter
                                GROUP BY branch_id, priority");
         $stmt->execute();
         return $stmt->fetchAll();
