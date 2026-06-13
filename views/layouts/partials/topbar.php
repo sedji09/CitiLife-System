@@ -18,12 +18,12 @@
       <div class="relative" v-if="role !== 'patient'">
         <button @click.prevent="toggleChatMenu"
           class="relative rounded-full border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-100 shadow-sm has-tooltip bottom-tooltip"
-          :class="unreadMessageCount > 0 ? 'ring-2 ring-blue-200' : ''" type="button" aria-label="Messages"
+          :class="totalUnreadCount > 0 ? 'ring-2 ring-blue-200' : ''" type="button" aria-label="Messages"
           data-tooltip="Messages">
           <i data-lucide="message-square" class="w-5 h-5"></i>
-          <span v-if="unreadMessageCount > 0"
-            class="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-500 px-1.5 text-xs font-bold text-white">
-            {{ unreadMessageCount }}
+          <span v-if="totalUnreadCount > 0"
+            class="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+            {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
           </span>
         </button>
 

@@ -179,6 +179,16 @@
       filteredStaffSearchResults() {
         const existingIds = this.filteredConversations ? this.filteredConversations.map(c => String(c.id)) : [];
         return (this.staffSearchResults || []).filter(staff => !existingIds.includes(String(staff.id)));
+      },
+      totalUnreadCount() {
+        // Sum unread counts from all active (open) chat windows
+        const activeUnread = this.activeChats.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+        // For conversations NOT in activeChats, use the API-fetched DB count
+        const activeIds = new Set(this.activeChats.map(c => String(c.id)));
+        const conversationUnread = this.conversations
+          .filter(c => !activeIds.has(String(c.id)))
+          .reduce((sum, c) => sum + (parseInt(c.unread_count) || 0), 0);
+        return activeUnread + conversationUnread;
       }
     },
     watch: {
@@ -347,35 +357,53 @@
           .then(data => { if (data.success) this.unreadMessageCount = data.count; })
           .catch(err => console.error(err));
 
-        // Fetch conversations
-        if (this.chatMenuOpen) {
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations')
-            .then(res => res.json())
-            .then(data => { if (data.success) this.conversations = data.conversations; })
-            .catch(err => console.error(err));
-        }
+        // Fetch conversations (always, so badge count stays live)
+        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations')
+          .then(res => res.json())
+          .then(data => { if (data.success) this.conversations = data.conversations; })
+          .catch(err => console.error(err));
 
         // Fetch active chats — only append NEW messages to avoid re-render stealing focus
         this.activeChats.forEach(chat => {
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + chat.id)
+          const markReadParam = chat.minimized ? '0' : '1';
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam)
             .then(res => res.json())
             .then(data => {
-              if (data.success && data.messages.length > chat.messages.length) {
-                // Only push the genuinely new messages (avoid full array replacement)
+              if (data.success) {
+                // 1. Sync read statuses in real-time (so "Sent" changes to "Seen" instantly)
+                const minLength = Math.min(chat.messages.length, data.messages.length);
+                for (let i = 0; i < minLength; i++) {
+                  if (chat.messages[i].id === data.messages[i].id && chat.messages[i].is_read != data.messages[i].is_read) {
+                    chat.messages[i].is_read = data.messages[i].is_read;
+                  }
+                }
+
+                // 2. Append genuinely new messages
+                if (data.messages.length > chat.messages.length) {
+                  // Only push the genuinely new messages (avoid full array replacement)
                 const existingIds = new Set(chat.messages.map(m => m.id));
                 const newMsgs = data.messages.filter(m => !existingIds.has(m.id));
                 if (newMsgs.length > 0) {
                   newMsgs.forEach(m => chat.messages.push(m));
                   chat.loading = false;
-                  nextTick(() => {
-                    const body = this.$refs['chatBody_' + chat.id];
-                    if (body && body[0]) {
-                      body[0].scrollTop = body[0].scrollHeight;
-                    }
-                  });
+                  // Count unread: messages from the OTHER person while chat is minimized
+                  const incomingFromOther = newMsgs.filter(m => String(m.sender_id) !== String(this.userId));
+                  if (incomingFromOther.length > 0 && chat.minimized) {
+                    chat.unreadCount = (chat.unreadCount || 0) + incomingFromOther.length;
+                  }
+                  // Auto-scroll only if not minimized
+                  if (!chat.minimized) {
+                    nextTick(() => {
+                      const body = this.$refs['chatBody_' + chat.id];
+                      if (body && body[0]) {
+                        body[0].scrollTop = body[0].scrollHeight;
+                      }
+                    });
+                  }
                 }
               }
-            }).catch(err => console.error(err));
+            } // Close if (data.success)
+          }).catch(err => console.error(err));
         });
       },
       openNewMessageModal() {
@@ -446,12 +474,26 @@
       },
       toggleChatMinimize(chat) {
         chat.minimized = !chat.minimized;
+        // Clear unread badge when user opens the chat
+        if (!chat.minimized) {
+          chat.unreadCount = 0;
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id).catch(() => {});
+          nextTick(() => {
+            const body = this.$refs['chatBody_' + chat.id];
+            if (body && body[0]) {
+              body[0].scrollTop = body[0].scrollHeight;
+            }
+          });
+        }
+        this.saveActiveChats();
       },
       openChatWindow(conv) {
         this.addToRecentSearches(conv);
         const existing = this.activeChats.find(c => c.id == conv.id);
         if (existing) {
           existing.minimized = false;
+          existing.unreadCount = 0; // Clear badge when user opens it
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id).catch(() => {});
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -547,14 +589,30 @@
 
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
+            this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
+            fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + targetId).catch(() => {});
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
             }
             // Force absolute reactivity refresh in ALL cases
             this.activeChats = [...this.activeChats];
+            
+            // Ensure scroll is at the bottom after window re-opens
+            nextTick(() => {
+              const body = this.$refs['chatBody_' + targetId];
+              if (body && body[0]) {
+                body[0].scrollTop = body[0].scrollHeight;
+              }
+            });
           } else {
             chat.minimized = false;
+            nextTick(() => {
+              const body = this.$refs['chatBody_' + chat.id];
+              if (body && body[0]) {
+                body[0].scrollTop = body[0].scrollHeight;
+              }
+            });
           }
         } catch (e) {
           console.error("bringChatToFront error:", e);

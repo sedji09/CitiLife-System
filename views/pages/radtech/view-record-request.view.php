@@ -10,8 +10,8 @@
     <div class="mb-6 flex items-center justify-between">
         <div class="flex items-center gap-4">
             <a href="index.php?role=radtech&page=record-request"
-                class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
             </a>
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">

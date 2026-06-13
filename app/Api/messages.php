@@ -78,9 +78,12 @@ try {
                 exit;
             }
 
-            // Mark as read
-            $stmt = $pdo->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?");
-            $stmt->execute([$contactId, $userId]);
+            // Mark as read optionally
+            $markRead = $_GET['mark_read'] ?? '1';
+            if ($markRead === '1') {
+                $stmt = $pdo->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?");
+                $stmt->execute([$contactId, $userId]);
+            }
 
             // Fetch messages
             $stmt = $pdo->prepare("
@@ -92,6 +95,17 @@ try {
             $stmt->execute([$userId, $contactId, $contactId, $userId]);
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['success' => true, 'messages' => $messages]);
+            break;
+
+        case 'mark_chat_read':
+            $contactId = $_POST['contact_id'] ?? ($_GET['contact_id'] ?? 0);
+            if (!$contactId) {
+                echo json_encode(['error' => 'Invalid contact']);
+                exit;
+            }
+            $stmt = $pdo->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?");
+            $stmt->execute([$contactId, $userId]);
+            echo json_encode(['success' => true]);
             break;
 
         case 'send_message':

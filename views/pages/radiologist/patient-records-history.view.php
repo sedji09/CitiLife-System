@@ -30,9 +30,9 @@ if (!empty($caseDetails['image_path'])) {
 
 <!-- Header nav -->
 <div class="mb-4">
-    <a href="?role=radiologist&page=patient-history"
-        class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition">
-        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Patient History
+    <a href="?role=radiologist&page=patient-history" title="Back to Patient History"
+        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+        <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
 </div>
 

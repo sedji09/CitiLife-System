@@ -16,9 +16,9 @@ if (isset($caseNotFound) && $caseNotFound) {
 <!-- Back nav -->
 <div class="mb-4">
     <a href="?role=radiologist&page=patient-queue&branch_id=<?= $branchIdQuery ?>"
-       id="back-to-worklist-btn"
-       class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition">
-        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Worklist
+       id="back-to-worklist-btn" title="Back to Worklist"
+       class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+        <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
 </div>
 

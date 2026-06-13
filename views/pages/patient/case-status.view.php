@@ -100,8 +100,9 @@ $statusDescriptions = [
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">X-ray Status</h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">Track your latest examination in real time.</p>
         </div>
-        <a href="/<?= PROJECT_DIR ?>/my-records" class="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-semibold text-sm transition-colors">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Records
+        <a href="/<?= PROJECT_DIR ?>/my-records" title="Back to Records"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
     </div>
 
