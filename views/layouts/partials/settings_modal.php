@@ -187,7 +187,7 @@
         </div>
 
         <!-- Active Session -->
-        <div class="settings-flex-row" style="padding:14px 0;">
+        <div class="settings-flex-row" style="padding:14px 0;border-bottom:1px solid var(--modal-border-light, #f3f4f6);">
           <div>
             <div style="font-size:13px;font-weight:600;color: var(--modal-text, #111827);">Active Session</div>
             <div style="font-size:11px;color: var(--modal-text-light, #9ca3af);margin-top:2px;">You are currently

@@ -56,70 +56,72 @@
 
     <!-- Filter Bar -->
     <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-        <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <form method="GET" action="" class="flex flex-col gap-4">
             <input type="hidden" name="page" value="audit-logs">
 
-            <!-- Search -->
-            <div class="lg:col-span-2">
-                <div class="relative group">
-                    <i data-lucide="search"
-                        class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors"></i>
-                    <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
-                        placeholder="Search action, user, or details..."
-                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <!-- Search -->
+                <div class="lg:col-span-2">
+                    <div class="relative group">
+                        <i data-lucide="search"
+                            class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors"></i>
+                        <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
+                            placeholder="Search action, user, or details..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Module Filter -->
-            <div>
-                <select name="module"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
-                    <option value="">All Modules</option>
-                    <?php foreach ($distinctModules as $mod): ?>
-                        <option value="<?= htmlspecialchars($mod) ?>" <?= $filters['module'] == $mod ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($mod) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Module Filter -->
+                <div>
+                    <select name="module"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        <option value="">All Modules</option>
+                        <?php foreach ($distinctModules as $mod): ?>
+                            <option value="<?= htmlspecialchars($mod) ?>" <?= $filters['module'] == $mod ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($mod) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Role Filter -->
-            <div>
-                <select name="role"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
-                    <option value="">All Roles</option>
-                    <?php foreach ($distinctRoles as $rl): ?>
-                        <option value="<?= htmlspecialchars($rl) ?>" <?= $filters['role'] == $rl ? 'selected' : '' ?>>
-                            <?= strtoupper(str_replace('_', ' ', $rl)) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Role Filter -->
+                <div>
+                    <select name="role"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        <option value="">All Roles</option>
+                        <?php foreach ($distinctRoles as $rl): ?>
+                            <option value="<?= htmlspecialchars($rl) ?>" <?= $filters['role'] == $rl ? 'selected' : '' ?>>
+                                <?= strtoupper(str_replace('_', ' ', $rl)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Start Date -->
-            <div>
-                <input type="date" name="start_date" value="<?= htmlspecialchars($filters['start_date']) ?>"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
-                    placeholder="Start Date">
-            </div>
+                <!-- Start Date -->
+                <div>
+                    <input type="date" name="start_date" value="<?= htmlspecialchars($filters['start_date']) ?>"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
+                        placeholder="Start Date">
+                </div>
 
-            <!-- End Date -->
-            <div class="flex gap-2">
-                <input type="date" name="end_date" value="<?= htmlspecialchars($filters['end_date']) ?>"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
-                    placeholder="End Date">
+                <!-- End Date -->
+                <div>
+                    <input type="date" name="end_date" value="<?= htmlspecialchars($filters['end_date']) ?>"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
+                        placeholder="End Date">
+                </div>
             </div>
             
             <!-- Submit Button & Reset -->
-            <div class="lg:col-span-6 flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
                 <a href="/<?= PROJECT_DIR ?>/audit-logs"
-                    class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+                    class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm"
                     title="Reset Filters">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
                     Reset
                 </a>
                 <button type="submit"
-                    class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center gap-2 transition shadow-sm text-xs font-bold uppercase tracking-wider">
+                    class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm text-xs font-bold uppercase tracking-wider">
                     <i data-lucide="filter" class="w-3.5 h-3.5"></i>
                     Apply Filters
                 </button>
@@ -165,18 +167,13 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-600 font-extrabold text-xs shrink-0">
-                                            <?= strtoupper(substr($log['user_name'] ?? 'S', 0, 1)) ?>
-                                        </div>
-                                        <div class="flex flex-col min-w-0">
-                                            <span class="text-xs font-bold text-gray-800 tracking-tight leading-none mb-1 truncate">
-                                                <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
-                                            </span>
-                                            <span class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
-                                                <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
-                                            </span>
-                                        </div>
+                                    <div class="flex flex-col min-w-0">
+                                        <span class="text-xs font-bold text-gray-800 tracking-tight leading-none mb-1 truncate">
+                                            <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
+                                        </span>
+                                        <span class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
+                                            <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">

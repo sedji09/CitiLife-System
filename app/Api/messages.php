@@ -8,6 +8,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['error' => 'Unauthorized']);
@@ -23,13 +25,13 @@ try {
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0");
             $stmt->execute([$userId]);
             $count = $stmt->fetchColumn();
-            echo json_encode(['success' => true, 'count' => (int)$count]);
+            echo json_encode(['success' => true, 'count' => (int) $count]);
             break;
 
         case 'fetch_conversations':
             require_once __DIR__ . '/../Models/UserModel.php';
             $userModel = new UserModel($pdo);
-            
+
             // Fetch users the current user has chatted with, ordered by latest message
             $sql = "
                 SELECT 
@@ -58,7 +60,7 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$userId, $userId, $userId, $userId]);
             $conversations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Format names
             foreach ($conversations as &$conv) {
                 $sessionName = $conv['name'] ?? ($conv['full_name_report'] ?? '');
@@ -75,11 +77,11 @@ try {
                 echo json_encode(['error' => 'Invalid contact']);
                 exit;
             }
-            
+
             // Mark as read
             $stmt = $pdo->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?");
             $stmt->execute([$contactId, $userId]);
-            
+
             // Fetch messages
             $stmt = $pdo->prepare("
                 SELECT id, sender_id, receiver_id, message, attachment, is_read, created_at 
@@ -96,28 +98,28 @@ try {
             $contactId = $_POST['contact_id'] ?? 0;
             $message = trim($_POST['message'] ?? '');
             $attachmentPath = null;
-            
+
             // Handle file attachment
             if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
                 $fileTmpPath = $_FILES['attachment']['tmp_name'];
                 $fileName = $_FILES['attachment']['name'];
                 $fileSize = $_FILES['attachment']['size'];
-                
+
                 // Validate size (25MB)
                 if ($fileSize > 25 * 1024 * 1024) {
                     echo json_encode(['error' => 'File size exceeds 25MB limit.']);
                     exit;
                 }
-                
+
                 $uploadDir = __DIR__ . '/../../public/uploads/chat_attachments/';
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
-                
+
                 $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
                 $newFileName = uniqid('chat_', true) . '.' . $fileExt;
                 $destination = $uploadDir . $newFileName;
-                
+
                 if (move_uploaded_file($fileTmpPath, $destination)) {
                     $attachmentPath = 'public/uploads/chat_attachments/' . $newFileName;
                 } else {
@@ -125,12 +127,12 @@ try {
                     exit;
                 }
             }
-            
+
             if (!$contactId || (empty($message) && !$attachmentPath)) {
                 echo json_encode(['error' => 'Invalid input']);
                 exit;
             }
-            
+
             $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, message, attachment) VALUES (?, ?, ?, ?)");
             if ($stmt->execute([$userId, $contactId, $message, $attachmentPath])) {
                 $msgId = $pdo->lastInsertId();
@@ -148,27 +150,34 @@ try {
             $userModel = new UserModel($pdo);
             $q = trim($_GET['q'] ?? '');
             $sql = "SELECT id, email, role, avatar, name, full_name_report FROM users WHERE role != 'patient' AND id != ?";
-            $params = [$userId];
-            if (!empty($q)) {
-                $sql .= " AND (email LIKE ? OR name LIKE ? OR full_name_report LIKE ?)";
-                $params[] = "%$q%";
-                $params[] = "%$q%";
-                $params[] = "%$q%";
-            }
-            $sql .= " LIMIT 10";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-            $staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            foreach ($staff as &$s) {
+            $stmt->execute([$userId]);
+            $allStaff = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $staff = [];
+            foreach ($allStaff as &$s) {
                 $sessionName = $s['name'] ?? ($s['full_name_report'] ?? '');
                 $info = $userModel->getDisplayInfo($s['id'], $sessionName, $s['email']);
                 $s['name'] = $info['displayName'];
                 $s['initials'] = $info['initials'];
+
+                // Filter by display name if query exists
+                if (!empty($q)) {
+                    // Match display name (case-insensitive)
+                    if (stripos($s['name'], $q) !== false) {
+                        $staff[] = $s;
+                    }
+                } else {
+                    $staff[] = $s;
+                }
             }
+
+            // Limit to 10 results
+            $staff = array_slice($staff, 0, 10);
+
             echo json_encode(['success' => true, 'staff' => $staff]);
             break;
-            
+
         case 'mark_read':
             $contactId = $_POST['contact_id'] ?? 0;
             if ($contactId) {

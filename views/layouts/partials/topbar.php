@@ -49,20 +49,21 @@
 
           <div class="p-2 flex items-center gap-2">
             <!-- Back arrow when focused -->
-            <button v-if="chatSearchFocused" @click="chatSearchFocused = false; chatSearchQuery = ''" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-600 transition flex-shrink-0">
+            <button v-if="chatSearchFocused" @click="chatSearchFocused = false; chatSearchQuery = ''"
+              class="p-1.5 rounded-full hover:bg-gray-100 text-gray-600 transition flex-shrink-0">
               <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </button>
             <div
               class="flex-1 flex items-center bg-gray-100 rounded-full pl-4 pr-4 py-2 border border-transparent focus-within:ring-2 focus-within:ring-blue-500 transition-all">
               <i data-lucide="search" class="w-4 h-4 text-gray-500 shrink-0 ml-0"></i>
-              <input type="text" v-model="chatSearchQuery" @focus="chatSearchFocused = true" placeholder="Search Messenger"
+              <input type="text" v-model="chatSearchQuery" @focus="onChatSearchFocus" @input="onChatSearchInput" placeholder="Search Chats"
                 class="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 ml-2 text-[15px] text-gray-800 p-0 m-0 w-full"
                 style="box-shadow: none;">
             </div>
           </div>
 
           <div class="flex-1 overflow-y-auto custom-scrollbar pb-2">
-            
+
             <!-- Default Conversation List -->
             <template v-if="!chatSearchFocused">
               <template v-if="filteredConversations.length > 0">
@@ -76,8 +77,10 @@
                     </div>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-semibold text-gray-900 truncate" :class="conv.unread_count > 0 ? 'font-bold text-black' : ''">{{ conv.name }}</div>
-                    <div class="text-xs truncate flex gap-1" :class="conv.unread_count > 0 ? 'font-bold text-gray-900' : 'text-gray-500'">
+                    <div class="text-sm font-semibold text-gray-900 truncate"
+                      :class="conv.unread_count > 0 ? 'font-bold text-black' : ''">{{ conv.name }}</div>
+                    <div class="text-xs truncate flex gap-1"
+                      :class="conv.unread_count > 0 ? 'font-bold text-gray-900' : 'text-gray-500'">
                       <span v-if="conv.sender_id === userId">You: </span>
                       <span class="truncate">{{ conv.latest_message }}</span>
                       <span>·</span>
@@ -100,14 +103,16 @@
                 </div>
                 <div v-for="(conv, index) in recentSearches" :key="'recent_' + conv.id" @click="openChatWindow(conv)"
                   class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
-                  <div class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                  <div
+                    class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
                     <img v-if="conv.avatar" :src="conv.avatar" class="w-full h-full object-cover">
                     <span v-else>{{ conv.initials }}</span>
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="text-[15px] text-gray-900 truncate">{{ conv.name }}</div>
                   </div>
-                  <button @click.stop="removeRecentSearch(index)" class="p-1.5 rounded-full hover:bg-gray-200 text-gray-400 transition" title="Remove">
+                  <button @click.stop="removeRecentSearch(index)"
+                    class="p-1.5 rounded-full hover:bg-gray-200 text-gray-400 transition" title="Remove">
                     <i data-lucide="x" class="w-4 h-4"></i>
                   </button>
                 </div>
@@ -116,11 +121,12 @@
                   Your contacts
                 </div>
               </template>
-              
+
               <template v-if="filteredConversations.length > 0">
                 <div v-for="conv in filteredConversations" :key="'contact_' + conv.id" @click="openChatWindow(conv)"
                   class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
-                  <div class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                  <div
+                    class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
                     <img v-if="conv.avatar" :src="conv.avatar" class="w-full h-full object-cover">
                     <span v-else>{{ conv.initials }}</span>
                   </div>
@@ -129,8 +135,28 @@
                   </div>
                 </div>
               </template>
-              <div v-else class="py-8 text-center text-sm text-gray-500">
-                No contacts found.
+
+              <!-- Global Staff Search Results -->
+              <template v-if="filteredStaffSearchResults?.length > 0">
+                <div class="px-4 py-2 text-[13px] font-semibold text-gray-500 mt-2 border-t border-gray-100 pt-3">
+                  Other Staff Members
+                </div>
+                <div v-for="staff in filteredStaffSearchResults" :key="'global_' + staff.id" @click="openChatWindow(staff)"
+                  class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
+                  <div
+                    class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                    <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover">
+                    <span v-else>{{ staff.initials }}</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[15px] text-gray-900 truncate">{{ staff.name }}</div>
+                    <div class="text-xs text-gray-500 truncate">{{ staff.role.charAt(0).toUpperCase() + staff.role.slice(1) }}</div>
+                  </div>
+                </div>
+              </template>
+
+              <div v-if="filteredConversations?.length === 0 && filteredStaffSearchResults?.length === 0" class="py-8 text-center text-sm text-gray-500">
+                No users found.
               </div>
             </template>
 
