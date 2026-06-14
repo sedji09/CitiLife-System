@@ -104,7 +104,7 @@ class CaseModel
     {
         $radFilter = $radiologistId ? " AND radiologist_id = " . (int) $radiologistId : "";
         $prioFilter = $priorityFilter !== 'all' ? " AND priority = " . $this->pdo->quote($priorityFilter) : "";
-        
+
         // Total Pending (All Branches)
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND $dateCondition $radFilter $prioFilter");
         $stmt->execute();
@@ -157,9 +157,9 @@ class CaseModel
      */
     public function getBranchPriorityStats($dateCondition, $radiologistId = null, $priorityFilter = 'all')
     {
-        $radFilter = $radiologistId ? " AND radiologist_id = " . (int)$radiologistId : "";
+        $radFilter = $radiologistId ? " AND radiologist_id = " . (int) $radiologistId : "";
         $prioFilter = $priorityFilter !== 'all' ? " AND priority = " . $this->pdo->quote($priorityFilter) : "";
-        
+
         $stmt = $this->pdo->prepare("SELECT branch_id, priority, COUNT(*) as count 
                                FROM cases 
                                WHERE status IN ('Pending', 'Under Reading', 'Completed') AND image_status = 'Uploaded' AND $dateCondition $radFilter $prioFilter

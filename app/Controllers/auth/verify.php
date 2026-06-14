@@ -42,7 +42,7 @@ if (empty($token)) {
                     $stmt->execute([$email, $hashedPassword, $patientId]);
                     $userId = $pdo->lastInsertId();
 
-                    $pdo->prepare("DELETE FROM account_verifications WHERE id = ?")->execute([$verification['id']]);
+                    $pdo->prepare("DELETE FROM account_verifications WHERE token = ?")->execute([$token]);
 
                     $pdo->commit();
 

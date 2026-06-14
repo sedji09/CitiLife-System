@@ -304,14 +304,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 </div>
 
                 <div class="text-center mt-4 border-t pt-4">
-                    <p class="text-sm text-gray-600 mb-2">
+                    <p class="text-sm text-gray-600">
                         Don't have an account? <a href="patient-signup"
                             class="font-bold text-red-600 hover:text-red-500 hover:underline">Sign up here</a>
-                    </p>
-                    <p class="text-xs text-gray-500">
-                        Are you a staff member? <a href="login"
-                            class="font-medium text-gray-700 hover:text-gray-900 border-b border-gray-300 hover:border-gray-900">Go
-                            to Staff Portal</a>
                     </p>
                 </div>
             </form>

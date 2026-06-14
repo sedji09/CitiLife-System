@@ -238,12 +238,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     </button>
                 </div>
 
-                <div class="text-center mt-4 border-t pt-4">
-                    <p class="text-sm text-gray-600">
-                        Are you a patient? <a href="patient-login"
-                            class="font-medium text-red-600 hover:text-red-500">Go to Patient Portal</a>
-                    </p>
-                </div>
             </form>
         </div>
         <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">

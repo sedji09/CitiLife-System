@@ -95,15 +95,15 @@ $statusDescriptions = [
 <div id="case-status-container" class="space-y-4 sm:space-y-5 pb-8 max-w-3xl mx-auto">
 
     <!-- Page Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <a href="/<?= PROJECT_DIR ?>/my-records" title="Back to Records"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
         <div>
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">X-ray Status</h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">Track your latest examination in real time.</p>
         </div>
-        <a href="/<?= PROJECT_DIR ?>/my-records" title="Back to Records"
-            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-            <i data-lucide="chevron-left" class="w-5 h-5"></i>
-        </a>
     </div>
 
     <?php if (!$caseRow): ?>
@@ -250,6 +250,17 @@ $statusDescriptions = [
                                 <?= htmlspecialchars(date('F j, Y', strtotime($caseRow['created_at']))) ?></p>
                         </div>
                     </div>
+                    <?php if (!empty($caseRow['radiologist_name'])): ?>
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="stethoscope" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Radiologist</p>
+                                <p class="text-sm font-semibold text-gray-800">Dr. <?= htmlspecialchars($caseRow['radiologist_name']) ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

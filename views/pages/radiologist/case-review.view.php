@@ -221,7 +221,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <?php else: ?>
                 <?php foreach ($patientHistory as $h): ?>
                 <div class="px-5 py-3 hover:bg-red-50 transition cursor-pointer group"
-                     onclick="window.open('/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>','_blank')">
+                     onclick="window.location.href='/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>&back_to=case-review&back_id=<?= $caseId ?>'">
                     <div class="flex justify-between items-start">
                         <p class="text-xs font-bold text-gray-800 group-hover:text-red-600 transition"><?= htmlspecialchars($h['exam_type']) ?></p>
                         <span class="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5"><?= htmlspecialchars($h['branch_name']) ?></span>
@@ -313,16 +313,15 @@ if (isset($caseNotFound) && $caseNotFound) {
                     </div>
                 </div>
 
-                <div class="space-y-4 flex-1">
+                <div class="space-y-4 flex-1 flex flex-col">
                     <!-- Findings -->
-                    <div>
+                    <div class="flex flex-col" style="flex: 1.5;">
                         <div class="flex items-center justify-between mb-1.5 ml-1">
                             <label class="block text-[10px] font-bold text-red-500 uppercase tracking-wider ml-1">Radiographic Findings</label>
                             <span class="text-[10px] text-gray-400" id="findings-count-<?= $idx ?>">0 words</span>
                         </div>
                         <textarea
-                            class="exam-findings w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
-                            rows="6"
+                            class="exam-findings flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
                             placeholder="Describe radiographic findings for <?= htmlspecialchars($exam) ?>..."
@@ -330,14 +329,13 @@ if (isset($caseNotFound) && $caseNotFound) {
                     </div>
 
                     <!-- Impression -->
-                    <div>
+                    <div class="flex flex-col" style="flex: 1;">
                         <div class="flex items-center justify-between mb-1.5 ml-1">
                             <label class="block text-[10px] font-bold text-red-500 uppercase tracking-wider ml-1">Impression</label>
                             <span class="text-[10px] text-gray-400" id="impression-count-<?= $idx ?>">0 words</span>
                         </div>
                         <textarea
-                            class="exam-impression w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
-                            rows="3"
+                            class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
                             placeholder="Impression for <?= htmlspecialchars($exam) ?>..."

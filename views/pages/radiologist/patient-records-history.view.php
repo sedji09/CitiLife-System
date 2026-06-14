@@ -10,8 +10,8 @@ $caseId = $_GET['id'] ?? 0;
 $caseDetails = $caseModel->getCaseById($caseId);
 
 $radiologistId = $_SESSION['user_id'] ?? null;
-if (!$caseDetails || $caseDetails['radiologist_id'] != $radiologistId) {
-    echo "<div class='p-6 mt-10 text-center text-red-600 bg-red-50 rounded-lg border border-red-200 font-bold'>Case not found or unauthorized access. This case is assigned to another radiologist.</div>";
+if (!$caseDetails) {
+    echo "<div class='p-6 mt-10 text-center text-red-600 bg-red-50 rounded-lg border border-red-200 font-bold'>Case not found or invalid ID.</div>";
     exit;
 }
 
@@ -28,9 +28,18 @@ if (!empty($caseDetails['image_path'])) {
 }
 ?>
 
+<?php
+$backPage = $_GET['back_to'] ?? 'patient-history';
+$backId   = $_GET['back_id'] ?? '';
+$backUrl  = "?role=radiologist&page=" . urlencode($backPage);
+if ($backId) {
+    $backUrl .= "&id=" . urlencode($backId);
+}
+?>
+
 <!-- Header nav -->
 <div class="mb-4">
-    <a href="?role=radiologist&page=patient-history" title="Back to Patient History"
+    <a href="<?= htmlspecialchars($backUrl) ?>" title="Back"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>

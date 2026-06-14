@@ -716,12 +716,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (step === 7) {
-                const pw = document.getElementById('m_password').value;
-                const cpw = document.getElementById('m_confirm_password').value;
-                if (pw !== cpw) {
-                    toast("Passwords do not match.", "error");
-                    isValid = false;
-                }
+                // Email is validated natively by checkValidity() loop above
             }
 
             return isValid;
@@ -798,7 +793,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 });
             }
-        });
     </script>
 </body>
 
