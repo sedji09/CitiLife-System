@@ -14,7 +14,20 @@
             <h1 class="text-xl font-bold text-gray-900 tracking-tight">Admin Central Dashboard</h1>
             <p class="text-xs text-gray-500 mt-1">System-wide overview of patient and branch statistics.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <form method="GET" action="" class="flex items-center gap-2" onsubmit="event.preventDefault();">
+                <input type="hidden" name="role" value="admin_central">
+                <input type="hidden" name="page" value="dashboard">
+                <select name="filter" onchange="updateMainFilter(this.value)"
+                    class="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all cursor-pointer">
+                    <option value="today" <?= ($_GET['filter'] ?? 'today') === 'today' ? 'selected' : '' ?>>Today</option>
+                    <option value="this_week" <?= ($_GET['filter'] ?? '') === 'this_week' ? 'selected' : '' ?>>This Week
+                    </option>
+                    <option value="monthly" <?= ($_GET['filter'] ?? '') === 'monthly' ? 'selected' : '' ?>>This Month
+                    </option>
+                    <option value="yearly" <?= ($_GET['filter'] ?? '') === 'yearly' ? 'selected' : '' ?>>This Year</option>
+                </select>
+            </form>
             <span
                 class="px-3 py-1.5 bg-red-50 text-red-700 font-semibold rounded-lg text-xs border border-red-100 flex items-center gap-2 cursor-default">
                 <i data-lucide="building-2" class="w-3.5 h-3.5"></i> Overall Analytics
@@ -25,62 +38,80 @@
     <!-- Summary Cards Row (5 Cards) -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <!-- Total Patients -->
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="text-blue-500 mb-2"><i data-lucide="users" class="w-5 h-5"></i></div>
-            <div class="text-2xl font-black text-gray-900"><?= number_format($dashboardData['totals']['patients']) ?>
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[13px] text-gray-500 font-medium">Total Patients</h3>
+                <div class="p-1.5 rounded-lg bg-blue-50 text-blue-500">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                </div>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider flex items-center gap-1">
-                Total Patients of All Branches
+            <div class="text-2xl font-black text-gray-900" id="tot_patients">
+                <?= number_format($dashboardData['totals']['patients']) ?>
             </div>
         </div>
 
-        <!-- Total Active Branches -->
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="text-indigo-500 mb-2"><i data-lucide="building" class="w-5 h-5"></i></div>
-            <div class="text-2xl font-black text-gray-900">
+        <!-- Active Branches -->
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[13px] text-gray-500 font-medium">Active Branches</h3>
+                <div class="p-1.5 rounded-lg bg-indigo-50 text-indigo-500">
+                    <i data-lucide="building" class="w-4 h-4"></i>
+                </div>
+            </div>
+            <div class="text-2xl font-black text-gray-900" id="tot_branches">
                 <?= number_format($dashboardData['totals']['active_branches']) ?>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">Active Branches
-            </div>
         </div>
 
-        <!-- Total Active Users -->
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="text-purple-500 mb-2"><i data-lucide="user-check" class="w-5 h-5"></i></div>
-            <div class="text-2xl font-black text-gray-900">
-                <?= number_format($dashboardData['totals']['active_users']) ?>
+        <!-- Active Users -->
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[13px] text-gray-500 font-medium">Active Staff</h3>
+                <div class="p-1.5 rounded-lg bg-purple-50 text-purple-500">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                </div>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">Active Staff Users
+            <div class="text-2xl font-black text-gray-900" id="tot_users">
+                <?= number_format($dashboardData['totals']['active_users']) ?>
             </div>
         </div>
 
         <!-- STAT -->
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="text-red-500 mb-2"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
-            <div class="text-2xl font-black text-gray-900">
-                <?= number_format($dashboardData['totals']['stat']) ?>
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[13px] text-gray-500 font-medium">STAT</h3>
+                <div class="p-1.5 rounded-lg bg-red-50 text-red-500">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                </div>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">STAT Cases
+            <div class="text-2xl font-black text-gray-900" id="tot_stat">
+                <?= number_format($dashboardData['totals']['stat']) ?>
             </div>
         </div>
 
         <!-- Urgent -->
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="text-orange-500 mb-2"><i data-lucide="clock" class="w-5 h-5"></i></div>
-            <div class="text-2xl font-black text-gray-900">
-                <?= number_format($dashboardData['totals']['urgent']) ?>
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[13px] text-gray-500 font-medium">Urgent Cases</h3>
+                <div class="p-1.5 rounded-lg bg-orange-50 text-orange-500">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                </div>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">Urgent Cases
+            <div class="text-2xl font-black text-gray-900" id="tot_urgent">
+                <?= number_format($dashboardData['totals']['urgent']) ?>
             </div>
         </div>
 
         <!-- Routine -->
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="text-green-500 mb-2"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
-            <div class="text-2xl font-black text-gray-900">
-                <?= number_format($dashboardData['totals']['routine']) ?>
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[13px] text-gray-500 font-medium">Routine Cases</h3>
+                <div class="p-1.5 rounded-lg bg-green-50 text-green-500">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </div>
             </div>
-            <div class="text-[10px] text-gray-500 mt-0.5 font-medium uppercase tracking-wider">Routine Cases
+            <div class="text-2xl font-black text-gray-900" id="tot_routine">
+                <?= number_format($dashboardData['totals']['routine']) ?>
             </div>
         </div>
     </div>
@@ -94,10 +125,18 @@
                 <div>
                     <h3 class="font-bold text-gray-900 text-sm">Monthly Registrations</h3>
                     <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">For
-                        <?= date('Y') ?>
+                        <span id="monthlyChartYearLabel"><?= htmlspecialchars($_GET['monthly_trend_year'] ?? date('Y')) ?></span>
                     </p>
                 </div>
-                <i data-lucide="bar-chart-3" class="w-4 h-4 text-gray-400"></i>
+                <div class="flex items-center gap-2">
+                    <form onsubmit="event.preventDefault();" class="m-0 p-0">
+                        <input type="number" id="monthlyYearInput" min="2000" max="2100" 
+                            value="<?= htmlspecialchars($_GET['monthly_trend_year'] ?? date('Y')) ?>"
+                            onchange="updateMonthlyChart(this.value)"
+                            class="px-2 py-1 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 shadow-sm w-20">
+                    </form>
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-gray-400" id="monthlyChartIcon"></i>
+                </div>
             </div>
             <div class="p-4 flex-grow relative h-[240px]">
                 <canvas id="monthlyTrendChart"></canvas>
@@ -121,7 +160,7 @@
                     <canvas id="branchDistributionChart"></canvas>
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-1">
                         <span class="text-xs font-bold text-gray-400 leading-none">Total</span>
-                        <span
+                        <span id="doughnutTotalPatients"
                             class="text-xl font-black text-gray-900 leading-tight"><?= number_format($dashboardData['totals']['patients']) ?></span>
                     </div>
                 </div>
@@ -193,7 +232,7 @@
         barGradient.addColorStop(0, 'rgba(29, 78, 216, 0.9)'); // Blue 700
         barGradient.addColorStop(1, 'rgba(37, 99, 235, 0.1)'); // Blue 600
 
-        new Chart(ctxMonthly, {
+        window.monthlyChartInstance = new Chart(ctxMonthly, {
             type: 'bar',
             data: {
                 labels: chartData.monthly.labels,
@@ -237,7 +276,7 @@
 
         // 2. Branch Distribution Doughnut
         const ctxDoughnut = document.getElementById('branchDistributionChart').getContext('2d');
-        new Chart(ctxDoughnut, {
+        window.doughnutChartInstance = new Chart(ctxDoughnut, {
             type: 'doughnut',
             data: {
                 labels: chartData.branches.labels,
@@ -295,7 +334,7 @@
 
         // 3. Daily Line Chart
         const ctxDaily = document.getElementById('dailyTrendChart').getContext('2d');
-        new Chart(ctxDaily, {
+        window.dailyChartInstance = new Chart(ctxDaily, {
             type: 'line',
             data: {
                 labels: chartData.daily.labels,
@@ -344,7 +383,7 @@
         branchGradient.addColorStop(0, 'rgba(29, 78, 216, 0.9)');
         branchGradient.addColorStop(1, 'rgba(37, 99, 235, 0.1)');
 
-        new Chart(ctxBranchBar, {
+        window.branchBarChartInstance = new Chart(ctxBranchBar, {
             type: 'bar',
             data: {
                 labels: chartData.branches.labels.map(l => l.replace(' Branch', '')),
@@ -386,4 +425,99 @@
             }
         });
     });
+
+    async function updateMonthlyChart(year) {
+        try {
+            const url = `?role=admin_central&page=dashboard&action=get_monthly_data&monthly_trend_year=${year}`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                if (window.monthlyChartInstance) {
+                    window.monthlyChartInstance.data.datasets[0].data = data.data;
+                    window.monthlyChartInstance.update();
+                }
+                const label = document.getElementById('monthlyChartYearLabel');
+                if (label) label.textContent = year;
+            }
+        } catch (error) {
+            console.error('Failed to fetch monthly data:', error);
+        }
+    }
+    async function updateMainFilter(filter) {
+        try {
+            const url = `?role=admin_central&page=dashboard&filter=${filter}`;
+            window.history.pushState({path: url}, '', url);
+
+            const fetchUrl = url + '&ajax_main_filter=1';
+            const response = await fetch(fetchUrl);
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Update Totals
+                const formatNum = (num) => new Intl.NumberFormat().format(num);
+                const updateEl = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = formatNum(val);
+                };
+                
+                updateEl('tot_patients', data.totals.patients);
+                updateEl('tot_branches', data.totals.active_branches);
+                updateEl('tot_users', data.totals.active_users);
+                updateEl('tot_stat', data.totals.stat);
+                updateEl('tot_urgent', data.totals.urgent);
+                updateEl('tot_routine', data.totals.routine);
+
+                // Update Doughnut Chart
+                if (window.doughnutChartInstance) {
+                    window.doughnutChartInstance.data.labels = data.charts.branches.labels;
+                    window.doughnutChartInstance.data.datasets[0].data = data.charts.branches.data;
+                    window.doughnutChartInstance.update();
+                }
+
+                // Update Legend
+                const legendContainer = document.getElementById('patientDistributionLegend');
+                if (legendContainer) {
+                    legendContainer.innerHTML = '';
+                    const palette = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#14B8A6', '#84CC16'];
+                    data.charts.branches.labels.forEach((label, i) => {
+                        const dataVal = data.charts.branches.data[i];
+                        const color = palette[i % palette.length];
+                        
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'flex items-center justify-between gap-4 text-sm';
+                        legendItem.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full" style="background-color: ${color}"></div>
+                                <span class="text-gray-600 font-medium">${label.replace(' Branch', '')}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-gray-900">${dataVal}</span>
+                            </div>
+                        `;
+                        legendContainer.appendChild(legendItem);
+                    });
+                }
+
+                // Update Daily Line Chart
+                if (window.dailyChartInstance) {
+                    window.dailyChartInstance.data.labels = data.charts.daily.labels;
+                    window.dailyChartInstance.data.datasets[0].data = data.charts.daily.data;
+                    window.dailyChartInstance.update();
+                }
+
+                // Update Branch Bar Chart
+                if (window.branchBarChartInstance) {
+                    window.branchBarChartInstance.data.labels = data.charts.branches.labels.map(l => l.replace(' Branch', ''));
+                    window.branchBarChartInstance.data.datasets[0].data = data.charts.branches.data;
+                    window.branchBarChartInstance.update();
+                }
+                
+                // Update total label in doughnut
+                const totalLabel = document.getElementById('doughnutTotalPatients');
+                if (totalLabel) totalLabel.textContent = formatNum(data.totals.patients);
+            }
+        } catch (error) {
+            console.error('Failed to fetch main filter data:', error);
+        }
+    }
 </script>

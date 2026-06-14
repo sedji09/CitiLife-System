@@ -58,7 +58,7 @@
                 </select>
                 <select id="statusFilter" onchange="filterAndSortUsers()"
                     class="flex-1 md:w-40 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-                    <option value="" selected>All Statuses</option>
+                    <option value="" selected>All Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
@@ -73,9 +73,10 @@
                         <tr class="bg-gray-50/80 border-b border-gray-200">
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Email Address / User</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Role</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Branch Assignment</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Branch Assignment
+                            </th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-right">Actions</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody" class="divide-y divide-gray-100">
@@ -124,13 +125,12 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-sm font-medium text-gray-600 tracking-tight uppercase">
+                                        <span class="text-sm text-gray-600 tracking-tight capitalize">
                                             <?= htmlspecialchars(str_replace('_', ' ', $u['role'])) ?>
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2 text-sm font-medium text-gray-500 tracking-tight">
-                                            <i data-lucide="map-pin" class="w-3.5 h-3.5 opacity-40"></i>
+                                        <div class="flex items-center gap-2 text-sm text-gray-500 tracking-tight">
                                             <?= htmlspecialchars($u['branch_name'] ?? 'Universal') ?>
                                         </div>
                                     </td>
@@ -150,8 +150,8 @@
                                             <?= htmlspecialchars($u['status']) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                    <td class="px-6 py-4 text-left">
+                                        <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($u['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
                                                     <input type="hidden" name="action" value="toggle-status">
@@ -229,7 +229,7 @@
 <div id="addUserModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 class="text-lg font-bold text-gray-900">Create New Staff Account</h3>
             <button type="button" onclick="closeAddUserModal()"
@@ -264,7 +264,7 @@
                 <div>
                     <label for="role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
                     <select id="role" name="role" required onchange="toggleBranchSelect()"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Role</option>
                         <option value="branch_admin">Branch Admin</option>
                         <option value="radtech">RadTech</option>
@@ -275,7 +275,7 @@
                 <div id="branchSelectWrapper">
                     <label for="branch_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch</label>
                     <select id="branch_id" name="branch_id"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
                             <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>
@@ -303,7 +303,7 @@
 <div id="editUserModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 class="text-lg font-bold text-gray-900">Edit Staff Account</h3>
             <button type="button" onclick="closeEditUserModal()"
@@ -338,7 +338,7 @@
                 <div>
                     <label for="edit_role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
                     <select id="edit_role" name="role" required onchange="toggleEditBranchSelect()"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Role</option>
                         <option value="branch_admin">Branch Admin</option>
                         <option value="radtech">RadTech</option>
@@ -349,7 +349,7 @@
                 <div id="edit_branchSelectWrapper">
                     <label for="edit_branch_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch</label>
                     <select id="edit_branch_id" name="branch_id"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
                             <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>

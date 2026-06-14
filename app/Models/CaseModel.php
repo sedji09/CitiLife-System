@@ -666,13 +666,13 @@ class CaseModel
     {
         $hasApprovalStatus = $this->hasColumn('cases', 'approval_status');
         if ($hasApprovalStatus) {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number 
+            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                     FROM cases c 
                     JOIN patients p ON c.patient_id = p.id 
                     WHERE c.approval_status = 'Pending' AND c.branch_id = ?
                     ORDER BY c.created_at DESC";
         } else {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number 
+            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                     FROM cases c 
                     JOIN patients p ON c.patient_id = p.id 
                     WHERE c.status = 'Pending' AND c.branch_id = ?

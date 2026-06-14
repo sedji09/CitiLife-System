@@ -66,7 +66,7 @@
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Branch Name</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Created Date</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-right">Actions</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="branchesTableBody" class="divide-y divide-gray-100">
@@ -130,7 +130,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($b['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
                                                     <input type="hidden" name="action" value="toggle-status">
@@ -237,37 +237,44 @@
                 </div>
             </div>
             <div>
-                <label for="additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional Address / Direction</label>
+                <label for="additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional
+                    Address / Direction</label>
                 <div class="relative">
                     <i data-lucide="map" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="text" id="additional_address" name="additional_address" placeholder="e.g. In front of Hospital"
-                        autocomplete="off"
+                    <input type="text" id="additional_address" name="additional_address"
+                        placeholder="e.g. In front of Hospital" autocomplete="off"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="block text-sm font-semibold text-gray-700">Contact Numbers</label>
-                    <button type="button" onclick="addContactField('add')" id="add_btn_add" class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors">
+                    <button type="button" onclick="addContactField('add')" id="add_btn_add"
+                        class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors">
                         <i data-lucide="plus" class="w-3 h-3"></i> Add Number
                     </button>
                 </div>
                 <div class="space-y-2">
                     <div id="add_contact_1_wrapper">
-                        <input type="text" id="contact_number_1" name="contact_number_1" placeholder="Contact 1 (e.g. 0919-...)"
+                        <input type="text" id="contact_number_1" name="contact_number_1"
+                            placeholder="Contact 1 (e.g. 0919-...)"
                             class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                     </div>
                     <div id="add_contact_2_wrapper" class="hidden relative">
-                        <input type="text" id="contact_number_2" name="contact_number_2" placeholder="Contact 2 (e.g. 0919-...)"
+                        <input type="text" id="contact_number_2" name="contact_number_2"
+                            placeholder="Contact 2 (e.g. 0919-...)"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('add', 2)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('add', 2)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
                     <div id="add_contact_3_wrapper" class="hidden relative">
-                        <input type="text" id="contact_number_3" name="contact_number_3" placeholder="Contact 3 (e.g. 0919-...)"
+                        <input type="text" id="contact_number_3" name="contact_number_3"
+                            placeholder="Contact 3 (e.g. 0919-...)"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('add', 3)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('add', 3)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -311,7 +318,8 @@
                 </div>
             </div>
             <div>
-                <label for="edit_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch Address</label>
+                <label for="edit_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch
+                    Address</label>
                 <div class="relative">
                     <i data-lucide="map-pin" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="edit_address" name="address"
@@ -319,7 +327,8 @@
                 </div>
             </div>
             <div>
-                <label for="edit_additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional Address / Direction</label>
+                <label for="edit_additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional
+                    Address / Direction</label>
                 <div class="relative">
                     <i data-lucide="map" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="edit_additional_address" name="additional_address"
@@ -329,7 +338,8 @@
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="block text-sm font-semibold text-gray-700">Contact Numbers</label>
-                    <button type="button" onclick="addContactField('edit')" id="edit_btn_add" class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
+                    <button type="button" onclick="addContactField('edit')" id="edit_btn_add"
+                        class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
                         <i data-lucide="plus" class="w-3 h-3"></i> Add Number
                     </button>
                 </div>
@@ -341,14 +351,16 @@
                     <div id="edit_contact_2_wrapper" class="hidden relative">
                         <input type="text" id="edit_contact_number_2" name="contact_number_2" placeholder="Contact 2"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('edit', 2)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('edit', 2)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
                     <div id="edit_contact_3_wrapper" class="hidden relative">
                         <input type="text" id="edit_contact_number_3" name="contact_number_3" placeholder="Contact 3"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('edit', 3)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('edit', 3)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -463,23 +475,23 @@
         document.getElementById('edit_contact_number_1').value = branch.contact_number_1 || '';
         document.getElementById('edit_contact_number_2').value = branch.contact_number_2 || '';
         document.getElementById('edit_contact_number_3').value = branch.contact_number_3 || '';
-        
+
         const wrapper2 = document.getElementById('edit_contact_2_wrapper');
         const wrapper3 = document.getElementById('edit_contact_3_wrapper');
         const btnAdd = document.getElementById('edit_btn_add');
-        
+
         if (branch.contact_number_2) {
             wrapper2.classList.remove('hidden');
         } else {
             wrapper2.classList.add('hidden');
         }
-        
+
         if (branch.contact_number_3) {
             wrapper3.classList.remove('hidden');
         } else {
             wrapper3.classList.add('hidden');
         }
-        
+
         if (branch.contact_number_2 && branch.contact_number_3) {
             btnAdd.classList.add('hidden');
         } else {
@@ -623,15 +635,15 @@
         // Auto-format contact numbers
         const contactInputs = document.querySelectorAll('input[name^="contact_number"]');
         contactInputs.forEach(input => {
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 let val = this.value.replace(/\D/g, ''); // Remove non-digits
                 if (val.length > 11) val = val.substring(0, 11); // Limit to 11 digits
-                
+
                 let formatted = '';
                 if (val.length > 0) formatted = val.substring(0, 4);
                 if (val.length > 4) formatted += '-' + val.substring(4, 7);
                 if (val.length > 7) formatted += '-' + val.substring(7, 11);
-                
+
                 this.value = formatted;
             });
         });

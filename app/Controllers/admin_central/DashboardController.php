@@ -12,8 +12,27 @@ $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
 $userModel = new \UserModel($pdo);
 
-// 1. Get Overall Stats (All time)
-$allTimeStats = $caseModel->getReportStats('2020-01-01', date('2100-01-01'));
+// Handle Date Filter
+$filter = $_GET['filter'] ?? 'today';
+$startDate = date('Y-m-d');
+$endDate = date('Y-m-d');
+
+if ($filter === 'today') {
+    $startDate = date('Y-m-d');
+    $endDate = date('Y-m-d');
+} elseif ($filter === 'this_week') {
+    $startDate = date('Y-m-d', strtotime('monday this week'));
+    $endDate = date('Y-m-d', strtotime('sunday this week'));
+} elseif ($filter === 'monthly') {
+    $startDate = date('Y-m-01');
+    $endDate = date('Y-m-t');
+} elseif ($filter === 'yearly') {
+    $startDate = date('Y-01-01');
+    $endDate = date('Y-12-31');
+}
+
+// 1. Get Overall Stats based on filter
+$allTimeStats = $caseModel->getReportStats($startDate, $endDate);
 $allBranchesList = $branchModel->getAllBranches();
 
 $totalPatients = 0;
@@ -40,7 +59,7 @@ foreach ($allTimeStats as $stat) {
         $totalUrgent += $stat['urgent_count'];
         $totalRoutine += $stat['routine_count'];
         $totalPhilHealth += $stat['with_philhealth'];
-        
+
         $branchIndex[$stat['branch_name']] = $stat['total_patients'];
     }
 }
@@ -49,7 +68,7 @@ $branchNames = array_keys($branchIndex);
 $branchCounts = array_values($branchIndex);
 
 // 2. Get This Month's Trends (System-wide)
-$year = date('Y');
+$year = $_GET['monthly_trend_year'] ?? date('Y');
 $stmt = $pdo->prepare("
     SELECT MONTH(created_at) as month_num, COUNT(*) as count 
     FROM cases 
@@ -63,10 +82,19 @@ $monthlyDataRaw = $stmt->fetchAll();
 // Fill remaining months with 0
 $monthlyTrend = array_fill(1, 12, 0);
 foreach ($monthlyDataRaw as $row) {
-    $monthlyTrend[(int)$row['month_num']] = (int)$row['count'];
+    $monthlyTrend[(int) $row['month_num']] = (int) $row['count'];
 }
 
 $monthsLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+if (isset($_GET['action']) && $_GET['action'] === 'get_monthly_data') {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'labels' => $monthsLabel,
+        'data' => array_values($monthlyTrend)
+    ]);
+    exit;
+}
 $monthlyTrendData = array_values($monthlyTrend);
 
 // 3. Get This Week's Daily Trends (System-wide)
@@ -81,9 +109,9 @@ $dailyDataRaw = $stmtDaily->fetchAll();
 
 $dailyTrend = array_fill(0, 7, 0);
 foreach ($dailyDataRaw as $row) {
-    $mysqlDay = (int)$row['day_num']; 
+    $mysqlDay = (int) $row['day_num'];
     $mappedDay = ($mysqlDay == 1) ? 6 : $mysqlDay - 2;
-    $dailyTrend[$mappedDay] = (int)$row['count'];
+    $dailyTrend[$mappedDay] = (int) $row['count'];
 }
 $daysLabel = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -129,3 +157,9 @@ $dashboardData = [
         ]
     ]
 ];
+
+if (isset($_GET['ajax_main_filter']) && $_GET['ajax_main_filter'] == '1') {
+    header('Content-Type: application/json');
+    echo json_encode($dashboardData);
+    exit;
+}

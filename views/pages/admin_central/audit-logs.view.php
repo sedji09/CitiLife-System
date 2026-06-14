@@ -44,12 +44,14 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 tracking-tight">System Audit Logs</h1>
-            <p class="text-sm text-gray-500 mt-1">Real-time global monitoring of all system events and administrative actions.</p>
+            <p class="text-sm text-gray-500 mt-1">Real-time global monitoring of all system events and administrative
+                actions.</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full">
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span class="text-[10px] font-black text-red-700 uppercase tracking-widest leading-none">Live Monitoring</span>
+                <span class="text-[10px] font-black text-red-700 uppercase tracking-widest leading-none">Live
+                    Monitoring</span>
             </div>
         </div>
     </div>
@@ -74,7 +76,7 @@
                 <!-- Module Filter -->
                 <div>
                     <select name="module"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
                         <option value="">All Modules</option>
                         <?php foreach ($distinctModules as $mod): ?>
                             <option value="<?= htmlspecialchars($mod) ?>" <?= $filters['module'] == $mod ? 'selected' : '' ?>>
@@ -87,7 +89,7 @@
                 <!-- Role Filter -->
                 <div>
                     <select name="role"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
                         <option value="">All Roles</option>
                         <?php foreach ($distinctRoles as $rl): ?>
                             <option value="<?= htmlspecialchars($rl) ?>" <?= $filters['role'] == $rl ? 'selected' : '' ?>>
@@ -111,7 +113,7 @@
                         placeholder="End Date">
                 </div>
             </div>
-            
+
             <!-- Submit Button & Reset -->
             <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
                 <a href="/<?= PROJECT_DIR ?>/audit-logs"
@@ -163,7 +165,8 @@
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="text-[13px] text-gray-500 font-medium tabular-nums">
                                         <?= date('M j, Y', strtotime($log['created_at'])) ?>
-                                        <span class="block text-[11px] text-gray-400 mt-0.5"><?= date('g:i:s A', strtotime($log['created_at'])) ?></span>
+                                        <span
+                                            class="block text-[11px] text-gray-400 mt-0.5"><?= date('g:i:s A', strtotime($log['created_at'])) ?></span>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">
@@ -171,25 +174,29 @@
                                         <span class="text-xs font-bold text-gray-800 tracking-tight leading-none mb-1 truncate">
                                             <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
                                         </span>
-                                        <span class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
+                                        <span
+                                            class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
                                             <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
                                         </span>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="px-2.5 py-0.5 bg-gray-100 rounded text-[9px] font-black text-gray-500 uppercase tracking-widest">
-                                        <?= htmlspecialchars($log['branch_name'] ?? 'GLOBAL') ?>
+                                    <span class="text-sm text-gray-600 tracking-tight">
+                                        <?= htmlspecialchars($log['branch_name'] ?? 'Global') ?>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="text-[11px] font-bold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars($log['module'] ?? 'System') ?></span>
+                                    <span
+                                        class="text-sm text-gray-600 tracking-tight capitalize"><?= htmlspecialchars(strtolower($log['module'] ?? 'System')) ?></span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <div class="text-gray-700 font-semibold leading-tight max-w-xs truncate" title="<?= htmlspecialchars($log['action']) ?>">
+                                    <div class="text-gray-700 font-semibold leading-tight max-w-xs truncate"
+                                        title="<?= htmlspecialchars($log['action']) ?>">
                                         <?= htmlspecialchars($log['action']) ?>
                                     </div>
                                     <?php if (!empty($log['details'])): ?>
-                                        <div class="text-[11px] text-gray-400 mt-1 line-clamp-1 truncate max-w-xs" title="<?= htmlspecialchars($log['details']) ?>">
+                                        <div class="text-[11px] text-gray-400 mt-1 line-clamp-1 truncate max-w-xs"
+                                            title="<?= htmlspecialchars($log['details']) ?>">
                                             <?php
                                             $displayDetails = preg_replace('/,?\s*Exam:\s*.*$/', '', $log['details']);
                                             $displayDetails = trim($displayDetails, " ,");
@@ -212,7 +219,8 @@
                                         $sColor = 'gray';
                                     }
                                     ?>
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-<?= $sColor ?>-50 text-<?= $sColor ?>-700 border border-<?= $sColor === 'red' ? 'red-500' : $sColor . '-400' ?> status-badge status-badge-<?= $sColor ?>">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-<?= $sColor ?>-50 text-<?= $sColor ?>-700 border border-<?= $sColor === 'red' ? 'red-500' : $sColor . '-400' ?> status-badge status-badge-<?= $sColor ?>">
                                         <?= htmlspecialchars($statusLabel) ?>
                                     </span>
                                 </td>
@@ -238,7 +246,8 @@
             ?>
             <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <div class="text-xs text-gray-500">
-                    Showing <span class="font-semibold"><?= $start ?></span>-<span class="font-semibold"><?= $end ?></span> of
+                    Showing <span class="font-semibold"><?= $start ?></span>-<span class="font-semibold"><?= $end ?></span>
+                    of
                     <span class="font-semibold"><?= $total_count ?></span> records
                 </div>
                 <div class="flex items-center gap-3">
@@ -261,7 +270,8 @@
 
 <!-- Details Modal -->
 <div id="logModal" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-    <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl transform transition-all animate-in zoom-in-95 duration-200">
+    <div
+        class="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 class="text-sm font-black text-gray-900 uppercase tracking-widest">Action Details</h3>
             <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition p-1">

@@ -68,8 +68,8 @@
                         <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
                             <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient No.</th>
                             <th class="text-left font-semibold px-3 py-3 truncate max-w-[200px]">Patient Name</th>
-                            <th class="text-center font-semibold px-3 py-3">Age</th>
-                            <th class="text-center font-semibold px-3 py-3">Sex</th>
+                            <th class="text-left font-semibold px-3 py-3">Age</th>
+                            <th class="text-left font-semibold px-3 py-3">Sex</th>
                             <th class="text-left font-semibold px-3 py-3">Branch</th>
                             <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Actions</th>
                         </tr>
@@ -123,22 +123,21 @@
                                             <?php endif; ?>
                                         </div>
                                     </td>
-                                    <td class="py-3 px-3 text-center">
-                                        <span
-                                            class="text-sm font-medium text-gray-600"><?= htmlspecialchars($p['age']) ?></span>
+                                    <td class="py-3 px-3 text-left">
+                                        <span class="text-sm text-gray-600"><?= htmlspecialchars($p['age']) ?></span>
                                     </td>
-                                    <td class="py-3 px-3 text-center">
-                                        <span
-                                            class="text-sm font-medium text-gray-600 uppercase"><?= htmlspecialchars($p['sex']) ?></span>
+                                    <td class="py-3 px-3 text-left">
+                                        <span class="text-sm text-gray-600"><?= htmlspecialchars($p['sex']) ?></span>
                                     </td>
                                     <td class="py-3 px-3">
-                                        <div class="font-medium text-gray-600">
+                                        <div class="text-gray-600">
                                             <?= htmlspecialchars($p['branch_name'] ?? 'General') ?>
                                         </div>
                                     </td>
                                     <td class="py-3 px-3 text-left">
                                         <div class="flex items-center justify-start gap-2">
-                                            <a href="/<?= PROJECT_DIR ?>/patient-details?id=<?= $p['id'] ?>" class="opacity-80" title="View Profile">
+                                            <a href="/<?= PROJECT_DIR ?>/patient-details?id=<?= $p['id'] ?>" class="opacity-80"
+                                                title="View Profile">
                                                 <i data-lucide="eye"
                                                     class="w-6 h-6 bg-blue-100 px-1 py-1 rounded-md border border-blue-500 text-blue-500"></i>
                                             </a>
@@ -147,7 +146,8 @@
                                                 <i data-lucide="edit-3"
                                                     class="w-6 h-6 bg-green-100 px-1 py-1 rounded-md border border-green-500 text-green-500"></i>
                                             </button>
-                                            <a href="/<?= PROJECT_DIR ?>/patient-history?patient_number=<?= urlencode($p['patient_number']) ?>" class="opacity-80" title="Medical History">
+                                            <a href="/<?= PROJECT_DIR ?>/patient-history?patient_number=<?= urlencode($p['patient_number']) ?>"
+                                                class="opacity-80" title="Medical History">
                                                 <i data-lucide="file-text"
                                                     class="w-6 h-6 bg-yellow-100 px-1 py-1 rounded-md border border-yellow-500 text-yellow-500"></i>
                                             </a>
@@ -231,7 +231,8 @@
             </div>
 
             <div>
-                <label for="contact_number" class="block text-sm font-semibold text-gray-700 mb-1.5">Contact Number</label>
+                <label for="contact_number" class="block text-sm font-semibold text-gray-700 mb-1.5">Contact
+                    Number</label>
                 <div class="relative">
                     <i data-lucide="phone" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="contact_number" name="contact_number" required placeholder="09xxxxxxxxx"
