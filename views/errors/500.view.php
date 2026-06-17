@@ -2,8 +2,8 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$role = $_SESSION['role'] ?? 'guest';
-$homeLink = ($role !== 'guest') ? "/" . PROJECT_DIR . "/dashboard" : "/" . PROJECT_DIR . "/login";
+// Palaging ibabalik sa login page, i-logout muna para sigurado
+$homeLink = "/" . PROJECT_DIR . "/logout";
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -40,4 +40,12 @@ require_once basePath('routes.php');
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
-$router->route($uri, $method);
+try {
+    $router->route($uri, $method);
+} catch (\Throwable $e) {
+    // I-log ang totoong error sa server para ma-check mo later kung bakit nag-error
+    error_log($e->getMessage());
+    
+    // I-load ang 500 error view kapag may pumalyang code
+    $router->error(500);
+}

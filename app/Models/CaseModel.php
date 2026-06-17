@@ -300,7 +300,7 @@ class CaseModel
     {
         $stmt = $this->pdo->prepare("
             SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number,
-                   b.name AS branch_name,
+                   b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3,
                    COALESCE(NULLIF(u.full_name_report, ''), NULLIF(u.name, ''), SUBSTRING_INDEX(u.email, '@', 1)) AS radtech_name, u.professional_title AS radtech_title, u.signature AS radtech_signature,
                    COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name, ur.professional_title AS radiologist_title, ur.signature AS radiologist_signature
             FROM cases c
@@ -358,7 +358,7 @@ class CaseModel
     public function getLatestCaseByPatient($patientId)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, b.name AS branch_name
+            SELECT c.*, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
@@ -375,7 +375,7 @@ class CaseModel
     public function getActiveCasesByPatient($patientId)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, b.name AS branch_name
+            SELECT c.*, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
@@ -392,7 +392,7 @@ class CaseModel
      */
     public function getPatientHistory($patientNumber, $excludeCaseId = null)
     {
-        $sql = "SELECT c.*, b.name as branch_name, 
+        $sql = "SELECT c.*, b.name as branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, 
                        COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name
                 FROM cases c
                 JOIN branches b ON c.branch_id = b.id
@@ -584,9 +584,10 @@ class CaseModel
     public function getCaseByNumber($caseNumber)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number as p_num
+            SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number as p_num, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
             FROM cases c
             JOIN patients p ON c.patient_id = p.id
+            JOIN branches b ON c.branch_id = b.id
             WHERE c.case_number = ?
         ");
         $stmt->execute([$caseNumber]);
@@ -899,6 +900,23 @@ class CaseModel
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$branchId, $startDate, $endDate]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Get case statistics for a patient.
+     */
+    public function getPatientCaseStats($patientId)
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT 
+                COUNT(*) as total_exams,
+                COUNT(DISTINCT branch_id) as branches_visited,
+                MAX(created_at) as last_visit
+            FROM cases 
+            WHERE patient_id = ?
+        ");
+        $stmt->execute([$patientId]);
         return $stmt->fetch();
     }
 

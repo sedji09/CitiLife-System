@@ -16,3 +16,6 @@ if (!$patient) {
 
 // Fetch latest case just for context if any
 $latestCase = $caseModel->getLatestCaseByPatient($patientId);
+
+// Fetch case statistics for the patient
+$patientStats = $caseModel->getPatientCaseStats($patientId);

@@ -53,7 +53,7 @@ class PatientModel
     {
         $hasPatientId = $this->hasColumn('users', 'patient_id');
         if ($hasPatientId) {
-            $stmt = $this->pdo->prepare("SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, u.email FROM patients p LEFT JOIN users u ON u.patient_id = p.id WHERE p.id = ?");
+            $stmt = $this->pdo->prepare("SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, u.email, u.avatar FROM patients p LEFT JOIN users u ON u.patient_id = p.id WHERE p.id = ?");
             $stmt->execute([$id]);
             return $stmt->fetch();
         }

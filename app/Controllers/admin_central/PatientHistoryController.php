@@ -6,6 +6,7 @@ $caseModel = new CaseModel($pdo);
 $patientModel = new PatientModel($pdo);
 
 $patientNumber = $_GET['patient_number'] ?? '';
+$source = $_GET['source'] ?? 'profile';
 $patient = null;
 $history = [];
 

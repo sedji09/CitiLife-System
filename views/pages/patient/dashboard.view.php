@@ -163,9 +163,13 @@ $statusDescriptions = [
         <!-- Patient Profile Card -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-5">
             <div class="flex items-center gap-4 mb-4">
-                <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                    <i data-lucide="user" class="w-6 h-6 text-red-600"></i>
-                </div>
+                <?php if (!empty($displayInfo['avatar'])): ?>
+                    <img src="<?= htmlspecialchars($displayInfo['avatar']) ?>" alt="Profile" class="h-12 w-12 rounded-full object-cover shrink-0 border border-red-100 shadow-sm">
+                <?php else: ?>
+                    <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <i data-lucide="user" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                <?php endif; ?>
                 <div>
                     <h2 class="font-bold text-gray-900"><?= htmlspecialchars($displayName) ?></h2>
                     <p class="text-xs text-red-600 font-mono">#

@@ -106,10 +106,5 @@ $router->get('/app/api/messages.php', 'App/Api/messages.php');
 $router->post('/app/api/messages.php', 'App/Api/messages.php');
 $router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');
 $router->post('/app/api/request_password_reset.php', 'App/Api/request_password_reset.php');
+$router->post('/app/api/cancel_case.php', 'App/Api/cancel_case.php');
 $router->post('/app/config/update_patient.php', 'config/update_patient.php');
-
-// Temporary route to test the 500 error page
-$router->get('/test-500', function () {
-    loadView('errors/500');
-});
-

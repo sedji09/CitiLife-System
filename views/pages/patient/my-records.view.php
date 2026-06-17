@@ -207,7 +207,8 @@ $statusBadge = [
                                                         <?php
                                                         $isExpired = strtotime($c['created_at']) < strtotime('-3 months');
                                                         $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $c['id']);
-                                                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
+                                                        $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
+                                                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                                                         ?>
                                                         <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                                                             class="group transition-all" title="View Report">
@@ -290,7 +291,8 @@ $statusBadge = [
                                         <?php
                                         $isExpired = strtotime($c['created_at']) < strtotime('-3 months');
                                         $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $c['id']);
-                                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
+                                        $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
+                                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                                         ?>
                                         <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                                             class="inline-flex items-center gap-1.5 text-green-600 hover:text-green-800 text-xs font-bold transition">
@@ -337,19 +339,57 @@ $statusBadge = [
                 <h3 class="custom-alert-title">Result Access Expired</h3>
                 <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance</p>
                 <div class="custom-alert-buttons-container">
-                    <button class="custom-alert-btn-secondary" onclick="void(0)">Contact Us</button>
+                    <a id="expired-alert-contact-btn" href="#" class="custom-alert-btn-secondary" style="text-decoration:none; display:none; justify-content:center; align-items:center;">Contact Us</a>
                     <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
                 </div>
             </div>
         </div>
 
         <script>
-            function showExpiredAlert(e) {
+            function showExpiredAlert(e, contacts = []) {
                 if (e) {
                     e.preventDefault();
                     e.stopPropagation();
                 }
+                const contactBtn = document.getElementById('expired-alert-contact-btn');
+                if (contacts && contacts.length > 0) {
+                    contactBtn.setAttribute('onclick', `showContactOptions(${JSON.stringify(contacts)}); document.getElementById('expired-alert-modal').classList.remove('show'); return false;`);
+                    contactBtn.href = "#";
+                    contactBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> Contact Clinic';
+                    contactBtn.style.display = 'inline-flex';
+                } else {
+                    contactBtn.style.display = 'none';
+                }
                 document.getElementById('expired-alert-modal').classList.add('show');
+            }
+
+            function showContactOptions(numbers) {
+                if (!numbers || numbers.length === 0) return;
+                
+                let html = '<div class="flex flex-col gap-3 mt-2">';
+                numbers.forEach(num => {
+                    html += `<a href="tel:${num}" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-700 font-bold transition shadow-sm" style="text-decoration:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> 
+                        ${num}
+                    </a>`;
+                });
+                html += '</div>';
+
+                Swal.fire({
+                    title: 'Contact Clinic',
+                    html: html,
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    didOpen: () => {
+                        const closeBtn = Swal.getCloseButton();
+                        if (closeBtn) closeBtn.blur();
+                    },
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        title: 'text-xl font-bold text-gray-800',
+                        closeButton: '!outline-none !ring-0 !border-0 !shadow-none !text-gray-500 hover:!text-gray-800'
+                    }
+                });
             }
 
             document.addEventListener('DOMContentLoaded', function() {
