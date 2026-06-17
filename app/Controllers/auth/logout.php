@@ -3,6 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+$role = $_SESSION['role'] ?? null;
+
 // Destroy all session data
 $_SESSION = [];
 session_destroy();
@@ -16,9 +18,9 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// Redirect to login page
+// Redirect to appropriate login page based on role
 $reason = $_GET['reason'] ?? '';
-$redirect = "/" . PROJECT_DIR . "/login";
+$redirect = "/" . PROJECT_DIR . ($role === 'patient' ? "/patient-login" : "/login");
 if ($reason) {
     $redirect .= "?reason=" . urlencode($reason);
 }

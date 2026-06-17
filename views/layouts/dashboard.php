@@ -159,7 +159,11 @@ try {
 
       <?php require __DIR__ . '/partials/chat_widget.php'; ?>
 
-      <?php require __DIR__ . '/partials/scripts.php'; ?>
+    </div> <!-- End main content wrapper -->
+  </div> <!-- End #app Vue container -->
+
+  <?php require __DIR__ . '/partials/data_privacy_modal.php'; ?>
+  <?php require __DIR__ . '/partials/scripts.php'; ?>
 </body>
 
 </html>

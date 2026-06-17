@@ -50,6 +50,9 @@ $router->post('/otp-login.php', 'App\Controllers\AuthController@otpLogin', ['gue
 $router->get('/logout', 'App\Controllers\AuthController@logout');
 $router->get('/logout.php', 'App\Controllers\AuthController@logout');
 
+// Privacy accept route
+$router->post('/accept-privacy', 'App\Controllers\AuthController@acceptPrivacy', ['auth']);
+
 // Whitelisted dashboard pages (routed dynamically to PageController)
 $dashboardPages = [
     'dashboard',
