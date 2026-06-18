@@ -41,6 +41,7 @@ try {
                     u.avatar,
                     u.name,
                     u.full_name_report,
+                    m.id as latest_message_id,
                     m.message as latest_message,
                     m.created_at as latest_message_time,
                     m.sender_id,

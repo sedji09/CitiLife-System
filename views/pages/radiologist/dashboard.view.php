@@ -122,7 +122,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     const filter = document.getElementById('filterSelect').value;
                     const monthPicker = document.getElementById('monthPicker');
                     const yearPicker = document.getElementById('yearPicker');
-                    
+
                     if (filter === 'monthly') {
                         monthPicker.classList.remove('hidden');
                         yearPicker.classList.add('hidden');
@@ -133,13 +133,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         monthPicker.classList.add('hidden');
                         yearPicker.classList.add('hidden');
                     }
-                    
+
                     let url = '?role=radiologist&page=dashboard&filter=' + filter;
                     if (filter === 'monthly') url += '&month=' + monthPicker.value;
                     if (filter === 'yearly') url += '&year=' + yearPicker.value;
-                    
-                    window.history.pushState({path: url}, '', url);
-                    
+
+                    window.history.pushState({ path: url }, '', url);
+
                     if (typeof fetchDashboardData === 'function') {
                         fetchDashboardData();
                     }
@@ -197,16 +197,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
                     <script>
                         function fetchDashboardData() {
-                        const priority = document.getElementById('priorityFilter').value;
-                        const filter = document.getElementById('filterSelect').value;
-                        const month = document.getElementById('monthPicker').value;
-                        const year = document.getElementById('yearPicker').value;
-                        
-                        let url = '?role=radiologist&page=dashboard&priority=' + priority + '&filter=' + filter + '&ajax=1';
-                        if (filter === 'monthly' && month) url += '&month=' + month;
-                        if (filter === 'yearly' && year) url += '&year=' + year;
+                            const priority = document.getElementById('priorityFilter').value;
+                            const filter = document.getElementById('filterSelect').value;
+                            const month = document.getElementById('monthPicker').value;
+                            const year = document.getElementById('yearPicker').value;
 
-                        fetch(url, { cache: 'no-store' })
+                            let url = '?role=radiologist&page=dashboard&priority=' + priority + '&filter=' + filter + '&ajax=1';
+                            if (filter === 'monthly' && month) url += '&month=' + month;
+                            if (filter === 'yearly' && year) url += '&year=' + year;
+
+                            fetch(url, { cache: 'no-store' })
                                 .then(res => {
                                     if (!res.ok) throw new Error("Network response was not ok");
                                     return res.json();

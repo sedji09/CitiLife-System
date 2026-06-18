@@ -11,7 +11,8 @@ if (isset($caseNotFound) && $caseNotFound) {
 
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="?role=radtech&page=patient-lists" class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+    <a href="?role=radtech&page=patient-lists"
+        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
     <div>
@@ -78,11 +79,11 @@ if (isset($caseNotFound) && $caseNotFound) {
                             class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['branch_name'] ?? '—') ?></span>
                     </div>
                     <?php if (($caseDetails['philhealth_status'] ?? '') === 'With PhilHealth Card' && !empty($caseDetails['philhealth_id'])): ?>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">PhilHealth Number</span>
-                        <span
-                            class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['philhealth_id']) ?></span>
-                    </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">PhilHealth Number</span>
+                            <span
+                                class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['philhealth_id']) ?></span>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -146,7 +147,8 @@ if (isset($caseNotFound) && $caseNotFound) {
             <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Upload</h3>
             <?php if (!$isReadOnly): ?>
                 <span id="file-counter"
-                    style="font-size:0.75rem;font-weight:600;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:9999px;padding:2px 10px;">0 files</span>
+                    style="font-size:0.75rem;font-weight:600;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:9999px;padding:2px 10px;">0
+                    files</span>
             <?php endif; ?>
         </div>
         <p class="text-xs text-gray-500 mb-5">DICOM · JPG · JPEG · PNG — Max 15 MB per file</p>
@@ -162,19 +164,22 @@ if (isset($caseNotFound) && $caseNotFound) {
         <div id="no-image-error" style="display:none;"
             class="mb-3 rounded-lg bg-red-50 border border-red-300 p-3 flex items-center gap-3">
             <i data-lucide="image-off" class="w-5 h-5 text-red-600 shrink-0"></i>
-            <p class="text-sm text-red-700 font-medium">Please upload at least one diagnostic image before submitting.</p>
+            <p class="text-sm text-red-700 font-medium">Please upload at least one diagnostic image before submitting.
+            </p>
         </div>
 
         <div id="exam-required-error" style="display:none;"
             class="mb-3 rounded-lg bg-amber-50 border border-amber-300 p-3 flex items-center gap-3">
             <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 shrink-0"></i>
-            <p class="text-sm text-amber-700 font-medium">Please select Examination Types above before uploading images.</p>
+            <p class="text-sm text-amber-700 font-medium">Please select Examination Types above before uploading images.
+            </p>
         </div>
 
         <div id="limit-error" style="display:none;"
             class="mb-3 rounded-lg bg-orange-50 border border-orange-300 p-3 flex items-center gap-3">
             <i data-lucide="info" class="w-5 h-5 text-orange-600 shrink-0"></i>
-            <p id="limit-error-msg" class="text-sm text-orange-700 font-medium">You can only upload as many images as there are selected exams.</p>
+            <p id="limit-error-msg" class="text-sm text-orange-700 font-medium">You can only upload as many images as
+                there are selected exams.</p>
         </div>
 
         <?php if (!$isReadOnly): ?>
@@ -194,7 +199,8 @@ if (isset($caseNotFound) && $caseNotFound) {
                         </p>
                         <p class="text-xs text-gray-400 mt-1">Max <strong class="text-gray-500">15 MB</strong> per file</p>
                     </div>
-                    <input type="file" id="xray_file_input" name="xray_image[]" accept=".jpg,.jpeg,.png,.dcm,.dicom" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" multiple>
+                    <input type="file" id="xray_file_input" name="xray_image[]" accept=".jpg,.jpeg,.png,.dcm,.dicom"
+                        class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" multiple>
                 </div>
 
                 <!-- Preview list -->
@@ -221,11 +227,12 @@ if (isset($caseNotFound) && $caseNotFound) {
             <?php if (!empty($savedPaths)): ?>
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($savedPaths as $idx => $sPath): ?>
-                        <div class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm">
-                            <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($sPath) ?>" 
-                                 alt="X-ray <?= $idx + 1 ?>"
-                                 class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
-                            <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] font-bold text-white py-1 text-center uppercase tracking-tighter">
+                        <div
+                            class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm">
+                            <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
+                                class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
+                            <div
+                                class="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] font-bold text-white py-1 text-center uppercase tracking-tighter">
                                 IMG <?= $idx + 1 ?>
                             </div>
                         </div>
@@ -243,11 +250,14 @@ if (isset($caseNotFound) && $caseNotFound) {
         <?php endif; ?>
 
         <!-- Validation Error Banner -->
-        <div id="rad-selection-error" class="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mt-6 hidden flex items-start gap-3 shadow-sm transition-opacity duration-300" role="alert">
+        <div id="rad-selection-error"
+            class="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mt-6 hidden flex items-start gap-3 shadow-sm transition-opacity duration-300"
+            role="alert">
             <i data-lucide="info" class="w-5 h-5 text-orange-500 mt-0.5 shrink-0"></i>
             <div>
                 <strong class="font-medium text-sm">Selection Required</strong>
-                <span class="block sm:inline text-sm mt-0.5 opacity-90">Please select a radiologist from the dropdown before submitting the case.</span>
+                <span class="block sm:inline text-sm mt-0.5 opacity-90">Please select a radiologist from the dropdown
+                    before submitting the case.</span>
             </div>
         </div>
 
@@ -256,18 +266,22 @@ if (isset($caseNotFound) && $caseNotFound) {
         <div class="mt-4 flex gap-4 items-center">
             <?php if (!$isReadOnly): ?>
                 <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 p-2 rounded-lg shadow-sm">
-                    <label for="radiologist_id" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i data-lucide="user-check" class="w-4 h-4 inline mr-1 text-red-500"></i>Send to:</label>
+                    <label for="radiologist_id" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i
+                            data-lucide="user-check" class="w-4 h-4 inline mr-1 text-red-500"></i>Send to:</label>
                     <div class="relative inline-block" id="custom-radiologist-select" style="min-width: 260px;">
                         <input type="hidden" name="radiologist_id" id="radiologist_id" required>
-                        <button type="button" class="w-full text-left text-sm border border-gray-300 rounded-md py-1.5 pl-3 pr-8 bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm" onclick="document.getElementById('rad-options').classList.toggle('hidden')">
+                        <button type="button"
+                            class="w-full text-left text-sm border border-gray-300 rounded-md py-1.5 pl-3 pr-8 bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm"
+                            onclick="document.getElementById('rad-options').classList.toggle('hidden')">
                             <span id="rad-selected-text" class="text-gray-700">-- Select Radiologist --</span>
                             <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 pointer-events-none"></i>
                         </button>
-                        <ul id="rad-options" class="absolute z-50 mb-1 bottom-full w-full bg-white border border-gray-200 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
+                        <ul id="rad-options"
+                            class="absolute z-50 mb-1 bottom-full w-full bg-white border border-gray-200 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
                             <?php foreach ($radiologistsList ?? [] as $rad): ?>
-                                <?php 
-                                    $caseCount = isset($rad['active_case_count']) ? (int)$rad['active_case_count'] : 0; 
-                                    $isAvailable = isset($rad['is_available']) ? (int)$rad['is_available'] === 1 : true;
+                                <?php
+                                $caseCount = isset($rad['active_case_count']) ? (int) $rad['active_case_count'] : 0;
+                                $isAvailable = isset($rad['is_available']) ? (int) $rad['is_available'] === 1 : true;
                                 ?>
                                 <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors <?= $isAvailable ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed opacity-60 bg-gray-50' ?>"
                                     <?= $isAvailable ? "onclick=\"
@@ -276,13 +290,18 @@ if (isset($caseNotFound) && $caseNotFound) {
                                         document.getElementById('rad-options').classList.add('hidden');
                                         document.getElementById('rad-selection-error').classList.add('hidden');
                                     \"" : '' ?>>
-                                    <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-500' ?>">Dr. <?= htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name']))) ?></span>
+                                    <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-500' ?>">Dr.
+                                        <?= htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name']))) ?></span>
                                     <?php if ($isAvailable): ?>
-                                        <span class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2" title="<?= $caseCount ?> pending cases">
+                                        <span
+                                            class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2"
+                                            title="<?= $caseCount ?> pending cases">
                                             <?= $caseCount ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 shadow-sm ml-2" title="Unavailable">
+                                        <span
+                                            class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 shadow-sm ml-2"
+                                            title="Unavailable">
                                             Unavailable
                                         </span>
                                     <?php endif; ?>
@@ -292,16 +311,16 @@ if (isset($caseNotFound) && $caseNotFound) {
                     </div>
 
                     <script>
-                    document.addEventListener('click', function(event) {
-                        const selectWrap = document.getElementById('custom-radiologist-select');
-                        const options = document.getElementById('rad-options');
-                        if (selectWrap && !selectWrap.contains(event.target)) {
-                            options.classList.add('hidden');
-                        }
-                    });
+                        document.addEventListener('click', function (event) {
+                            const selectWrap = document.getElementById('custom-radiologist-select');
+                            const options = document.getElementById('rad-options');
+                            if (selectWrap && !selectWrap.contains(event.target)) {
+                                options.classList.add('hidden');
+                            }
+                        });
                     </script>
                 </div>
-                <button type="button" 
+                <button type="button"
                     onclick="if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case?', 'submit_radiologist', event)"
                     class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm h-full">
                     <i data-lucide="send" class="w-4 h-4"></i>
@@ -316,7 +335,7 @@ if (isset($caseNotFound) && $caseNotFound) {
             <?php endif; ?>
 
             <?php if ($isReportReady): ?>
-                <a href="javascript:void(0)" 
+                <a href="javascript:void(0)"
                     onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
                     class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
                     <i data-lucide="printer" class="w-4 h-4"></i>
@@ -475,7 +494,7 @@ if (isset($caseNotFound) && $caseNotFound) {
             function addFiles(newFiles) {
                 if (errSize) errSize.style.display = 'none';
                 if (errLimit) errLimit.style.display = 'none';
-                
+
                 var examCount = getExamCount();
                 if (examCount === 0) {
                     if (errExamReq) errExamReq.style.display = 'flex';
@@ -499,7 +518,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                         if (errSize) errSize.style.display = 'flex';
                         return;
                     }
-                    
+
                     var parts = file.name.split('.');
                     var ext = parts[parts.length - 1].toLowerCase();
                     if (!allowedExts.includes(ext)) {
@@ -523,7 +542,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                     // Sync fileQueue → native input RIGHT before PHP receives the form
                     syncInputFiles();
                     var examCount = getExamCount();
-                    
+
                     if (examCount === 0) {
                         e.preventDefault();
                         if (errExamReq) { errExamReq.style.display = 'flex'; errExamReq.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
@@ -561,10 +580,10 @@ if (isset($caseNotFound) && $caseNotFound) {
 
             // Listen for exam changes
             if (examContainer) {
-                examContainer.addEventListener('exam-ms:change', function(e) {
+                examContainer.addEventListener('exam-ms:change', function (e) {
                     var newCount = e.detail.count;
                     if (newCount > 0 && errExamReq) errExamReq.style.display = 'none';
-                    
+
                     // If exams reduced below current files, trim or warn
                     if (fileQueue.length > newCount) {
                         // For now we just warn and show the limit error
@@ -573,7 +592,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                     } else if (errLimit) {
                         errLimit.style.display = 'none';
                     }
-                    
+
                     updateCounter();
                     renderPreviews();
                 });

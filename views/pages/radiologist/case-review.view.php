@@ -13,10 +13,20 @@ if (isset($caseNotFound) && $caseNotFound) {
 <!--  CASE REVIEW – Multi-Exam Radiologist Reporting Interface                 -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 
+<?php
+$backPage = $_GET['back_to'] ?? 'patient-queue';
+$backId   = $_GET['back_id'] ?? '';
+$backUrl  = "?role=radiologist&page=" . urlencode($backPage);
+if ($backPage === 'patient-queue') {
+    $backUrl .= "&branch_id=" . urlencode($branchIdQuery);
+} elseif ($backId) {
+    $backUrl .= "&id=" . urlencode($backId);
+}
+?>
 <!-- Back nav -->
 <div class="mb-4">
-    <a href="?role=radiologist&page=patient-queue&branch_id=<?= $branchIdQuery ?>"
-       id="back-to-worklist-btn" title="Back to Worklist"
+    <a href="<?= htmlspecialchars($backUrl) ?>"
+       id="back-to-worklist-btn" title="Back"
        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
@@ -50,7 +60,17 @@ if (isset($caseNotFound) && $caseNotFound) {
         <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
         <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
     </div>
-    <a href="?role=radiologist&page=worklist" class="text-xs font-bold text-green-700 hover:underline">Return to Worklist &rarr;</a>
+    <a href="<?= htmlspecialchars($backUrl) ?>" class="text-xs font-bold text-green-700 hover:underline">
+        <?php
+        if ($backPage === 'patient-records-history') {
+            echo 'Return to Patient Record';
+        } elseif ($backPage === 'patient-history') {
+            echo 'Return to Patient History';
+        } else {
+            echo 'Return to Worklist';
+        }
+        ?> &rarr;
+    </a>
 </div>
 <?php endif; ?>
 
@@ -349,17 +369,23 @@ if (isset($caseNotFound) && $caseNotFound) {
 
         <!-- Submit footer -->
         <div class="border-t border-gray-100 px-5 py-4 rounded-b-xl">
-            <?php if ($isCompleted): ?>
-            <div class="w-full rounded-xl bg-red-50 border border-red-200 py-3 px-5 flex items-center justify-center gap-2">
-                <i data-lucide="check-circle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
-                <span class="text-sm font-bold text-red-600">Report Submitted &mdash; Ready for Release</span>
+            <div id="completed-footer-actions" class="<?= $isCompleted ? '' : 'hidden' ?> w-full flex flex-col gap-2">
+                <div class="w-full rounded-xl bg-red-50 border border-red-200 py-3 px-5 flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
+                    <span class="text-sm font-bold text-red-600">Report Submitted &mdash; Ready for Release</span>
+                </div>
+                <button type="button" id="btn-edit-report"
+                        class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Findings
+                </button>
             </div>
-            <?php else: ?>
-            <button type="button" id="btn-submit-report"
-                    class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm focus:ring-4 focus:ring-red-200 focus:outline-none transition-all">
-                <i data-lucide="send" class="w-4 h-4"></i> Submit Report
-            </button>
-            <?php endif; ?>
+            
+            <div id="editable-footer-actions" class="<?= $isCompleted ? 'hidden' : '' ?> w-full">
+                <button type="button" id="btn-submit-report"
+                        class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm focus:ring-4 focus:ring-red-200 focus:outline-none transition-all">
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit Report
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -372,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Exam data store ───────────────────────────────────────────────────────
     const examKeys  = <?= json_encode($examTypes) ?>;
     const savedData = <?= json_encode($savedReports) ?>;
-    const isCompleted = <?= $isCompleted ? 'true' : 'false' ?>;
+    let isCompleted = <?= $isCompleted ? 'true' : 'false' ?>;
     const STORAGE_KEY = `rad_case_draft_<?= $caseId ?>`;
 
     const store = {}; // { examKey: { findings, impression } }
@@ -572,6 +598,57 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('report-form').submit();
         }, 'Yes, Submit', false, e);
     });
+
+    // ── Unlock Report Findings for Editing ────────────────────────────────────
+    const btnEditReport = document.getElementById('btn-edit-report');
+    if (btnEditReport) {
+        btnEditReport.addEventListener('click', () => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Edit Report Findings?',
+                    text: 'Are you sure you want to unlock and edit the findings of this report? This will allow you to modify and resubmit the report.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, edit findings',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#2563eb', // Blue
+                    cancelButtonColor: '#4b5563',
+                    customClass: {
+                        popup: 'rounded-3xl',
+                        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm',
+                        cancelButton: 'rounded-xl px-5 py-2.5 font-semibold text-sm'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        unlockFormForEditing();
+                    }
+                });
+            } else {
+                if (confirm('Are you sure you want to unlock and edit the findings of this report?')) {
+                    unlockFormForEditing();
+                }
+            }
+        });
+    }
+
+    function unlockFormForEditing() {
+        // Remove readonly from textareas
+        document.querySelectorAll('.exam-findings, .exam-impression').forEach(ta => {
+            ta.removeAttribute('readonly');
+            ta.classList.remove('cursor-not-allowed', 'text-gray-600');
+            ta.classList.add('focus:ring-2', 'focus:ring-red-100', 'focus:border-red-300');
+            
+            // Re-add input event listener since it was skipped if completed
+            ta.addEventListener('input', () => { syncStore(ta); updateCount(ta); });
+        });
+        
+        // Show submit button, hide completed view actions
+        document.getElementById('completed-footer-actions')?.classList.add('hidden');
+        document.getElementById('editable-footer-actions')?.classList.remove('hidden');
+        
+        // Toggle client-side flag
+        isCompleted = false;
+    }
 
     // ── Image Viewer ──────────────────────────────────────────────────────────
     const images   = document.querySelectorAll('.dicom-img');

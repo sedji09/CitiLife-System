@@ -12,12 +12,12 @@ $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
 
-$caseId        = $_GET['id']        ?? 0;
+$caseId = $_GET['id'] ?? 0;
 $branchIdQuery = $_GET['branch_id'] ?? 0;
 $radiologistId = $_SESSION['user_id'] ?? 1;
 
 $successMsg = '';
-$errorMsg   = '';
+$errorMsg = '';
 $isSubmitted = false;
 
 // 1. Pre-fetch case details so branch_id is available for audit logging
@@ -32,19 +32,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     try {
         $submitData = [
             'clinical_information' => $_POST['clinical_information'] ?? '',
-            'exam_reports_arr'     => json_decode($_POST['exam_reports'] ?? '{}', true) ?: []
+            'exam_reports_arr' => json_decode($_POST['exam_reports'] ?? '{}', true) ?: []
         ];
 
         $result = $caseModel->submitRadiologistReport($caseId, $radiologistId, $submitData, $notificationModel);
 
         if ($result['success']) {
-            $successMsg  = $result['message'] . " Radtech can now print and release the result.";
+            $successMsg = $result['message'] . " Radtech can now print and release the result.";
             $isSubmitted = true;
 
             // Build a meaningful audit log entry
             $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
-            $examList    = implode(', ', array_keys($submitData['exam_reports_arr']));
-            $details     = "Patient: {$patientName} | Case #{$caseId} | Exams: {$examList}";
+            $examList = implode(', ', array_keys($submitData['exam_reports_arr']));
+            $details = "Patient: {$patientName} | Case #{$caseId} | Exams: {$examList}";
 
             $auditLogModel->addLog(
                 $radiologistId,
@@ -82,26 +82,28 @@ if (!$caseDetails) {
         $caseDetails['status'] = 'Under Reading';
     }
 
-    $fullName    = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
+    $fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
     $isCompleted = ($isSubmitted || in_array($caseDetails['status'], ['Report Ready', 'Completed']));
 
     // ── Parse exam types ──────────────────────────────────────────────────────────
-    $examTypeRaw  = $caseDetails['exam_type'] ?? '';
-    $examTypes    = array_values(array_filter(array_map('trim', explode(',', $examTypeRaw))));
-    if (empty($examTypes)) $examTypes = ['General'];
+    $examTypeRaw = $caseDetails['exam_type'] ?? '';
+    $examTypes = array_values(array_filter(array_map('trim', explode(',', $examTypeRaw))));
+    if (empty($examTypes))
+        $examTypes = ['General'];
 
     // ── Parse saved per-exam reports ─────────────────────────────────────────────
     $savedReports = [];
-    $rawFindings  = $caseDetails['findings'] ?? '';
+    $rawFindings = $caseDetails['findings'] ?? '';
     if ($rawFindings && $rawFindings[0] === '{') {
         $decoded = json_decode($rawFindings, true);
-        if (is_array($decoded)) $savedReports = $decoded;
+        if (is_array($decoded))
+            $savedReports = $decoded;
     }
     // Fallback: single-exam — put into first exam slot
     if (empty($savedReports) && count($examTypes) === 1 && $rawFindings) {
         $examKey = $examTypes[0];
         $prefix = "[{$examKey}] ";
-        
+
         // Strip prefix if exists
         if (str_starts_with($rawFindings, $prefix)) {
             $rawFindings = substr($rawFindings, strlen($prefix));
@@ -112,7 +114,7 @@ if (!$caseDetails) {
         }
 
         $savedReports[$examKey] = [
-            'findings'   => $rawFindings,
+            'findings' => $rawFindings,
             'impression' => $rawImpression,
         ];
     }

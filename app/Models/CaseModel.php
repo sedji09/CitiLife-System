@@ -181,7 +181,7 @@ class CaseModel
                 recommendation       = '',
                 radiologist_id       = ?,
                 date_completed       = NOW(),
-                status               = 'Report Ready'
+                status               = CASE WHEN status = 'Completed' THEN 'Completed' ELSE 'Report Ready' END
             WHERE id = ?
         ");
         return $stmt->execute([
@@ -225,32 +225,47 @@ class CaseModel
             'impression' => $impressionStore
         ];
 
+        $cDataBefore = $this->getCaseById($caseId);
+        $wasAlreadySubmitted = ($cDataBefore && in_array($cDataBefore['status'], ['Report Ready', 'Completed']));
+
         if ($this->saveFinding($caseId, $radiologistId, $saveData)) {
             $cData = $this->getCaseById($caseId);
             if ($cData && !empty($cData['branch_id'])) {
                 // Determine branch name/code for the message
                 $branchLabel = str_replace(' Branch', '', $cData['branch_name']);
 
-                // Notify RadTech
-                $notificationModel->add(
-                    "Report Ready",
-                    "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). Awaiting release.",
-                    "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
-                    null,
-                    'radtech',
-                    $cData['branch_id']
-                );
-
-                // Notify Patient (if linked)
-                $patientUserId = $this->getPatientUserId($caseId);
-                if ($patientUserId) {
+                if ($wasAlreadySubmitted) {
+                    // Notify RadTech about findings change
                     $notificationModel->add(
-                        "Reading Completed",
-                        "Your X-ray for Case {$cData['case_number']} has been read. It will be released shortly.",
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}",
-                        $patientUserId,
-                        'patient'
+                        "Report Updated",
+                        "Radiologist has updated the report findings for Case {$cData['case_number']} ({$branchLabel}).",
+                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
+                        null,
+                        'radtech',
+                        $cData['branch_id']
                     );
+                } else {
+                    // Notify RadTech
+                    $notificationModel->add(
+                        "Report Ready",
+                        "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). Awaiting release.",
+                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
+                        null,
+                        'radtech',
+                        $cData['branch_id']
+                    );
+
+                    // Notify Patient (if linked)
+                    $patientUserId = $this->getPatientUserId($caseId);
+                    if ($patientUserId) {
+                        $notificationModel->add(
+                            "Reading Completed",
+                            "Your X-ray for Case {$cData['case_number']} has been read. It will be released shortly.",
+                            "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}",
+                            $patientUserId,
+                            'patient'
+                        );
+                    }
                 }
             }
             return [
