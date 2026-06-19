@@ -80,6 +80,13 @@ if ($backId) {
             class="inline-flex items-center text-<?= $sColor ?>-600 border border-<?= $sColor ?>-400 rounded-full bg-<?= $sColor ?>-50 px-3 py-1 text-xs font-semibold shadow-sm">
             <?= htmlspecialchars($caseDetails['status']) ?>
         </span>
+
+        <?php if ($caseDetails['radiologist_id'] == $radiologistId): ?>
+            <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $caseDetails['id'] ?>&back_to=patient-records-history&back_id=<?= $caseDetails['id'] ?>"
+               class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition ml-2">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Findings
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 

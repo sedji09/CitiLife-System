@@ -10,7 +10,7 @@ $branchesList = $branchModel->getAllBranches();
 
 // Fetch Completed cases (Standardized via Model)
 $radiologistId = $_SESSION['user_id'] ?? null;
-$records = $caseModel->getWorklist(null, null, 'Completed', false, $radiologistId);
+$records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
 ?>
 
 <!-- Header -->

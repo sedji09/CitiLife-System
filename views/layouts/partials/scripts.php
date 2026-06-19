@@ -99,6 +99,7 @@
         themeDropdownOpen: false,
         // Chat Settings
         userId: window.__APP__.userId || null,
+        lastReceivedMessageId: null,
         chatMenuOpen: false,
         chatSearchQuery: '',
         searchTimeout: null,
@@ -360,7 +361,40 @@
         // Fetch conversations (always, so badge count stays live)
         fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations')
           .then(res => res.json())
-          .then(data => { if (data.success) this.conversations = data.conversations; })
+          .then(data => {
+            if (data.success) {
+              this.conversations = data.conversations;
+
+              let maxId = this.lastReceivedMessageId;
+              let playSound = false;
+
+              data.conversations.forEach(conv => {
+                if (conv.latest_message_id) {
+                  const msgId = parseInt(conv.latest_message_id);
+                  const senderId = String(conv.sender_id);
+                  const currentUserId = String(this.userId);
+
+                  if (senderId !== currentUserId) {
+                    if (this.lastReceivedMessageId !== null && msgId > this.lastReceivedMessageId) {
+                      playSound = true;
+                    }
+                    maxId = Math.max(maxId || 0, msgId);
+                  }
+                }
+              });
+
+              if (this.lastReceivedMessageId === null) {
+                this.lastReceivedMessageId = maxId || 0;
+              } else {
+                if (playSound && this.notifSound) {
+                  this.playNotificationSound();
+                }
+                if (maxId > this.lastReceivedMessageId) {
+                  this.lastReceivedMessageId = maxId;
+                }
+              }
+            }
+          })
           .catch(err => console.error(err));
 
         // Fetch active chats — only append NEW messages to avoid re-render stealing focus
@@ -381,29 +415,55 @@
                 // 2. Append genuinely new messages
                 if (data.messages.length > chat.messages.length) {
                   // Only push the genuinely new messages (avoid full array replacement)
-                const existingIds = new Set(chat.messages.map(m => m.id));
-                const newMsgs = data.messages.filter(m => !existingIds.has(m.id));
-                if (newMsgs.length > 0) {
-                  newMsgs.forEach(m => chat.messages.push(m));
-                  chat.loading = false;
-                  // Count unread: messages from the OTHER person while chat is minimized
-                  const incomingFromOther = newMsgs.filter(m => String(m.sender_id) !== String(this.userId));
-                  if (incomingFromOther.length > 0 && chat.minimized) {
-                    chat.unreadCount = (chat.unreadCount || 0) + incomingFromOther.length;
-                  }
-                  // Auto-scroll only if not minimized
-                  if (!chat.minimized) {
-                    nextTick(() => {
-                      const body = this.$refs['chatBody_' + chat.id];
-                      if (body && body[0]) {
-                        body[0].scrollTop = body[0].scrollHeight;
+                  const existingIds = new Set(chat.messages.map(m => m.id));
+                  const newMsgs = data.messages.filter(m => !existingIds.has(m.id));
+                  if (newMsgs.length > 0) {
+                    newMsgs.forEach(m => chat.messages.push(m));
+                    chat.loading = false;
+
+                    // Count unread: messages from the OTHER person while chat is minimized
+                    const incomingFromOther = newMsgs.filter(m => String(m.sender_id) !== String(this.userId));
+                    if (incomingFromOther.length > 0 && chat.minimized) {
+                      chat.unreadCount = (chat.unreadCount || 0) + incomingFromOther.length;
+                    }
+
+                    // Play sound if any incoming messages are from other person
+                    if (incomingFromOther.length > 0) {
+                      let maxChatMsgId = this.lastReceivedMessageId;
+                      let playChatSound = false;
+                      incomingFromOther.forEach(m => {
+                        const msgId = parseInt(m.id);
+                        if (this.lastReceivedMessageId !== null && msgId > this.lastReceivedMessageId) {
+                          playChatSound = true;
+                        }
+                        maxChatMsgId = Math.max(maxChatMsgId || 0, msgId);
+                      });
+
+                      if (this.lastReceivedMessageId === null) {
+                        this.lastReceivedMessageId = maxChatMsgId || 0;
+                      } else {
+                        if (playChatSound && this.notifSound) {
+                          this.playNotificationSound();
+                        }
+                        if (maxChatMsgId > this.lastReceivedMessageId) {
+                          this.lastReceivedMessageId = maxChatMsgId;
+                        }
                       }
-                    });
+                    }
+
+                    // Auto-scroll only if not minimized
+                    if (!chat.minimized) {
+                      nextTick(() => {
+                        const body = this.$refs['chatBody_' + chat.id];
+                        if (body && body[0]) {
+                          body[0].scrollTop = body[0].scrollHeight;
+                        }
+                      });
+                    }
                   }
                 }
-              }
-            } // Close if (data.success)
-          }).catch(err => console.error(err));
+              } // Close if (data.success)
+            }).catch(err => console.error(err));
         });
       },
       openNewMessageModal() {
@@ -477,7 +537,7 @@
         // Clear unread badge when user opens the chat
         if (!chat.minimized) {
           chat.unreadCount = 0;
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id).catch(() => {});
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id).catch(() => { });
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
@@ -493,7 +553,7 @@
         if (existing) {
           existing.minimized = false;
           existing.unreadCount = 0; // Clear badge when user opens it
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id).catch(() => {});
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id).catch(() => { });
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -590,14 +650,14 @@
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
             this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
-            fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + targetId).catch(() => {});
+            fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + targetId).catch(() => { });
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
             }
             // Force absolute reactivity refresh in ALL cases
             this.activeChats = [...this.activeChats];
-            
+
             // Ensure scroll is at the bottom after window re-opens
             nextTick(() => {
               const body = this.$refs['chatBody_' + targetId];
@@ -1175,6 +1235,13 @@
       },
       playNotificationSound() {
         try {
+          // Throttle to prevent multiple overlaps within 1 second
+          const now = Date.now();
+          if (window.__lastNotificationSoundTime && (now - window.__lastNotificationSoundTime < 1000)) {
+            return;
+          }
+          window.__lastNotificationSoundTime = now;
+
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           if (!AudioContext) return;
           const ctx = new AudioContext();
@@ -1286,9 +1353,15 @@
           // Radiologist specific associations
           if (currentRole === 'radiologist' || currentRole === 'radtech' || currentRole === 'admin_central' || currentRole === 'branch_admin' || currentRole === 'it_admin') {
             if (targetPage === 'worklist' && ['worklist', 'patient-queue', 'case-review'].includes(currentPage)) {
+              if (currentPage === 'case-review' && currentUrl.searchParams.get('back_to') === 'patient-records-history') {
+                return false;
+              }
               return true;
             }
             if (targetPage === 'patient-history' && ['patient-history', 'patient-records-history'].includes(currentPage)) {
+              return true;
+            }
+            if (targetPage === 'patient-history' && currentPage === 'case-review' && currentUrl.searchParams.get('back_to') === 'patient-records-history') {
               return true;
             }
           }

@@ -41,7 +41,7 @@ class PatientDetailsController
 
                 // Centralized logic handling validation, file uploads, DB updates and Notifications
                 $result = $caseModel->processRadTechSubmission($caseId, $submitData, $notificationModel);
-                
+
                 if ($result['success']) {
                     $_SESSION['flash_success'] = $result['message'];
                     header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists");
@@ -63,7 +63,7 @@ class PatientDetailsController
             $radiologistsList = [];
         } else {
             $caseNotFound = false;
-            
+
             // Fetch Radiologists with active case count
             $stmtRad = $pdo->prepare("
                 SELECT 
@@ -78,7 +78,7 @@ class PatientDetailsController
             ");
             $stmtRad->execute();
             $radiologistsList = $stmtRad->fetchAll();
-            
+
             // 4. Page Logic (Read-only check)
             $isReadOnly = in_array($caseDetails['status'], ['Pending', 'Under Reading', 'Report Ready', 'Completed'])
                 && $caseDetails['image_status'] === 'Uploaded';
