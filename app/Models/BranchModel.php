@@ -23,9 +23,6 @@ class BranchModel {
     /**
      * Get branch by ID.
      */
-    /**
-     * Get branch by ID.
-     */
     public function getBranchById($id) {
         $stmt = $this->pdo->prepare("SELECT * FROM branches WHERE id = ?");
         $stmt->execute([$id]);

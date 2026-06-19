@@ -1,14 +1,18 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class DashboardController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * DashboardController.php - Branch Admin
  * Fetches statistics and recent activity for the branch admin dashboard.
  */
-
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/RecordRequestModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $patientModel = new \PatientModel($pdo);
@@ -67,3 +71,7 @@ if ($filter === 'today') {
 }
 
 $recentActivity = $auditLogModel->getFilteredLogs($auditFilters, 8, 0, 'branch_admin', $branchId);
+
+        return get_defined_vars();
+    }
+}

@@ -1,14 +1,22 @@
 <?php
+
+namespace App\Controllers\it_admin;
+
+class AuditLogsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * AuditLogsController.php
  * IT Admin controller for global system audit monitoring.
  */
 
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-require_once __DIR__ . '/../../Models/UserModel.php';
 
-$auditLogModel = new AuditLogModel($pdo);
-$userModel = new UserModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
+$userModel = new \UserModel($pdo);
 
 // 1. Collect Filters
 $filters = [
@@ -35,7 +43,7 @@ try {
     $total_count = $auditLogModel->getTotalFilteredLogsCount($filters, $currentRole, $currentBranchId);
     $distinctModules = $auditLogModel->getDistinctModules();
     $distinctRoles = $auditLogModel->getDistinctRoles();
-} catch (Exception $e) {
+} catch (\Exception $e) {
     $error = "System Error: Failed to retrieve logs. " . $e->getMessage();
     $logs = [];
     $total_count = 0;
@@ -45,3 +53,7 @@ try {
 
 // 4. Calculate pagination
 $total_pages = ceil($total_count / $limit);
+
+        return get_defined_vars();
+    }
+}

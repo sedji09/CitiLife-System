@@ -6,9 +6,6 @@
  * Supports dynamic A4 pagination for long findings.
  */
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/UserModel.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $userModel = new \UserModel($pdo);

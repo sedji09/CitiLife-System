@@ -1,10 +1,19 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class BranchXrayCasesController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * BranchXrayCasesController.php
  * Handles backend logic for the Branch Admin's X-ray Cases (Tabbed: Today's Queue & Patient Records).
  */
 
-require_once __DIR__ . '/../../Models/CaseModel.php';
 
 $caseModel = new \CaseModel($pdo);
 
@@ -29,4 +38,8 @@ $releasedRecords = $caseModel->getReleasedRecords($branchId);
 $currentTab = $_GET['tab'] ?? 'queue';
 if (!in_array($currentTab, ['queue', 'records'])) {
     $currentTab = 'queue';
+}
+
+        return get_defined_vars();
+    }
 }

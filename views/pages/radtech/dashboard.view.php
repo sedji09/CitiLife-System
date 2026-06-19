@@ -1,8 +1,6 @@
 <?php
 // Centralized DB connection (included in layouts, but safe to include once globally)
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
 
 // Initialize the Backend Model
 $caseModel = new \CaseModel($pdo);

@@ -1,12 +1,18 @@
 <?php
+namespace App\Controllers\admin_central;
+
+class SettingsController
+{
+    public function handle()
+    {
+        global $pdo;
+
 // Handles logic for the Settings Page
 // Accessible by admin_central
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-global $pdo;
 
 $success = '';
 $error = '';
@@ -73,9 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch current settings
 $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings");
 $dbSettings = [];
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
     $dbSettings[$row['setting_key']] = $row['setting_value'];
 }
 
 $currentSystemName = $dbSettings['system_name'] ?? 'X-Ray Clinic Management System';
 $currentLogo = $dbSettings['clinic_logo'] ?? '';
+
+        return get_defined_vars();
+    }
+}

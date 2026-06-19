@@ -1,13 +1,21 @@
 <?php
+
+namespace App\Controllers\it_admin;
+
+class UserRoleSettingsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * UserRoleSettingsController.php
  * IT Admin module for managing system security policies and role permissions.
  */
 
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-require_once __DIR__ . '/../../helpers/AuthHelper.php';
 
-$auditLogModel = new AuditLogModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $success = $_SESSION['success'] ?? '';
 $error = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
@@ -68,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             } else {
                 echo json_encode(['success' => false, 'message' => 'DB execution failed']);
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -78,6 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // 3. Load active matrix from DB
 $activeMatrix = [];
 $stmt = $pdo->query("SELECT role, perm_key, access_level FROM role_permissions");
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
     $activeMatrix[$row['role']][$row['perm_key']] = intval($row['access_level']);
+}
+
+        return get_defined_vars();
+    }
 }

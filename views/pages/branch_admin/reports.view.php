@@ -3,7 +3,6 @@
  * reports.php - Branch Admin Reports
  */
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
 
 $branchModel = new \BranchModel($pdo);
 $branchId = $_SESSION['branch_id'] ?? null;

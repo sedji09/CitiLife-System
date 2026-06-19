@@ -1,12 +1,18 @@
 <?php
+
+namespace App\Controllers\radiologist;
+
+class CaseReviewController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * CaseReviewController.php
  * Handles backend logic for the Radiologist Case Review and reporting interface.
  */
-
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/NotificationModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
@@ -61,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
         } else {
             $errorMsg = $result['message'];
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $errorMsg = "Failed to submit report: " . $e->getMessage();
     }
 }
@@ -126,5 +132,9 @@ if (!$caseDetails) {
         } else {
             $imagePaths = [$caseDetails['image_path']];
         }
+    }
+}
+
+        return get_defined_vars();
     }
 }

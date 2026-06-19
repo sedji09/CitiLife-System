@@ -46,8 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateStmt = $pdo->prepare("UPDATE users SET otp_code = ?, token_expires_at = ?, otp_resend_count = ?, last_otp_resend_at = NOW(), otp_locked_until = ? WHERE id = ?");
                 $updateStmt->execute([$otpCode, $expiresAt, $newResendCount, $lockedUntil, $_SESSION['temp_user_id']]);
 
-                require_once basePath('app/Helpers/mailer_helper.php');
-                $firstName = $_SESSION['temp_name'] ?: 'User';
+                                $firstName = $_SESSION['temp_name'] ?: 'User';
                 $emailBody = "
                     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
                         <h2 style='color: #1f2937;'>CitiLife System - New Login Code</h2>

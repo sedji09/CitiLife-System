@@ -5,9 +5,6 @@
  * Opened from the Patient dashboard.
  */
 session_start();
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/UserModel.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $userModel = new \UserModel($pdo);

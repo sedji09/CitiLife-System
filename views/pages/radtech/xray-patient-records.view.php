@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $branchId = $_SESSION['branch_id'] ?? 1;

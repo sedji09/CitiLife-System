@@ -1,13 +1,18 @@
 <?php
+
+namespace App\Controllers\patient;
+
+class RegistrationController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * RegistrationController.php
  * Handles backend logic for patient-initiated registration and examination requests.
  */
-
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/NotificationModel.php';
 
 $branchModel = new \BranchModel($pdo);
 $patientModel = new \PatientModel($pdo);
@@ -80,7 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $error = 'Failed to process request: ' . $e->getMessage();
+    }
+}
+
+        return get_defined_vars();
     }
 }

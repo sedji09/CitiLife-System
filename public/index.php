@@ -1,12 +1,9 @@
 <?php
-
-// 1. Session start
 session_start();
 
-// 2. Load global helpers (which defines basePath)
 require_once __DIR__ . '/../helpers.php';
 
-// 3. Define PROJECT_DIR dynamic constant for root routing compatibility
+// Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
 if (!defined('PROJECT_DIR')) {
     $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/CitiLife-System/public/index.php';
     $parts = explode('/', $scriptPath);
@@ -14,10 +11,10 @@ if (!defined('PROJECT_DIR')) {
     define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'CitiLife-System');
 }
 
-// 4. Load Composer Autoloader
+// I-load muna ang Composer Autoloader
 require_once basePath('vendor/autoload.php');
 
-// 5. Load Database configuration
+// Load Database configuration
 $dbConfig = require basePath('config/db.php');
 
 // 6. Bootstrap Database using our Framework Database wrapper

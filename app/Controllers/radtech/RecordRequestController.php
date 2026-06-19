@@ -1,18 +1,24 @@
 <?php
+
+namespace App\Controllers\radtech;
+
+class RecordRequestController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * RecordRequestController.php
  * Handles backend logic for the RadTech Record Request page.
  */
 
-require_once __DIR__ . '/../../Models/RecordRequestModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/NotificationModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-
 $recordModel = new \RecordRequestModel($pdo);
 $branchModel = new \BranchModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
+
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
 $branchId = $_SESSION['branch_id'] ?? null;
@@ -38,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_request'])) {
         } else {
             $errorMsg = "Failed to submit request.";
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $errorMsg = "Error: " . $e->getMessage();
     }
 }
@@ -54,3 +60,7 @@ $approvedRequests = count(array_filter($requests, fn($r) => $r['status'] === 'Ap
 
 // Variables $requests, $totalRequests, $pendingRequests, $approvedRequests, $successMsg, $errorMsg 
 // will be available in the view file because this controller is included before the view.
+
+        return get_defined_vars();
+    }
+}

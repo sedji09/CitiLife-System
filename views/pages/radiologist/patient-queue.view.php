@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $branchModel = new \BranchModel($pdo);

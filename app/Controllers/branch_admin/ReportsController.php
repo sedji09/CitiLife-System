@@ -1,11 +1,18 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class ReportsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * ReportsController.php
  * Handles report generation and exporting for Branch Administrators.
  */
-
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $branchModel = new \BranchModel($pdo);
@@ -43,7 +50,7 @@ if (isset($_GET['ajax_get_stats'])) {
             'data' => $stats,
             'monthly' => $monthlyCounts
         ]);
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
@@ -449,7 +456,7 @@ if (isset($_GET['export_excel'])) {
 
     $stats = $caseModel->getBranchBreakdown($branchId, $startDate, $endDate);
 
-    require_once __DIR__ . '/../../../vendor/autoload.php';
+
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -546,4 +553,8 @@ if (isset($_GET['export_excel'])) {
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
     exit;
+}
+
+        return get_defined_vars();
+    }
 }

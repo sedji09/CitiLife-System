@@ -1,8 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/NotificationModel.php';
-require_once __DIR__ . '/../../../models/AuditLogModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);

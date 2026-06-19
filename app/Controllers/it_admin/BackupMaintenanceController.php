@@ -1,13 +1,21 @@
 <?php
+
+namespace App\Controllers\it_admin;
+
+class BackupMaintenanceController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * BackupMaintenanceController.php
  * IT Admin module for database backups and system maintenance.
  */
 
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-require_once __DIR__ . '/../../helpers/AuthHelper.php';
 
-$auditLogModel = new AuditLogModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $backupDir = __DIR__ . '/../../../storage/backups/';
 $success = $_SESSION['success'] ?? '';
 $error = $_SESSION['error'] ?? '';
@@ -111,4 +119,8 @@ function formatSize($bytes) {
         return number_format($bytes / 1024, 2) . ' KB';
     }
     return $bytes . ' bytes';
+}
+
+        return get_defined_vars();
+    }
 }

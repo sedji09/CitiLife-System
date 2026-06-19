@@ -1,12 +1,21 @@
 <?php
+
+namespace App\Controllers\it_admin;
+
+class SecuritySettingsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * SecuritySettingsController.php
  * IT Admin module for managing system security policies.
  */
 
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
-$auditLogModel = new AuditLogModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $success = $_SESSION['success'] ?? '';
 $error = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
@@ -14,7 +23,7 @@ unset($_SESSION['success'], $_SESSION['error']);
 // 1. Fetch current settings
 $settings = [];
 $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE category = 'Security'");
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
     $settings[$row['setting_key']] = $row['setting_value'];
 }
 
@@ -43,10 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $_SESSION['success'] = "Security policies updated successfully.";
         header("Location: ?page=security-settings");
         exit();
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $pdo->rollBack();
         $_SESSION['error'] = "Failed to update settings: " . $e->getMessage();
         header("Location: ?page=security-settings");
         exit();
+    }
+}
+
+        return get_defined_vars();
     }
 }

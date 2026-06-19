@@ -1,11 +1,19 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class PatientDetailsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * PatientDetailsController.php
  * Handles backend logic for patient details, image uploads, and submission to radiologist.
  */
 
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/NotificationModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
@@ -30,4 +38,8 @@ if (!$caseDetails || $caseDetails['branch_id'] != $branchId) {
     $caseNotFound = false;
     
     $savedTemplate = $caseDetails['report_template'] ?? '';
+}
+
+        return get_defined_vars();
+    }
 }

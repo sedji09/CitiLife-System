@@ -3,7 +3,6 @@
  * reports.php - Admin Central Reports
  */
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
 
 $branchId = $_SESSION['branch_id'] ?? null;
 // $allBranches is already provided by the controller

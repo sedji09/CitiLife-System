@@ -1,16 +1,23 @@
 <?php
+
+namespace App\Controllers\radtech;
+
+class PatientRegistrationController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * PatientRegistrationController.php
  * Handles backend logic for walk-in patient registration and returning patient lookups.
  */
 
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-
 $patientModel = new \PatientModel($pdo);
 $caseModel = new \CaseModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
+
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
 // --- 1. AJAX Endpoints ---
@@ -25,7 +32,7 @@ if (isset($_GET['ajax_search'])) {
         try {
             $results = $patientModel->searchPatients($query);
             echo json_encode($results);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo json_encode(['error' => $e->getMessage()]);
         }
     }
@@ -118,7 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php?role=radtech&page=patient-registration");
             exit;
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $error = "Registration failed: " . $e->getMessage();
+    }
+}
+
+        return get_defined_vars();
     }
 }

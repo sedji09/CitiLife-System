@@ -1,11 +1,18 @@
 <?php
-require_once __DIR__ . '/../../Models/UserModel.php';
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
 
-$userModel = new UserModel($pdo);
-$patientModel = new PatientModel($pdo);
-$caseModel = new CaseModel($pdo);
+namespace App\Controllers\it_admin;
+
+class DashboardController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
+
+$userModel = new \UserModel($pdo);
+$patientModel = new \PatientModel($pdo);
+$caseModel = new \CaseModel($pdo);
 
 // Fetch Stats
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
@@ -60,4 +67,8 @@ $recentLogs = $pdo->query("
     LEFT JOIN users u ON al.user_id = u.id 
     ORDER BY al.created_at DESC 
     LIMIT 5
-")->fetchAll(PDO::FETCH_ASSOC);
+")->fetchAll(\PDO::FETCH_ASSOC);
+
+        return get_defined_vars();
+    }
+}

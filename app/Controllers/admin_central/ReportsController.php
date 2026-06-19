@@ -1,11 +1,19 @@
 <?php
+
+namespace App\Controllers\admin_central;
+
+class ReportsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * ReportsController.php
  * Handles report generation for Admin Central.
  */
 
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
 
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
@@ -35,7 +43,7 @@ if (isset($_GET['ajax_generate'])) {
             'data' => $stats,
             'trends' => $monthlyTrends
         ]);
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
@@ -502,7 +510,7 @@ if (isset($_GET['export_excel'])) {
 
     $statsList = $caseModel->getReportStats($startDate, $endDate, $branchIds);
 
-    require_once __DIR__ . '/../../../vendor/autoload.php';
+
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -620,3 +628,7 @@ if (isset($_GET['export_excel'])) {
 
 // Initial page load data
 $allBranches = $branchModel->getAllBranches();
+
+        return get_defined_vars();
+    }
+}

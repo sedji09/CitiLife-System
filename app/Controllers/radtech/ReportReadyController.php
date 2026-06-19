@@ -1,16 +1,23 @@
 <?php
+
+namespace App\Controllers\radtech;
+
+class ReportReadyController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * ReportReadyController.php
  * Handles backend logic for the RadTech Report Ready tab.
  */
 
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/NotificationModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-
 $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
+
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
 // 1. Ensure Schema
@@ -89,7 +96,7 @@ if (isset($_GET['action'])) {
 
             echo json_encode(['success' => true]);
             exit;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
             exit;
         }
@@ -123,7 +130,7 @@ if (isset($_GET['action'])) {
             }
             header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=report-ready");
             exit;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $errorMsg = "Failed to release result: " . $e->getMessage();
         }
     }
@@ -139,3 +146,7 @@ $patients = array_filter($allPatients, function ($p) {
         && $p['approval_status'] === 'Approved'
         && $p['status'] === 'Report Ready';
 });
+
+        return get_defined_vars();
+    }
+}

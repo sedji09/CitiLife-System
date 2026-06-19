@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 global $pdo;
-require_once basePath('app/Helpers/mailer_helper.php');
 
 $error = '';
 $success = '';
@@ -133,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mt-8 pt-6 border-t border-gray-100 text-center">
             <p class="text-sm text-gray-600">
                 Remembered your password? 
-                <a href="login" class="font-bold text-red-600 hover:underline">Back to Login</a>
+                <a href="patient-login" class="font-bold text-red-600 hover:underline">Back to Login</a>
             </p>
         </div>
     </div>

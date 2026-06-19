@@ -1,18 +1,24 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class RecordRequestsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * RecordRequestsController.php
  * Handles backend logic for Branch Admin's incoming record requests.
  */
 
-require_once __DIR__ . '/../../Models/RecordRequestModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/NotificationModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-
 $recordModel = new \RecordRequestModel($pdo);
 $branchModel = new \BranchModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
+
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
 $message = '';
@@ -40,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $logAction = ($action === 'Approve') ? "Information request approved" : "Information request rejected";
             $auditLogModel->addLog($currentUserId, $logAction, 'Record Requests', 'Request', $requestId, "Request ID: $requestId", $myBranchId);
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $message = "Error: " . $e->getMessage();
         $messageType = "error";
     }
@@ -48,3 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // 3. Fetch pending requests
 $pendingRequests = $myBranchName ? $recordModel->getPendingRequestsForBranch($myBranchName) : [];
+
+        return get_defined_vars();
+    }
+}

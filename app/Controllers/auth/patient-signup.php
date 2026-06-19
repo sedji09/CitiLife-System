@@ -111,8 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $insertStmt->execute([$verificationToken, $patientId, $email]);
 
-                    require_once basePath('app/Helpers/mailer_helper.php');
-                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
                     $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
 
                     $emailBody = "

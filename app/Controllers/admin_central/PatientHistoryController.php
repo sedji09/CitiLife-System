@@ -1,9 +1,17 @@
 <?php
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/PatientModel.php';
 
-$caseModel = new CaseModel($pdo);
-$patientModel = new PatientModel($pdo);
+namespace App\Controllers\admin_central;
+
+class PatientHistoryController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
+
+$caseModel = new \CaseModel($pdo);
+$patientModel = new \PatientModel($pdo);
 
 $patientNumber = $_GET['patient_number'] ?? '';
 $source = $_GET['source'] ?? 'profile';
@@ -18,5 +26,9 @@ if ($patientNumber) {
 
     if ($patient) {
         $history = $caseModel->getPatientHistory($patientNumber);
+    }
+}
+
+        return get_defined_vars();
     }
 }

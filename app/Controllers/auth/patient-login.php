@@ -86,8 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     $updateStmt->execute([$otpCode, $expiresAt, $user['id']]);
                     
                     // Send email
-                    require_once basePath('app/Helpers/mailer_helper.php');
-                    $firstName = $user['first_name'] ?? 'Patient';
+                                        $firstName = $user['first_name'] ?? 'Patient';
                     $emailBody = "
                         <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
                             <h2 style='color: #1f2937;'>CitiLife System - Login Verification</h2>

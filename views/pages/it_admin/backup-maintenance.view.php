@@ -128,7 +128,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <span
-                                            class="text-xs font-black text-gray-400 tabular-nums"><?= formatSize($backup['size']) ?></span>
+                                            class="text-xs font-black text-gray-400 tabular-nums"><?= \App\Controllers\it_admin\formatSize($backup['size']) ?></span>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex gap-2">

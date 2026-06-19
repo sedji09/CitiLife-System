@@ -29,7 +29,6 @@ try {
             break;
 
         case 'fetch_conversations':
-            require_once __DIR__ . '/../Models/UserModel.php';
             $userModel = new UserModel($pdo);
 
             // Fetch users the current user has chatted with, ordered by latest message
@@ -160,7 +159,6 @@ try {
             break;
 
         case 'search_staff':
-            require_once __DIR__ . '/../Models/UserModel.php';
             $userModel = new UserModel($pdo);
             $q = trim($_GET['q'] ?? '');
             $sql = "SELECT id, email, role, avatar, name, full_name_report FROM users WHERE role != 'patient' AND id != ?";

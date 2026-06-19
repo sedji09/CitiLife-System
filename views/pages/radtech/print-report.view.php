@@ -1,8 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/UserModel.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

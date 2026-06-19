@@ -1,12 +1,19 @@
 <?php
+
+namespace App\Controllers\admin_central;
+
+class DashboardController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * DashboardController.php
  * Handles the Admin Central dashboard metrics and charts.
  */
 
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/UserModel.php';
 
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
@@ -162,4 +169,8 @@ if (isset($_GET['ajax_main_filter']) && $_GET['ajax_main_filter'] == '1') {
     header('Content-Type: application/json');
     echo json_encode($dashboardData);
     exit;
+}
+
+        return get_defined_vars();
+    }
 }

@@ -1,11 +1,18 @@
 <?php
-require_once __DIR__ . '/../../Models/UserModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
-$userModel = new UserModel($pdo);
-$branchModel = new BranchModel($pdo);
-$auditLogModel = new AuditLogModel($pdo);
+namespace App\Controllers\admin_central;
+
+class UsersController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
+
+$userModel = new \UserModel($pdo);
+$branchModel = new \BranchModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $currentAdminId = $_SESSION['user_id'] ?? 0;
 $currentBranchId = $_SESSION['branch_id'] ?? null;
 
@@ -15,12 +22,12 @@ try {
     $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'min_password_length'");
     $val = $stmt->fetchColumn();
     if ($val) $minPassLength = intval($val);
-} catch (Exception $e) {}
+} catch (\Exception $e) {}
 
 // One-time check for database column support for 'Inactive' status
 try {
     $pdo->exec("ALTER TABLE users MODIFY COLUMN status ENUM('Pending', 'Active', 'Rejected', 'Inactive') DEFAULT 'Active'");
-} catch (Exception $e) {
+} catch (\Exception $e) {
     // Silently fail if already updated or if user doesn't have permissions
 }
 
@@ -110,3 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch all staff users
 $users = $userModel->getAllStaffUsers();
 $branches = $branchModel->getAllBranches();
+
+        return get_defined_vars();
+    }
+}
