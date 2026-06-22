@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-gray-900">
         <div>
-            <h2 class="text-xl font-bold tracking-tight">Incoming Record Requests</h2>
+            <h2 class="text-xl font-semibold tracking-tight">Incoming Record Requests</h2>
             <p class="text-sm text-gray-500 mt-1">Review requests from RadTechs in other branches asking for patient
                 records stored in your branch (<?= htmlspecialchars($myBranchName) ?>).</p>
         </div>

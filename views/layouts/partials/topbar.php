@@ -56,7 +56,8 @@
             <div
               class="flex-1 flex items-center bg-gray-100 rounded-full pl-4 pr-4 py-2 border border-transparent focus-within:ring-2 focus-within:ring-blue-500 transition-all">
               <i data-lucide="search" class="w-4 h-4 text-gray-500 shrink-0 ml-0"></i>
-              <input type="text" v-model="chatSearchQuery" @focus="onChatSearchFocus" @input="onChatSearchInput" placeholder="Search Chats"
+              <input type="text" v-model="chatSearchQuery" @focus="onChatSearchFocus" @input="onChatSearchInput"
+                placeholder="Search Chats"
                 class="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 ml-2 text-[15px] text-gray-800 p-0 m-0 w-full"
                 style="box-shadow: none;">
             </div>
@@ -81,8 +82,14 @@
                       :class="conv.unread_count > 0 ? 'font-bold text-black' : ''">{{ conv.name }}</div>
                     <div class="text-xs truncate flex gap-1"
                       :class="conv.unread_count > 0 ? 'font-bold text-gray-900' : 'text-gray-500'">
-                      <span v-if="conv.sender_id === userId">You: </span>
-                      <span class="truncate">{{ conv.latest_message }}</span>
+                      <span v-if="conv.latest_message" class="truncate">
+                        <span v-if="conv.sender_id === userId">You: </span>
+                        {{ conv.latest_message }}
+                      </span>
+                      <span v-else-if="conv.latest_attachment" class="truncate italic">
+                        <span v-if="conv.sender_id === userId">You </span>
+                        {{ isImageAttachment(conv.latest_attachment) ? 'sent a photo' : 'sent a file' }}
+                      </span>
                       <span>·</span>
                       <span>{{ formatTimeAgo(conv.latest_message_time) }}</span>
                     </div>
@@ -141,7 +148,8 @@
                 <div class="px-4 py-2 text-[13px] font-semibold text-gray-500 mt-2 border-t border-gray-100 pt-3">
                   Other Staff Members
                 </div>
-                <div v-for="staff in filteredStaffSearchResults" :key="'global_' + staff.id" @click="openChatWindow(staff)"
+                <div v-for="staff in filteredStaffSearchResults" :key="'global_' + staff.id"
+                  @click="openChatWindow(staff)"
                   class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
                   <div
                     class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
@@ -150,12 +158,14 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="text-[15px] text-gray-900 truncate">{{ staff.name }}</div>
-                    <div class="text-xs text-gray-500 truncate">{{ staff.role.charAt(0).toUpperCase() + staff.role.slice(1) }}</div>
+                    <div class="text-xs text-gray-500 truncate">{{ staff.role.charAt(0).toUpperCase() +
+                      staff.role.slice(1) }}</div>
                   </div>
                 </div>
               </template>
 
-              <div v-if="filteredConversations?.length === 0 && filteredStaffSearchResults?.length === 0" class="py-8 text-center text-sm text-gray-500">
+              <div v-if="filteredConversations?.length === 0 && filteredStaffSearchResults?.length === 0"
+                class="py-8 text-center text-sm text-gray-500">
                 No users found.
               </div>
             </template>

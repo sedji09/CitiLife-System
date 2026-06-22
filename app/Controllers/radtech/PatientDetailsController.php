@@ -33,6 +33,7 @@ class PatientDetailsController
                 $submitData = [
                     'exam_type' => $_POST['exam_type'] ?? '',
                     'priority' => $_POST['priority'] ?? '',
+                    'clinical_information' => $_POST['clinical_information'] ?? '',
                     'report_template' => $_POST['exam_type'] ?? '',
                     'files' => $_FILES['xray_image'] ?? null,
                     'radtech_id' => $_SESSION['user_id'] ?? null,

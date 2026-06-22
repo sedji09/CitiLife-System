@@ -315,6 +315,10 @@
       nextTick(() => this.renderIcons());
     },
     methods: {
+      isImageAttachment(filename) {
+        if (!filename) return false;
+        return /\.(jpeg|jpg|gif|png)$/i.test(filename);
+      },
       openLightbox(chat, clickedMsg) {
         // Get all image messages from the chat
         const images = chat.messages.filter(m => m.attachment && m.attachment.match(/\.(jpeg|jpg|gif|png)$/i));

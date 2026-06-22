@@ -26,7 +26,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
     <div>
-        <h2 class="text-2xl font-bold text-gray-900">Patient Records History</h2>
+        <h2 class="text-2xl font-semibold text-gray-900">Patient Records History</h2>
         <p class="text-sm text-gray-400 mt-0.5">Historical patient database and examination archive</p>
     </div>
 </div>
@@ -129,7 +129,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         <div class="bg-white p-4 rounded-full shadow-md mb-4 group-hover:scale-110 transition-transform">
                             <i data-lucide="file-text" class="w-10 h-10 text-red-500"></i>
                         </div>
-                        <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Open HTML Preview</span>
+                        <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Open HTML
+                            Preview</span>
                         <span class="text-sm text-gray-500 mt-1">View the report document in a new tab</span>
                     </a>
                 <?php else: ?>

@@ -45,7 +45,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-2xl font-bold text-gray-900 tracking-tight">RadTech Dashboard</h2>
+      <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">RadTech Dashboard</h2>
       <p class="text-sm text-gray-500 mt-1">Overview of activity for <span id="period-label" class="realtime-update"><?= htmlspecialchars($periodLabel) ?></span> and quick
         actions.</p>
     </div>

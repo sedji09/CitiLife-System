@@ -14,7 +14,7 @@
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
             </a>
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <h1 class="text-2xl font-semibold text-gray-900 flex items-center gap-3">
                     Record Request Details
                     <span
                         class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border <?= $statusColorClass ?>">

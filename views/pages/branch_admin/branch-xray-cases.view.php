@@ -16,7 +16,7 @@
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex">
-        <a href="?role=branch_admin&page=branch-xray-cases&tab=queue"
+        <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=queue"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'queue' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Today's Queue
             <?php if (count($todayQueue) > 0): ?>
@@ -26,7 +26,7 @@
                 </span>
             <?php endif; ?>
         </a>
-        <a href="?role=branch_admin&page=branch-xray-cases&tab=records"
+        <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=records"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'records' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Records
         </a>
@@ -44,15 +44,13 @@
                 style="padding-left: 2.75rem !important;"
                 class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
         </div>
-        <select id="filter-exam"
+        <select id="filter-priority"
             class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
-            <option value="All">All Exam Types</option>
-            <option>Chest PA</option>
-            <option>Abdominal X-ray</option>
-            <option>Extremity X-ray</option>
-            <option>Skull X-ray</option>
-            <option>Lumbar Spine</option>
-            <option>Pelvis</option>
+            <option value="All" hidden>Filter by Priority</option>
+            <option value="All">All</option>
+            <option value="Routine">Routine</option>
+            <option value="Urgent">Urgent</option>
+            <option value="STAT">STAT</option>
         </select>
         <select id="sort-date"
             class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
@@ -104,6 +102,7 @@
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-case="<?= htmlspecialchars($row['case_number']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
+                            data-priority="<?= htmlspecialchars($row['priority'] ?? '') ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>">
                             <td class="py-3 px-4 font-medium text-gray-900"><?= htmlspecialchars($row['case_number']) ?></td>
                             <td class="py-3 px-4 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
@@ -173,7 +172,7 @@
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <?php if ($currentTab === 'queue'): ?>
-                                        <a href="?role=branch_admin&page=patient-details&id=<?= $row['id'] ?>"
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Case Detals">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
@@ -187,7 +186,7 @@
                                             </a>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <a href="?role=branch_admin&page=records-history&id=<?= $row['id'] ?>"
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Record Details">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
@@ -246,7 +245,7 @@
         let currentPage = 1;
 
         const searchInput = document.getElementById('search-input');
-        const filterExam = document.getElementById('filter-exam');
+        const filterPriority = document.getElementById('filter-priority');
         const sortDate = document.getElementById('sort-date');
         const tableBody = document.getElementById('table-body');
 
@@ -257,7 +256,7 @@
 
         function getFilteredRows() {
             const searchTerm = searchInput.value.toLowerCase();
-            const examFilter = filterExam.value;
+            const priorityFilter = filterPriority.value;
             const sortOrder = sortDate.value;
             const rows = Array.from(tableBody.querySelectorAll('tr.record-row'));
 
@@ -275,12 +274,12 @@
             return rows.filter(row => {
                 const name = row.getAttribute('data-name').toLowerCase();
                 const caseNo = row.getAttribute('data-case').toLowerCase();
-                const exam = row.getAttribute('data-exam');
+                const priority = row.getAttribute('data-priority');
 
                 const matchesSearch = name.includes(searchTerm) || caseNo.includes(searchTerm);
-                const matchesExam = examFilter === 'All' || exam.includes(examFilter);
+                const matchesPriority = priorityFilter === 'All' || priority === priorityFilter;
 
-                return matchesSearch && matchesExam;
+                return matchesSearch && matchesPriority;
             });
         }
 
@@ -335,7 +334,7 @@
 
         // Event Listeners
         searchInput.addEventListener('input', applyFilters);
-        filterExam.addEventListener('change', applyFilters);
+        filterPriority.addEventListener('change', applyFilters);
         sortDate.addEventListener('change', applyFilters);
 
         document.addEventListener('realtime:updated', () => {

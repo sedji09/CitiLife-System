@@ -1,6 +1,6 @@
 <?php
 /**
- * Patient Details View
+ * Patient Details View for Radiologist
  * Backend logic handled by PatientDetailsController.php
  */
 if (isset($caseNotFound) && $caseNotFound) {
@@ -11,7 +11,7 @@ if (isset($caseNotFound) && $caseNotFound) {
 
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases" class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= urlencode($caseDetails['id']) ?>&branch_id=<?= urlencode($caseDetails['branch_id']) ?>" class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
     <div>
@@ -163,24 +163,6 @@ if (isset($caseNotFound) && $caseNotFound) {
             </div>
         <?php else: ?>
             <p style="color:#9ca3af;font-size:0.875rem;font-style:italic;">No images uploaded yet.</p>
-        <?php endif; ?>
-    </div>
-
-    <!-- Action Buttons -->
-    <?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed']); ?>
-    <div class="mt-8 flex gap-4">
-        <?php if ($isReportReady): ?>
-            <a href="/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseId ?>" target="_blank"
-                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
-                <i data-lucide="printer" class="w-4 h-4"></i>
-                Print Result
-            </a>
-        <?php else: ?>
-            <button type="button" disabled title="Print Result (Available after Radiologist submits report)"
-                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-400 cursor-not-allowed shadow-sm">
-                <i data-lucide="printer" class="w-4 h-4"></i>
-                Print Result
-            </button>
         <?php endif; ?>
     </div>
 </div>

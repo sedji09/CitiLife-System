@@ -6,7 +6,6 @@
     // ── Helpers ───────────────────────────────────────────────────────────────
     function getFilteredRows() {
         const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
-        const exam   = document.getElementById('filter-exam')?.value  || 'Filter by Exam Type';
         const sort   = document.getElementById('sort-date')?.value    || 'Sort by:';
 
         const tbody = document.getElementById('table-body');
@@ -28,12 +27,10 @@
         return rows.filter(row => {
             const name    = (row.dataset.name || '').toLowerCase();
             const id      = (row.dataset.id   || '').toLowerCase();
-            const rowExam =  row.dataset.exam  || '';
 
             const matchSearch = !search || name.includes(search) || id.includes(search);
-            const matchExam   = exam === 'Filter by Exam Type' || exam === 'All' || exam === rowExam;
 
-            return matchSearch && matchExam;
+            return matchSearch;
         });
     }
 
@@ -117,7 +114,7 @@
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target && (e.target.id === 'filter-exam' || e.target.id === 'sort-date')) applyFilters();
+        if (e.target && e.target.id === 'sort-date') applyFilters();
     });
 
     // ── Re-apply pagination after realtime polling replaces tbody innerHTML ───

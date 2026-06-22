@@ -20,7 +20,7 @@ sort($priorities);
 <!-- Header -->
 <div class="flex items-center justify-between mb-6">
     <div class="ml-5">
-        <h2 id="worklist-title" class="text-2xl font-bold text-gray-900">Worklist</h2>
+        <h2 id="worklist-title" class="text-2xl font-semibold text-gray-900">Worklist</h2>
         <p id="worklist-subtitle" class="text-sm text-gray-500 mt-1">Manage pending cases across all branches</p>
     </div>
 </div>

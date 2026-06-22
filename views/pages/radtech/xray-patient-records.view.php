@@ -20,18 +20,8 @@ $records = $caseModel->getReleasedRecords($branchId);
 <div class="mt-6 flex flex-col gap-4">
     <div class="flex gap-4 items-center">
         <input type="text" id="search-input" placeholder="Search patient records (Name or ID)..."
-            class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
-        <select id="filter-exam"
-            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option>Filter by Exam Type</option>
-            <option>All</option>
-            <option>Chest PA</option>
-            <option>Abdominal X-ray</option>
-            <option>Extremity X-ray</option>
-            <option>Skull X-ray</option>
-            <option>Lumbar Spine</option>
-            <option>Pelvis</option>
-        </select>
+            class="w-80 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+
         <select id="sort-date"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option>Sort by:</option>

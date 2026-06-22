@@ -14,7 +14,7 @@
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </a>
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Patient Profile</h1>
+                    <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Patient Profile</h1>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Case #<?= htmlspecialchars($patient['patient_number'] ?? 'N/A') ?></p>
                 </div>
             </div>

@@ -25,7 +25,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
     <div>
-        <h2 class="text-2xl font-bold text-gray-900">Patient Records History</h2>
+        <h2 class="text-2xl font-semibold text-gray-900">Patient Records History</h2>
         <p class="text-sm text-gray-400 mt-0.5">Historical patient database and examination archive</p>
     </div>
 </div>

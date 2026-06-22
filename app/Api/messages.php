@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers.php';
 global $pdo;
@@ -42,6 +43,7 @@ try {
                     u.full_name_report,
                     m.id as latest_message_id,
                     m.message as latest_message,
+                    m.attachment as latest_attachment,
                     m.created_at as latest_message_time,
                     m.sender_id,
                     (SELECT COUNT(*) FROM messages WHERE sender_id = u.id AND receiver_id = ? AND is_read = 0) as unread_count

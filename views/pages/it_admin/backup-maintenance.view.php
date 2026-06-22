@@ -4,7 +4,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Backup & Maintenance</h1>
+            <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Backup & Maintenance</h1>
             <p class="text-sm text-gray-500 mt-1">Manage database snapshots and ensure system data integrity.</p>
         </div>
         <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">

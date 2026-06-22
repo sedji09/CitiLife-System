@@ -9,7 +9,7 @@
     <div class="mx-auto max-w-6xl space-y-6">
         <!-- Header -->
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Patient Records</h1>
+            <h1 class="text-2xl font-semibold text-gray-900">Patient Records</h1>
             <p class="text-sm text-gray-500">Manage patient information across all branches</p>
         </div>
 

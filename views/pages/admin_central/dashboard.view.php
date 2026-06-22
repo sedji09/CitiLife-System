@@ -11,7 +11,7 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
-            <h1 class="text-xl font-bold text-gray-900 tracking-tight">Admin Central Dashboard</h1>
+            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Admin Central Dashboard</h1>
             <p class="text-xs text-gray-500 mt-1">System-wide overview of patient and branch statistics.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">

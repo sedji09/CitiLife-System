@@ -23,20 +23,20 @@ if ($backPage === 'patient-queue') {
     $backUrl .= "&id=" . urlencode($backId);
 }
 ?>
-<!-- Back nav -->
-<div class="mb-4">
-    <a href="<?= htmlspecialchars($backUrl) ?>"
-       id="back-to-worklist-btn" title="Back"
-       class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-    </a>
-</div>
-
 <!-- Title row -->
-<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-5">
-    <div>
-        <h2 class="text-2xl font-black text-gray-900 tracking-tight"><?= htmlspecialchars($caseDetails['case_number'] ?? 'N/A') ?></h2>
-        <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars($caseDetails['branch_name']) ?> Branch</p>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+    <div class="flex items-center gap-4">
+        <a href="<?= htmlspecialchars($backUrl) ?>"
+           id="back-to-worklist-btn" title="Back"
+           class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">
+                Case Review
+            </h2>
+            <p class="text-gray-500 text-sm mt-0.5">Review patient case and submit diagnostic findings</p>
+        </div>
     </div>
     <div class="flex items-center flex-wrap gap-1.5">
         <?php
@@ -92,7 +92,16 @@ if ($backPage === 'patient-queue') {
             <h3 class="font-bold text-gray-800 text-sm">Patient Information</h3>
         </div>
         <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm pl-1">
-            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Name</p><p class="font-semibold text-gray-900 text-xs"><?= $fullName ?></p></div>
+            <div>
+                <p class="text-gray-400 text-[10px] uppercase tracking-wide">Name</p>
+                <p class="font-semibold text-xs">
+                    <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-details&id=<?= urlencode($caseDetails['id']) ?>&branch_id=<?= urlencode($caseDetails['branch_id']) ?>" 
+                       class="text-red-600 hover:text-red-700 hover:underline transition-colors"
+                       title="View Patient Details">
+                        <?= $fullName ?>
+                    </a>
+                </p>
+            </div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Age / Sex</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['age']) ?> / <?= htmlspecialchars(ucfirst($caseDetails['sex'])) ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Patient No.</p><p class="font-semibold text-gray-900 text-xs font-mono"><?= htmlspecialchars($caseDetails['patient_number'] ?? 'N/A') ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Case No.</p><p class="font-semibold text-gray-900 text-xs font-mono"><?= htmlspecialchars($caseDetails['case_number']) ?></p></div>
@@ -220,6 +229,20 @@ if ($backPage === 'patient-queue') {
                 </button>
             </div>
         </div>
+
+        <!-- Clinical Information Panel -->
+        <?php if (!empty($caseDetails['clinical_information'])): ?>
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden p-5 mb-4 relative">
+            <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-red-500"></i>
+                <h3 class="font-bold text-gray-800 text-sm">Clinical Information</h3>
+            </div>
+            <p class="text-xs text-gray-700 leading-relaxed pl-1">
+                <?= nl2br(htmlspecialchars($caseDetails['clinical_information'])) ?>
+            </p>
+        </div>
+        <?php endif; ?>
 
         <!-- Patient History accordion -->
         <div class="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">

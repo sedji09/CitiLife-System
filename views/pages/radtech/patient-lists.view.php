@@ -417,7 +417,7 @@
     class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
     <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mb-4"></div>
     <h3 class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing report snapshots...
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing the results...
     </p>
 </div>
 
@@ -474,7 +474,7 @@
                     let base64Images = [];
                     for (let i = 0; i < pages.length; i++) {
                         const page = pages[i];
-                        if (statusText) statusText.textContent = `Capturing page ${i + 1} of ${pages.length}...`;
+                        if (statusText) statusText.textContent = `Processing page ${i + 1} of ${pages.length}...`;
 
                         const canvas = await html2canvas(page, {
                             scale: pages.length > 5 ? 1.5 : 2, // Slightly lower scale for very large reports to prevent memory issues

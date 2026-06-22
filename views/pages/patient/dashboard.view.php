@@ -150,7 +150,7 @@ $statusDescriptions = [
 
     <!-- Welcome banner -->
     <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Welcome back,
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
             <?= htmlspecialchars($displayName) ?>
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Here's an overview of your X-ray examination status.</p>
@@ -161,7 +161,8 @@ $statusDescriptions = [
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-5">
             <div class="flex items-center gap-4 mb-4">
                 <?php if (!empty($displayInfo['avatar'])): ?>
-                    <img src="<?= htmlspecialchars($displayInfo['avatar']) ?>" alt="Profile" class="h-12 w-12 rounded-full object-cover shrink-0 border border-red-100 shadow-sm">
+                    <img src="<?= htmlspecialchars($displayInfo['avatar']) ?>" alt="Profile"
+                        class="h-12 w-12 rounded-full object-cover shrink-0 border border-red-100 shadow-sm">
                 <?php else: ?>
                     <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                         <i data-lucide="user" class="w-6 h-6 text-red-600"></i>
@@ -301,7 +302,7 @@ $statusDescriptions = [
 
             <!-- View Full Status button -->
             <div class="px-5 pb-5">
-                <?php 
+                <?php
                 $statusLink = in_array($latestCase['status'], ['Completed', 'Released', 'Rejected']) ? 'case-status' : 'xray-status';
                 ?>
                 <a href="/<?= PROJECT_DIR ?>/<?= $statusLink ?>?case_id=<?= $latestCase['id'] ?>"

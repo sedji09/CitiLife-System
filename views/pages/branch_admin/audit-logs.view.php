@@ -150,7 +150,7 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 audit-text-main">Branch Audit Logs</h1>
+            <h1 class="text-2xl font-semibold text-gray-900 audit-text-main">Branch Audit Logs</h1>
             <p class="text-sm text-gray-500 audit-text-muted mt-1">Activities and system events recorded within your
                 branch</p>
         </div>

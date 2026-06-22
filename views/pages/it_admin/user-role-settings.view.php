@@ -34,7 +34,7 @@ function getRoleIcon($roleKey)
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Access Control Center</h1>
+            <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Access Control Center</h1>
             <p class="text-sm text-gray-500 mt-1">Configure functional permissions and security boundaries for all staff
                 roles.</p>
         </div>

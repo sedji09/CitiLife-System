@@ -18,9 +18,11 @@
         background: #ffffff !important;
         font-family: inherit !important;
     }
+
     .datepicker-picker {
         background: #ffffff !important;
     }
+
     .datepicker-controls .btn {
         background: transparent !important;
         border: none !important;
@@ -29,34 +31,41 @@
         border-radius: 8px !important;
         transition: all 0.2s !important;
     }
+
     .datepicker-controls .btn:hover {
         background-color: #fee2e2 !important;
         color: #dc2626 !important;
     }
-    .datepicker-cell.selected, 
+
+    .datepicker-cell.selected,
     .datepicker-cell.selected:hover {
         background-color: #dc2626 !important;
         color: #ffffff !important;
         font-weight: 600 !important;
     }
+
     .datepicker-cell.today:not(.selected) {
         border-color: #dc2626 !important;
         color: #dc2626 !important;
         font-weight: 600 !important;
     }
+
     .datepicker-cell.focused:not(.selected) {
         background-color: #fee2e2 !important;
     }
+
     .datepicker-cell:hover {
         background-color: #fee2e2 !important;
         color: #dc2626 !important;
         border-radius: 8px !important;
     }
+
     .datepicker-header .datepicker-controls .view-switch {
         font-weight: 700 !important;
         color: #111827 !important;
         font-size: 15px !important;
     }
+
     .datepicker-header .datepicker-controls .view-switch:hover {
         background-color: #fee2e2 !important;
         color: #dc2626 !important;
@@ -67,22 +76,24 @@
 <main class="flex-1 overflow-y-auto p-4 lg:p-6">
     <div class="mx-auto max-w-3xl space-y-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Patient Registration</h1>
+            <h1 class="text-2xl font-semibold text-gray-900">Patient Registration</h1>
             <p class="text-sm text-gray-500">Walk-in patient entry — system auto-generates case number</p>
         </div>
 
-        <?php 
+        <?php
         $regSuccess = $_SESSION['registration_success'] ?? null;
-        if ($regSuccess): 
+        if ($regSuccess):
             unset($_SESSION['registration_success']); // Clear for next load
-        ?>
-            <div class="rounded-lg bg-green-50 border border-green-300 p-4 mb-6 animate-in fade-in slide-in-from-top-4 duration-500 flex items-center gap-3">
+            ?>
+            <div
+                class="rounded-lg bg-green-50 border border-green-300 p-4 mb-6 animate-in fade-in slide-in-from-top-4 duration-500 flex items-center gap-3">
                 <i data-lucide="check-circle-2" class="w-6 h-6 text-green-600"></i>
                 <div>
                     <h3 class="font-semibold text-green-800">Registration Successful</h3>
                     <p class="text-sm text-green-700">
-                        <?= htmlspecialchars($regSuccess['message']) ?> 
-                        (Case: <strong><?= htmlspecialchars($regSuccess['case_number']) ?></strong> for <?= htmlspecialchars($regSuccess['patient_name']) ?>)
+                        <?= htmlspecialchars($regSuccess['message']) ?>
+                        (Case: <strong><?= htmlspecialchars($regSuccess['case_number']) ?></strong> for
+                        <?= htmlspecialchars($regSuccess['patient_name']) ?>)
                     </p>
                 </div>
             </div>
@@ -127,7 +138,8 @@
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
-                            <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                            <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle
+                                Name</label>
                             <input type="text" id="middle-name" name="middle-name"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         </div>
@@ -144,7 +156,8 @@
                                     class="text-red-500">*</span></label>
                             <?php $birthdateValue = $_POST['birthdate'] ?? ''; ?>
                             <div class="relative">
-                                <input type="text" id="birthdate" name="birthdate" required placeholder="Select birthdate" readonly
+                                <input type="text" id="birthdate" name="birthdate" required
+                                    placeholder="Select birthdate" readonly
                                     value="<?= htmlspecialchars($birthdateValue) ?>"
                                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                                 <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
@@ -161,20 +174,23 @@
                     </div>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                         <div>
-                            <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number <span
-                                    class="text-red-500">*</span></label>
-                            <input type="tel" id="contact" name="contact" pattern="[0-9]{11}" maxlength="11" minlength="11"
-                                title="Please enter exactly 11 digits" placeholder="e.g. 09123456789"
+                            <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number
+                                <span class="text-red-500">*</span></label>
+                            <input type="tel" id="contact" name="contact" pattern="[0-9]{11}" maxlength="11"
+                                minlength="11" title="Please enter exactly 11 digits" placeholder="e.g. 09123456789"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email
+                                Address</label>
                             <input type="email" id="email" name="email" placeholder="patient@example.com"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="home_address" class="block text-sm font-medium text-gray-700 mb-2">Home Address</label>
-                            <input type="text" id="home_address" name="home_address" placeholder="123 Main St, Brgy, City"
+                            <label for="home_address" class="block text-sm font-medium text-gray-700 mb-2">Home
+                                Address</label>
+                            <input type="text" id="home_address" name="home_address"
+                                placeholder="123 Main St, Brgy, City"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         </div>
                     </div>
@@ -202,8 +218,10 @@
                         <i data-lucide="user-check" class="w-6 h-6 text-blue-600 mt-1"></i>
                         <div>
                             <h4 class="font-medium text-blue-900" id="sp-name">John Doe</h4>
-                            <p class="text-sm text-blue-700 mt-1">Age: <span id="sp-age"></span> | Sex: <span
-                                    id="sp-sex"></span></p>
+                            <p class="text-sm text-blue-700 mt-1">Patient No: <span id="sp-patient-no"
+                                    class="font-bold"></span></p>
+                            <p class="text-sm text-blue-700 mt-0.5">Age: <span id="sp-age"></span></p>
+                            <p class="text-sm text-blue-700 mt-0.5">Sex: <span id="sp-sex"></span></p>
                             <p class="text-sm text-blue-700">Contact: <span id="sp-contact"></span></p>
                             <button type="button" onclick="clearSelectedPatient()"
                                 class="mt-2 text-xs font-semibold text-red-600 hover:text-red-800 focus:outline-none">
@@ -313,11 +331,11 @@
                 renderChips(container);
             }
         });
-        
+
         // Clear Priority
         const priority = document.getElementById('priority');
         if (priority) priority.value = 'Routine';
-        
+
         // Clear PhilHealth
         const card = document.getElementById('card');
         const idInput = document.getElementById('id-number');
@@ -430,8 +448,8 @@
                 if (birthdateVal) {
                     const bdate = new Date(birthdateVal);
                     const today = new Date();
-                    bdate.setHours(0,0,0,0);
-                    today.setHours(0,0,0,0);
+                    bdate.setHours(0, 0, 0, 0);
+                    today.setHours(0, 0, 0, 0);
                     if (bdate > today) {
                         Swal.fire({
                             icon: 'error',
@@ -452,7 +470,7 @@
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
             document.body.style.cursor = 'wait';
-            
+
             submitBtn.innerHTML = `
                 <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -564,6 +582,7 @@
         const resultsList = document.getElementById('search-results');
         document.getElementById('existing-patient-id').value = p.id;
         document.getElementById('sp-name').innerText = p.first_name + ' ' + p.last_name;
+        document.getElementById('sp-patient-no').innerText = p.patient_number || 'N/A';
         document.getElementById('sp-age').innerText = p.age;
         document.getElementById('sp-sex').innerText = p.sex;
         document.getElementById('sp-contact').innerText = p.contact_number || 'N/A';

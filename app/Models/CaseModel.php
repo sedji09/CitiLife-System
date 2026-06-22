@@ -708,6 +708,7 @@ class CaseModel
                 exam_type = ?, 
                 priority = ?, 
                 report_template = ?, 
+                clinical_information = ?,
                 status = 'Pending', 
                 image_status = 'Uploaded',
                 radtech_id = ?";
@@ -715,6 +716,7 @@ class CaseModel
             $data['exam_type'],
             $data['priority'],
             $data['report_template'],
+            $data['clinical_information'] ?? '',
             $data['radtech_id'] ?? null
         ];
 
@@ -785,6 +787,7 @@ class CaseModel
             'exam_type' => $data['exam_type'],
             'priority' => $data['priority'],
             'report_template' => $data['report_template'],
+            'clinical_information' => $data['clinical_information'] ?? '',
             'image_path' => json_encode($uploadedPaths),
             'radtech_id' => $data['radtech_id'] ?? null,
             'radiologist_id' => $data['radiologist_id'] ?? null

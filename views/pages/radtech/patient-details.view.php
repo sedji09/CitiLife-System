@@ -119,6 +119,13 @@ if (isset($caseNotFound) && $caseNotFound) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-gray-600 text-sm font-medium mb-1.5">Clinical Information / Indication</label>
+                    <textarea name="clinical_information" rows="3"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 <?= $isReadOnly ? 'opacity-70 cursor-not-allowed' : '' ?>"
+                        placeholder="Enter patient symptoms, history, or clinical indication..."
+                        <?= $isReadOnly ? 'disabled' : '' ?>><?= htmlspecialchars($caseDetails['clinical_information'] ?? '') ?></textarea>
+                </div>
                 <div class="pt-1">
                     <span class="block text-gray-600 text-sm font-medium mb-1.5">Status</span>
                     <?php

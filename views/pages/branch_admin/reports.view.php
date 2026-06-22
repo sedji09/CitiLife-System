@@ -28,8 +28,10 @@ $branchName = $branchData['name'] ?? 'Your Branch';
         border-color: #ef4444 !important;
         box-shadow: 0 0 0 1px #ef4444 !important;
     }
+
     .theme-dark #card-stat:hover span {
-        color: #fca5a5 !important; /* text-red-300 */
+        color: #fca5a5 !important;
+        /* text-red-300 */
     }
 
     .theme-dark #card-urgent:hover {
@@ -37,8 +39,10 @@ $branchName = $branchData['name'] ?? 'Your Branch';
         border-color: #f97316 !important;
         box-shadow: 0 0 0 1px #f97316 !important;
     }
+
     .theme-dark #card-urgent:hover span {
-        color: #fdba74 !important; /* text-orange-300 */
+        color: #fdba74 !important;
+        /* text-orange-300 */
     }
 
     .theme-dark #card-routine:hover,
@@ -47,10 +51,12 @@ $branchName = $branchData['name'] ?? 'Your Branch';
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 1px #3b82f6 !important;
     }
+
     .theme-dark #card-routine:hover span {
-        color: #93c5fd !important; /* text-blue-300 */
+        color: #93c5fd !important;
+        /* text-blue-300 */
     }
-    
+
     .theme-dark #priority-total-text,
     .theme-dark #philhealth-total-text {
         color: #f8fafc !important;
@@ -64,7 +70,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Reports & Analytics</h1>
+            <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Reports & Analytics</h1>
             <p class="text-sm text-gray-500 mt-1">Generate and export patient statistics for
                 <?= htmlspecialchars($branchName) ?>.
             </p>
@@ -207,7 +213,8 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-orange-500 shadow-sm shadow-orange-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-orange-700 transition-colors">Urgent / Priority</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-orange-700 transition-colors">Urgent
+                                / Priority</span>
                         </div>
                         <span id="row-urgent"
                             class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">0</span>
@@ -218,7 +225,8 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Routine / Normal</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Routine
+                                / Normal</span>
                         </div>
                         <span id="row-routine"
                             class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">0</span>
@@ -250,7 +258,8 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">With Card</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">With
+                                Card</span>
                         </div>
                         <span id="label-philhealth-with"
                             class="text-sm font-bold text-gray-900 group-hover:text-red-700 transition-colors">0</span>
@@ -261,7 +270,8 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Without Card</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Without
+                                Card</span>
                         </div>
                         <span id="label-philhealth-without"
                             class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">0</span>
