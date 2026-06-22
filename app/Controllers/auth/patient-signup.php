@@ -152,10 +152,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Patient Registration - CitiLife System</title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/alerts.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/security.js?v=<?= time() ?>"></script>
+    
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
+        /* Global override for Vanilla JS Datepicker to make selected date RED */
+        html body .datepicker-cell.selected,
+        html body .datepicker-cell.selected:hover,
+        html body .datepicker-cell.selected.focused,
+        html body .datepicker-picker .datepicker-cell.selected,
+        html body .datepicker-picker .datepicker-cell.selected:hover,
+        html body .datepicker-picker .datepicker-cell.selected.focused {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            border-color: #dc2626 !important;
+        }
+
+        /* Remove the default TEAL background from 'today' and make it clean */
+        html body .datepicker-cell.today:not(.selected),
+        html body .datepicker-picker .datepicker-cell.today:not(.selected) {
+            background-color: #f3f4f6 !important; /* light grey instead of teal */
+            color: #111827 !important;
+            font-weight: 600 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        html body .datepicker-cell.today.focused:not(.selected),
+        html body .datepicker-picker .datepicker-cell.today.focused:not(.selected) {
+            background-color: #e5e7eb !important;
+        }
         .step {
             display: none;
             animation: fadeIn 0.3s ease-in-out;
@@ -315,9 +346,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate
                                 *</label>
-                            <input id="d_birthdate" name="birthdate" type="date" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                value="<?= htmlspecialchars($birthdate ?? '') ?>">
+                            <div class="relative">
+                                <input id="d_birthdate" name="birthdate" type="text" required readonly placeholder="Select birthdate"
+                                    class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    value="<?= htmlspecialchars($birthdate ?? '') ?>">
+                                <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            </div>
                         </div>
 
                         <!-- Sex -->
@@ -496,9 +530,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
                             <div class="relative mb-6">
-                                <input type="date" id="m_birthdate" name="birthdate" required
-                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                <input type="text" id="m_birthdate" name="birthdate" required readonly
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
                                     placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
+                                <i data-lucide="calendar" class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Birthdate</label>
                             </div>
@@ -656,6 +691,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            const datepickerOptions = {
+                autohide: true,
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            };
+            
+            if (document.getElementById('d_birthdate')) {
+                new Datepicker(document.getElementById('d_birthdate'), datepickerOptions);
+            }
+            if (document.getElementById('m_birthdate')) {
+                new Datepicker(document.getElementById('m_birthdate'), datepickerOptions);
+            }
+        });
+
         let currentStep = 1;
         const totalSteps = 7;
 

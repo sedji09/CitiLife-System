@@ -45,6 +45,29 @@ $branchId = $_SESSION['branch_id'] ?? 1;
 $pendingPatients = $caseModel->getPendingCases($branchId);
 ?>
 
+<!-- Vanilla JS Datepicker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<style>
+    html body .datepicker-cell.selected,
+    html body .datepicker-cell.selected:hover,
+    html body .datepicker-picker .datepicker-cell.selected {
+        background-color: #dc2626 !important;
+        color: #ffffff !important;
+        border-color: #dc2626 !important;
+    }
+    html body .datepicker-cell.today:not(.selected),
+    html body .datepicker-picker .datepicker-cell.today:not(.selected) {
+        background-color: #f3f4f6 !important;
+        color: #111827 !important;
+        font-weight: 600 !important;
+        border: 1px solid #d1d5db !important;
+    }
+    html body .datepicker-cell.today.focused:not(.selected) {
+        background-color: #e5e7eb !important;
+    }
+</style>
+
 <!-- Header -->
 <div class="flex items-center justify-between">
     <div>
@@ -168,9 +191,9 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
 </div>
 
 <!-- Edit Modal -->
-<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white mt-20">
-        <div class="mt-3">
+<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+    <div class="w-full max-w-xl p-8 border shadow-xl rounded-2xl bg-white">
+        <div class="mt-1">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Patient Information</h3>
             <div class="space-y-3">
                 <div>
@@ -181,8 +204,11 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Birthdate</label>
-                        <input type="date" id="modalBirthdate"
-                            class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full" required>
+                        <div class="relative mt-1">
+                            <input type="text" id="modalBirthdate" readonly placeholder="Select birthdate"
+                                class="text-sm text-gray-900 bg-gray-50 p-2 pr-8 rounded w-full border border-gray-200" required>
+                            <i data-lucide="calendar" class="absolute right-2 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Sex</label>
@@ -231,6 +257,20 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
     src="/<?= PROJECT_DIR ?>/views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
+    // ── Vanilla JS Datepicker init ─────────────────────────────────────────────
+    let modalDatePicker = null;
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) window.lucide.createIcons();
+        const modalBirthdateInput = document.getElementById('modalBirthdate');
+        if (modalBirthdateInput) {
+            modalDatePicker = new Datepicker(modalBirthdateInput, {
+                autohide: true,
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            });
+        }
+    });
+
     // ── Highlight row from notification ───────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         const params = new window.URLSearchParams(window.location.search);

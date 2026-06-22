@@ -16,9 +16,14 @@ $periodLabel = $dateInfo['label'];
 
 // 1. Fetch Stats (Backend logic)
 $radiologistId = $_SESSION['user_id'] ?? null;
-$stats = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
-$emergencyCases = $stats['emergencyCases'];
-$totalPending = $stats['totalPending'];
+// Global stats — NOT date-filtered. These cards always show all unfinished pending cases.
+$globalStats = $caseModel->getGlobalPendingStats($radiologistId);
+$emergencyCases = $globalStats['emergencyCases'];
+$totalPending = $globalStats['totalPending'];
+$overdueCases = $globalStats['overdueCases'];
+$completedToday = $globalStats['completedToday'];
+$inProgress = $globalStats['inProgress'];
+$forRevision = $globalStats['forRevision'];
 
 // 2. Fetch Aggregated Chart Data (Backend logic)
 $branchesList = $branchModel->getAllBranches();
@@ -66,14 +71,33 @@ foreach ($branchStats as $stat) {
     $branchColors[] = $availableColors[$colorIndex++ % count($availableColors)];
 }
 
-// Handle AJAX updates
+// Handle AJAX: global stat cards refresh (no date filter)
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1' && isset($_GET['global_stats'])) {
+    if (ob_get_length())
+        ob_clean();
+    header('Content-Type: application/json');
+    $gs = $caseModel->getGlobalPendingStats($radiologistId);
+    echo json_encode([
+        'emergencyCases' => $gs['emergencyCases'],
+        'totalPending' => $gs['totalPending'],
+        'overdueCases' => $gs['overdueCases'],
+        'completedToday' => $gs['completedToday'],
+        'inProgress' => $gs['inProgress'],
+        'forRevision' => $gs['forRevision'],
+    ]);
+    exit;
+}
+
+// Handle AJAX updates (date-filtered charts)
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     if (ob_get_length())
         ob_clean();
     header('Content-Type: application/json');
+    // Re-fetch chart stats using the date condition (not global)
+    $chartStats = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
     echo json_encode([
-        'emergencyCases' => $emergencyCases,
-        'totalPending' => $totalPending,
+        'emergencyCases' => $chartStats['emergencyCases'],
+        'totalPending' => $chartStats['totalPending'],
         'labels' => $labels,
         'emergencyData' => $emergencyData,
         'urgentData' => $urgentData,
@@ -145,31 +169,108 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </div>
     </div>
 
-    <!-- Stats -->
-    <div id="radio-dashboard-top-stats" class="grid grid-cols-1 gap-4 sm:grid-cols-2 realtime-update">
-        <!-- Card 1 -->
+    <!-- Stats Grid: 6 cards in 2 rows of 3 -->
+    <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
+
+        <!-- Card 1: Pending STAT -->
         <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT"
-            class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md transition decoration-none">
-            <div id="stat-count"
-                class="bg-red-100 text-red-600 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
-                <?= $emergencyCases ?>
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-red-100 p-2 rounded-lg group-hover:bg-red-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                </div>
+                <span id="stat-count" class="text-2xl font-extrabold text-red-600"><?= $emergencyCases ?></span>
             </div>
             <div>
-                <p class="text-xs text-gray-500">Pending STAT Cases</p>
-                <p class="text-sm font-semibold text-gray-800">Across all branches</p>
+                <p class="text-xs font-semibold text-gray-800">Pending STAT</p>
+                <p class="text-[10px] text-gray-400">Across all branches</p>
             </div>
         </a>
 
-        <!-- Card 2 -->
+        <!-- Card 2: Total Pending -->
         <a href="/<?= PROJECT_DIR ?>/worklist"
-            class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition decoration-none">
-            <div id="pending-count"
-                class="bg-gray-100 text-gray-700 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
-                <?= $totalPending ?>
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-orange-200 shadow-sm hover:shadow-md hover:border-orange-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-orange-100 p-2 rounded-lg group-hover:bg-orange-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-orange-600" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                </div>
+                <span id="pending-count" class="text-2xl font-extrabold text-orange-600"><?= $totalPending ?></span>
             </div>
             <div>
-                <p class="text-xs text-gray-500">Total Pending</p>
-                <p class="text-sm font-semibold text-gray-800">All branches combined</p>
+                <p class="text-xs font-semibold text-gray-800">Total Pending</p>
+                <p class="text-[10px] text-gray-400">All branches</p>
+            </div>
+        </a>
+
+        <!-- Card 3: Overdue -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=overdue"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-red-100 p-2 rounded-lg group-hover:bg-red-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                </div>
+                <span id="overdue-count" class="text-2xl font-extrabold text-red-600"><?= $overdueCases ?></span>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-800">Overdue</p>
+                <p class="text-[10px] text-gray-400">Unread cases</p>
+            </div>
+        </a>
+
+        <!-- Card 4: In Progress -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=Under+Reading"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-blue-200 shadow-sm hover:shadow-md hover:border-blue-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-blue-100 p-2 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12" />
+                        <path d="M12 12 L16 14" />
+                        <path d="M8 6 l8 0" opacity=".3" />
+                    </svg>
+                </div>
+                <span id="inprogress-count" class="text-2xl font-extrabold text-blue-600"><?= $inProgress ?></span>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-800">In Progress</p>
+                <p class="text-[10px] text-gray-400">Under Reading Cases</p>
+            </div>
+        </a>
+
+        <!-- Card 5: Completed Today -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=completed_today"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-green-200 shadow-sm hover:shadow-md hover:border-green-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-green-600" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                </div>
+                <span id="completed-count" class="text-2xl font-extrabold text-green-600"><?= $completedToday ?></span>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-800">Completed Today</p>
+                <p class="text-[10px] text-gray-400">Reports submitted</p>
             </div>
         </a>
     </div>
@@ -209,8 +310,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     return res.json();
                                 })
                                 .then(data => {
-                                    document.getElementById('stat-count').innerText = data.emergencyCases;
-                                    document.getElementById('pending-count').innerText = data.totalPending;
+                                    // NOTE: stat-count and pending-count are global (not date-filtered),
+                                    // so they are intentionally NOT updated here.
                                     document.getElementById('period-label').innerText = data.periodLabel;
 
                                     if (window.priorityChart) {
@@ -381,7 +482,25 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             }
         });
 
-        // Polling for real-time updates every 5 seconds
+        // Poll chart data (date-filtered) every 5 seconds
         setInterval(fetchDashboardData, 5000);
+
+        // Poll global stat cards separately — always without date filter
+        function refreshGlobalStats() {
+            fetch('?role=radiologist&page=dashboard&filter=all&ajax=1&global_stats=1', { cache: 'no-store' })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (!data) return;
+                    document.getElementById('stat-count').innerText = data.emergencyCases;
+                    document.getElementById('pending-count').innerText = data.totalPending;
+                    document.getElementById('overdue-count').innerText = data.overdueCases;
+                    document.getElementById('inprogress-count').innerText = data.inProgress;
+                    document.getElementById('completed-count').innerText = data.completedToday;
+                    document.getElementById('revision-count').innerText = data.forRevision;
+                })
+                .catch(() => { });
+        }
+        refreshGlobalStats();
+        setInterval(refreshGlobalStats, 5000);
     });
 </script>

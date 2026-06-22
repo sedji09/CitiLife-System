@@ -102,6 +102,11 @@ $router->get('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->post('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->get('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->post('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
+$router->get('/branch-dashboard', 'auth/branch-dashboard.php');
+$router->get('/patient-dashboard', 'auth/patient-dashboard.php');
+$router->get('/image', 'ImageController@serve');
+
+$router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
 $router->get('/app/api/messages.php', 'App/Api/messages.php');
 $router->post('/app/api/messages.php', 'App/Api/messages.php');
 $router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');

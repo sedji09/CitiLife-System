@@ -10,7 +10,33 @@ $branchesList = $branchModel->getAllBranches();
 
 // Fetch all pending cases (Standardized via Model)
 $radiologistId = $_SESSION['user_id'] ?? null;
-$records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+
+// Support status URL filter for dashboard card deep-links
+$statusParam = $_GET['status'] ?? '';
+if ($statusParam === 'overdue') {
+    // Overdue: pending/under-reading for 3+ hours
+    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+    $records = array_filter($records, function($r) {
+        return (time() - strtotime($r['created_at'])) >= 3 * 3600;
+    });
+    $records = array_values($records);
+} elseif ($statusParam === 'completed_today') {
+    $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
+    $records = array_filter($records, function($r) {
+        return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');
+    });
+    $records = array_values($records);
+} elseif ($statusParam === 'Under Reading') {
+    $records = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
+    $records = array_filter($records, function($r) {
+        return empty($r['findings']);
+    });
+    $records = array_values($records);
+} elseif ($statusParam === 'For Revision') {
+    $records = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
+} else {
+    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+}
 
 // Extract unique priorities for filters
 $priorities = array_unique(array_column($records, 'priority'));
@@ -20,8 +46,25 @@ sort($priorities);
 <!-- Header -->
 <div class="flex items-center justify-between mb-6">
     <div class="ml-5">
-        <h2 id="worklist-title" class="text-2xl font-semibold text-gray-900">Worklist</h2>
-        <p id="worklist-subtitle" class="text-sm text-gray-500 mt-1">Manage pending cases across all branches</p>
+        <?php
+        $wlTitle = 'Worklist';
+        $wlSubtitle = 'Manage pending cases across all branches';
+        if ($statusParam === 'overdue') {
+            $wlTitle = 'Overdue Cases';
+            $wlSubtitle = 'Cases waiting 3+ hours without a completed reading';
+        } elseif ($statusParam === 'completed_today') {
+            $wlTitle = 'Completed Reports — Today';
+            $wlSubtitle = 'Reports submitted or completed today';
+        } elseif ($statusParam === 'Under Reading') {
+            $wlTitle = 'In Progress Cases';
+            $wlSubtitle = 'Cases opened by radiologist but findings not yet submitted';
+        } elseif ($statusParam === 'For Revision') {
+            $wlTitle = 'Cases For Revision';
+            $wlSubtitle = 'Cases flagged for editing or correction';
+        }
+        ?>
+        <h2 id="worklist-title" class="text-2xl font-semibold text-gray-900"><?= htmlspecialchars($wlTitle) ?></h2>
+        <p id="worklist-subtitle" class="text-sm text-gray-500 mt-1"><?= htmlspecialchars($wlSubtitle) ?></p>
     </div>
 </div>
 

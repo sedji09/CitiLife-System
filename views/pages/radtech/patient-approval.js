@@ -3,7 +3,12 @@ let currentEditId = null;
 function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId) {
     currentEditId = id;
     document.getElementById('modalName').value = name;
-    document.getElementById('modalBirthdate').value = birthdate;
+    // Set the datepicker date (use the picker if available, fallback to direct value)
+    const modalBirthdateInput = document.getElementById('modalBirthdate');
+    modalBirthdateInput.value = birthdate;
+    if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+        modalDatePicker.setDate(birthdate);
+    }
     document.getElementById('modalSex').value = sex;
     document.getElementById('modalContact').value = contact;
     document.getElementById('modalAddress').value = homeAddress || '';

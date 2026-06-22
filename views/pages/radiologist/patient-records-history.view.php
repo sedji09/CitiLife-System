@@ -5,6 +5,46 @@ $caseModel = new \CaseModel($pdo);
 
 $caseId = $_GET['id'] ?? 0;
 
+// ── AJAX Save Handler ─────────────────────────────────────────────────────────
+if (isset($_POST['ajax_save']) && $_POST['ajax_save'] === '1') {
+    ob_clean();
+    header('Content-Type: application/json');
+    $radiologistId = $_SESSION['user_id'] ?? null;
+    $caseDetails   = $caseModel->getCaseById($caseId);
+
+    if (!$caseDetails || $caseDetails['radiologist_id'] != $radiologistId) {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized or case not found.']);
+        exit;
+    }
+
+    $examReportsArr = json_decode($_POST['exam_reports'] ?? '{}', true) ?: [];
+
+    // Flatten for single-exam cases
+    $allFindings    = [];
+    $allImpressions = [];
+    foreach ($examReportsArr as $eData) {
+        if (!empty($eData['findings']))   $allFindings[]    = $eData['findings'];
+        if (!empty($eData['impression'])) $allImpressions[] = $eData['impression'];
+    }
+    $findingsStore   = count($examReportsArr) > 1 ? json_encode($examReportsArr) : implode("\n\n", $allFindings);
+    $impressionStore = count($examReportsArr) > 1 ? '' : implode("\n\n", $allImpressions);
+
+    $notificationModel = new \NotificationModel($pdo);
+    $result = $caseModel->submitRadiologistReport($caseId, $radiologistId, [
+        'clinical_information' => $caseDetails['clinical_information'] ?? '',
+        'exam_reports_arr'     => $examReportsArr,
+    ], $notificationModel);
+
+    echo json_encode([
+        'success'  => $result['success'] ?? false,
+        'message'  => $result['message'] ?? 'Done.',
+        'findings' => $findingsStore,
+        'impression' => $impressionStore,
+    ]);
+    exit;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Fetch case details (Backend logic)
 $caseDetails = $caseModel->getCaseById($caseId);
 
@@ -69,24 +109,19 @@ if ($backId) {
 
         <?php
         $sColor = match ($caseDetails['status']) {
-            'Completed' => 'green',
-            'Report Ready' => 'purple',
+            'Completed'     => 'green',
+            'Report Ready'  => 'purple',
             'Under Reading' => 'blue',
-            'Pending' => 'gray',
-            default => 'gray'
+            'Pending'       => 'gray',
+            default         => 'gray'
         };
         ?>
-        <span
+        <span id="status-badge"
             class="inline-flex items-center text-<?= $sColor ?>-600 border border-<?= $sColor ?>-400 rounded-full bg-<?= $sColor ?>-50 px-3 py-1 text-xs font-semibold shadow-sm">
             <?= htmlspecialchars($caseDetails['status']) ?>
         </span>
 
-        <?php if ($caseDetails['radiologist_id'] == $radiologistId): ?>
-            <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $caseDetails['id'] ?>&back_to=patient-records-history&back_id=<?= $caseDetails['id'] ?>"
-               class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition ml-2">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Findings
-            </a>
-        <?php endif; ?>
+
     </div>
 </div>
 
@@ -384,7 +419,7 @@ if ($backId) {
         </script>
     </div>
 
-    <!-- RIGHT SIDE: Report Editor (Read Only) -->
+    <!-- RIGHT SIDE: Findings Report — Read + Inline Edit -->
     <div class="bg-white border text-sm border-gray-200 shadow-sm rounded-xl flex flex-col p-3 border-t-gray-100">
 
         <div class="bg-red-600 px-5 h-14 flex items-center gap-3 text-white shadow-lg z-10 w-full rounded-t-xl">
@@ -396,10 +431,11 @@ if ($backId) {
 
         <div class="flex-1 flex flex-col px-3 pb-2 mt-4">
 
-            <div class="space-y-4 flex-1">
+            <!-- ── READ-ONLY DISPLAY ─────────────────────────────────────── -->
+            <div id="findings-readonly" class="space-y-4 flex-1">
                 <?php
                 // Parse multi-exam json if present
-                $rawF = $caseDetails['findings'] ?? '';
+                $rawF    = $caseDetails['findings'] ?? '';
                 $isMulti = false;
                 $reports = [];
                 if (!empty($rawF) && $rawF[0] === '{') {
@@ -416,18 +452,14 @@ if ($backId) {
                         <div class="mb-4">
                             <h4 class="font-bold text-red-600 text-xs mb-2 uppercase"><?= htmlspecialchars($examName) ?></h4>
                             <div class="mb-3">
-                                <label
-                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
-                                <div
-                                    class="w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
+                                <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
                                     <?= htmlspecialchars($data['findings'] ?: 'None') ?>
                                 </div>
                             </div>
                             <div>
-                                <label
-                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
-                                <div
-                                    class="w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
+                                <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
                                     <?= htmlspecialchars($data['impression'] ?: 'None') ?>
                                 </div>
                             </div>
@@ -438,36 +470,206 @@ if ($backId) {
                     ?>
                     <!-- Findings -->
                     <div>
-                        <label
-                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
-                        <div
-                            class="w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
+                        <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
                             <?= htmlspecialchars($caseDetails['findings'] ?: 'None') ?>
                         </div>
                     </div>
 
                     <!-- Impression -->
                     <div>
-                        <label
-                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
-                        <div
-                            class="w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
+                        <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-wrap">
                             <?= htmlspecialchars($caseDetails['impression'] ?: 'None') ?>
                         </div>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <div class="mt-6 flex flex-col items-center">
+            <!-- ── EDIT MODE (hidden by default) ────────────────────────── -->
+            <div id="findings-editmode" class="hidden space-y-4 flex-1">
+                <?php
+                // Rebuild exam list for edit form
+                $examTypeRaw = $caseDetails['exam_type'] ?? '';
+                $examTypes   = array_values(array_filter(array_map('trim', explode(',', $examTypeRaw))));
+                if (empty($examTypes)) $examTypes = ['General'];
+
+                // Saved per-exam data
+                $savedReports = [];
+                if ($isMulti) {
+                    $savedReports = $reports;
+                } elseif (!empty($caseDetails['findings'])) {
+                    $savedReports[$examTypes[0]] = [
+                        'findings'   => $caseDetails['findings'],
+                        'impression' => $caseDetails['impression'] ?? '',
+                    ];
+                }
+
+                foreach ($examTypes as $exam):
+                    $savedF = $savedReports[$exam]['findings']   ?? '';
+                    $savedI = $savedReports[$exam]['impression']  ?? '';
+                    ?>
+                    <div class="mb-4">
+                        <?php if (count($examTypes) > 1): ?>
+                            <h4 class="font-bold text-red-600 text-xs mb-2 uppercase"><?= htmlspecialchars($exam) ?></h4>
+                        <?php endif; ?>
+                        <div class="mb-3">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
+                            <textarea name="findings[<?= htmlspecialchars($exam) ?>]"
+                                data-exam="<?= htmlspecialchars($exam) ?>"
+                                data-field="findings"
+                                rows="5"
+                                class="inline-edit-field w-full rounded-lg border border-gray-300 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none transition"><?= htmlspecialchars($savedF) ?></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
+                            <textarea name="impression[<?= htmlspecialchars($exam) ?>]"
+                                data-exam="<?= htmlspecialchars($exam) ?>"
+                                data-field="impression"
+                                rows="3"
+                                class="inline-edit-field w-full rounded-lg border border-gray-300 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none transition"><?= htmlspecialchars($savedI) ?></textarea>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <!-- Save + Cancel row -->
+                <div class="flex gap-2 mt-2">
+                    <button id="btn-save-findings" type="button" onclick="saveFindings()"
+                        class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span id="save-btn-label">Save Findings</span>
+                    </button>
+                    <button type="button" onclick="toggleEditMode()"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-200 focus:outline-none transition">
+                        Cancel
+                    </button>
+                </div>
+
+                <!-- Save feedback toast -->
+                <div id="save-toast" class="hidden mt-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-center"></div>
+            </div>
+
+            <div class="mt-6 flex flex-col items-center gap-4">
+                <?php if ($caseDetails['radiologist_id'] == $radiologistId): ?>
+                    <!-- Toggle Edit button -->
+                    <button id="btn-edit-findings" type="button"
+                       onclick="toggleEditMode()"
+                       class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        <span>Edit Findings</span>
+                    </button>
+                <?php endif; ?>
+
                 <?php if (!empty($caseDetails['date_completed'])): ?>
-                    <p class="text-xs text-gray-400">Report Completed on
+                    <p class="text-xs text-gray-400" id="report-completed-label">Report Completed on
                         <?= date('M d, Y h:i A', strtotime($caseDetails['date_completed'])) ?>
                     </p>
                 <?php else: ?>
-                    <p class="text-xs text-gray-400 font-medium">Report not yet completed</p>
+                    <p class="text-xs text-gray-400 font-medium" id="report-completed-label">Report not yet completed</p>
                 <?php endif; ?>
             </div>
         </div>
 
     </div>
 </div>
+
+<script>
+(function () {
+    let editMode = false;
+
+    window.toggleEditMode = function () {
+        editMode = !editMode;
+        const readDiv  = document.getElementById('findings-readonly');
+        const editDiv  = document.getElementById('findings-editmode');
+        const btnEl    = document.getElementById('btn-edit-findings');
+        if (editMode) {
+            readDiv.classList.add('hidden');
+            editDiv.classList.remove('hidden');
+            if (btnEl) btnEl.classList.add('hidden');
+        } else {
+            readDiv.classList.remove('hidden');
+            editDiv.classList.add('hidden');
+            if (btnEl) btnEl.classList.remove('hidden');
+            // Hide toast
+            const toast = document.getElementById('save-toast');
+            if (toast) toast.classList.add('hidden');
+        }
+    };
+
+    window.saveFindings = function () {
+        const saveBtn   = document.getElementById('btn-save-findings');
+        const saveLabel = document.getElementById('save-btn-label');
+        const toast     = document.getElementById('save-toast');
+        const fields    = document.querySelectorAll('.inline-edit-field');
+
+        // Collect exam_reports object  { "ExamName": { findings, impression } }
+        const examReports = {};
+        fields.forEach(f => {
+            const exam  = f.dataset.exam;
+            const field = f.dataset.field; // 'findings' or 'impression'
+            if (!examReports[exam]) examReports[exam] = { findings: '', impression: '' };
+            examReports[exam][field] = f.value;
+        });
+
+        if (saveBtn) { saveBtn.disabled = true; if (saveLabel) saveLabel.textContent = 'Saving…'; }
+
+        const formData = new FormData();
+        formData.append('ajax_save', '1');
+        formData.append('exam_reports', JSON.stringify(examReports));
+
+        // POST to the current clean URL — the router maps it to this page
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('id', '<?= (int)$caseId ?>');
+
+        fetch(currentUrl.toString(), { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (saveBtn) { saveBtn.disabled = false; if (saveLabel) saveLabel.textContent = 'Save Findings'; }
+
+                if (data.success) {
+                    // Update read-only display with new text
+                    const roFindings   = document.querySelectorAll('.ro-findings');
+                    const roImpression = document.querySelectorAll('.ro-impression');
+
+                    if (roFindings.length === 1 && roImpression.length === 1) {
+                        // Single-exam: flat text
+                        roFindings[0].textContent   = examReports[Object.keys(examReports)[0]]?.findings   || 'None';
+                        roImpression[0].textContent = examReports[Object.keys(examReports)[0]]?.impression || 'None';
+                    } else {
+                        // Multi-exam: update each
+                        roFindings.forEach((el, i) => {
+                            const exam = Object.keys(examReports)[i];
+                            if (exam) el.textContent = examReports[exam].findings || 'None';
+                        });
+                        roImpression.forEach((el, i) => {
+                            const exam = Object.keys(examReports)[i];
+                            if (exam) el.textContent = examReports[exam].impression || 'None';
+                        });
+                    }
+
+                    // Update completed label
+                    const label = document.getElementById('report-completed-label');
+                    if (label) label.textContent = 'Report Updated on ' + new Date().toLocaleString('en-PH', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                    showToast('✓ Findings saved successfully.', 'green');
+                    // Auto close edit mode after 1s
+                    setTimeout(() => toggleEditMode(), 900);
+                } else {
+                    showToast('✗ ' + (data.message || 'Save failed. Try again.'), 'red');
+                }
+            })
+            .catch(() => {
+                if (saveBtn) { saveBtn.disabled = false; if (saveLabel) saveLabel.textContent = 'Save Findings'; }
+                showToast('✗ Network error. Please try again.', 'red');
+            });
+    };
+
+    function showToast(msg, color) {
+        const toast = document.getElementById('save-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.className = `mt-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-center bg-${color}-50 border border-${color}-300 text-${color}-700`;
+        toast.classList.remove('hidden');
+    }
+})();
+</script>

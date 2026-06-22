@@ -98,6 +98,55 @@ class CaseModel
     }
 
     /**
+     * Get GLOBAL pending stats for the Radiologist Dashboard stat cards.
+     * These are NOT filtered by date — always shows all-time unfinished cases.
+     */
+    public function getGlobalPendingStats($radiologistId = null)
+    {
+        $radFilter = $radiologistId ? " AND radiologist_id = " . (int) $radiologistId : "";
+
+        // Total Pending (No date filter — global)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' $radFilter");
+        $stmt->execute();
+        $totalPending = $stmt->fetchColumn() ?: 0;
+
+        // STAT Cases Pending (No date filter — global)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND priority = 'STAT' $radFilter");
+        $stmt->execute();
+        $emergencyCases = $stmt->fetchColumn() ?: 0;
+
+        // Overdue: Pending/Under Reading for 3+ hours without being completed
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND TIMESTAMPDIFF(HOUR, created_at, NOW()) >= 3 $radFilter");
+        $stmt->execute();
+        $overdueCases = $stmt->fetchColumn() ?: 0;
+
+        // Completed Today
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Report Ready', 'Completed') AND DATE(date_completed) = CURDATE() $radFilter");
+        $stmt->execute();
+        $completedToday = $stmt->fetchColumn() ?: 0;
+
+        // In Progress: opened by radiologist (Under Reading) but no findings yet
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status = 'Under Reading' AND image_status = 'Uploaded' AND (findings IS NULL OR findings = '') $radFilter");
+        $stmt->execute();
+        $inProgress = $stmt->fetchColumn() ?: 0;
+
+        // For Revision: cases with status 'For Revision'
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status = 'For Revision' $radFilter");
+        $stmt->execute();
+        $forRevision = $stmt->fetchColumn() ?: 0;
+
+        return [
+            'totalPending'   => $totalPending,
+            'emergencyCases' => $emergencyCases,
+            'overdueCases'   => $overdueCases,
+            'completedToday' => $completedToday,
+            'inProgress'     => $inProgress,
+            'forRevision'    => $forRevision,
+        ];
+    }
+
+
+    /**
      * Get statistics for the Radiologist Dashboard.
      */
     public function getRadiologistStats($dateCondition, $radiologistId = null, $priorityFilter = 'all')
@@ -955,12 +1004,18 @@ class CaseModel
         if (!$this->hasColumn('cases', 'report_template')) {
             $this->pdo->exec("ALTER TABLE cases ADD COLUMN report_template VARCHAR(100) DEFAULT NULL");
         }
-        // Ensure status enum includes 'Report Ready'
+        // Ensure status enum includes 'Report Ready' and 'For Revision'
         $stmt = $this->pdo->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'status'");
         $stmt->execute();
         $enumRow = $stmt->fetchColumn();
         if ($enumRow && strpos($enumRow, 'Report Ready') === false) {
-            $this->pdo->exec("ALTER TABLE cases MODIFY COLUMN status ENUM('Pending','Under Reading','Report Ready','Completed') NOT NULL DEFAULT 'Pending'");
+            $this->pdo->exec("ALTER TABLE cases MODIFY COLUMN status ENUM('Pending','Under Reading','Report Ready','For Revision','Completed','Rejected') NOT NULL DEFAULT 'Pending'");
+        } elseif ($enumRow && strpos($enumRow, 'For Revision') === false) {
+            $this->pdo->exec("ALTER TABLE cases MODIFY COLUMN status ENUM('Pending','Under Reading','Report Ready','For Revision','Completed','Rejected') NOT NULL DEFAULT 'Pending'");
+        }
+        // Ensure date_completed column exists
+        if (!$this->hasColumn('cases', 'date_completed')) {
+            $this->pdo->exec("ALTER TABLE cases ADD COLUMN date_completed DATETIME DEFAULT NULL");
         }
         // Ensure image_path is TEXT (not VARCHAR) so many-image JSON is never truncated
         $stmt2 = $this->pdo->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'image_path'");

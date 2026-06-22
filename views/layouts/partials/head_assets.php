@@ -990,6 +990,31 @@
         background: #4b5563;
         color: #ffffff;
     }
+    /* Global override for Vanilla JS Datepicker to make selected date RED */
+    html body .datepicker-cell.selected,
+    html body .datepicker-cell.selected:hover,
+    html body .datepicker-cell.selected.focused,
+    html body .datepicker-picker .datepicker-cell.selected,
+    html body .datepicker-picker .datepicker-cell.selected:hover,
+    html body .datepicker-picker .datepicker-cell.selected.focused {
+        background-color: #dc2626 !important;
+        color: #ffffff !important;
+        border-color: #dc2626 !important;
+    }
+
+    /* Remove the default TEAL background from 'today' and make it clean */
+    html body .datepicker-cell.today:not(.selected),
+    html body .datepicker-picker .datepicker-cell.today:not(.selected) {
+        background-color: #f3f4f6 !important; /* light grey instead of teal */
+        color: #111827 !important;
+        font-weight: 600 !important;
+        border: 1px solid #d1d5db !important;
+    }
+
+    html body .datepicker-cell.today.focused:not(.selected),
+    html body .datepicker-picker .datepicker-cell.today.focused:not(.selected) {
+        background-color: #e5e7eb !important;
+    }
   </style>
 
   <!-- ===== THEME BOOTSTRAP: runs synchronously before first paint ===== -->

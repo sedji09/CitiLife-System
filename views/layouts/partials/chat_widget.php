@@ -177,8 +177,11 @@
             <div class="font-bold text-gray-900 text-sm leading-tight">{{ chat.name }}</div>
             <div v-if="chat.messages && chat.messages.length > 0" class="text-gray-500 truncate mt-0.5 leading-snug"
               style="font-size: 13px;">
-              <span>{{ chat.messages[chat.messages.length - 1].sender_id == userId ? 'You: ' : '' }}</span>{{
-              chat.messages[chat.messages.length - 1].message }}
+              <span>{{ chat.messages[chat.messages.length - 1].sender_id == userId ? 'You: ' : '' }}</span>
+              <span v-if="chat.messages[chat.messages.length - 1].message">{{ chat.messages[chat.messages.length - 1].message }}</span>
+              <span v-else-if="chat.messages[chat.messages.length - 1].attachment" class="italic">
+                {{ chat.messages[chat.messages.length - 1].attachment.match(/\.(jpeg|jpg|gif|png)$/i) ? 'sent a photo' : 'sent a file' }}
+              </span>
             </div>
             <div v-else class="text-gray-400 italic mt-0.5 leading-snug" style="font-size: 13px;">No messages yet</div>
           </div>

@@ -198,8 +198,7 @@
                                         <div class="text-[11px] text-gray-400 mt-1 line-clamp-1 truncate max-w-xs"
                                             title="<?= htmlspecialchars($log['details']) ?>">
                                             <?php
-                                            $displayDetails = preg_replace('/,?\s*Exam:\s*.*$/', '', $log['details']);
-                                            $displayDetails = trim($displayDetails, " ,");
+                                            $displayDetails = trim($log['details'], " ,");
                                             echo htmlspecialchars($displayDetails);
                                             ?>
                                         </div>

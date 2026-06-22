@@ -277,11 +277,6 @@
                             if (strpos($rawName, '@') !== false)
                                 $rawName = explode('@', $rawName)[0];
                             $subjectName = $rawName;
-
-                            if (!empty($log['details']) && preg_match('/(?:Name|Patient|User):\s*([^,\-]+)/i', $log['details'], $matches)) {
-                                if (!empty(trim($matches[1])))
-                                    $subjectName = trim($matches[1]);
-                            }
                             ?>
                             <tr class="transition-colors">
                                 <td class="px-4 py-3 whitespace-nowrap">
@@ -305,7 +300,7 @@
                                     </div>
                                     <div class="text-[11px] text-gray-400 mt-0.5 line-clamp-1 audit-text-dim"
                                         title="<?= htmlspecialchars($log['details'] ?? '') ?>">
-                                        <?= htmlspecialchars(preg_replace('/,?\s*Exam:\s*.*$/', '', $log['details'] ?? '')) ?>
+                                        <?= htmlspecialchars($log['details'] ?? '') ?>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">
