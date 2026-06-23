@@ -135,7 +135,7 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
 
     <!-- Total Patients of Branch Card -->
     <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition group">
@@ -165,6 +165,18 @@
       </p>
     </div>
 
+    <!-- Pending Cases Card -->
+    <a href="/<?= PROJECT_DIR ?>/branch-xray-cases"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition block group">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-semibold text-gray-500 group-hover:text-yellow-600 transition">Pending Cases</p>
+        <div class="p-2 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition">
+          <i data-lucide="hourglass" class="w-5 h-5 text-yellow-600"></i>
+        </div>
+      </div>
+      <p class="text-3xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['pending'] ?? 0) ?></p>
+      <p class="text-xs text-gray-400 mt-1">Cases waiting for action</p>
+    </a>
 
     <!--Pending Record Requests Card -->
     <a href="/<?= PROJECT_DIR ?>/record-requests"

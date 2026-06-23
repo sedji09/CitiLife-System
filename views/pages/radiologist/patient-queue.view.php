@@ -12,7 +12,7 @@ $branchName = $branch['name'] ?? 'Unknown Branch';
 
 // Fetch cases for this branch that are 'Pending' or 'Under Reading' and images are 'Uploaded'
 $radiologistId = $_SESSION['user_id'] ?? null;
-$records = $caseModel->getWorklist($branchId, null, ['Pending', 'Under Reading'], true, $radiologistId);
+$records = $caseModel->getWorklist($branchId, null, ['Pending', 'Under Reading', 'Report Ready'], true, $radiologistId);
 
 // Extract unique exam types for the filter dropdown
 $examTypes = array_unique(array_column($records, 'exam_type'));
@@ -74,13 +74,14 @@ sort($examTypes);
                     <th class="text-left font-semibold px-3 py-3 truncate max-w-[150px]">Exam Type</th>
                     <th class="text-left font-semibold px-3 py-3">Priority</th>
                     <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Date Submitted</th>
+                    <th class="text-left font-semibold px-3 py-3">Status</th>
                     <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Action</th>
                 </tr>
             </thead>
             <tbody class="text-gray-800 bg-white divide-y divide-gray-100">
                 <?php if (count($records) === 0): ?>
                     <tr class="empty-state-row">
-                        <td colspan="7" class="text-center py-8 text-gray-500">
+                        <td colspan="8" class="text-center py-8 text-gray-500">
                             No pending cases for this branch.
                         </td>
                     </tr>
@@ -121,6 +122,53 @@ sort($examTypes);
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="text-sm text-gray-500"><?= date('M d, Y', strtotime($row['created_at'])) ?></div>
+                            </td>
+                            <td class="py-3 px-3">
+                                <?php
+                                $rawStatus = $row['status'] ?? 'Pending';
+                                $displayStatus = $rawStatus;
+                                $sBorder = '1.5px solid #facc15';
+                                $sBg = '#fefce8';
+                                $sColor = '#a16207';
+                                $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+
+                                if ($rawStatus === 'Pending') {
+                                    if ($isOverdue) {
+                                        $displayStatus = 'Overdue';
+                                        $sBorder = '1.5px solid #f87171';
+                                        $sBg = '#fef2f2';
+                                        $sColor = '#b91c1c';
+                                    } else {
+                                        $displayStatus = 'Pending';
+                                        $sBorder = '1.5px solid #facc15';
+                                        $sBg = '#fefce8';
+                                        $sColor = '#a16207';
+                                    }
+                                } elseif ($rawStatus === 'Under Reading') {
+                                    $displayStatus = 'In Progress';
+                                    $sBorder = '1.5px solid #60a5fa';
+                                    $sBg = '#eff6ff';
+                                    $sColor = '#1d4ed8';
+                                } elseif ($rawStatus === 'Report Ready') {
+                                    $displayStatus = 'Report Ready';
+                                    $sBorder = '1.5px solid #818cf8';
+                                    $sBg = '#eef2ff';
+                                    $sColor = '#4338ca';
+                                } elseif ($rawStatus === 'For Revision') {
+                                    $displayStatus = 'For Revision';
+                                    $sBorder = '1.5px solid #f87171';
+                                    $sBg = '#fef2f2';
+                                    $sColor = '#b91c1c';
+                                } elseif ($rawStatus === 'Completed') {
+                                    $displayStatus = 'Completed';
+                                    $sBorder = '1.5px solid #4ade80';
+                                    $sBg = '#f0fdf4';
+                                    $sColor = '#15803d';
+                                }
+                                ?>
+                                <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold" style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                                    <?= htmlspecialchars($displayStatus) ?>
+                                </span>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $branchId ?>"
@@ -242,7 +290,7 @@ sort($examTypes);
                 if (!noRecordsRow) {
                     noRecordsRow = document.createElement('tr');
                     noRecordsRow.className = 'no-records';
-                    noRecordsRow.innerHTML = `<td colspan="7" class="text-center py-8 text-gray-500">No matching records found.</td>`;
+                    noRecordsRow.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No matching records found.</td>`;
                     tbody.appendChild(noRecordsRow);
                 } else {
                     noRecordsRow.style.display = '';

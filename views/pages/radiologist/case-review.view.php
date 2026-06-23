@@ -14,12 +14,10 @@ if (isset($caseNotFound) && $caseNotFound) {
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 
 <?php
-$backPage = $_GET['back_to'] ?? 'patient-queue';
+$backPage = $_GET['back_to'] ?? 'worklist';
 $backId   = $_GET['back_id'] ?? '';
 $backUrl  = "?role=radiologist&page=" . urlencode($backPage);
-if ($backPage === 'patient-queue') {
-    $backUrl .= "&branch_id=" . urlencode($branchIdQuery);
-} elseif ($backId) {
+if ($backId) {
     $backUrl .= "&id=" . urlencode($backId);
 }
 ?>

@@ -64,6 +64,7 @@ class PageController
             'security-settings',
             'backup-maintenance',
             'print-report',
+            'feedback',
         ];
 
         // Fallback for page parameter

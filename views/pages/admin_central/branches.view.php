@@ -19,6 +19,35 @@
             </button>
         </div>
 
+        <?php
+        $activeBranchesCount = 0;
+        $totalBranchesCount = count($branches);
+        foreach ($branches as $b) {
+            if ($b['status'] === 'Active') $activeBranchesCount++;
+        }
+        ?>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Active Branches</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $activeBranchesCount ?></h3>
+                </div>
+                <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <i data-lucide="building-2" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Branches</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $totalBranchesCount ?></h3>
+                </div>
+                <div class="p-3 bg-gray-50 text-gray-600 rounded-lg">
+                    <i data-lucide="list" class="w-6 h-6"></i>
+                </div>
+            </div>
+        </div>
+
         <?php if ($success): ?>
             <div id="statusAlert"
                 class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -532,7 +561,7 @@
     }
 
     // Pagination State
-    let currentPage = 1;
+    let currentPage = parseInt(sessionStorage.getItem('CitiLife_adminBranches_page')) || 1;
     const itemsPerPage = 7;
 
     function filterAndSortBranches(resetPage = true) {
@@ -584,6 +613,8 @@
 
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
+
+        sessionStorage.setItem('CitiLife_adminBranches_page', currentPage);
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);

@@ -5,8 +5,12 @@ $caseModel = new \CaseModel($pdo);
 $patientModel = new \PatientModel($pdo);
 $branchModel = new \BranchModel($pdo);
 
+require_once __DIR__ . '/../../../app/Models/FeedbackModel.php';
+$feedbackModel = new \FeedbackModel($pdo);
+
 $userId = $_SESSION['user_id'] ?? 0;
 $allCases = [];
+$feedbackCaseIds = [];
 
 // 1. Fetch Patient Info (Backend logic)
 $patientId = $_SESSION['patient_id'] ?? null;
@@ -23,13 +27,13 @@ if ($patientId) {
 // 2. Fetch Cases (Backend logic)
 if ($patientRow && isset($patientRow['patient_number'])) {
     $rawCases = $caseModel->getPatientHistory($patientRow['patient_number']);
-    // Only show Completed, Released, or Rejected cases in My Records
     foreach ($rawCases as $c) {
         $isRejected = (isset($c['approval_status']) && $c['approval_status'] === 'Rejected') || (isset($c['status']) && $c['status'] === 'Rejected');
         if (in_array($c['status'], ['Completed', 'Released']) || $isRejected) {
             $allCases[] = $c;
         }
     }
+    $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
 }
 
 $statusBadge = [
@@ -218,6 +222,21 @@ $statusBadge = [
                                                                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Report
                                                             </span>
                                                         </a>
+
+                                                        <!-- Give Feedback (Only if not yet given) -->
+                                                        <?php if (!in_array($c['id'], $feedbackCaseIds)): ?>
+                                                        <a href="javascript:void(0)" onclick="openFeedbackModal(<?= $c['id'] ?>, '<?= htmlspecialchars($c['case_number']) ?>', '<?= htmlspecialchars(addslashes($c['exam_type'] ?? 'General Exam')) ?>')"
+                                                            class="group transition-all" title="Give Feedback">
+                                                            <div
+                                                                class="hidden lg:flex items-center justify-center p-2 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-colors shadow-sm">
+                                                                <i data-lucide="star" class="w-4 h-4"></i>
+                                                            </div>
+                                                            <span
+                                                                class="lg:hidden inline-flex items-center gap-1.5 text-yellow-600 hover:text-yellow-700 text-xs font-semibold transition mt-1 lg:mt-0">
+                                                                <i data-lucide="star" class="w-3.5 h-3.5"></i> Feedback
+                                                            </span>
+                                                        </a>
+                                                        <?php endif; ?>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -295,6 +314,12 @@ $statusBadge = [
                                             class="inline-flex items-center gap-1.5 text-green-600 hover:text-green-800 text-xs font-bold transition">
                                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Report
                                         </a>
+                                        <?php if (!in_array($c['id'], $feedbackCaseIds)): ?>
+                                        <a href="javascript:void(0)" onclick="openFeedbackModal(<?= $c['id'] ?>, '<?= htmlspecialchars($c['case_number']) ?>', '<?= htmlspecialchars(addslashes($c['exam_type'] ?? 'General Exam')) ?>')"
+                                            class="inline-flex items-center gap-1.5 text-yellow-600 hover:text-yellow-700 text-xs font-bold transition">
+                                            <i data-lucide="star" class="w-3.5 h-3.5"></i> Feedback
+                                        </a>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -338,6 +363,72 @@ $statusBadge = [
                 <div class="custom-alert-buttons-container">
                     <a id="expired-alert-contact-btn" href="#" class="custom-alert-btn-secondary" style="text-decoration:none; display:none; justify-content:center; align-items:center;">Contact Us</a>
                     <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Modal -->
+        <div id="feedback-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity opacity-0">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200" id="feedback-modal-content">
+                <!-- Modal Header -->
+                <div class="px-6 py-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-red-100 text-red-600 rounded-lg">
+                            <i data-lucide="message-square-plus" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-gray-900">Submit Feedback</h2>
+                            <p class="text-xs text-gray-500">How was your experience with CitiLife?</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeFeedbackModal()" class="text-gray-400 hover:text-gray-600 transition p-2 rounded-lg hover:bg-gray-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Case Info Bar -->
+                <div class="bg-red-50 border-b border-red-100 px-6 py-3 flex items-center gap-2 text-sm text-red-800">
+                    <i data-lucide="folder-open" class="w-4 h-4 text-red-600"></i>
+                    <span class="font-medium">Feedback for Case: <span class="font-bold text-red-700" id="feedback-case-number"></span> (<span id="feedback-exam-type"></span>)</span>
+                </div>
+
+                <!-- Form -->
+                <div class="p-6">
+                    <form id="feedback-form" class="space-y-6">
+                        <input type="hidden" name="case_id" id="feedback-case-id" value="">
+                        
+                        <!-- Star Rating -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Overall Rating <span class="text-red-500">*</span></label>
+                            <div class="flex items-center gap-2" id="feedback-star-container">
+                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                    <button type="button" class="feedback-star-btn p-1 text-gray-300 hover:text-yellow-400 transition transform hover:scale-110" data-rating="<?= $i ?>">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 pointer-events-none">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        </svg>
+                                    </button>
+                                <?php endfor; ?>
+                            </div>
+                            <input type="hidden" name="rating" id="feedback-rating-input" value="" required>
+                            <p class="text-xs text-gray-500 mt-2" id="feedback-rating-text">Select a rating</p>
+                        </div>
+
+                        <!-- Comments -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Additional Comments (Optional)</label>
+                            <textarea name="comments" id="feedback-comments" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition outline-none" placeholder="Tell us more about your experience..."></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button type="button" onclick="closeFeedbackModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
+                                Cancel
+                            </button>
+                            <button type="button" id="feedback-submit-btn" onclick="submitFeedbackForm()" class="px-6 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition shadow-sm active:scale-[0.98] flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Submit Feedback
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -402,6 +493,133 @@ $statusBadge = [
         </script>
 
         <?php if (!empty($allCases)): ?>
-            <script src="/<?= PROJECT_DIR ?>/views/pages/patient/my-records.js"></script>
+            <script src="/<?= PROJECT_DIR ?>/views/pages/patient/my-records.js?v=<?= time() ?>"></script>
         <?php endif; ?>
+        
+        <script>
+            // ── Feedback Modal Logic ──────────────────────────────────────────────────
+            window.openFeedbackModal = function(caseId, caseNumber, examType) {
+                const modal = document.getElementById('feedback-modal');
+                const content = document.getElementById('feedback-modal-content');
+                if (!modal || !content) return;
+                
+                // Reset form
+                const form = document.getElementById('feedback-form');
+                if (form) form.reset();
+                document.getElementById('feedback-case-id').value = caseId;
+                document.getElementById('feedback-rating-input').value = "";
+                updateFeedbackStars(0);
+                
+                // Set text
+                document.getElementById('feedback-case-number').textContent = caseNumber;
+                document.getElementById('feedback-exam-type').textContent = examType;
+                
+                // Show modal
+                modal.classList.remove('hidden');
+                // trigger reflow
+                void modal.offsetWidth;
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            };
+
+            window.closeFeedbackModal = function() {
+                const modal = document.getElementById('feedback-modal');
+                const content = document.getElementById('feedback-modal-content');
+                if (!modal || !content) return;
+                
+                modal.classList.add('opacity-0');
+                content.classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 200);
+            };
+
+            // Star rating logic
+            const feedbackTexts = {
+                1: "Poor", 2: "Fair", 3: "Good", 4: "Very Good", 5: "Excellent"
+            };
+
+            function updateFeedbackStars(value) {
+                const stars = document.querySelectorAll('.feedback-star-btn');
+                const ratingText = document.getElementById('feedback-rating-text');
+                
+                stars.forEach(star => {
+                    const rating = parseInt(star.getAttribute('data-rating'));
+                    if (rating <= value) {
+                        star.classList.remove('text-gray-300');
+                        star.classList.add('text-yellow-400');
+                    } else {
+                        star.classList.remove('text-yellow-400');
+                        star.classList.add('text-gray-300');
+                    }
+                });
+                if (ratingText) {
+                    ratingText.textContent = value == 0 ? "Select a rating" : feedbackTexts[value];
+                }
+            }
+
+            document.addEventListener('click', function(e) {
+                const starBtn = e.target.closest('.feedback-star-btn');
+                if (starBtn) {
+                    const value = starBtn.getAttribute('data-rating');
+                    document.getElementById('feedback-rating-input').value = value;
+                    updateFeedbackStars(value);
+                }
+            });
+
+            window.submitFeedbackForm = function() {
+                const feedbackForm = document.getElementById('feedback-form');
+                if (!feedbackForm) return;
+
+                const submitBtn = document.getElementById('feedback-submit-btn');
+                const rating = document.getElementById('feedback-rating-input').value;
+                
+                if (!rating) {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: 'Please provide a star rating to let us know how we did!' });
+                    return;
+                }
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Submitting...';
+                if (window.lucide) lucide.createIcons();
+                
+                const formData = new FormData(feedbackForm);
+                
+                fetch('/<?= PROJECT_DIR ?>/app/api/submit_feedback.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Feedback';
+                    if (window.lucide) lucide.createIcons();
+                    
+                    if (data.success) {
+                        closeFeedbackModal();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thank you!',
+                            text: 'Your feedback has been submitted successfully.',
+                            confirmButtonColor: '#dc2626',
+                            customClass: {
+                                popup: 'rounded-2xl',
+                                title: 'text-xl font-bold text-gray-800'
+                            }
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Failed to submit feedback' });
+                    }
+                })
+                .catch(err => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Feedback';
+                    if (window.lucide) lucide.createIcons();
+                    console.error(err);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'A network error occurred. Please try again.' });
+                });
+            };
+        </script>
     </div>

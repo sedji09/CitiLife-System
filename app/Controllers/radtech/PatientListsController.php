@@ -14,9 +14,11 @@ class PatientListsController
  * Handles backend logic for the RadTech Today's Queue (Patient List).
  */
 
+require_once __DIR__ . '/../../Models/UserModel.php';
 $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
+$userModel = new \UserModel($pdo);
 
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
@@ -81,6 +83,25 @@ if (isset($_GET['action'])) {
                         "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
                         $patientUserId
                     );
+
+                    // Send Email Notification
+                    $patientUser = $userModel->getUserById($patientUserId);
+                    if ($patientUser && !empty($patientUser['email'])) {
+                        $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
+                        $subject = "Your X-ray Report is Ready - CitiLife System";
+                        $loginUrl = "http://" . $_SERVER['HTTP_HOST'] . "/" . PROJECT_DIR . "/patient-login.php";
+                        $body = "
+                            <div style='font-family: Arial, sans-serif; color: #333;'>
+                                <h2>Hello {$patientName},</h2>
+                                <p>Good news! Your X-ray report for Case <strong>{$caseData['case_number']}</strong> has been released and is now ready for viewing or downloading.</p>
+                                <p>You can access it by logging into your patient portal:</p>
+                                <p><a href='{$loginUrl}' style='display: inline-block; padding: 10px 15px; background-color: #ff0000d3; color: #fff; text-decoration: none; border-radius: 5px;'>Log in to Patient Portal</a></p>
+                                <br>
+                                <p>Thank you for choosing CitiLife.</p>
+                            </div>
+                        ";
+                        sendEmail($patientUser['email'], $patientName, $subject, $body);
+                    }
                 }
             }
 
@@ -116,6 +137,25 @@ if (isset($_GET['action'])) {
                         "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
                         $patientUserId
                     );
+
+                    // Send Email Notification
+                    $patientUser = $userModel->getUserById($patientUserId);
+                    if ($patientUser && !empty($patientUser['email'])) {
+                        $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
+                        $subject = "Your X-ray Report is Ready - CitiLife System";
+                        $loginUrl = "http://" . $_SERVER['HTTP_HOST'] . "/" . PROJECT_DIR . "/patient-login.php";
+                        $body = "
+                            <div style='font-family: Arial, sans-serif; color: #333;'>
+                                <h2>Hello {$patientName},</h2>
+                                <p>Good news! Your X-ray report for Case <strong>{$caseData['case_number']}</strong> has been released and is now ready for viewing or downloading.</p>
+                                <p>You can access it by logging into your patient portal:</p>
+                                <p><a href='{$loginUrl}' style='display: inline-block; padding: 10px 15px; background-color: #ff0000d3; color: #fff; text-decoration: none; border-radius: 5px;'>Log in to Patient Portal</a></p>
+                                <br>
+                                <p>Thank you for choosing CitiLife.</p>
+                            </div>
+                        ";
+                        sendEmail($patientUser['email'], $patientName, $subject, $body);
+                    }
                 }
             }
             header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists");

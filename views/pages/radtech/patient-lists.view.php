@@ -177,6 +177,12 @@
                             <td class="py-3 px-3">
                                 <?php
                                 $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
+                                
+                                $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+                                if ($displayStatus === 'Pending' && $isOverdue) {
+                                    $displayStatus = 'Overdue';
+                                }
+
                                 $sBorder = '1.5px solid #facc15';
                                 $sBg = '#fefce8';
                                 $sColor = '#a16207';
@@ -195,7 +201,7 @@
                                     $sBg = '#f0fdf4';
                                     $sColor = '#15803d';
                                 }
-                                if ($displayStatus === 'Rejected') {
+                                if ($displayStatus === 'Rejected' || $displayStatus === 'Overdue') {
                                     $sBorder = '1.5px solid #f87171';
                                     $sBg = '#fef2f2';
                                     $sColor = '#b91c1c';

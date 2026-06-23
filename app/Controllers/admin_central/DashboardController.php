@@ -47,6 +47,7 @@ $totalEmergency = 0;
 $totalUrgent = 0;
 $totalRoutine = 0;
 $totalPhilHealth = 0;
+$totalPending = 0;
 
 $branchesData = []; // For pie chart
 $branchIndex = [];
@@ -66,6 +67,7 @@ foreach ($allTimeStats as $stat) {
         $totalUrgent += $stat['urgent_count'];
         $totalRoutine += $stat['routine_count'];
         $totalPhilHealth += $stat['with_philhealth'];
+        $totalPending += $stat['pending_count'] ?? 0;
 
         $branchIndex[$stat['branch_name']] = $stat['total_patients'];
     }
@@ -142,6 +144,7 @@ foreach ($allStaff as $u) {
 $dashboardData = [
     'totals' => [
         'patients' => $totalPatients,
+        'pending' => $totalPending,
         'stat' => $totalEmergency,
         'urgent' => $totalUrgent,
         'routine' => $totalRoutine,

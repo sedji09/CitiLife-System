@@ -35,10 +35,10 @@
         </div>
     </div>
 
-    <!-- Summary Cards Row (5 Cards) -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <!-- Summary Cards Row -->
+    <div class="flex overflow-x-auto gap-3 pb-2 w-full">
         <!-- Total Patients -->
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <div class="bg-white p-4 lg:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex-1" style="min-width: 140px;">
             <div class="flex items-start justify-between mb-3">
                 <h3 class="text-[13px] text-gray-500 font-medium">Total Patients</h3>
                 <div class="p-1.5 rounded-lg bg-blue-50 text-blue-500">
@@ -50,34 +50,22 @@
             </div>
         </div>
 
-        <!-- Active Branches -->
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-            <div class="flex items-start justify-between mb-3">
-                <h3 class="text-[13px] text-gray-500 font-medium">Active Branches</h3>
-                <div class="p-1.5 rounded-lg bg-indigo-50 text-indigo-500">
-                    <i data-lucide="building" class="w-4 h-4"></i>
-                </div>
-            </div>
-            <div class="text-2xl font-black text-gray-900" id="tot_branches">
-                <?= number_format($dashboardData['totals']['active_branches']) ?>
-            </div>
-        </div>
 
-        <!-- Active Users -->
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <!-- Pending Cases -->
+        <div class="bg-white p-4 lg:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex-1" style="min-width: 140px;">
             <div class="flex items-start justify-between mb-3">
-                <h3 class="text-[13px] text-gray-500 font-medium">Active Staff</h3>
-                <div class="p-1.5 rounded-lg bg-purple-50 text-purple-500">
-                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                <h3 class="text-[13px] text-gray-500 font-medium">Pending Cases</h3>
+                <div class="p-1.5 rounded-lg bg-yellow-50 text-yellow-500">
+                    <i data-lucide="hourglass" class="w-4 h-4"></i>
                 </div>
             </div>
-            <div class="text-2xl font-black text-gray-900" id="tot_users">
-                <?= number_format($dashboardData['totals']['active_users']) ?>
+            <div class="text-2xl font-black text-gray-900" id="tot_pending">
+                <?= number_format($dashboardData['totals']['pending'] ?? 0) ?>
             </div>
         </div>
 
         <!-- STAT -->
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <div class="bg-white p-4 lg:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex-1" style="min-width: 140px;">
             <div class="flex items-start justify-between mb-3">
                 <h3 class="text-[13px] text-gray-500 font-medium">STAT</h3>
                 <div class="p-1.5 rounded-lg bg-red-50 text-red-500">
@@ -90,7 +78,7 @@
         </div>
 
         <!-- Urgent -->
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <div class="bg-white p-4 lg:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex-1" style="min-width: 140px;">
             <div class="flex items-start justify-between mb-3">
                 <h3 class="text-[13px] text-gray-500 font-medium">Urgent Cases</h3>
                 <div class="p-1.5 rounded-lg bg-orange-50 text-orange-500">
@@ -103,7 +91,7 @@
         </div>
 
         <!-- Routine -->
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+        <div class="bg-white p-4 lg:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex-1" style="min-width: 140px;">
             <div class="flex items-start justify-between mb-3">
                 <h3 class="text-[13px] text-gray-500 font-medium">Routine Cases</h3>
                 <div class="p-1.5 rounded-lg bg-green-50 text-green-500">
@@ -463,6 +451,7 @@
                 updateEl('tot_patients', data.totals.patients);
                 updateEl('tot_branches', data.totals.active_branches);
                 updateEl('tot_users', data.totals.active_users);
+                updateEl('tot_pending', data.totals.pending);
                 updateEl('tot_stat', data.totals.stat);
                 updateEl('tot_urgent', data.totals.urgent);
                 updateEl('tot_routine', data.totals.routine);

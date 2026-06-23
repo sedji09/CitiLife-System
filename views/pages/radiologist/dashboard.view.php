@@ -130,34 +130,129 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <option value="yearly" <?= $filter === 'yearly' ? 'selected' : '' ?>>Yearly</option>
             </select>
 
-            <input type="month" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>"
-                onchange="handleFilterChange()"
-                class="<?= $filter === 'monthly' ? '' : 'hidden' ?> bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
+            <!-- Custom Month Picker Popup -->
+            <div id="monthPickerWrapper" class="<?= $filter === 'monthly' ? '' : 'hidden' ?> relative">
+                <!-- Trigger Button -->
+                <button type="button" id="monthPickerTrigger" onclick="toggleMonthPicker()"
+                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] justify-between">
+                    <span id="monthPickerLabel" class="whitespace-nowrap"><?= date('F Y', strtotime($selectedMonth . '-01')) ?></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+                </button>
 
-            <input type="number" id="yearPicker" min="2000" max="2100" value="<?= htmlspecialchars($selectedYear) ?>"
+                <!-- Popup Panel -->
+                <div id="monthPickerPanel"
+                    class="hidden absolute right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3 w-[260px]">
+                    <!-- Year Navigation -->
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <button type="button" onclick="changePickerYear(-1)"
+                            class="text-gray-500 hover:text-blue-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
+                        <span id="pickerYearLabel" class="font-semibold text-gray-800 text-sm"></span>
+                        <button type="button" onclick="changePickerYear(1)"
+                            class="text-gray-500 hover:text-blue-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
+                    </div>
+                    <!-- Month Grid -->
+                    <div id="monthGrid" class="grid grid-cols-4 gap-1"></div>
+                </div>
+
+                <!-- Hidden inputs to hold selected values (read by JS) -->
+                <input type="hidden" id="monthPickerMonth" value="<?= date('m', strtotime($selectedMonth . '-01')) ?>">
+                <input type="hidden" id="monthPickerYear" value="<?= date('Y', strtotime($selectedMonth . '-01')) ?>">
+            </div>
+
+            <select id="yearPicker"
                 onchange="handleFilterChange()"
                 class="<?= $filter === 'yearly' ? '' : 'hidden' ?> bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm w-24">
+                <?php for ($y = date('Y'); $y >= 2020; $y--):
+                    $sel = $selectedYear == $y ? 'selected' : '';
+                ?>
+                    <option value="<?= $y ?>" <?= $sel ?>><?= $y ?></option>
+                <?php endfor; ?>
+            </select>
 
             <script>
+                const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+                let _pickerYear  = parseInt(document.getElementById('monthPickerYear').value);
+                let _pickerMonth = parseInt(document.getElementById('monthPickerMonth').value); // 1-based
+
+                function renderMonthGrid() {
+                    document.getElementById('pickerYearLabel').textContent = _pickerYear;
+                    const grid = document.getElementById('monthGrid');
+                    grid.innerHTML = '';
+                    MONTH_NAMES.forEach((name, i) => {
+                        const m = i + 1;
+                        const isSelected = (m === _pickerMonth && _pickerYear === parseInt(document.getElementById('monthPickerYear').value));
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = name;
+                        btn.className = 'text-sm rounded-lg py-1.5 text-center transition-colors ' +
+                            (isSelected
+                                ? 'bg-blue-600 text-white font-semibold'
+                                : 'text-gray-700 hover:bg-gray-100');
+                        btn.onclick = () => selectMonth(m);
+                        grid.appendChild(btn);
+                    });
+                }
+
+                function selectMonth(m) {
+                    _pickerMonth = m;
+                    const mm = String(m).padStart(2, '0');
+                    document.getElementById('monthPickerMonth').value = mm;
+                    document.getElementById('monthPickerYear').value  = _pickerYear;
+                    document.getElementById('monthPickerLabel').textContent = MONTH_FULL[m - 1] + ' ' + _pickerYear;
+                    document.getElementById('monthPickerPanel').classList.add('hidden');
+                    renderMonthGrid();
+                    handleFilterChange();
+                }
+
+                function changePickerYear(delta) {
+                    const newYear = _pickerYear + delta;
+                    if (newYear < 2020 || newYear > <?= date('Y') ?>) return;
+                    _pickerYear = newYear;
+                    renderMonthGrid();
+                }
+
+                function toggleMonthPicker() {
+                    const panel = document.getElementById('monthPickerPanel');
+                    panel.classList.toggle('hidden');
+                    if (!panel.classList.contains('hidden')) {
+                        _pickerYear = parseInt(document.getElementById('monthPickerYear').value);
+                        _pickerMonth = parseInt(document.getElementById('monthPickerMonth').value);
+                        renderMonthGrid();
+                    }
+                }
+
+                // Close when clicking outside
+                document.addEventListener('click', function(e) {
+                    const wrapper = document.getElementById('monthPickerWrapper');
+                    if (wrapper && !wrapper.contains(e.target)) {
+                        document.getElementById('monthPickerPanel').classList.add('hidden');
+                    }
+                });
+
                 function handleFilterChange() {
                     const filter = document.getElementById('filterSelect').value;
-                    const monthPicker = document.getElementById('monthPicker');
+                    const monthWrapper = document.getElementById('monthPickerWrapper');
                     const yearPicker = document.getElementById('yearPicker');
 
                     if (filter === 'monthly') {
-                        monthPicker.classList.remove('hidden');
+                        monthWrapper.classList.remove('hidden');
                         yearPicker.classList.add('hidden');
                     } else if (filter === 'yearly') {
-                        monthPicker.classList.add('hidden');
+                        monthWrapper.classList.add('hidden');
                         yearPicker.classList.remove('hidden');
                     } else {
-                        monthPicker.classList.add('hidden');
+                        monthWrapper.classList.add('hidden');
                         yearPicker.classList.add('hidden');
                     }
 
+                    const monthNum  = document.getElementById('monthPickerMonth').value;
+                    const monthYear = document.getElementById('monthPickerYear').value;
+
                     let url = '?role=radiologist&page=dashboard&filter=' + filter;
-                    if (filter === 'monthly') url += '&month=' + monthPicker.value;
-                    if (filter === 'yearly') url += '&year=' + yearPicker.value;
+                    if (filter === 'monthly') url += '&month=' + monthYear + '-' + monthNum;
+                    if (filter === 'yearly')  url += '&year='  + yearPicker.value;
 
                     window.history.pushState({ path: url }, '', url);
 
@@ -176,7 +271,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
-                <div class="bg-red-100 p-2 rounded-lg group-hover:bg-red-200 transition-colors">
+                <div class="bg-red-100 p-2 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <path
@@ -195,7 +290,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
         <!-- Card 2: Total Pending -->
         <a href="/<?= PROJECT_DIR ?>/worklist"
-            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-orange-200 shadow-sm hover:shadow-md hover:border-orange-400 transition-all decoration-none">
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+            style="border: 1px solid #fed7aa;" onmouseenter="this.style.borderColor='#fb923c'"
+            onmouseleave="this.style.borderColor='#fed7aa'">
             <div class="flex items-center justify-between">
                 <div class="bg-orange-100 p-2 rounded-lg group-hover:bg-orange-200 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-orange-600" viewBox="0 0 24 24"
@@ -219,7 +316,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         <a href="/<?= PROJECT_DIR ?>/worklist?status=overdue"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
-                <div class="bg-red-100 p-2 rounded-lg group-hover:bg-red-200 transition-colors">
+                <div class="bg-red-100 p-2 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10" />
@@ -236,7 +333,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
         <!-- Card 4: In Progress -->
         <a href="/<?= PROJECT_DIR ?>/worklist?status=Under+Reading"
-            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-blue-200 shadow-sm hover:shadow-md hover:border-blue-400 transition-all decoration-none">
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+            style="border: 1px solid #bfdbfe;" onmouseenter="this.style.borderColor='#60a5fa'"
+            onmouseleave="this.style.borderColor='#bfdbfe'">
             <div class="flex items-center justify-between">
                 <div class="bg-blue-100 p-2 rounded-lg group-hover:bg-blue-200 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" viewBox="0 0 24 24"
@@ -256,8 +355,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 5: Completed Today -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?status=completed_today"
-            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-green-200 shadow-sm hover:shadow-md hover:border-green-400 transition-all decoration-none">
+        <div class="flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+            style="border: 1px solid #bbf7d0;" onmouseenter="this.style.borderColor='#4ade80'"
+            onmouseleave="this.style.borderColor='#bbf7d0'">
             <div class="flex items-center justify-between">
                 <div class="bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-green-600" viewBox="0 0 24 24"
@@ -272,7 +372,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <p class="text-xs font-semibold text-gray-800">Completed Today</p>
                 <p class="text-[10px] text-gray-400">Reports submitted</p>
             </div>
-        </a>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -297,7 +397,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         function fetchDashboardData() {
                             const priority = document.getElementById('priorityFilter').value;
                             const filter = document.getElementById('filterSelect').value;
-                            const month = document.getElementById('monthPicker').value;
+                            const monthNum = document.getElementById('monthPickerMonth').value;
+                            const monthYear = document.getElementById('monthPickerYear').value;
+                            const month = monthYear + '-' + monthNum;
                             const year = document.getElementById('yearPicker').value;
 
                             let url = '?role=radiologist&page=dashboard&priority=' + priority + '&filter=' + filter + '&ajax=1';

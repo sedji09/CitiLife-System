@@ -158,7 +158,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ROWS_PER_PAGE = 8;
-        let currentPage = 1;
+        let currentPage = parseInt(sessionStorage.getItem('CitiLife_recordRequests_page')) || 1;
 
         const searchInput = document.getElementById('search-input');
         const filterBranch = document.getElementById('filter-branch');
@@ -206,6 +206,8 @@
 
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
+
+            sessionStorage.setItem('CitiLife_recordRequests_page', currentPage);
 
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
             const endIdx = startIdx + ROWS_PER_PAGE;

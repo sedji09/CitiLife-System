@@ -1,7 +1,7 @@
 
 (function () {
     const ROWS_PER_PAGE = 8;
-    let currentPage = 1;
+    let currentPage = parseInt(sessionStorage.getItem('CitiLife_radtechXray_page')) || 1;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     function getFilteredRows() {
@@ -45,6 +45,8 @@
         // Clamp current page
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1)          currentPage = 1;
+
+        sessionStorage.setItem('CitiLife_radtechXray_page', currentPage);
 
         const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
         const endIdx   = startIdx + ROWS_PER_PAGE;

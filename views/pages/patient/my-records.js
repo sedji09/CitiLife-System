@@ -5,7 +5,7 @@
     window.__RECORDS_INIT_DONE__ = true;
 
     const ROWS_PER_PAGE = 10;
-    let currentPage = 1;
+    let currentPage = parseInt(sessionStorage.getItem('CitiLife_myRecords_page')) || 1;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     function getFilteredRows() {
@@ -73,6 +73,9 @@
 
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
+        
+        // Save to sessionStorage so it persists when returning from another page
+        sessionStorage.setItem('CitiLife_myRecords_page', currentPage);
 
         const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
         const endIdx = startIdx + ROWS_PER_PAGE;
@@ -252,4 +255,7 @@
     document.addEventListener('realtime:updated', () => { 
         renderPage(); 
     });
+
+
+
 })();

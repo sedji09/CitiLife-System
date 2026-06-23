@@ -262,6 +262,11 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                 <td class="py-3 px-6">
                   <?php
                   $displayStatus = ($case['approval_status'] === 'Rejected' || $case['status'] === 'Rejected') ? 'Rejected' : $case['status'];
+                  $isOverdue = (time() - strtotime($case['created_at'])) >= 3 * 3600;
+                  if ($displayStatus === 'Pending' && $isOverdue) {
+                      $displayStatus = 'Overdue';
+                  }
+
                   $sStyles = ['border' => '1.5px solid #facc15', 'background' => '#fefce8', 'color' => '#a16207'];
                   if ($displayStatus === 'Report Ready')
                     $sStyles = ['border' => '1.5px solid #818cf8', 'background' => '#eef2ff', 'color' => '#4338ca'];
@@ -269,7 +274,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                     $sStyles = ['border' => '1.5px solid #60a5fa', 'background' => '#eff6ff', 'color' => '#1d4ed8'];
                   if ($displayStatus === 'Completed')
                     $sStyles = ['border' => '1.5px solid #4ade80', 'background' => '#f0fdf4', 'color' => '#15803d'];
-                  if ($displayStatus === 'Rejected')
+                  if ($displayStatus === 'Rejected' || $displayStatus === 'Overdue')
                     $sStyles = ['border' => '1.5px solid #f87171', 'background' => '#fef2f2', 'color' => '#b91c1c'];
                   $sStyleStr = "border:{$sStyles['border']};background-color:{$sStyles['background']};color:{$sStyles['color']}";
                   ?>

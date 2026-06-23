@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/../models/PatientModel.php';
-require_once __DIR__ . '/../models/CaseModel.php';
+require_once __DIR__ . '/../app/Models/PatientModel.php';
+require_once __DIR__ . '/../app/Models/CaseModel.php';
 
 session_start();
 

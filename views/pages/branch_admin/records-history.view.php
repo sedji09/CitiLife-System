@@ -21,7 +21,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2">
-    <a href="?role=branch_admin&page=branch-xray-cases&tab=records"
+    <a href="javascript:history.back()"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>

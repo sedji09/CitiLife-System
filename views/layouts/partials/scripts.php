@@ -1350,7 +1350,7 @@
           if (targetPage === 'branch-xray-cases' && ['branch-xray-cases', 'patient-details', 'records-history'].includes(currentPage)) {
             return true;
           }
-          if (targetPage === 'my-records' && ['my-records', 'case-status', 'view-report', 'download-report'].includes(currentPage)) {
+          if (targetPage === 'my-records' && ['my-records', 'case-status', 'view-report', 'download-report', 'feedback'].includes(currentPage)) {
             return true;
           }
 

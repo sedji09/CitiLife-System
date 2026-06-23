@@ -94,7 +94,7 @@ $statusDescriptions = [
 
     <!-- Page Header -->
     <div class="flex items-center gap-4">
-        <a href="/<?= PROJECT_DIR ?>/my-records" title="Back to Records"
+        <a href="javascript:history.back()" title="Back to Records"
             class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>

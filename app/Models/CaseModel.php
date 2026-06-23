@@ -314,6 +314,30 @@ class CaseModel
                             $patientUserId,
                             'patient'
                         );
+
+                        // Send Email Notification
+                        $stmtEmail = $this->pdo->prepare("SELECT email FROM users WHERE id = ?");
+                        $stmtEmail->execute([$patientUserId]);
+                        $patientEmail = $stmtEmail->fetchColumn();
+
+                        if (!empty($patientEmail)) {
+                            require_once __DIR__ . '/../Helpers/mailer_helper.php';
+                            $patientName = $cData['first_name'] . ' ' . $cData['last_name'];
+                            $subject = "Reading Completed - CitiLife System";
+                            $loginUrl = "http://" . $_SERVER['HTTP_HOST'] . "/" . PROJECT_DIR . "/patient-login.php";
+                            $body = "
+                                <div style='font-family: Arial, sans-serif; color: #333;'>
+                                    <h2>Hello {$patientName},</h2>
+                                    <p>Your X-ray for Case <strong>{$cData['case_number']}</strong> has been read by our radiologist.</p>
+                                    <p>The status is now <strong>Report Ready</strong>. It will be officially released to your account shortly by our staff.</p>
+                                    <p>You can monitor your status by logging into your patient portal:</p>
+                                    <p><a href='{$loginUrl}' style='display: inline-block; padding: 10px 15px; background-color: #ff0000d3; color: #fff; text-decoration: none; border-radius: 5px;'>Log in to Patient Portal</a></p>
+                                    <br>
+                                    <p>Thank you for choosing CitiLife.</p>
+                                </div>
+                            ";
+                            sendEmail($patientEmail, $patientName, $subject, $body);
+                        }
                     }
                 }
             }
@@ -911,6 +935,7 @@ class CaseModel
                        COUNT(c.id) as total_patients,
                        SUM(CASE WHEN c.philhealth_status = 'With PhilHealth Card' THEN 1 ELSE 0 END) as with_philhealth,
                        SUM(CASE WHEN c.philhealth_status = 'Without PhilHealth Card' THEN 1 ELSE 0 END) as without_philhealth,
+                       SUM(CASE WHEN c.status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
                        SUM(CASE WHEN c.priority = 'STAT' THEN 1 ELSE 0 END) as emergency_count,
                        SUM(CASE WHEN c.priority IN ('Urgent', 'Priority') THEN 1 ELSE 0 END) as urgent_count,
                        SUM(CASE WHEN c.priority IN ('Routine', 'Normal') THEN 1 ELSE 0 END) as routine_count
