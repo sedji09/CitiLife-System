@@ -43,11 +43,28 @@ if (!$patientId) {
 
 $caseRow = null;
 
+$reqId = isset($_GET['request_id']) ? (int) $_GET['request_id'] : 0;
+
 // 2. Fetch specific case
-if ($patientId && $caseId) {
-    $caseRow = $caseModel->getCaseById($caseId);
-    if ($caseRow && $caseRow['patient_id'] != $patientId) {
-        $caseRow = null; // Security check
+if ($patientId) {
+    if ($caseId) {
+        $caseRow = $caseModel->getCaseById($caseId);
+        if ($caseRow && $caseRow['patient_id'] != $patientId) {
+            $caseRow = null; // Security check
+        }
+    } elseif ($reqId) {
+        $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name, r.patient_id, 'Pending' as approval_status 
+                                  FROM requests r 
+                                  LEFT JOIN branches b ON r.branch_id = b.id 
+                                  WHERE r.id = ?");
+        $stmtReq->execute([$reqId]);
+        $caseRow = $stmtReq->fetch(PDO::FETCH_ASSOC);
+        if ($caseRow && $caseRow['patient_id'] != $patientId) {
+            $caseRow = null; // Security check
+        }
+        if ($caseRow && $caseRow['status'] === 'Rejected') {
+            $caseRow['approval_status'] = 'Rejected';
+        }
     }
 }
 
@@ -208,7 +225,7 @@ $statusDescriptions = [
                             <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Case Number</p>
+                            <p class="text-xs text-gray-500">Reference #</p>
                             <p class="text-sm font-semibold text-red-600 font-mono">
                                 <?= htmlspecialchars($caseRow['case_number']) ?></p>
                         </div>

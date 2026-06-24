@@ -26,36 +26,31 @@ $data = json_decode(file_get_contents('php://input'), true);
 $caseId = $data['case_id'] ?? 0;
 
 if (!$caseId) {
-    echo json_encode(['success' => false, 'message' => 'Invalid Case ID']);
+    echo json_encode(['success' => false, 'message' => 'Invalid Request ID']);
     exit;
 }
 
 try {
-    // Ensure case belongs to patient and is still pending
-    $stmt = $pdo->prepare("SELECT id, status, approval_status FROM cases WHERE id = ? AND patient_id = ?");
+    // Ensure request belongs to patient and is still pending approval
+    $stmt = $pdo->prepare("SELECT id, status FROM requests WHERE id = ? AND patient_id = ?");
     $stmt->execute([$caseId, $patientId]);
     $case = $stmt->fetch();
 
     if (!$case) {
-        echo json_encode(['success' => false, 'message' => 'Case not found or unauthorized']);
+        echo json_encode(['success' => false, 'message' => 'Request not found or unauthorized']);
         exit;
     }
 
-    if ($case['status'] !== 'Pending') {
+    if ($case['status'] !== 'Pending Approval') {
         echo json_encode(['success' => false, 'message' => 'Only pending requests can be cancelled']);
         exit;
     }
 
-    if (isset($case['approval_status']) && $case['approval_status'] !== 'Pending') {
-        echo json_encode(['success' => false, 'message' => 'Cannot cancel a request that has already been processed']);
-        exit;
-    }
-
-    // Delete the case
-    $stmtDel = $pdo->prepare("DELETE FROM cases WHERE id = ?");
+    // Delete the request
+    $stmtDel = $pdo->prepare("DELETE FROM requests WHERE id = ?");
     $stmtDel->execute([$caseId]);
 
-    echo json_encode(['success' => true, 'message' => 'Case cancelled successfully']);
+    echo json_encode(['success' => true, 'message' => 'Request cancelled successfully']);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
 }

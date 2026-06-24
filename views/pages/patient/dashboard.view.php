@@ -58,25 +58,23 @@ $displayStatus = 'Pending';
 $isRejected = ($userAccountStatus === 'Rejected');
 
 if ($latestCase) {
-    if (isset($latestCase['approval_status']) && $latestCase['approval_status'] === 'Rejected') {
+    $recordType = $latestCase['record_type'] ?? 'Case';
+
+    if ($latestCase['status'] === 'Rejected') {
         $currentStep = 0;
         $displayStatus = 'Rejected';
         $isRejected = true;
-    } elseif ($latestCase['status'] === 'Pending') {
-        if (isset($latestCase['approval_status']) && $latestCase['approval_status'] === 'Pending') {
-            $currentStep = 2; // Step 1 Done. Step 2 Active waiting for approval.
-            $displayStatus = 'Pending';
-        } elseif (isset($latestCase['approval_status']) && $latestCase['approval_status'] === 'Approved') {
-            if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
-                $currentStep = 4; // Step 3 Done. Step 4 Active waiting for radiologist.
-                $displayStatus = 'X-ray Taken';
-            } else {
-                $currentStep = 3; // Step 2 Done. Step 3 Active waiting for X-ray to be taken.
-                $displayStatus = 'Approved';
-            }
+    } elseif ($recordType === 'Request' && $latestCase['status'] === 'Pending Approval') {
+        $currentStep = 2;
+        $displayStatus = 'Pending';
+    } elseif ($recordType === 'Case' && $latestCase['status'] === 'Pending') {
+        // Case is created (which implies Approved) but no X-ray taken yet
+        if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
+            $currentStep = 4;
+            $displayStatus = 'X-ray Taken';
         } else {
-            $currentStep = 2;
-            $displayStatus = 'Pending';
+            $currentStep = 3;
+            $displayStatus = 'Approved';
         }
     } elseif ($latestCase['status'] === 'Under Reading') {
         $currentStep = 4;
@@ -87,10 +85,6 @@ if ($latestCase) {
     } elseif (in_array($latestCase['status'], ['Released', 'Completed'])) {
         $currentStep = 6;
         $displayStatus = $latestCase['status'];
-    } elseif ($latestCase['status'] === 'Rejected') {
-        $currentStep = 0;
-        $displayStatus = 'Rejected';
-        $isRejected = true;
     } else {
         $currentStep = 2;
         $displayStatus = $latestCase['status'] ?: 'Pending';

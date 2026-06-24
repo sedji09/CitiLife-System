@@ -158,25 +158,22 @@ $statusDescriptions = [
             $displayStatus = 'Pending';
             $isRejected = $isRejectedGlobal;
             
-            if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Rejected') {
+            $recordType = $caseRow['record_type'] ?? 'Case';
+
+            if ($caseRow['status'] === 'Rejected') {
                 $currentStep = 0;
                 $displayStatus = 'Rejected';
                 $isRejected = true;
-            } elseif ($caseRow['status'] === 'Pending') {
-                if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Pending') {
-                    $currentStep = 2;
-                    $displayStatus = 'Pending';
-                } elseif (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Approved') {
-                    if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
-                        $currentStep = 4;
-                        $displayStatus = 'X-ray Taken';
-                    } else {
-                        $currentStep = 3;
-                        $displayStatus = 'Approved';
-                    }
+            } elseif ($recordType === 'Request' && $caseRow['status'] === 'Pending Approval') {
+                $currentStep = 2;
+                $displayStatus = 'Pending';
+            } elseif ($recordType === 'Case' && $caseRow['status'] === 'Pending') {
+                if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
+                    $currentStep = 4;
+                    $displayStatus = 'X-ray Taken';
                 } else {
-                    $currentStep = 2;
-                    $displayStatus = 'Pending';
+                    $currentStep = 3;
+                    $displayStatus = 'Approved';
                 }
             } elseif ($caseRow['status'] === 'Under Reading') {
                 $currentStep = 4;
@@ -187,10 +184,6 @@ $statusDescriptions = [
             } elseif (in_array($caseRow['status'], ['Released', 'Completed'])) {
                 $currentStep = 6;
                 $displayStatus = $caseRow['status'];
-            } elseif ($caseRow['status'] === 'Rejected') {
-                $currentStep = 0;
-                $displayStatus = 'Rejected';
-                $isRejected = true;
             } else {
                 $currentStep = 2;
                 $displayStatus = $caseRow['status'] ?: 'Pending';
@@ -251,7 +244,7 @@ $statusDescriptions = [
                             <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Case Number</p>
+                            <p class="text-xs text-gray-500">Reference #</p>
                             <p class="text-sm font-semibold text-red-600 font-mono">
                                 <?= htmlspecialchars($caseRow['case_number']) ?></p>
                         </div>

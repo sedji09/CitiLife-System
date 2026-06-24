@@ -1166,13 +1166,13 @@
           .then(res => res.json())
           .then(data => {
             if (!data.error) {
-              const oldIds = this.notifications.map(n => n.id);
+              const oldIds = this.notifications.map(n => String(n.id));
               this.notificationCount = data.unread_count;
               this.notifications = data.notifications;
 
               // Play sound and display toast alerts for new unread notifications
               if (!isInitial && data.notifications.length > 0) {
-                const newNotifs = data.notifications.filter(n => !oldIds.includes(n.id));
+                const newNotifs = data.notifications.filter(n => !oldIds.includes(String(n.id)));
                 if (newNotifs.length > 0) {
                   if (this.notifSound) {
                     this.playNotificationSound();
@@ -1595,4 +1595,18 @@
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
+
+  // Auto-hide flash messages (success/error banners) after 4 seconds
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const flashMessages = document.querySelectorAll('div.bg-red-50.border-red-300, div.bg-green-50.border-green-300');
+      flashMessages.forEach(msg => {
+        msg.style.transition = 'opacity 0.5s ease';
+        msg.style.opacity = '0';
+        setTimeout(() => {
+          msg.style.display = 'none';
+        }, 500);
+      });
+    }, 4000);
+  });
 </script>

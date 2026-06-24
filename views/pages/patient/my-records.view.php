@@ -34,6 +34,25 @@ if ($patientRow && isset($patientRow['patient_number'])) {
         }
     }
     $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
+
+    // Fetch rejected requests from the `requests` table
+    $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name 
+                              FROM requests r 
+                              LEFT JOIN branches b ON r.branch_id = b.id 
+                              WHERE r.patient_id = ? AND r.status = 'Rejected'");
+    $stmtReq->execute([$patientId]);
+    $rejectedRequests = $stmtReq->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($rejectedRequests as $req) {
+        $req['is_request_only'] = true; // flag to know it's not in cases table
+        $req['approval_status'] = 'Rejected';
+        $allCases[] = $req;
+    }
+
+    // Sort all cases by created_at DESC
+    usort($allCases, function($a, $b) {
+        return strtotime($b['created_at']) - strtotime($a['created_at']);
+    });
 }
 
 $statusBadge = [
@@ -110,7 +129,7 @@ $statusBadge = [
                 <!-- Search & Filters (RadTech Style) -->
                 <div class="mb-4 sm:mb-6 flex flex-col md:flex-row gap-2 sm:gap-3 md:items-center">
                     <div class="relative flex-1">
-                        <input type="text" id="record-search-input" placeholder="Search records (Case # or Exam)..."
+                        <input type="text" id="record-search-input" placeholder="Search records (Request / Case # or Exam)..."
                             class="w-full rounded-lg sm:rounded-xl border border-gray-200 bg-white pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center pointer-events-none">
                             <i data-lucide="search" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400"></i>
@@ -146,7 +165,7 @@ $statusBadge = [
                                 <thead
                                     class="sticky top-0 z-10 bg-gray-50 border-b border-gray-100 text-gray-500 text-left">
                                     <tr>
-                                        <th class="px-5 py-3 font-semibold whitespace-nowrap">Case #</th>
+                                        <th class="px-5 py-3 font-semibold whitespace-nowrap">Request / Case #</th>
                                         <th class="px-5 py-3 font-semibold whitespace-nowrap">Examination</th>
                                         <th class="px-5 py-3 font-semibold whitespace-nowrap">Date</th>
                                         <th class="px-5 py-3 font-semibold whitespace-nowrap">Branch</th>
@@ -191,7 +210,7 @@ $statusBadge = [
                                             <td class="px-5 py-3.5 whitespace-nowrap">
                                                 <div class="flex items-center gap-2 justify-center lg:justify-start">
                                                     <!-- View Status -->
-                                                    <a href="/<?= PROJECT_DIR ?>/case-status?case_id=<?= $c['id'] ?>"
+                                                    <a href="/<?= PROJECT_DIR ?>/case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
                                                         class="group transition-all" title="View Status">
                                                         <div
                                                             class="hidden lg:flex items-center justify-center p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors shadow-sm">

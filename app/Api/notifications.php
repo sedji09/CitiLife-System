@@ -56,7 +56,7 @@ $stmt = $pdo->prepare("
     SELECT * FROM notifications 
     WHERE is_read = 0 
       AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
-    ORDER BY created_at DESC 
+    ORDER BY created_at DESC, id DESC 
     LIMIT 20
 ");
 $stmt->execute([$userId, $role, $branchId]);

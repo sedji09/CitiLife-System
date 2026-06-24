@@ -653,22 +653,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function unlockFormForEditing() {
-        // Remove readonly from textareas
-        document.querySelectorAll('.exam-findings, .exam-impression').forEach(ta => {
-            ta.removeAttribute('readonly');
-            ta.classList.remove('cursor-not-allowed', 'text-gray-600');
-            ta.classList.add('focus:ring-2', 'focus:ring-red-100', 'focus:border-red-300');
-            
-            // Re-add input event listener since it was skipped if completed
-            ta.addEventListener('input', () => { syncStore(ta); updateCount(ta); });
-        });
-        
-        // Show submit button, hide completed view actions
-        document.getElementById('completed-footer-actions')?.classList.add('hidden');
-        document.getElementById('editable-footer-actions')?.classList.remove('hidden');
-        
-        // Toggle client-side flag
-        isCompleted = false;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'unlock_report';
+        input.value = '1';
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
     }
 
     // ── Image Viewer ──────────────────────────────────────────────────────────

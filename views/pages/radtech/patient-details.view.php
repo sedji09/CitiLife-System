@@ -45,7 +45,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <i data-lucide="user-check" class="h-5 w-5 text-green-600"></i>
                 <h3 class="text-lg font-semibold text-gray-800">Patient Verification</h3>
             </div>
-            <div class="rounded-lg bg-red-50 border border-red-300 p-4">
+            <div class="rounded-lg bg-red-50 border border-red-200 p-4">
                 <p class="text-xs font-medium italic text-red-700 mb-3">Note: CONFIRM IDENTITY BEFORE UPLOAD</p>
                 <div class="px-2 space-y-2">
                     <div class="flex justify-between text-sm">

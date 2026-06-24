@@ -135,7 +135,7 @@ class PatientModel
         }
 
         $code = 'GEN';
-        $padLength = 3;
+        $padLength = 5;
 
         if (stripos($branchName, 'Gapan') !== false) {
             $code = 'GAP';
@@ -151,11 +151,10 @@ class PatientModel
             $code = 'STD';
         } elseif (stripos($branchName, 'Pantabangan') !== false) {
             $code = 'PAN';
-            $padLength = 4;
         }
 
         $year = date('Y');
-        $prefix = "PAT-{$code}-{$year}-";
+        $prefix = "PAT{$year}-{$code}-";
 
         $stmtLast = $this->pdo->prepare("SELECT patient_number FROM patients WHERE patient_number LIKE ? ORDER BY id DESC LIMIT 1");
         $stmtLast->execute([$prefix . '%']);
@@ -216,7 +215,7 @@ class PatientModel
 
     /**
      * Centralized logic for patient registration (both from RadTech and Portal).
-     * Handles transactions, case creation, and notifications.
+     * Handles transactions, request creation, resubmission, and notifications.
      */
     public function processRegistration($data, $caseModel, $notificationModel)
     {
@@ -253,33 +252,54 @@ class PatientModel
                 $this->linkToUser($userId, $patientId);
             }
 
-            // Register Initial Case
-            $caseData = [
-                'patient_id' => $patientId,
-                'branch_id' => $branchId,
-                'exam_type' => $data['exam_type'] ?? 'To be determined',
-                'priority' => $data['priority'] ?? 'Routine',
-                'philhealth_status' => $data['philhealth_status'] ?? 'Without PhilHealth Card',
-                'philhealth_id' => $data['philhealth_id'] ?? null,
-                'approval_status' => $data['approval_status'] ?? 'Pending'
-            ];
-
-            $caseResult = $caseModel->registerCase($caseData);
-            $caseId = $caseResult['id'];
-            $caseNumber = $caseResult['case_number'];
-
-            // Handle Notifications
             $isPortal = ($data['source'] ?? '') === 'portal';
+
+            $finalId = null;
+            $finalNumber = null;
+
             if ($isPortal) {
-                // For portal-side registration, notify RadTech of the new request
+                // Portal Flow: Create a Request
+                $requestData = [
+                    'patient_id' => $patientId,
+                    'branch_id' => $branchId,
+                    'exam_type' => $data['exam_type'] ?? 'To be determined',
+                    'priority' => $data['priority'] ?? 'Routine',
+                    'philhealth_status' => $data['philhealth_status'] ?? 'Without PhilHealth Card',
+                    'philhealth_id' => $data['philhealth_id'] ?? null,
+                    'status' => 'Pending Approval'
+                ];
+
+                // Register new request
+                $caseResult = $caseModel->registerRequest($requestData);
+                $finalId = $caseResult['id'];
+                $finalNumber = $caseResult['request_number'];
+
+                // Notify RadTech of the new request
                 $notificationModel->add(
-                    "New Patient Registration",
-                    "Case {$caseNumber} awaits approval.",
-                    "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval&highlight=" . urlencode($caseNumber),
+                    "New Patient Request",
+                    "Request {$finalNumber} awaits approval.",
+                    "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval&highlight=" . urlencode($finalNumber),
                     null,
                     'radtech',
                     $branchId
                 );
+
+            } else {
+                // RadTech Flow: Create a Case directly (skips Request phase)
+                $caseNumber = $caseModel->generateCaseNumber($branchId);
+                
+                $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', NULL)");
+                $stmtCase->execute([
+                    $caseNumber, 
+                    $patientId, 
+                    $branchId, 
+                    $data['exam_type'] ?? 'To be determined',
+                    $data['priority'] ?? 'Routine', 
+                    $data['philhealth_status'] ?? 'Without PhilHealth Card', 
+                    $data['philhealth_id'] ?? null
+                ]);
+                $finalId = $pdo->lastInsertId();
+                $finalNumber = $caseNumber;
             }
 
             $pdo->commit();
@@ -287,9 +307,9 @@ class PatientModel
             return [
                 'success' => true,
                 'patient_id' => $patientId,
-                'case_id' => $caseId,
-                'case_number' => $caseNumber,
-                'message' => $isExisting ? "Case created successfully." : "Patient registered successfully."
+                'case_id' => $finalId,
+                'case_number' => $finalNumber,
+                'message' => $isExisting ? ($isPortal ? "Request submitted successfully." : "Case created successfully.") : "Patient registered successfully."
             ];
 
         } catch (Exception $e) {

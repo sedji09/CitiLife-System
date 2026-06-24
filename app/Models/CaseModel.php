@@ -362,6 +362,19 @@ class CaseModel
     }
 
     /**
+     * Unlock a case to be edited.
+     */
+    public function unlockReport($caseId)
+    {
+        if ($this->hasColumn('cases', 'released')) {
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', released = 0 WHERE id = ?");
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading' WHERE id = ?");
+        }
+        return $stmt->execute([$caseId]);
+    }
+
+    /**
      * Get latest 5 cases for the dashboard table
      */
     public function getRecentCases($branchId, $dateCondition, $limit = 5)
@@ -403,75 +416,154 @@ class CaseModel
     }
 
     /**
-     * Register a new case.
+     * Register a new request (previously registerCase).
      */
-    public function registerCase($data)
+    public function registerRequest($data)
     {
-        $caseNumber = $this->generateCaseNumber($data['branch_id'] ?? null);
-        $hasApprovalStatus = $this->hasColumn('cases', 'approval_status');
-        $approvalStatus = $data['approval_status'] ?? 'Pending';
+        $requestNumber = $this->generateRequestNumber();
+        $status = $data['status'] ?? 'Pending Approval';
 
-        if ($hasApprovalStatus) {
-            $stmt = $this->pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
-            $stmt->execute([
-                $caseNumber,
-                $data['patient_id'],
-                $data['branch_id'],
-                $data['exam_type'] ?? 'To be determined',
-                $data['priority'] ?? 'Routine',
-                $data['philhealth_status'] ?? 'Without PhilHealth Card',
-                $data['philhealth_id'] ?? null,
-                $approvalStatus
-            ]);
-        } else {
-            $stmt = $this->pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')");
-            $stmt->execute([
-                $caseNumber,
-                $data['patient_id'],
-                $data['branch_id'],
-                $data['exam_type'] ?? 'To be determined',
-                $data['priority'] ?? 'Routine',
-                $data['philhealth_status'] ?? 'Without PhilHealth Card',
-                $data['philhealth_id'] ?? null
-            ]);
-        }
+        $stmt = $this->pdo->prepare("INSERT INTO requests (request_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $requestNumber,
+            $data['patient_id'],
+            $data['branch_id'],
+            $data['exam_type'] ?? 'To be determined',
+            $data['priority'] ?? 'Routine',
+            $data['philhealth_status'] ?? 'Without PhilHealth Card',
+            $data['philhealth_id'] ?? null,
+            $status
+        ]);
 
-        $newCaseId = $this->pdo->lastInsertId();
-        return ['id' => $newCaseId, 'case_number' => $caseNumber];
+        $newReqId = $this->pdo->lastInsertId();
+
+        $stmtLog = $this->pdo->prepare("INSERT INTO request_logs (request_id, action, remarks) VALUES (?, 'Submitted', 'Patient registration submitted')");
+        $stmtLog->execute([$newReqId]);
+
+        return ['id' => $newReqId, 'request_number' => $requestNumber];
     }
 
+
     /**
-     * Get the latest case for a patient.
+     * Get the latest case or request for a patient.
      */
     public function getLatestCaseByPatient($patientId)
     {
-        $stmt = $this->pdo->prepare("
-            SELECT c.*, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
+        $sql = "
+            SELECT 
+                r.id as request_id,
+                r.id as id,
+                NULL as case_id,
+                r.request_number as case_number,
+                'Request' as record_type,
+                r.status as status,
+                NULL as approval_status,
+                r.patient_id,
+                r.branch_id,
+                r.exam_type,
+                r.priority,
+                r.created_at,
+                b.name AS branch_name,
+                b.contact_number_1 AS branch_contact,
+                b.contact_number_2 AS branch_contact_2,
+                b.contact_number_3 AS branch_contact_3,
+                NULL as radtech_id,
+                NULL as image_status
+            FROM requests r
+            LEFT JOIN branches b ON r.branch_id = b.id
+            WHERE r.patient_id = ?
+
+            UNION ALL
+
+            SELECT 
+                c.request_id as request_id,
+                c.id as id,
+                c.id as case_id,
+                c.case_number,
+                'Case' as record_type,
+                c.status,
+                NULL as approval_status,
+                c.patient_id,
+                c.branch_id,
+                c.exam_type,
+                c.priority,
+                c.created_at,
+                b.name AS branch_name,
+                b.contact_number_1 AS branch_contact,
+                b.contact_number_2 AS branch_contact_2,
+                b.contact_number_3 AS branch_contact_3,
+                c.radtech_id,
+                (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
-            ORDER BY c.created_at DESC
+            
+            ORDER BY created_at DESC
             LIMIT 1
-        ");
-        $stmt->execute([$patientId]);
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$patientId, $patientId]);
         return $stmt->fetch();
     }
 
     /**
-     * Get all active cases for a patient.
+     * Get all active cases (and pending/rejected requests) for a patient.
      */
     public function getActiveCasesByPatient($patientId)
     {
-        $stmt = $this->pdo->prepare("
-            SELECT c.*, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
+        $sql = "
+            SELECT 
+                r.id as request_id,
+                r.id as id,
+                NULL as case_id,
+                r.request_number as case_number,
+                'Request' as record_type,
+                r.status as status,
+                NULL as approval_status,
+                r.patient_id,
+                r.branch_id,
+                r.exam_type,
+                r.priority,
+                r.created_at,
+                b.name AS branch_name,
+                b.contact_number_1 AS branch_contact,
+                b.contact_number_2 AS branch_contact_2,
+                b.contact_number_3 AS branch_contact_3,
+                NULL as radtech_id,
+                NULL as image_status
+            FROM requests r
+            LEFT JOIN branches b ON r.branch_id = b.id
+            WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Rejected')
+
+            UNION ALL
+
+            SELECT 
+                c.request_id as request_id,
+                c.id as id,
+                c.id as case_id,
+                c.case_number,
+                'Case' as record_type,
+                c.status,
+                NULL as approval_status,
+                c.patient_id,
+                c.branch_id,
+                c.exam_type,
+                c.priority,
+                c.created_at,
+                b.name AS branch_name,
+                b.contact_number_1 AS branch_contact,
+                b.contact_number_2 AS branch_contact_2,
+                b.contact_number_3 AS branch_contact_3,
+                c.radtech_id,
+                (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
-            WHERE c.patient_id = ?
-              AND c.status NOT IN ('Released', 'Completed', 'Rejected')
-              AND (c.approval_status IS NULL OR c.approval_status != 'Rejected')
-            ORDER BY c.created_at DESC
-        ");
-        $stmt->execute([$patientId]);
+            WHERE c.patient_id = ? AND c.status NOT IN ('Released', 'Completed')
+            
+            ORDER BY created_at DESC
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$patientId, $patientId]);
         return $stmt->fetchAll();
     }
 
@@ -557,30 +649,47 @@ class CaseModel
             $stmtB->execute([$branchId]);
             $branchName = $stmtB->fetchColumn() ?: 'General';
 
-            $cleanName = str_replace(' Branch', '', $branchName);
-            $branchCode = strtoupper(substr($cleanName, 0, 3));
-
-            if (strpos($branchName, 'San Antonio') !== false)
-                $branchCode = 'SAN';
-            if (strpos($branchName, 'Sto Domingo') !== false)
-                $branchCode = 'STO';
-            if (strpos($branchName, 'General Tinio') !== false)
-                $branchCode = 'GEN';
+            if (stripos($branchName, 'Gapan') !== false) $branchCode = 'GAP';
+            elseif (stripos($branchName, 'Bongabon') !== false) $branchCode = 'BON';
+            elseif (stripos($branchName, 'Peñaranda') !== false) $branchCode = 'PEN';
+            elseif (stripos($branchName, 'General Tinio') !== false || stripos($branchName, 'General Tion') !== false) $branchCode = 'GTI';
+            elseif (stripos($branchName, 'San Antonio') !== false) $branchCode = 'SAN';
+            elseif (stripos($branchName, 'Sto Domingo') !== false) $branchCode = 'STD';
+            elseif (stripos($branchName, 'Pantabangan') !== false) $branchCode = 'PAN';
         }
 
         $year = date('Y');
-        $prefix = "CX-{$year}-"; // System standard uses CX-YYYY-XXXX
+        $bId = $branchId ?: 1;
+        
+        $this->pdo->prepare("INSERT IGNORE INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 0)")->execute([$bId, $year]);
+        
+        // Transaction safety for generating numbers
+        $stmt = $this->pdo->prepare("SELECT current_number FROM branch_case_sequences WHERE branch_id = ? AND year = ? FOR UPDATE");
+        $stmt->execute([$bId, $year]);
+        $current = (int)$stmt->fetchColumn();
+        $next = $current + 1;
+        
+        $this->pdo->prepare("UPDATE branch_case_sequences SET current_number = ? WHERE branch_id = ? AND year = ?")->execute([$next, $bId, $year]);
 
-        $stmtLast = $this->pdo->prepare("SELECT case_number FROM cases WHERE case_number LIKE ? AND case_number NOT LIKE '%-REJ' ORDER BY id DESC LIMIT 1");
-        $stmtLast->execute(["CX-{$year}-%"]);
-        $lastCase = $stmtLast->fetchColumn();
+        return "{$branchCode}{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
+    }
 
-        $caseIndex = 1;
-        if ($lastCase && preg_match('/CX-' . $year . '-(\d+)/', $lastCase, $m)) {
-            $caseIndex = (int) $m[1] + 1;
-        }
-
-        return 'CX-' . $year . '-' . str_pad($caseIndex, 4, '0', STR_PAD_LEFT);
+    /**
+     * Generate a unique request number.
+     */
+    public function generateRequestNumber()
+    {
+        $year = date('Y');
+        $this->pdo->prepare("INSERT IGNORE INTO request_sequences (year, current_number) VALUES (?, 0)")->execute([$year]);
+        
+        $stmt = $this->pdo->prepare("SELECT current_number FROM request_sequences WHERE year = ? FOR UPDATE");
+        $stmt->execute([$year]);
+        $current = (int)$stmt->fetchColumn();
+        $next = $current + 1;
+        
+        $this->pdo->prepare("UPDATE request_sequences SET current_number = ? WHERE year = ?")->execute([$next, $year]);
+        
+        return "REQ-{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -733,8 +842,8 @@ class CaseModel
      */
     public function rejectCase($id)
     {
-        $stmt = $this->pdo->prepare("UPDATE cases SET approval_status = 'Rejected', status = 'Rejected', case_number = CONCAT(case_number, '-REJ') WHERE id = ? AND approval_status = 'Pending'");
-        $stmt->execute([$id]);
+        $stmt = $this->pdo->prepare("UPDATE cases SET approval_status = 'Rejected', status = 'Rejected', case_number = CONCAT(case_number, '-REJ-', ?) WHERE id = ? AND approval_status = 'Pending'");
+        $stmt->execute([$id, $id]);
         return $stmt->rowCount() > 0;
     }
 
@@ -749,24 +858,17 @@ class CaseModel
     }
 
     /**
-     * Get pending cases for approval.
+     * Get pending requests for approval.
      */
     public function getPendingCases($branchId)
     {
-        $hasApprovalStatus = $this->hasColumn('cases', 'approval_status');
-        if ($hasApprovalStatus) {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
-                    FROM cases c 
-                    JOIN patients p ON c.patient_id = p.id 
-                    WHERE c.approval_status = 'Pending' AND c.branch_id = ?
-                    ORDER BY c.created_at DESC";
-        } else {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
-                    FROM cases c 
-                    JOIN patients p ON c.patient_id = p.id 
-                    WHERE c.status = 'Pending' AND c.branch_id = ?
-                    ORDER BY c.created_at DESC";
-        }
+        $sql = "SELECT r.*, r.id as request_id, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
+                FROM requests r 
+                JOIN patients p ON r.patient_id = p.id 
+                WHERE r.status IN ('Pending Approval', 'Rejected') AND r.branch_id = ?
+                ORDER BY 
+                  CASE WHEN r.status = 'Pending Approval' THEN 1 ELSE 2 END,
+                  r.created_at DESC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$branchId]);
         return $stmt->fetchAll();
@@ -886,43 +988,80 @@ class CaseModel
 
     /**
      * Unified logic for a technologist approving or rejecting a case.
-     * Handles status changes and patient notifications.
+     * Handles status changes, generating case number securely, and patient notifications.
      */
-    public function processCaseApproval($id, $action, $notificationModel)
+    public function processCaseApproval($id, $action, $notificationModel, $rejectionReason = null, $performedBy = null)
     {
-        if ($action === 'approve') {
-            if ($this->approveCase($id)) {
-                $caseData = $this->getCaseById($id);
-                $patientUserId = $this->getPatientUserId($id);
+        $pdo = $this->pdo;
+        try {
+            $pdo->beginTransaction();
 
+            $stmtReq = $pdo->prepare("SELECT * FROM requests WHERE id = ? FOR UPDATE");
+            $stmtReq->execute([$id]);
+            $requestData = $stmtReq->fetch();
+
+            if (!$requestData) {
+                $pdo->rollBack();
+                return ['success' => false, 'message' => "Request not found."];
+            }
+
+            if ($action === 'approve') {
+                if ($requestData['status'] === 'Approved') {
+                    $pdo->rollBack();
+                    return ['success' => false, 'message' => "Request is already approved."];
+                }
+
+                $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Approved', approved_at = NOW() WHERE id = ?");
+                $stmtUpdate->execute([$id]);
+
+                $caseNumber = $this->generateCaseNumber($requestData['branch_id']);
+
+                $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
+                $stmtCase->execute([
+                    $caseNumber, $requestData['patient_id'], $requestData['branch_id'], $requestData['exam_type'],
+                    $requestData['priority'], $requestData['philhealth_status'], $requestData['philhealth_id'], $id
+                ]);
+                $caseId = $pdo->lastInsertId();
+
+                $stmtLog = $pdo->prepare("INSERT INTO request_logs (request_id, action, remarks, performed_by) VALUES (?, 'Approved', 'Request approved and case generated', ?)");
+                $stmtLog->execute([$id, $performedBy]);
+
+                $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
                 if ($patientUserId) {
-                    $notificationModel->add(
-                        "Request Approved",
-                        "Your X-ray request ({$caseData['case_number']}) has been approved. Please proceed to the X-ray room.",
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$id}",
-                        $patientUserId,
-                        'patient'
-                    );
+                    $notificationModel->add("Request Approved", "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.", "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}", $patientUserId, 'patient');
                 }
-                return ['success' => true, 'message' => "Patient approved and moved to Today's Queue."];
-            }
-        } elseif ($action === 'reject') {
-            $caseData = $this->getCaseById($id);
-            if ($this->rejectCase($id)) {
-                $patientUserId = $this->getPatientUserId($id);
-                if ($patientUserId && $caseData) {
-                    $notificationModel->add(
-                        "Request Rejected",
-                        "Your X-ray request ({$caseData['case_number']}) has been rejected. Please contact the clinic for more info.",
-                        "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status",
-                        $patientUserId,
-                        'patient'
-                    );
+                
+                $pdo->commit();
+                return ['success' => true, 'message' => "Request approved and case $caseNumber generated."];
+
+            } elseif ($action === 'reject') {
+                $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = ? WHERE id = ?");
+                $stmtUpdate->execute([$rejectionReason, $id]);
+
+                $stmtLog = $pdo->prepare("INSERT INTO request_logs (request_id, action, remarks, performed_by) VALUES (?, 'Rejected', ?, ?)");
+                $stmtLog->execute([$id, $rejectionReason, $performedBy]);
+
+                $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
+                if ($patientUserId) {
+                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status", $patientUserId, 'patient');
                 }
-                return ['success' => true, 'message' => "Patient registration rejected and notified."];
+
+                $pdo->commit();
+                return ['success' => true, 'message' => "Request rejected successfully."];
             }
+
+            $pdo->rollBack();
+            return ['success' => false, 'message' => "Invalid action."];
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            return ['success' => false, 'message' => "Error: " . $e->getMessage()];
         }
-        return ['success' => false, 'message' => "Action failed."];
+    }
+
+    public function getPatientUserIdByPatientId($patientId) {
+        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
+        $stmt->execute([$patientId]);
+        return $stmt->fetchColumn();
     }
 
     /**

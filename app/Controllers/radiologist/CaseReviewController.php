@@ -70,6 +70,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     } catch (\Exception $e) {
         $errorMsg = "Failed to submit report: " . $e->getMessage();
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unlock_report'])) {
+    try {
+        $caseModel->unlockReport($caseId);
+
+        $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
+        
+        $auditLogModel->addLog(
+            $radiologistId,
+            'Unlocked Findings Report',
+            'Findings & Reports',
+            'Case',
+            $caseId,
+            "Patient: {$patientName} | Case #{$caseId} | Unlocked for editing",
+            $caseDetails['branch_id'] ?? null
+        );
+
+        // Re-fetch to get updated status
+        $caseDetails = $caseModel->getCaseById($caseId);
+        $successMsg = "Report unlocked. You can now edit the findings.";
+    } catch (\Exception $e) {
+        $errorMsg = "Failed to unlock report: " . $e->getMessage();
+    }
 }
 
 // 3. $caseDetails already fetched above (pre-fetched before POST handler)

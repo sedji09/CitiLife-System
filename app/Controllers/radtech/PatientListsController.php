@@ -37,7 +37,6 @@ if (!empty($_SESSION['flash_success'])) {
 // 2. Handle Actions
 if (isset($_GET['action'])) {
 
-    // 2A. Release and Upload Photos via AJAX
     if ($_GET['action'] === 'release_and_upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Content-Type: application/json');
         $id = (int) ($_POST['id'] ?? 0);
@@ -46,7 +45,7 @@ if (isset($_GET['action'])) {
         try {
             $caseData = $caseModel->getCaseById($id);
             if (!$caseData)
-                throw new Exception("Case not found.");
+                throw new \Exception("Case not found.");
 
             if ($caseData['released'] == 0) {
                 // Save images
@@ -174,7 +173,7 @@ $allPatients = $caseModel->getWorklist($branchId, null, null);
 $patients = array_filter($allPatients, function ($p) {
     $isToday = date('Y-m-d', strtotime($p['created_at'])) === date('Y-m-d');
     return $p['released'] == 0
-        && $p['approval_status'] === 'Approved'
+        && $p['status'] !== 'Rejected'
         && ($isToday || $p['status'] === 'Report Ready');
 });
 

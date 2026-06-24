@@ -26,9 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($caseId && $firstName && $birthdate && $sex && $contact) {
         try {
             $branchId = $_SESSION['branch_id'] ?? 1;
-            $case = $caseModel->getCaseById($caseId);
+            $stmtReq = $pdo->prepare("SELECT branch_id, patient_id FROM requests WHERE id = ?");
+            $stmtReq->execute([$caseId]);
+            $request = $stmtReq->fetch(PDO::FETCH_ASSOC);
 
-            if ($case && $case['branch_id'] == $branchId) {
+            if ($request && $request['branch_id'] == $branchId) {
                 // 1. Update patient info
                 $patientData = [
                     'first_name' => $firstName,
@@ -38,10 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'contact_number' => $contact,
                     'home_address' => $homeAddress
                 ];
-                $patientModel->updatePatient($case['patient_id'], $patientData);
+                $patientModel->updatePatient($request['patient_id'], $patientData);
 
-                // 2. Update case PhilHealth info
-                $caseModel->updateCasePhilHealth($caseId, $philhealth, $philhealthId);
+                // 2. Update request PhilHealth info
+                $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ? WHERE id = ?");
+                $stmtUp->execute([$philhealth, $philhealthId, $caseId]);
 
                 header('Location: /' . PROJECT_DIR . '/index.php?role=radtech&page=patient-approval&success=1');
                 exit;
