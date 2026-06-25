@@ -66,8 +66,7 @@
             class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
         <select id="filter-priority"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option value="All" hidden selected>Filter by Priority</option>
-            <option value="All">All</option>
+            <option value="All" selected>All Priorities</option>
             <option>Routine</option>
             <option>Urgent</option>
             <option>STAT</option>
@@ -109,6 +108,7 @@
                         <?php $isReportReady = ($row['status'] === 'Report Ready'); ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
@@ -177,7 +177,7 @@
                             <td class="py-3 px-3">
                                 <?php
                                 $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
-                                
+
                                 $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
                                 if ($displayStatus === 'Pending' && $isOverdue) {
                                     $displayStatus = 'Overdue';
@@ -317,9 +317,10 @@
         rows.forEach(row => {
             const name = (row.dataset.name || '').toLowerCase();
             const id = (row.dataset.id || '').toLowerCase();
+            const patient = (row.dataset.patient || '').toLowerCase();
             const rowPriority = row.dataset.priority || '';
 
-            const matchSearch = name.includes(search) || id.includes(search) || rowPriority.toLowerCase().includes(search);
+            const matchSearch = name.includes(search) || id.includes(search) || patient.includes(search) || rowPriority.toLowerCase().includes(search);
             const matchPriority = priority === 'Filter by Priority' || priority === 'All' || priority === rowPriority;
 
             if (matchSearch && matchPriority) {

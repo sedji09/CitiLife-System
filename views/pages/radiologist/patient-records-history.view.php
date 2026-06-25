@@ -35,6 +35,24 @@ if (isset($_POST['ajax_save']) && $_POST['ajax_save'] === '1') {
         'exam_reports_arr'     => $examReportsArr,
     ], $notificationModel);
 
+    if ($result['success'] ?? false) {
+        require_once __DIR__ . '/../../../app/Models/AuditLogModel.php';
+        $auditLogModel = new \AuditLogModel($pdo);
+        $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
+        $examList = implode(', ', array_keys($examReportsArr));
+        $details = "Patient: {$patientName} | Case #{$caseId} | Exams: {$examList}";
+        
+        $auditLogModel->addLog(
+            $radiologistId,
+            'Edited Findings Report',
+            'Report Correction',
+            'Case',
+            $caseId,
+            $details,
+            $caseDetails['branch_id'] ?? null
+        );
+    }
+
     echo json_encode([
         'success'  => $result['success'] ?? false,
         'message'  => $result['message'] ?? 'Done.',

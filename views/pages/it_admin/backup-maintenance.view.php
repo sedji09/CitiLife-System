@@ -7,11 +7,6 @@
             <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Backup & Maintenance</h1>
             <p class="text-sm text-gray-500 mt-1">Manage database snapshots and ensure system data integrity.</p>
         </div>
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">
-            <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
-            <span class="text-[10px] font-black text-indigo-700 uppercase tracking-widest leading-none">System Engine
-                Active</span>
-        </div>
     </div>
 
     <!-- Alert Messages -->
@@ -66,7 +61,7 @@
                         current state.</p>
                 </div>
                 <form action="" method="POST" class="w-full">
-                    <button type="button" 
+                    <button type="button"
                         onclick="confirmFormAction(this, 'generate_backup', 'Confirm System Backup', 'Are you sure you want to initialize a new system backup? This will generate a full SQL snapshot of the current database.', 'action', event)"
                         class="w-full py-4 bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2">
                         <i data-lucide="play" class="w-3 h-3 fill-current text-current"></i>
@@ -82,19 +77,19 @@
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/30 flex items-center justify-between">
                     <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">Snapshot History</h3>
                     <span
-                        class="px-2 py-1 bg-white border border-gray-200 rounded text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Local
+                        class="px-2 py-1 bg-white border border-gray-200 rounded text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Cloud
                         Storage</span>
                 </div>
 
-                <div class="overflow-x-auto flex-grow">
+                <div class="overflow-x-auto overflow-y-auto" style="max-height: 380px;">
                     <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50/20 border-b border-gray-100">
-                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        <thead class="sticky top-0 z-10">
+                            <tr class="bg-white border-b border-gray-100 shadow-[0_1px_2px_-1px_rgba(0,0,0,0.05)]">
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
                                     Filename</th>
-                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
                                     Size</th>
-                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
                                     Actions</th>
                             </tr>
                         </thead>

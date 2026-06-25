@@ -55,6 +55,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // 3. Fetch pending requests
 $pendingRequests = $myBranchName ? $recordModel->getPendingRequestsForBranch($myBranchName) : [];
 
+// 4. Fetch all branches for the filter
+$branchesList = $branchModel->getAllBranches();
+
         return get_defined_vars();
     }
 }

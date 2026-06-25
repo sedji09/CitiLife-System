@@ -21,11 +21,20 @@ if (isset($_GET['action']) && isset($_GET['id']) && !isset($_GET['ajax_polling']
             $successMsg = $result['message'];
 
             // Log the action
-            $caseData = $caseModel->getCaseById($id);
-            $patientName = $caseData ? ($caseData['first_name'] . ' ' . $caseData['last_name']) : "Unknown";
-            $logAction = ($action === 'approve') ? "Approved patient registration" : "Rejected patient registration";
-            $details = "Patient: $patientName, Case: " . ($caseData['case_number'] ?? $id);
-            $auditLogModel->addLog($currentUserId, $logAction, 'Patient Records', 'Case', $id, $details, $branchId);
+            $stmtReq = $pdo->prepare("SELECT r.request_number, p.first_name, p.last_name FROM requests r JOIN patients p ON r.patient_id = p.id WHERE r.id = ?");
+            $stmtReq->execute([$id]);
+            $reqData = $stmtReq->fetch();
+            $patientName = $reqData ? ($reqData['first_name'] . ' ' . $reqData['last_name']) : "Unknown";
+            $requestNum = $reqData ? $reqData['request_number'] : $id;
+
+            if ($action === 'approve') {
+                $logAction = "Approved patient registration";
+                $details = "Patient: $patientName, Request: $requestNum";
+            } else {
+                $logAction = "Rejected X-ray request";
+                $details = "Request Number: $requestNum";
+            }
+            $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
         } else {
             $errorMsg = $result['message'];
         }
@@ -106,11 +115,11 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
 
 <div class="mt-6 flex flex-col gap-4">
     <div class="flex gap-4 items-center">
-        <input type="text" id="search-input" placeholder="Search by patient name or case number..."
+        <input type="text" id="search-input" placeholder="Search by patient name or request number..."
             class="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring">
         <select id="filter-status"
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
-            <option value="All">All Statuses</option>
+            <option value="All">All Status</option>
             <option value="Pending Approval">Pending Approval</option>
             <option value="Rejected">Rejected</option>
         </select>

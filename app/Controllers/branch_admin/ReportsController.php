@@ -443,6 +443,20 @@ if (isset($_GET['export_pdf'])) {
     $canvas->page_text($w - $mx - $px - 65, $textY, 'Page {PAGE_NUM} of {PAGE_COUNT}', $font, 8, $color);
 
     $filename = "Report_" . str_replace(' ', '_', $branchName) . "_" . date('Ymd') . ".pdf";
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (PDF)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $rangeLabel",
+        $branchId
+    );
+
     $dompdf->stream($filename, ["Attachment" => true]);
     exit;
 }
@@ -552,6 +566,20 @@ if (isset($_GET['export_excel'])) {
 
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (Excel)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $startDate to $endDate",
+        $branchId
+    );
+
     exit;
 }
 

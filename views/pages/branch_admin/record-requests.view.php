@@ -39,12 +39,22 @@
             class="w-full md:w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
             <option value="All">All Branches</option>
             <?php
-            $branches = array_unique(array_column($pendingRequests, 'requester_branch_name'));
-            sort($branches);
-            foreach ($branches as $branch):
-                ?>
-                <option value="<?= htmlspecialchars($branch) ?>"><?= htmlspecialchars($branch) ?></option>
-            <?php endforeach; ?>
+            if (!empty($branchesList)) {
+                // Ensure array of branches is sorted by name
+                usort($branchesList, function($a, $b) {
+                    return strcmp($a['name'], $b['name']);
+                });
+                
+                foreach ($branchesList as $branch):
+                    // Skip the current admin's own branch if desired, or show all
+                    if ($branch['name'] !== $myBranchName):
+                    ?>
+                    <option value="<?= htmlspecialchars($branch['name']) ?>"><?= htmlspecialchars($branch['name']) ?></option>
+                <?php 
+                    endif;
+                endforeach;
+            }
+            ?>
         </select>
         <select id="sort-date"
             class="w-full md:w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
@@ -55,7 +65,7 @@
 
     <!-- Table Container -->
     <div id="record-requests-table"
-        class="realtime-update rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden min-h-[400px] flex flex-col">
+        class="rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -67,7 +77,7 @@
                         <th class="text-center font-semibold px-4 py-3.5">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100">
+                <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
                     <?php if (empty($pendingRequests)): ?>
                         <tr>
                             <td colspan="5" class="py-24">
@@ -157,7 +167,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ROWS_PER_PAGE = 8;
+        const ROWS_PER_PAGE = 6;
         let currentPage = parseInt(sessionStorage.getItem('CitiLife_recordRequests_page')) || 1;
 
         const searchInput = document.getElementById('search-input');
@@ -252,6 +262,11 @@
         searchInput.addEventListener('input', applyFilters);
         filterBranch.addEventListener('change', applyFilters);
         sortDate.addEventListener('change', applyFilters);
+
+        document.addEventListener('realtime:updated', () => {
+            renderPage();
+        });
+
         prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
         nextBtn.addEventListener('click', () => {
             if (currentPage < Math.ceil(getFilteredRows().length / ROWS_PER_PAGE)) {

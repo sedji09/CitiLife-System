@@ -24,7 +24,6 @@ $records = $caseModel->getReleasedRecords($branchId);
 
         <select id="sort-date"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option>Sort by:</option>
             <option>Newest Case</option>
             <option>Oldest Case</option>
         </select>
@@ -55,6 +54,7 @@ $records = $caseModel->getReleasedRecords($branchId);
                     <?php foreach ($records as $row): ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>">
@@ -148,4 +148,4 @@ $records = $caseModel->getReleasedRecords($branchId);
     </div>
 </div>
 
-<script src="/<?= PROJECT_DIR ?>/views/pages/radtech/xray-patient-records.js"></script>
+<script src="/<?= PROJECT_DIR ?>/views/pages/radtech/xray-patient-records.js?v=<?= time() ?>"></script>

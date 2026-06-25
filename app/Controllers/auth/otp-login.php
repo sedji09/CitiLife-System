@@ -109,6 +109,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Clear temp session
                     unset($_SESSION['temp_user_id'], $_SESSION['temp_role'], $_SESSION['temp_email'], $_SESSION['temp_branch_id'], $_SESSION['temp_patient_id'], $_SESSION['temp_name'], $_SESSION['temp_avatar'], $_SESSION['temp_portal']);
                     
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    $auditLogModel->addLog(
+                        $_SESSION['user_id'],
+                        'Patient Login',
+                        'IT Admin',
+                        'Authentication',
+                        $_SESSION['user_id'],
+                        "Successful login via OTP",
+                        $_SESSION['branch_id']
+                    );
+
                     header("Location: /" . PROJECT_DIR . "/dashboard");
                     exit;
                 } else {

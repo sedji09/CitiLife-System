@@ -73,6 +73,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             $_SESSION['name'] = ($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '');
                             $_SESSION['branch_id'] = $user['branch_id'];
 
+                            require_once basePath('app/Models/AuditLogModel.php');
+                            $auditLogModel = new \AuditLogModel($pdo);
+                            $auditLogModel->addLog(
+                                $user['id'],
+                                'Patient Login',
+                                'IT Admin',
+                                'Authentication',
+                                $user['id'],
+                                "Successful login via remembered device",
+                                $user['branch_id']
+                            );
+
                             header("Location: /" . PROJECT_DIR . "/dashboard");
                             exit;
                         }

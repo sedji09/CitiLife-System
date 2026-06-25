@@ -70,8 +70,7 @@
                 class="w-72 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
             <select id="filter-branch"
                 class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                <option>Filter by Branch</option>
-                <option>All</option>
+                <option selected>All Branches</option>
                 <?php foreach ($allBranches as $branch): ?>
                     <?php if ($branch['id'] != $_SESSION['branch_id']): ?>
                         <option><?= htmlspecialchars($branch['name']) ?></option>
@@ -80,7 +79,6 @@
             </select>
             <select id="sort-date"
                 class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                <option>Sort by:</option>
                 <option>Newest Request</option>
                 <option>Oldest Request</option>
             </select>
@@ -210,7 +208,9 @@
                             <option value="" disabled selected>-- Select Branch --</option>
                             <?php foreach ($allBranches as $branch): ?>
                                 <?php if ($branch['id'] != $_SESSION['branch_id']): ?>
-                                    <option value="<?= htmlspecialchars($branch['name']) ?>"><?= htmlspecialchars($branch['name']) ?></option>
+                                    <option value="<?= htmlspecialchars($branch['name']) ?>">
+                                        <?= htmlspecialchars($branch['name']) ?>
+                                    </option>
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         </select>

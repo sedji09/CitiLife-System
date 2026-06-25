@@ -92,17 +92,13 @@ if ($backId) {
         <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm pl-1">
             <div>
                 <p class="text-gray-400 text-[10px] uppercase tracking-wide">Name</p>
-                <p class="font-semibold text-xs">
-                    <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-details&id=<?= urlencode($caseDetails['id']) ?>&branch_id=<?= urlencode($caseDetails['branch_id']) ?>" 
-                       class="text-red-600 hover:text-red-700 hover:underline transition-colors"
-                       title="View Patient Details">
-                        <?= $fullName ?>
-                    </a>
+                <p class="font-semibold text-gray-900 text-xs">
+                    <?= $fullName ?>
                 </p>
             </div>
+            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Case No.</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['case_number']) ?></p></div>
+            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Patient No.</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['patient_number'] ?? 'N/A') ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Age / Sex</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['age']) ?> / <?= htmlspecialchars(ucfirst($caseDetails['sex'])) ?></p></div>
-            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Patient No.</p><p class="font-semibold text-gray-900 text-xs font-mono"><?= htmlspecialchars($caseDetails['patient_number'] ?? 'N/A') ?></p></div>
-            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Case No.</p><p class="font-semibold text-gray-900 text-xs font-mono"><?= htmlspecialchars($caseDetails['case_number']) ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Branch</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['branch_name']) ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Date</p><p class="font-semibold text-gray-900 text-xs"><?= date('M d, Y', strtotime($caseDetails['created_at'])) ?></p></div>
             

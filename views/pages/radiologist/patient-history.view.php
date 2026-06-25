@@ -38,7 +38,6 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
 
         <select id="sort-date"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
-            <option>Sort by:</option>
             <option>Newest Report</option>
             <option>Oldest Report</option>
         </select>

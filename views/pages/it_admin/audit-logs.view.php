@@ -41,67 +41,60 @@
             <p class="text-sm text-gray-500 mt-1">Real-time global monitoring of all system events and administrative
                 actions.</p>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">
-                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                <span class="text-[10px] font-black text-indigo-700 uppercase tracking-widest leading-none">Live
-                    Monitoring</span>
-            </div>
-        </div>
     </div>
 
     <!-- Filter Bar -->
     <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <form method="GET" action="" class="flex flex-col gap-4" id="filterForm">
             <input type="hidden" name="page" value="audit-logs">
 
-            <!-- Search -->
-            <div class="lg:col-span-2">
-                <div class="relative group">
-                    <i data-lucide="search"
-                        class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                    <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
-                        placeholder="Search action, user, or details..."
-                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Search -->
+                <div class="md:col-span-2 lg:col-span-2">
+                    <div class="relative group">
+                        <i data-lucide="search"
+                            class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors"></i>
+                        <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
+                            placeholder="Search action, user, or details..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all">
+                        <button type="submit" class="hidden">Search</button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Role Filter -->
-            <div>
-                <select name="role"
-                    class="w-full px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-widest focus:border-indigo-500">
-                    <option value="">All Roles</option>
-                    <?php foreach ($distinctRoles as $roleOption): ?>
-                        <option value="<?= $roleOption ?>" <?= $filters['role'] == $roleOption ? 'selected' : '' ?>>
-                            <?= strtoupper($roleOption) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <!-- Module Filter -->
+                <div class="col-span-1">
+                    <select name="module" onchange="document.getElementById('filterForm').submit()"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        <option value="">All Modules</option>
+                        <?php foreach ($distinctModules as $mod): ?>
+                            <option value="<?= htmlspecialchars($mod) ?>" <?= $filters['module'] == $mod ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($mod) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- Start Date -->
-            <div>
-                <input type="date" name="start_date" value="<?= htmlspecialchars($filters['start_date']) ?>"
-                    class="w-full px-4 py-2 border border-gray-200 rounded-xl text-xs focus:border-indigo-500">
-            </div>
+                <!-- Role Filter -->
+                <div class="col-span-1">
+                    <select name="role" onchange="document.getElementById('filterForm').submit()"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        <option value="">All Roles</option>
+                        <?php foreach ($distinctRoles as $rl): ?>
+                            <option value="<?= htmlspecialchars($rl) ?>" <?= $filters['role'] == $rl ? 'selected' : '' ?>>
+                                <?= ucwords(strtolower(str_replace('_', ' ', $rl))) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <!-- End Date -->
-            <div>
-                <input type="date" name="end_date" value="<?= htmlspecialchars($filters['end_date']) ?>"
-                    class="w-full px-4 py-2 border border-gray-200 rounded-xl text-xs focus:border-indigo-500">
-            </div>
-
-            <!-- Submit -->
-            <div class="flex gap-2">
-                <button type="submit"
-                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-2 flex items-center justify-center gap-2 transition shadow-sm">
-                    <i data-lucide="filter" class="w-4 h-4"></i>
-                    <span class="text-xs font-bold uppercase tracking-widest leading-none">Filter</span>
-                </button>
-                <a href="?page=audit-logs"
-                    class="p-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
-                    title="Reset Filters">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                </a>
+                <!-- Sort Order -->
+                <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                    <select name="sort" onchange="document.getElementById('filterForm').submit()"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>Newest First</option>
+                        <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Oldest First</option>
+                    </select>
+                </div>
             </div>
         </form>
     </div>
@@ -111,18 +104,16 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-gray-50/50 border-b border-gray-100">
-                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Timestamp
+                    <tr class="border-b border-gray-100 bg-white">
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600">
+                            Timestamp
                         </th>
-                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Actor</th>
-                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Branch</th>
-                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category
-                        </th>
-                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Action</th>
-                        <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                        <th
-                            class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                            Info</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600">Actor</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600">Branch</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600">Category</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600">Action</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600">Status</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-600 text-center">Info</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -140,40 +131,53 @@
 
                     <?php foreach ($logs as $log): ?>
                         <tr class="hover:bg-gray-50/50 transition-colors group">
-                            <td class="px-6 py-4">
-                                <span class="text-[11px] font-black text-gray-900 tabular-nums">
-                                    <?= date('M d, Y', strtotime($log['created_at'])) ?>
-                                </span>
-                                <p class="text-[10px] text-gray-400 font-bold">
-                                    <?= date('h:i:s A', strtotime($log['created_at'])) ?></p>
+                            <td class="px-6 py-2.5">
+                                <div class="flex flex-col">
+                                    <span class="text-[11px] font-medium text-gray-700 tabular-nums mb-0.5">
+                                        <?= date('M d, Y', strtotime($log['created_at'])) ?>
+                                    </span>
+                                    <span class="text-[10px] text-gray-500">
+                                        <?= date('h:i:s A', strtotime($log['created_at'])) ?>
+                                    </span>
+                                </div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-2.5">
                                 <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
-                                        <?= strtoupper(substr($log['user_name'] ?? 'U', 0, 1)) ?>
-                                    </div>
                                     <div class="flex flex-col">
                                         <span
-                                            class="text-xs font-bold text-gray-800 tracking-tight leading-none mb-1"><?= htmlspecialchars($log['user_name'] ?? 'System') ?></span>
+                                            class="text-xs font-bold text-gray-800 tracking-tight mb-0.5"><?= htmlspecialchars($log['user_name'] ?? 'System') ?></span>
                                         <span
-                                            class="text-[9px] font-black <?= $log['user_role'] == 'it_admin' ? 'text-rose-500' : 'text-gray-400' ?> uppercase tracking-widest"><?= $log['user_role'] ?? 'AUTOMATED' ?></span>
+                                            class="text-[10px] text-gray-500 lowercase mb-1"><?= htmlspecialchars($log['user_email'] ?? 'no email') ?></span>
+                                        <span
+                                            class="text-[8px] font-black <?= strtolower($log['user_role'] ?? '') == 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest"><?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?></span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4">
-                                <span
-                                    class="px-2 py-1 bg-gray-100 rounded text-[9px] font-black text-gray-500 uppercase tracking-widest"><?= htmlspecialchars($log['branch_name'] ?? 'GLOBAL') ?></span>
+                            <td class="px-6 py-2.5 text-xs text-gray-600">
+                                <?php 
+                                    if (in_array(strtolower($log['user_role'] ?? ''), ['it_admin', 'admin_central'])) {
+                                        echo 'Global';
+                                    } else {
+                                        echo htmlspecialchars(ucwords(strtolower($log['branch_name'] ?? 'Global')));
+                                    }
+                                ?>
                             </td>
-                            <td class="px-6 py-4">
-                                <span
-                                    class="text-[10px] font-bold text-gray-600 uppercase tracking-tight"><?= htmlspecialchars($log['module'] ?? 'Unknown') ?></span>
+                            <td class="px-6 py-2.5 text-xs text-gray-600">
+                                <?= htmlspecialchars(ucwords(strtolower($log['module'] ?? 'Unknown'))) ?>
                             </td>
-                            <td class="px-6 py-4">
-                                <p class="text-xs text-gray-700 leading-relaxed max-w-xs">
-                                    <?= htmlspecialchars($log['action']) ?></p>
+                            <td class="px-6 py-2.5">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-gray-800 tracking-tight mb-0.5">
+                                        <?= htmlspecialchars($log['action']) ?>
+                                    </span>
+                                    <?php if (!empty($log['details'])): ?>
+                                    <span class="text-[10px] text-gray-400 max-w-xs truncate" title="<?= htmlspecialchars($log['details']) ?>">
+                                        <?= htmlspecialchars($log['details']) ?>
+                                    </span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-2.5">
                                 <?php
                                 $statusLabel = 'Successful';
                                 $sColor = 'green';
@@ -187,13 +191,14 @@
                                     $sColor = 'gray';
                                 }
                                 ?>
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-<?= $sColor ?>-50 text-<?= $sColor ?>-700 border border-<?= $sColor === 'red' ? 'red-500' : $sColor . '-400' ?> status-badge status-badge-<?= $sColor ?>">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-<?= $sColor ?>-50 text-<?= $sColor ?>-700 border border-<?= $sColor === 'red' ? 'red-500' : $sColor . '-400' ?> status-badge status-badge-<?= $sColor ?>">
                                     <?= htmlspecialchars($statusLabel) ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-center">
+                            <td class="px-6 py-2.5 text-center">
                                 <button onclick="showDetails(<?= htmlspecialchars(json_encode($log)) ?>)"
-                                    class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
                                     <i data-lucide="info" class="w-4 h-4"></i>
                                 </button>
                             </td>
@@ -204,19 +209,50 @@
         </div>
 
         <!-- Pagination -->
-        <?php if ($total_pages > 1): ?>
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Showing <?= count($logs) ?> of <?= $total_count ?> entries
+        <?php if ($total_count > 0): ?>
+            <div
+                class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <?php
+                $start_record = $offset + 1;
+                $end_record = min($offset + count($logs), $total_count);
+                ?>
+                <span class="text-xs text-gray-500">
+                    Showing <?= $start_record ?>&ndash;<?= $end_record ?> of <?= $total_count ?> records
                 </span>
-                <div class="flex gap-2">
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?page=audit-logs&p=<?= $i ?>&<?= http_build_query(array_filter($filters)) ?>"
-                            class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all
-                       <?= $page_num == $i ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-indigo-200' ?>">
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <!-- Prev Button -->
+                        <?php if ($page_num > 1): ?>
+                            <a href="?page=audit-logs&p=<?= $page_num - 1 ?>&<?= http_build_query(array_filter($filters)) ?>"
+                                class="px-3 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all bg-white border border-gray-200 text-gray-600 hover:border-red-200 hover:text-red-600 shadow-sm">
+                                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
+                            </a>
+                        <?php else: ?>
+                            <span
+                                class="px-3 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium bg-gray-50 border border-gray-200 text-gray-400 cursor-not-allowed shadow-sm opacity-60">
+                                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
+                            </span>
+                        <?php endif; ?>
+
+                        <!-- Page Indicator -->
+                        <span class="text-xs font-semibold text-gray-700 px-2">
+                            Page <?= $page_num ?> of <?= max(1, $total_pages) ?>
+                        </span>
+
+                        <!-- Next Button -->
+                        <?php if ($page_num < $total_pages): ?>
+                            <a href="?page=audit-logs&p=<?= $page_num + 1 ?>&<?= http_build_query(array_filter($filters)) ?>"
+                                class="px-3 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all bg-white border border-gray-200 text-gray-600 hover:border-red-200 hover:text-red-600 shadow-sm">
+                                Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </a>
+                        <?php else: ?>
+                            <span
+                                class="px-3 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium bg-gray-50 border border-gray-200 text-gray-400 cursor-not-allowed shadow-sm opacity-60">
+                                Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </span>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>

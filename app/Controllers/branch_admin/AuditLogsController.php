@@ -22,6 +22,7 @@ $filters = [
     'search'      => $_GET['search'] ?? '',
     'role'        => $_GET['rl'] ?? '', // Role filter renamed to 'rl' to avoid conflict with routing 'role'
     'module'      => $_GET['module'] ?? '',
+    'sort'        => $_GET['sort'] ?? '',
     'start_date'  => $_GET['start_date'] ?? '',
     'end_date'    => $_GET['end_date'] ?? ''
 ];

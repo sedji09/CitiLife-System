@@ -48,6 +48,13 @@
                 actions.</p>
         </div>
         <div class="flex items-center gap-3">
+            <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role']) || (!empty($filters['sort']) && $filters['sort'] !== 'desc')): ?>
+                <a href="/<?= PROJECT_DIR ?>/audit-logs"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    Clear Filters
+                </a>
+            <?php endif; ?>
             <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full">
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                 <span class="text-[10px] font-black text-red-700 uppercase tracking-widest leading-none">Live
@@ -58,24 +65,25 @@
 
     <!-- Filter Bar -->
     <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-        <form method="GET" action="" class="flex flex-col gap-4">
+        <form method="GET" action="" class="flex flex-col gap-4" id="filterForm">
             <input type="hidden" name="page" value="audit-logs">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- Search -->
-                <div class="lg:col-span-2">
+                <div class="md:col-span-2 lg:col-span-2">
                     <div class="relative group">
                         <i data-lucide="search"
                             class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors"></i>
                         <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
                             placeholder="Search action, user, or details..."
                             class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all">
+                        <button type="submit" class="hidden">Search</button>
                     </div>
                 </div>
 
                 <!-- Module Filter -->
-                <div>
-                    <select name="module"
+                <div class="col-span-1">
+                    <select name="module" onchange="document.getElementById('filterForm').submit()"
                         class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
                         <option value="">All Modules</option>
                         <?php foreach ($distinctModules as $mod): ?>
@@ -87,8 +95,8 @@
                 </div>
 
                 <!-- Role Filter -->
-                <div>
-                    <select name="role"
+                <div class="col-span-1">
+                    <select name="role" onchange="document.getElementById('filterForm').submit()"
                         class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
                         <option value="">All Roles</option>
                         <?php foreach ($distinctRoles as $rl): ?>
@@ -99,34 +107,14 @@
                     </select>
                 </div>
 
-                <!-- Start Date -->
-                <div>
-                    <input type="date" name="start_date" value="<?= htmlspecialchars($filters['start_date']) ?>"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
-                        placeholder="Start Date">
+                <!-- Sort Order -->
+                <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                    <select name="sort" onchange="document.getElementById('filterForm').submit()"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
+                        <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>Newest First</option>
+                        <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Oldest First</option>
+                    </select>
                 </div>
-
-                <!-- End Date -->
-                <div>
-                    <input type="date" name="end_date" value="<?= htmlspecialchars($filters['end_date']) ?>"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all bg-white"
-                        placeholder="End Date">
-                </div>
-            </div>
-
-            <!-- Submit Button & Reset -->
-            <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
-                <a href="/<?= PROJECT_DIR ?>/audit-logs"
-                    class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm"
-                    title="Reset Filters">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                    Reset
-                </a>
-                <button type="submit"
-                    class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm text-xs font-bold uppercase tracking-wider">
-                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
-                    Apply Filters
-                </button>
             </div>
         </form>
     </div>
@@ -174,6 +162,11 @@
                                         <span class="text-xs font-bold text-gray-800 tracking-tight leading-none mb-1 truncate">
                                             <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
                                         </span>
+                                        <?php if (!empty($log['user_email'])): ?>
+                                        <span class="text-[10px] text-gray-500 mb-1 truncate">
+                                            <?= htmlspecialchars($log['user_email']) ?>
+                                        </span>
+                                        <?php endif; ?>
                                         <span
                                             class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
                                             <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
@@ -250,14 +243,14 @@
                     <span class="font-semibold"><?= $total_count ?></span> records
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="/<?= PROJECT_DIR ?>/audit-logs?p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>&start_date=<?= urlencode($filters['start_date']) ?>&end_date=<?= urlencode($filters['end_date']) ?>"
+                    <a href="/<?= PROJECT_DIR ?>/audit-logs?p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>&sort=<?= urlencode($filters['sort'] ?? '') ?>"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition <?= $page_num <= 1 ? 'pointer-events-none opacity-40 cursor-not-allowed' : '' ?>">
                         <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
                     </a>
                     <span class="text-xs font-medium text-gray-600 min-w-[90px] text-center">
                         Page <?= $page_num ?> of <?= $total_pages ?>
                     </span>
-                    <a href="/<?= PROJECT_DIR ?>/audit-logs?p=<?= min($total_pages, $page_num + 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>&start_date=<?= urlencode($filters['start_date']) ?>&end_date=<?= urlencode($filters['end_date']) ?>"
+                    <a href="/<?= PROJECT_DIR ?>/audit-logs?p=<?= min($total_pages, $page_num + 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&role=<?= urlencode($filters['role']) ?>&sort=<?= urlencode($filters['sort'] ?? '') ?>"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition <?= $page_num >= $total_pages ? 'pointer-events-none opacity-40 cursor-not-allowed' : '' ?>">
                         Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                     </a>

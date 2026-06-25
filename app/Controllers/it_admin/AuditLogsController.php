@@ -31,7 +31,7 @@ $filters = [
 // 2. Pagination Logic
 $page_num = isset($_GET['p']) ? (int)$_GET['p'] : 1;
 if ($page_num < 1) $page_num = 1;
-$limit = 15; // Global view shows more records
+$limit = 7; // Global view shows more records
 $offset = ($page_num - 1) * $limit;
 
 $currentRole = $_SESSION['role'] ?? 'it_admin';

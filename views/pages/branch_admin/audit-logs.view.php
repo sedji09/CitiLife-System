@@ -166,14 +166,15 @@
     </div>
 
     <!-- Search & Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
         <!-- Search Field -->
-        <div class="relative md:col-span-6 w-full group">
+        <div class="relative w-full group lg:col-span-2">
             <form method="GET" action="index.php">
                 <input type="hidden" name="role" value="branch_admin">
                 <input type="hidden" name="page" value="audit-logs">
                 <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
                 <input type="hidden" name="rl" value="<?= htmlspecialchars($filters['role']) ?>">
+                <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'] ?? '') ?>">
                 <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
                     placeholder="Search by action, user, or details..."
                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm filter-control">
@@ -184,12 +185,13 @@
         </div>
 
         <!-- Module Filter -->
-        <div class="md:col-span-3">
+        <div>
             <form method="GET" action="index.php">
                 <input type="hidden" name="role" value="branch_admin">
                 <input type="hidden" name="page" value="audit-logs">
                 <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
                 <input type="hidden" name="rl" value="<?= htmlspecialchars($filters['role']) ?>">
+                <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'] ?? '') ?>">
                 <select name="module" onchange="this.form.submit()"
                     class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
                     <option value="">All Modules</option>
@@ -203,15 +205,16 @@
         </div>
 
         <!-- Role Filter (rl) -->
-        <div class="md:col-span-3">
+        <div>
             <form method="GET" action="index.php">
                 <input type="hidden" name="role" value="branch_admin">
                 <input type="hidden" name="page" value="audit-logs">
                 <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
                 <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
+                <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'] ?? '') ?>">
                 <select name="rl" onchange="this.form.submit()"
                     class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
-                    <option value="">All Staff Roles</option>
+                    <option value="">All Roles</option>
                     <?php foreach ($distinctRoles as $rl): ?>
                         <?php if ($rl === 'patient')
                             continue; ?>
@@ -219,6 +222,24 @@
                             <?= htmlspecialchars(ucwords(str_replace('_', ' ', $rl))) ?>
                         </option>
                     <?php endforeach; ?>
+                </select>
+            </form>
+        </div>
+
+        <!-- Sort Filter -->
+        <div>
+            <form method="GET" action="index.php">
+                <input type="hidden" name="role" value="branch_admin">
+                <input type="hidden" name="page" value="audit-logs">
+                <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
+                <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
+                <input type="hidden" name="rl" value="<?= htmlspecialchars($filters['role']) ?>">
+                <select name="sort" onchange="this.form.submit()"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
+                    <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>New audit logs
+                    </option>
+                    <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Old audit logs
+                    </option>
                 </select>
             </form>
         </div>
@@ -333,14 +354,14 @@
                 records
             </span>
             <div class="flex items-center gap-4">
-                <a href="?role=branch_admin&page=audit-logs&p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>"
+                <a href="?role=branch_admin&page=audit-logs&p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&rl=<?= urlencode($filters['role']) ?>&sort=<?= urlencode($filters['sort'] ?? '') ?>"
                     class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition <?= $page_num <= 1 || $total_count == 0 ? 'pointer-events-none opacity-50' : '' ?> nav-button">
                     <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
                 </a>
                 <div class="text-xs font-bold text-gray-700 px-1 audit-text-muted min-w-[80px] text-center">
                     Page <?= $page_num ?> of <?= $totalPages ?>
                 </div>
-                <a href="?role=branch_admin&page=audit-logs&p=<?= min($totalPages, $page_num + 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>"
+                <a href="?role=branch_admin&page=audit-logs&p=<?= min($totalPages, $page_num + 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&rl=<?= urlencode($filters['role']) ?>&sort=<?= urlencode($filters['sort'] ?? '') ?>"
                     class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition <?= $page_num >= $totalPages || $total_count == 0 ? 'pointer-events-none opacity-50' : '' ?> nav-button">
                     Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
                 </a>

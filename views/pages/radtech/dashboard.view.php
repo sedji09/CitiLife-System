@@ -51,41 +51,64 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
     </div>
     <div class="flex items-center gap-2">
       <select id="filterSelect" onchange="handleFilterChange()"
-        class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm">
+        class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 shadow-sm">
         <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
         <option value="weekly" <?= $filter === 'weekly' ? 'selected' : '' ?>>This Week</option>
         <option value="monthly" <?= $filter === 'monthly' ? 'selected' : '' ?>>Monthly</option>
         <option value="yearly" <?= $filter === 'yearly' ? 'selected' : '' ?>>Yearly</option>
       </select>
 
-      <input type="month" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>"
-        onchange="handleFilterChange()"
-        class="<?= $filter === 'monthly' ? '' : 'hidden' ?> bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
+      <!-- Monthly Picker -->
+      <div id="monthlyFilter" class="relative <?= $filter === 'monthly' ? '' : 'hidden' ?>">
+        <button type="button" id="monthPickerTrigger" onclick="toggleMonthPicker()"
+            class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[140px] justify-between">
+            <span id="monthPickerLabel" class="whitespace-nowrap"><?= date('F Y', strtotime($selectedMonth . '-01')) ?></span>
+            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+        </button>
+        <div id="monthPickerPanel" class="hidden absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3 w-[260px]">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <button type="button" onclick="changePickerYear(-1)" class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
+                <span id="pickerYearLabel" class="font-semibold text-gray-800 text-sm"></span>
+                <button type="button" onclick="changePickerYear(1)" class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
+            </div>
+            <div id="monthGrid" class="grid grid-cols-4 gap-1"></div>
+        </div>
+        <input type="hidden" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>">
+      </div>
 
-      <input type="number" id="yearPicker" min="2000" max="2100" value="<?= htmlspecialchars($selectedYear) ?>"
-        onchange="handleFilterChange()"
-        class="<?= $filter === 'yearly' ? '' : 'hidden' ?> bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm w-24">
+      <!-- Yearly Picker -->
+      <div id="yearlyFilter" class="relative <?= $filter === 'yearly' ? '' : 'hidden' ?>">
+        <button type="button" id="yearPickerTrigger" onclick="toggleYearPicker()"
+            class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[100px] justify-between">
+            <span id="yearPickerLabel" class="whitespace-nowrap"><?= htmlspecialchars($selectedYear) ?></span>
+            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+        </button>
+        <div id="yearPickerPanel" class="hidden absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-2 w-[110px] max-h-64 overflow-y-auto">
+            <div id="yearGrid" class="flex flex-col gap-1"></div>
+        </div>
+        <input type="hidden" id="yearPicker" value="<?= htmlspecialchars($selectedYear) ?>">
+      </div>
 
       <script>
         function handleFilterChange() {
           const filter = document.getElementById('filterSelect').value;
-          const monthPicker = document.getElementById('monthPicker');
-          const yearPicker = document.getElementById('yearPicker');
+          const monthFilter = document.getElementById('monthlyFilter');
+          const yearFilter = document.getElementById('yearlyFilter');
 
           if (filter === 'monthly') {
-            monthPicker.classList.remove('hidden');
-            yearPicker.classList.add('hidden');
+            monthFilter.classList.remove('hidden');
+            yearFilter.classList.add('hidden');
           } else if (filter === 'yearly') {
-            monthPicker.classList.add('hidden');
-            yearPicker.classList.remove('hidden');
+            monthFilter.classList.add('hidden');
+            yearFilter.classList.remove('hidden');
           } else {
-            monthPicker.classList.add('hidden');
-            yearPicker.classList.add('hidden');
+            monthFilter.classList.add('hidden');
+            yearFilter.classList.add('hidden');
           }
 
           let url = '?role=radtech&page=dashboard&filter=' + filter;
-          if (filter === 'monthly') url += '&month=' + monthPicker.value;
-          if (filter === 'yearly') url += '&year=' + yearPicker.value;
+          if (filter === 'monthly') url += '&month=' + document.getElementById('monthPicker').value;
+          if (filter === 'yearly') url += '&year=' + document.getElementById('yearPicker').value;
 
           window.history.pushState({path: url}, '', url);
           if (window.__APP__) window.__APP__.currentPath = url; // Ensure global polling uses new URL
@@ -106,6 +129,105 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
             })
             .catch(err => console.error(err));
         }
+
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        let _pickerYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
+
+        function renderMonthGrid() {
+            document.getElementById('pickerYearLabel').textContent = _pickerYear;
+            const grid = document.getElementById('monthGrid');
+            grid.innerHTML = '';
+            MONTH_NAMES.forEach((name, i) => {
+                const m = i + 1;
+                let savedYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
+                let savedMonth = parseInt(document.getElementById('monthPicker').value.split('-')[1]);
+                const isSelected = (m === savedMonth && _pickerYear === savedYear);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = name;
+                btn.className = 'text-sm rounded-lg py-1.5 text-center transition-colors ' +
+                    (isSelected
+                        ? 'bg-red-600 text-white font-semibold'
+                        : 'text-gray-700 hover:bg-gray-100');
+                btn.onclick = () => selectMonth(m);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectMonth(m) {
+            const mm = String(m).padStart(2, '0');
+            document.getElementById('monthPicker').value = _pickerYear + '-' + mm;
+            document.getElementById('monthPickerLabel').textContent = MONTH_FULL[m - 1] + ' ' + _pickerYear;
+            document.getElementById('monthPickerPanel').classList.add('hidden');
+            renderMonthGrid();
+            handleFilterChange();
+        }
+
+        function changePickerYear(delta) {
+            const newYear = _pickerYear + delta;
+            if (newYear < 2000 || newYear > <?= date('Y') ?>) return;
+            _pickerYear = newYear;
+            renderMonthGrid();
+        }
+
+        function toggleMonthPicker() {
+            const panel = document.getElementById('monthPickerPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                _pickerYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
+                renderMonthGrid();
+            }
+        }
+
+        let _pickerYearValue = parseInt(document.getElementById('yearPicker').value);
+
+        function renderYearGrid() {
+            const grid = document.getElementById('yearGrid');
+            grid.innerHTML = '';
+            for (let y = <?= date('Y') ?>; y >= 2000; y--) {
+                const isSelected = (y === _pickerYearValue);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = y;
+                btn.className = 'text-sm rounded-lg py-2 px-3 text-center transition-colors w-full ' +
+                    (isSelected
+                        ? 'bg-red-600 text-white font-semibold'
+                        : 'text-gray-700 hover:bg-gray-100');
+                btn.onclick = () => selectYear(y);
+                grid.appendChild(btn);
+            }
+        }
+
+        function selectYear(y) {
+            _pickerYearValue = y;
+            document.getElementById('yearPicker').value = y;
+            document.getElementById('yearPickerLabel').textContent = y;
+            document.getElementById('yearPickerPanel').classList.add('hidden');
+            renderYearGrid();
+            handleFilterChange();
+        }
+
+        function toggleYearPicker() {
+            const panel = document.getElementById('yearPickerPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                _pickerYearValue = parseInt(document.getElementById('yearPicker').value);
+                renderYearGrid();
+            }
+        }
+
+        document.addEventListener('click', function (e) {
+            const monthFilter = document.getElementById('monthlyFilter');
+            if (monthFilter && !monthFilter.contains(e.target)) {
+                document.getElementById('monthPickerPanel').classList.add('hidden');
+            }
+            const yearFilter = document.getElementById('yearlyFilter');
+            if (yearFilter && !yearFilter.contains(e.target)) {
+                document.getElementById('yearPickerPanel').classList.add('hidden');
+            }
+        });
       </script>
     </div>
   </div>

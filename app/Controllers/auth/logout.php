@@ -5,6 +5,23 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $role = $_SESSION['role'] ?? null;
 
+$userId = $_SESSION['user_id'] ?? null;
+$branchId = $_SESSION['branch_id'] ?? null;
+
+if ($userId) {
+    require_once basePath('app/Models/AuditLogModel.php');
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $userId,
+        $role === 'patient' ? 'Patient Logout' : 'Staff Logout',
+        'IT Admin',
+        'Authentication',
+        $userId,
+        "User logged out",
+        $branchId
+    );
+}
+
 // Destroy all session data
 $_SESSION = [];
 session_destroy();

@@ -25,6 +25,18 @@ class FeedbackController
             $stats = $feedbackModel->getFeedbackStats($branchId);
         }
 
+        require_once __DIR__ . '/../../Models/AuditLogModel.php';
+        $auditLogModel = new \AuditLogModel($pdo);
+        $auditLogModel->addLog(
+            $_SESSION['user_id'] ?? null,
+            'Viewed Patient Feedbacks',
+            'Patient Feedback',
+            'Feedback',
+            null,
+            "Viewed feedback dashboard",
+            $branchId
+        );
+
         return get_defined_vars();
     }
 }

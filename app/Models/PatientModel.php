@@ -70,10 +70,24 @@ class PatientModel
     {
         $patientNumber = $this->generatePatientNumber($data['branch_id'] ?? null);
 
-        // Check if branch_id column exists in patients table
         $hasBranchId = $this->hasColumn('patients', 'branch_id');
+        $hasEmail = $this->hasColumn('patients', 'email');
 
-        if ($hasBranchId) {
+        if ($hasBranchId && $hasEmail) {
+            $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, email, home_address, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $patientNumber,
+                $data['first_name'],
+                $data['middle_name'] ?? null,
+                $data['last_name'],
+                $data['birthdate'],
+                $data['sex'],
+                $data['contact_number'],
+                $data['email'] ?? null,
+                $data['home_address'] ?? null,
+                $data['branch_id']
+            ]);
+        } elseif ($hasBranchId) {
             $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, home_address, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $patientNumber,
@@ -85,6 +99,19 @@ class PatientModel
                 $data['contact_number'],
                 $data['home_address'] ?? null,
                 $data['branch_id']
+            ]);
+        } elseif ($hasEmail) {
+            $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, email, home_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $patientNumber,
+                $data['first_name'],
+                $data['middle_name'] ?? null,
+                $data['last_name'],
+                $data['birthdate'],
+                $data['sex'],
+                $data['contact_number'],
+                $data['email'] ?? null,
+                $data['home_address'] ?? null
             ]);
         } else {
             $stmt = $this->pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, birthdate, sex, contact_number, home_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -108,17 +135,34 @@ class PatientModel
      */
     public function updatePatient($id, $data)
     {
-        $stmt = $this->pdo->prepare("UPDATE patients SET first_name = ?, middle_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, home_address = ? WHERE id = ?");
-        return $stmt->execute([
-            $data['first_name'],
-            $data['middle_name'] ?? null,
-            $data['last_name'],
-            $data['birthdate'],
-            $data['sex'],
-            $data['contact_number'],
-            $data['home_address'] ?? null,
-            $id
-        ]);
+        $hasEmail = $this->hasColumn('patients', 'email');
+
+        if ($hasEmail) {
+            $stmt = $this->pdo->prepare("UPDATE patients SET first_name = ?, middle_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, email = ?, home_address = ? WHERE id = ?");
+            return $stmt->execute([
+                $data['first_name'],
+                $data['middle_name'] ?? null,
+                $data['last_name'],
+                $data['birthdate'],
+                $data['sex'],
+                $data['contact_number'],
+                $data['email'] ?? null,
+                $data['home_address'] ?? null,
+                $id
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE patients SET first_name = ?, middle_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, home_address = ? WHERE id = ?");
+            return $stmt->execute([
+                $data['first_name'],
+                $data['middle_name'] ?? null,
+                $data['last_name'],
+                $data['birthdate'],
+                $data['sex'],
+                $data['contact_number'],
+                $data['home_address'] ?? null,
+                $id
+            ]);
+        }
     }
 
     /**

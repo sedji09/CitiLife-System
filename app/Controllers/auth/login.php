@@ -69,6 +69,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 $_SESSION['avatar'] = $user['avatar'] ?? null;
                 $_SESSION['branch_id'] = $user['branch_id'];
 
+                require_once basePath('app/Models/AuditLogModel.php');
+                $auditLogModel = new \AuditLogModel($pdo);
+                $auditLogModel->addLog(
+                    $user['id'],
+                    'Staff Login',
+                    'IT Admin',
+                    'Authentication',
+                    $user['id'],
+                    "Successful login",
+                    $user['branch_id']
+                );
+
                 // Redirect to dashboard
                 header("Location: /" . PROJECT_DIR . "/dashboard");
                 exit;

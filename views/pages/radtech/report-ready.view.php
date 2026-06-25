@@ -70,8 +70,7 @@
             class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
         <select id="filter-priority"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option value="All" hidden selected>Filter by Priority</option>
-            <option value="All">All</option>
+            <option value="All" selected>All</option>
             <option>Routine</option>
             <option>Urgent</option>
             <option>STAT</option>

@@ -1,12 +1,20 @@
-<!-- IT Dynamic User Role Matrix -->
 <?php
-$roleApplicablePermissions = [
-    'it_admin' => ['system_security', 'backup_mgmt', 'audit_logs', 'dashboard'],
-    'admin_central' => ['system_security', 'branch_mgmt', 'user_mgmt', 'patient_history', 'global_reports', 'audit_logs', 'dashboard'],
-    'branch_admin' => ['record_requests', 'patient_history', 'audit_logs', 'global_reports', 'dashboard'],
-    'radtech' => ['patient_reg', 'worklist', 'patient_history', 'record_requests', 'dashboard'],
-    'radiologist' => ['worklist', 'patient_history', 'dashboard', 'case_review', 'write_report'],
-    'patient' => ['patient_reg', 'dashboard']
+$roles = [
+    'it_admin' => 'IT System Admin',
+    'admin_central' => 'Admin (Central)',
+    'branch_admin' => 'Branch Admin',
+    'radtech' => 'RadTech (Staff)',
+    'radiologist' => 'Radiologist',
+    'patient' => 'Patient'
+];
+
+$roleDescriptions = [
+    'it_admin' => 'Manages system infrastructure, security, backups, and audit logs.',
+    'admin_central' => 'Oversees all branches, users, and reports at the system level.',
+    'branch_admin' => 'Manages records and operations within their assigned branch.',
+    'radtech' => 'Handles patient registration, worklist, and record requests.',
+    'radiologist' => 'Reviews cases, reads images, and submits diagnostic reports.',
+    'patient' => 'Portal access for viewing personal health records.',
 ];
 
 function getRoleIcon($roleKey)
@@ -28,342 +36,301 @@ function getRoleIcon($roleKey)
             return 'circle';
     }
 }
+
+function getRoleColor($roleKey)
+{
+    switch ($roleKey) {
+        case 'it_admin':
+            return 'text-indigo-600 bg-indigo-50';
+        case 'admin_central':
+            return 'text-pink-600 bg-pink-50';
+        case 'branch_admin':
+            return 'text-emerald-600 bg-emerald-50';
+        case 'radtech':
+            return 'text-orange-600 bg-orange-50';
+        case 'radiologist':
+            return 'text-sky-600 bg-sky-50';
+        case 'patient':
+            return 'text-purple-600 bg-purple-50';
+        default:
+            return 'text-gray-600 bg-gray-50';
+    }
+}
 ?>
-<div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="max-w-5xl mx-auto space-y-8 pb-20">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div>
-            <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Access Control Center</h1>
-            <p class="text-sm text-gray-500 mt-1">Configure functional permissions and security boundaries for all staff
-                roles.</p>
+            <h1 class="text-lg font-bold text-gray-900 tracking-tight">Access Control Center</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Configure permissions and security boundaries for staff roles.</p>
         </div>
-        <div class="flex items-center gap-4">
-            <div id="save-status"
-                class="hidden items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
-                <span id="save-status-icon">
-                    <i data-lucide="loader-2" class="w-3 h-3 text-green-600 animate-spin"></i>
-                </span>
-                <span id="save-status-text"
-                    class="text-[10px] font-bold text-green-700 uppercase tracking-widest leading-none">Saving
-                    Changes...</span>
-            </div>
-            <div class="flex items-center gap-2 px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-full">
-                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                <span class="text-[10px] font-bold text-rose-700 uppercase tracking-widest leading-none">Dynamic RBAC
-                    Active</span>
-            </div>
+        <div id="save-status"
+            class="hidden items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full transition-all">
+            <i data-lucide="loader-2" class="w-3.5 h-3.5 text-green-600 animate-spin" id="save-status-icon"></i>
+            <span id="save-status-text"
+                class="text-[10px] font-bold text-green-700 uppercase tracking-widest">Saving...</span>
         </div>
     </div>
 
-    <!-- Legend -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
-            <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
-                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-            </div>
-            <div>
-                <p class="text-[11px] font-bold text-gray-900 leading-none">Full Access</p>
-                <p class="text-[9px] text-gray-400 mt-1 uppercase tracking-tighter">Global Visibility</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
-            <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
-                <i data-lucide="shield-alert" class="w-4 h-4"></i>
-            </div>
-            <div>
-                <p class="text-[11px] font-bold text-gray-900 leading-none">Branch Bound</p>
-                <p class="text-[9px] text-gray-400 mt-1 uppercase tracking-tighter">Assigned Branch Only</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
-            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
-                <i data-lucide="slash" class="w-4 h-4"></i>
-            </div>
-            <div>
-                <p class="text-[11px] font-bold text-gray-900 leading-none">No Access</p>
-                <p class="text-[9px] text-gray-400 mt-1 uppercase tracking-tighter">Hidden / Disabled</p>
-            </div>
-        </div>
-    </div>
+    <!-- Role Selector + Save Button Row -->
+    <div class="flex items-end justify-between relative z-50">
+        <div class="relative flex-1 max-w-sm">
+            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Select
+                Role</label>
+            <button type="button" onclick="toggleRoleDropdown()" id="role-selector-btn"
+                class="w-full flex items-center justify-between px-3 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="flex items-center gap-3">
+                    <div id="selected-role-icon-bg"
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
+                        <i id="selected-role-icon" data-lucide="shield-alert" class="w-4 h-4"></i>
+                    </div>
+                    <div class="text-left">
+                        <p id="selected-role-title" class="text-sm font-semibold text-gray-900 leading-tight">IT System
+                            Admin</p>
+                        <p id="selected-role-desc" class="text-[10px] text-gray-400 mt-0.5 truncate max-w-[200px]">
+                            Manages system infrastructure, security, backups, and audit logs.</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+            </button>
 
-    <!-- View Switcher -->
-    <div class="flex items-center gap-8 border-b border-gray-200 w-full px-2">
-        <button onclick="setViewMode('role')" id="btn-view-role"
-            class="py-3 text-sm font-medium transition-all">
-            Role-Focused
+            <!-- Dropdown Menu -->
+            <div id="role-dropdown-menu"
+                class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden divide-y divide-gray-50">
+                <?php foreach ($roles as $roleKey => $roleLabel): ?>
+                    <button type="button"
+                        onclick="selectRole('<?= $roleKey ?>', '<?= htmlspecialchars($roleLabel) ?>', '<?= htmlspecialchars($roleDescriptions[$roleKey] ?? '') ?>', '<?= getRoleIcon($roleKey) ?>', '<?= getRoleColor($roleKey) ?>')"
+                        class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left group">
+                        <div
+                            class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 <?= getRoleColor($roleKey) ?>">
+                            <i data-lucide="<?= getRoleIcon($roleKey) ?>" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-900 leading-none"><?= htmlspecialchars($roleLabel) ?>
+                            </p>
+                            <p class="text-[10px] text-gray-400 mt-1">
+                                <?= htmlspecialchars($roleDescriptions[$roleKey] ?? '') ?>
+                            </p>
+                        </div>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <button type="button" onclick="saveAllPermissions()" id="btn-save-all"
+            class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 shadow-sm">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+            Save Changes
         </button>
-        <button onclick="setViewMode('grid')" id="btn-view-grid"
-            class="py-3 text-sm font-medium transition-all">
-            Full Matrix
-        </button>
     </div>
 
-    <!-- ROLE-FOCUSED VIEW CONTAINER -->
-    <div id="rbac-role-container" class="hidden space-y-6">
-        <!-- Role Selection Tabs -->
-        <div class="flex flex-wrap gap-4 mb-2">
-            <?php foreach ($roles as $roleKey => $roleLabel): ?>
-                <button onclick="setActiveRoleTab('<?= $roleKey ?>')" id="role-tab-<?= $roleKey ?>"
-                    class="role-tab flex items-center gap-2.5 px-5 py-3.5 rounded-xl border text-xs font-medium uppercase tracking-wider transition-all shadow-sm">
-                    <?= htmlspecialchars($roleLabel) ?>
-                </button>
-            <?php endforeach; ?>
-        </div>
+    <!-- Flat List Permissions Container -->
+    <div id="permissions-container" class="mt-4">
+        <?php foreach ($permissions as $category => $categoryPerms): ?>
+            <!-- Category Section -->
+            <div class="rbac-category mb-6" data-category="<?= htmlspecialchars($category) ?>">
+                <!-- Category Header -->
+                <div class="px-4 py-3 bg-gray-50 border border-gray-200 rounded-t-lg">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider"><?= $category ?></h3>
+                </div>
 
-        <!-- Role Contents Pane -->
-        <?php foreach ($roles as $roleKey => $roleLabel): ?>
-            <div id="role-content-<?= $roleKey ?>" class="role-content-pane hidden space-y-6">
-                <?php foreach ($permissions as $category => $categoryPerms): ?>
-                    <?php
-                    $hasApplicableInCat = false;
-                    foreach ($categoryPerms as $permKey => $permInfo) {
-                        if (isset($roleApplicablePermissions[$roleKey]) && in_array($permKey, $roleApplicablePermissions[$roleKey])) {
-                            $hasApplicableInCat = true;
-                            break;
-                        }
-                    }
-                    ?>
-                    <?php if ($hasApplicableInCat): ?>
-                        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-                            <h3 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                                <?= $category ?> Control
-                            </h3>
+                <!-- Permission Rows -->
+                <div class="border-x border-b border-gray-200 rounded-b-lg bg-white divide-y divide-gray-100">
+                    <?php foreach ($categoryPerms as $permKey => $permInfo): ?>
+                        <div class="perm-item flex items-center justify-between px-4 py-3" data-perm="<?= $permKey ?>">
+                            <!-- Permission Label & Description -->
+                            <div class="min-w-0 pr-4">
+                                <p class="text-sm font-medium text-gray-800"><?= $permInfo['label'] ?></p>
+                                <p class="text-[11px] text-gray-400 mt-0.5"><?= $permInfo['desc'] ?></p>
+                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <?php foreach ($categoryPerms as $permKey => $permInfo): ?>
-                                    <?php if (isset($roleApplicablePermissions[$roleKey]) && in_array($permKey, $roleApplicablePermissions[$roleKey])): ?>
-                                        <?php $currentLevel = $activeMatrix[$roleKey][$permKey] ?? 0; ?>
-                                        <div
-                                            class="flex items-center justify-between p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-all gap-4">
-                                            <div class="flex flex-col min-w-0">
-                                                <span
-                                                    class="text-sm font-extrabold text-gray-900 truncate leading-snug"><?= $permInfo['label'] ?></span>
-                                                <span
-                                                    class="text-[10px] text-gray-400 font-bold mt-1 leading-relaxed"><?= $permInfo['desc'] ?></span>
-                                            </div>
-                                            <div class="relative inline-block w-full max-w-[120px] shrink-0">
-                                                <select onchange="updatePermission('<?= $roleKey ?>', '<?= $permKey ?>', this.value)"
-                                                    class="w-full pl-3 pr-8 py-2 rounded-xl border-2 border-transparent bg-white text-xs font-black uppercase tracking-tighter transition-all focus:border-indigo-500 appearance-none cursor-pointer shadow-sm
-                                                     <?= $currentLevel == 1 ? 'text-green-600 border-green-200 bg-green-50/30' : ($currentLevel == 2 ? 'text-amber-600 border-amber-200 bg-amber-50/30' : 'text-gray-400 border-gray-200') ?>">
-                                                    <option value="0" <?= $currentLevel == 0 ? 'selected' : '' ?>>No Access</option>
-                                                    <option value="1" <?= $currentLevel == 1 ? 'selected' : '' ?>>Full</option>
-                                                    <option value="2" <?= $currentLevel == 2 ? 'selected' : '' ?>>Branch</option>
-                                                </select>
-                                                <i data-lucide="chevron-down"
-                                                    class="absolute right-3 top-3 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
+                            <!-- Segmented Control -->
+                            <div
+                                class="flex items-center rounded-md overflow-hidden border border-gray-200 shrink-0 segmented-control">
+                                <button type="button" onclick="setPermission('<?= $permKey ?>', 0)" id="btn-<?= $permKey ?>-0"
+                                    class="perm-btn px-4 py-1.5 text-[11px] font-semibold transition-colors focus:outline-none border-r border-gray-200">
+                                    None
+                                </button>
+                                <button type="button" onclick="setPermission('<?= $permKey ?>', 2)" id="btn-<?= $permKey ?>-2"
+                                    class="perm-btn px-4 py-1.5 text-[11px] font-semibold transition-colors focus:outline-none border-r border-gray-200">
+                                    Branch
+                                </button>
+                                <button type="button" onclick="setPermission('<?= $permKey ?>', 1)" id="btn-<?= $permKey ?>-1"
+                                    class="perm-btn px-4 py-1.5 text-[11px] font-semibold transition-colors focus:outline-none">
+                                    Full
+                                </button>
                             </div>
                         </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
         <?php endforeach; ?>
     </div>
 
-    <!-- FULL MATRIX VIEW CONTAINER -->
-    <div id="rbac-grid-container"
-        class="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden transition-all hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-                <thead>
-                    <tr class="bg-gray-50/80 border-b border-gray-200">
-                        <th
-                            class="sticky left-0 z-20 bg-gray-50 px-6 py-4 text-left text-xs font-black text-gray-400 uppercase tracking-widest border-r border-gray-200 min-w-[280px]">
-                            Functional Capability
-                        </th>
-                        <?php foreach ($roles as $roleKey => $roleLabel): ?>
-                            <th class="px-6 py-4 text-center min-w-[140px]">
-                                <p class="text-[11px] font-medium text-gray-900 uppercase tracking-tighter">
-                                    <?= htmlspecialchars($roleLabel) ?>
-                                </p>
-                                <span
-                                    class="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none"><?= strtoupper($roleKey) ?></span>
-                            </th>
-                        <?php endforeach; ?>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    <?php foreach ($permissions as $category => $categoryPerms): ?>
-                        <tr class="bg-gray-50/30">
-                            <td colspan="<?= count($roles) + 1 ?>" class="px-6 py-2 h-10 border-y border-gray-100">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                                    <span
-                                        class="text-[10px] font-black text-indigo-700 uppercase tracking-widest"><?= $category ?>
-                                        Control</span>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <?php foreach ($categoryPerms as $permKey => $permInfo): ?>
-                            <tr class="group hover:bg-indigo-50/10 transition-colors">
-                                <td
-                                    class="sticky left-0 z-10 bg-white group-hover:bg-indigo-50/20 px-6 py-5 border-r border-gray-100 transition-colors">
-                                    <div class="flex flex-col">
-                                        <span
-                                            class="text-sm font-bold text-gray-800 tracking-tight leading-none mb-1.5"><?= $permInfo['label'] ?></span>
-                                        <span
-                                            class="text-[10px] text-gray-500 font-medium leading-relaxed max-w-[220px]"><?= $permInfo['desc'] ?></span>
-                                    </div>
-                                </td>
-
-                                <?php foreach ($roles as $roleKey => $roleLabel): ?>
-                                    <?php $currentLevel = $activeMatrix[$roleKey][$permKey] ?? 0; ?>
-                                    <td class="px-4 py-5 text-center">
-                                        <?php if (isset($roleApplicablePermissions[$roleKey]) && in_array($permKey, $roleApplicablePermissions[$roleKey])): ?>
-                                            <div class="relative inline-block w-full max-w-[100px]">
-                                                <select onchange="updatePermission('<?= $roleKey ?>', '<?= $permKey ?>', this.value)"
-                                                    class="w-full pl-2 pr-6 py-1.5 rounded-lg border-2 border-transparent bg-gray-50 text-[10px] font-black uppercase tracking-tighter transition-all focus:bg-white focus:border-indigo-500 appearance-none cursor-pointer
-                                             <?= $currentLevel == 1 ? 'text-green-600 bg-green-50' : ($currentLevel == 2 ? 'text-amber-600 bg-amber-50' : 'text-gray-400') ?>">
-                                                    <option value="0" <?= $currentLevel == 0 ? 'selected' : '' ?>>No Access</option>
-                                                    <option value="1" <?= $currentLevel == 1 ? 'selected' : '' ?>>Full</option>
-                                                    <option value="2" <?= $currentLevel == 2 ? 'selected' : '' ?>>Branch</option>
-                                                </select>
-                                                <i data-lucide="chevron-down"
-                                                    class="absolute right-2 top-2 w-3 h-3 text-gray-300 pointer-events-none"></i>
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                <?php endforeach; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
 <script>
-    async function updatePermission(role, perm, level) {
+    // System Data
+    const activeMatrix = <?= json_encode($activeMatrix) ?>;
+
+    // State
+    let currentRole = localStorage.getItem('citilife_rbac_role') || 'it_admin';
+    let currentMatrix = JSON.parse(JSON.stringify(activeMatrix));
+
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load saved role or default
+        const btn = document.querySelector(`button[onclick*="'${currentRole}'"]`);
+        if (btn) {
+            btn.click();
+        } else {
+            renderPermissions(currentRole);
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('role-dropdown-menu');
+            const selector = document.getElementById('role-selector-btn');
+            if (!selector.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    });
+
+    function toggleRoleDropdown() {
+        document.getElementById('role-dropdown-menu').classList.toggle('hidden');
+    }
+
+    function selectRole(roleKey, label, desc, icon, colorClasses) {
+        currentRole = roleKey;
+        localStorage.setItem('citilife_rbac_role', roleKey);
+
+        // Update selector UI
+        document.getElementById('selected-role-title').textContent = label;
+        document.getElementById('selected-role-desc').textContent = desc;
+
+        const iconBg = document.getElementById('selected-role-icon-bg');
+        iconBg.className = `w-8 h-8 rounded-lg flex items-center justify-center ${colorClasses}`;
+
+        const iconEl = document.getElementById('selected-role-icon');
+        iconEl.setAttribute('data-lucide', icon);
+
+        // Hide dropdown
+        document.getElementById('role-dropdown-menu').classList.add('hidden');
+
+        // Render permissions for this role
+        renderPermissions(roleKey);
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function renderPermissions(roleKey) {
+        document.querySelectorAll('.perm-item').forEach(item => {
+            const permKey = item.dataset.perm;
+            // Get level from DB state, default to 0 if not set
+            const level = (currentMatrix[roleKey] && currentMatrix[roleKey][permKey]) ?? 0;
+            updateSegmentedControlUI(permKey, level);
+        });
+    }
+
+    function updateSegmentedControlUI(permKey, level) {
+        const activeClasses = 'bg-indigo-500 text-white hover:bg-indigo-600';
+        const inactiveClasses = 'bg-gray-50 text-gray-600 hover:bg-gray-100';
+
+        const buttons = [
+            { id: `btn-${permKey}-0`, isMatch: level == 0, hasBorderR: true },  // None
+            { id: `btn-${permKey}-2`, isMatch: level == 2, hasBorderR: true },  // Branch
+            { id: `btn-${permKey}-1`, isMatch: level == 1, hasBorderR: false }  // Full (last)
+        ];
+
+        buttons.forEach(btnConfig => {
+            const btn = document.getElementById(btnConfig.id);
+            if (btn) {
+                const borderClass = btnConfig.hasBorderR ? 'border-r border-gray-200' : '';
+                if (btnConfig.isMatch) {
+                    btn.className = `perm-btn px-4 py-1.5 text-[11px] font-semibold transition-colors focus:outline-none ${borderClass} ${activeClasses}`;
+                } else {
+                    btn.className = `perm-btn px-4 py-1.5 text-[11px] font-semibold transition-colors focus:outline-none ${borderClass} ${inactiveClasses}`;
+                }
+            }
+        });
+    }
+
+    // Track pending (unsaved) changes: { 'role|perm': { role, perm, level } }
+    let pendingChanges = {};
+
+    function setPermission(permKey, level) {
+        // Safe-guard to prevent IT Admin from locking themselves out
+        if (currentRole === 'it_admin' && permKey === 'system_security' && level === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Security Lock',
+                text: 'You cannot remove System Security access from the IT Admin role as it would lock you out of this page.',
+                confirmButtonColor: '#4f46e5',
+                confirmButtonText: 'Understood'
+            });
+            // Revert the segmented control UI back to Full Access visually (Level 1)
+            updateSegmentedControlUI('system_security', 1);
+            return;
+        }
+
+        // Update UI only
+        if (!currentMatrix[currentRole]) currentMatrix[currentRole] = {};
+        currentMatrix[currentRole][permKey] = level;
+        updateSegmentedControlUI(permKey, level);
+
+        // Track pending change
+        const key = `${currentRole}|${permKey}`;
+        pendingChanges[key] = { role: currentRole, perm: permKey, level: level };
+    }
+
+    async function saveAllPermissions() {
+        const changes = Object.values(pendingChanges);
+        if (changes.length === 0) return;
+
+        // Show Saving
         const statusEl = document.getElementById('save-status');
         statusEl.classList.remove('hidden');
         statusEl.classList.add('flex');
+        document.getElementById('save-status-text').textContent = 'Saving...';
+        document.getElementById('save-status-icon').setAttribute('data-lucide', 'loader-2');
+        document.getElementById('save-status-icon').classList.add('animate-spin');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
         try {
-            const formData = new FormData();
-            formData.append('action', 'toggle_perm');
-            formData.append('role', role);
-            formData.append('perm', perm);
-            formData.append('level', level);
+            for (const change of changes) {
+                const formData = new FormData();
+                formData.append('action', 'toggle_perm');
+                formData.append('role', change.role);
+                formData.append('perm', change.perm);
+                formData.append('level', change.level);
 
-            const response = await fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            });
+                const response = await fetch(window.location.href, { method: 'POST', body: formData });
+                const data = await response.json();
 
-            const data = await response.json();
-            if (data.success) {
-                // Sync all select dropdowns with the same role and permission in both views
-                document.querySelectorAll('select').forEach(select => {
-                    const onchangeAttr = select.getAttribute('onchange');
-                    if (onchangeAttr && onchangeAttr.includes(`'${role}'`) && onchangeAttr.includes(`'${perm}'`)) {
-                        select.value = level;
-
-                        // Update classes based on which view container it belongs to
-                        if (select.classList.contains('text-[10px]')) {
-                            // Grid select classes
-                            select.className = "w-full pl-2 pr-6 py-1.5 rounded-lg border-2 border-transparent bg-gray-50 text-[10px] font-black uppercase tracking-tighter transition-all focus:bg-white focus:border-indigo-500 appearance-none cursor-pointer " +
-                                (level == 1 ? 'text-green-600 bg-green-50' : (level == 2 ? 'text-amber-600 bg-amber-50' : 'text-gray-400'));
-                        } else {
-                            // Role-focused select classes
-                            select.className = "w-full pl-3 pr-8 py-2 rounded-xl border-2 border-transparent bg-white text-xs font-black uppercase tracking-tighter transition-all focus:border-indigo-500 appearance-none cursor-pointer shadow-sm " +
-                                (level == 1 ? 'text-green-600 border-green-200 bg-green-50/30' : (level == 2 ? 'text-amber-600 border-amber-200 bg-amber-50/30' : 'text-gray-400 border-gray-200'));
-                        }
-                    }
-                });
-
-                // Flash success color
-                document.getElementById('save-status-text').textContent = 'Changes Saved';
-                document.getElementById('save-status-icon').innerHTML = '<i data-lucide="check-circle" class="w-3 h-3 text-green-600"></i>';
-                lucide.createIcons();
-
-                setTimeout(() => {
-                    statusEl.classList.add('hidden');
-                    statusEl.classList.remove('flex');
-                    document.getElementById('save-status-text').textContent = 'Saving Changes...';
-                    document.getElementById('save-status-icon').innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 text-green-600 animate-spin"></i>';
-                    lucide.createIcons();
-                }, 2000);
-            } else {
-                errorAlert('Update Failed', data.message || 'Unknown error');
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to save');
+                }
             }
+
+            // All saved successfully
+            document.getElementById('save-status-text').textContent = 'All Changes Saved';
+            document.getElementById('save-status-icon').setAttribute('data-lucide', 'check-circle');
+            document.getElementById('save-status-icon').classList.remove('animate-spin');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            pendingChanges = {};
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
         } catch (err) {
-            console.error('Update failed:', err);
-            errorAlert('Network Error', 'A network error occurred while updating permissions.');
+            console.error('Save failed:', err);
+            alert('Failed to save some permission changes. Please try again.');
+            statusEl.classList.add('hidden');
+            statusEl.classList.remove('flex');
         }
     }
-
-    function setViewMode(mode) {
-        localStorage.setItem('citilife_rbac_view_mode', mode);
-        const gridContainer = document.getElementById('rbac-grid-container');
-        const roleContainer = document.getElementById('rbac-role-container');
-        const btnGrid = document.getElementById('btn-view-grid');
-        const btnRole = document.getElementById('btn-view-role');
-
-        if (mode === 'grid') {
-            gridContainer.classList.remove('hidden');
-            roleContainer.classList.add('hidden');
-            btnGrid.className = "py-3 text-sm font-medium transition-all border-b-2 border-red-600 text-red-600";
-            btnRole.className = "py-3 text-sm font-medium transition-all text-gray-500 hover:text-gray-700";
-        } else {
-            gridContainer.classList.add('hidden');
-            roleContainer.classList.remove('hidden');
-            btnRole.className = "py-3 text-sm font-medium transition-all border-b-2 border-red-600 text-red-600";
-            btnGrid.className = "py-3 text-sm font-medium transition-all text-gray-500 hover:text-gray-700";
-        }
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-
-    function setActiveRoleTab(roleKey) {
-        localStorage.setItem('citilife_rbac_active_role', roleKey);
-
-        // Hide all contents
-        document.querySelectorAll('.role-content-pane').forEach(el => el.classList.add('hidden'));
-
-        // Show active content
-        const activePane = document.getElementById('role-content-' + roleKey);
-        if (activePane) activePane.classList.remove('hidden');
-
-        // Deactivate all tabs
-        document.querySelectorAll('.role-tab').forEach(el => {
-            el.className = "role-tab flex items-center gap-2.5 px-5 py-3.5 rounded-xl border text-xs font-medium uppercase tracking-wider transition-all shadow-sm bg-white text-gray-500 border-gray-200 hover:text-gray-700 hover:border-gray-300";
-        });
-
-        // Activate active tab
-        const activeTab = document.getElementById('role-tab-' + roleKey);
-        if (activeTab) {
-            activeTab.className = "role-tab flex items-center gap-2.5 px-5 py-3.5 rounded-xl border text-xs font-medium uppercase tracking-wider transition-all shadow-sm bg-indigo-600 text-white border-indigo-600";
-        }
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-
-    // Initialize View & Role Tab from LocalStorage
-    (function () {
-        const savedMode = localStorage.getItem('citilife_rbac_view_mode') || 'role';
-        const savedRole = localStorage.getItem('citilife_rbac_active_role') || 'it_admin';
-
-        // Run after DOM is ready or immediately
-        const init = () => {
-            setViewMode(savedMode);
-            setActiveRoleTab(savedRole);
-        };
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-    })();
 </script>

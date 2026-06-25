@@ -27,8 +27,9 @@
         return rows.filter(row => {
             const name    = (row.dataset.name || '').toLowerCase();
             const id      = (row.dataset.id   || '').toLowerCase();
+            const patient = (row.dataset.patient || '').toLowerCase();
 
-            const matchSearch = !search || name.includes(search) || id.includes(search);
+            const matchSearch = !search || name.includes(search) || id.includes(search) || patient.includes(search);
 
             return matchSearch;
         });

@@ -37,8 +37,10 @@
 <div class="mt-6 flex flex-col gap-4">
     <div class="flex gap-4 items-center">
         <div class="relative flex-1 group" style="position: relative; flex: 1 1 0%;">
-            <div style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
-                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors" style="width: 1.1rem; height: 1.1rem;"></i>
+            <div
+                style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
+                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors"
+                    style="width: 1.1rem; height: 1.1rem;"></i>
             </div>
             <input type="text" id="search-input" placeholder="Search by patient name or case number..."
                 style="padding-left: 2.75rem !important;"
@@ -46,8 +48,7 @@
         </div>
         <select id="filter-priority"
             class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
-            <option value="All" hidden>Filter by Priority</option>
-            <option value="All">All</option>
+            <option value="All" selected>All Priorities</option>
             <option value="Routine">Routine</option>
             <option value="Urgent">Urgent</option>
             <option value="STAT">STAT</option>
@@ -98,7 +99,7 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($data as $row): ?>
-                        <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer" 
+                        <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-case="<?= htmlspecialchars($row['case_number']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
@@ -178,7 +179,7 @@
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
                                         <?php if ($row['status'] === 'Report Ready'): ?>
-                                            <a href="javascript:void(0)" 
+                                            <a href="javascript:void(0)"
                                                 onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                                 class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                                                 title="Print Preliminary Report">
@@ -191,13 +192,13 @@
                                             title="View Record Details">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
-                                        <a href="javascript:void(0)" 
+                                        <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                                             title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
-                                        <a href="javascript:void(0)" 
+                                        <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
                                             class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                                             title="Download PDF">
@@ -241,7 +242,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ROWS_PER_PAGE = 8;
+        const ROWS_PER_PAGE = 6;
         let currentPage = parseInt(sessionStorage.getItem('CitiLife_branchXray_page_<?= $currentTab ?>')) || 1;
 
         const searchInput = document.getElementById('search-input');
@@ -292,7 +293,7 @@
             // Clamp current page
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
-            
+
             sessionStorage.setItem('CitiLife_branchXray_page_<?= $currentTab ?>', currentPage);
 
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
@@ -300,7 +301,7 @@
 
             // Hide all, then show specific page
             rows.forEach(r => r.style.display = 'none');
-            
+
             const visibleRows = filteredRows.slice(startIdx, endIdx);
             visibleRows.forEach(row => row.style.display = '');
 

@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Models/FeedbackModel.php';
 require_once __DIR__ . '/../Models/PatientModel.php';
 require_once __DIR__ . '/../Models/NotificationModel.php';
+require_once __DIR__ . '/../Models/AuditLogModel.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 if (!$userId) {
@@ -55,6 +56,21 @@ if (in_array($caseId, $feedbackCaseIds)) {
 
 try {
     $feedbackModel->submitFeedback($caseId, $patientId, $userId, $branchId, $rating, $comments);
+
+    $patientName = $patientData['first_name'] . ' ' . $patientData['last_name'];
+    
+    // Add Audit Log
+    $auditLogModel = new \AuditLogModel($pdo);
+    $actionMsg = "Submitted feedback for case #{$caseId}";
+    $auditLogModel->addLog(
+        $userId,
+        $actionMsg,
+        'Patient Feedback',
+        'feedback',
+        $caseId, // entity_id
+        "Comments: " . ($comments ?: 'No comments provided.'),
+        $branchId
+    );
 
     // Notify Branch Admin
     if ($branchId) {

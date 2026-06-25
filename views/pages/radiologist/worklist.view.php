@@ -16,19 +16,19 @@ $statusParam = $_GET['status'] ?? '';
 if ($statusParam === 'overdue') {
     // Overdue: pending/under-reading for 3+ hours
     $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
-    $records = array_filter($records, function($r) {
+    $records = array_filter($records, function ($r) {
         return (time() - strtotime($r['created_at'])) >= 3 * 3600;
     });
     $records = array_values($records);
 } elseif ($statusParam === 'completed_today') {
     $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
-    $records = array_filter($records, function($r) {
+    $records = array_filter($records, function ($r) {
         return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');
     });
     $records = array_values($records);
 } elseif ($statusParam === 'Under Reading') {
     $records = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
-    $records = array_filter($records, function($r) {
+    $records = array_filter($records, function ($r) {
         return empty($r['findings']);
     });
     $records = array_values($records);
@@ -106,8 +106,6 @@ sort($priorities);
             class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
             <option value="date_desc">Newest Record</option>
             <option value="date_asc">Oldest Record</option>
-            <option value="branch_asc">Branch (A-Z)</option>
-            <option value="branch_desc">Branch (Z-A)</option>
             <option value="priority_desc">Priority (High-Low)</option>
             <option value="priority_asc">Priority (Low-High)</option>
         </select>
@@ -239,7 +237,8 @@ sort($priorities);
                                         $sColor = '#15803d';
                                     }
                                     ?>
-                                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold" style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold"
+                                        style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
                                         <?= htmlspecialchars($displayStatus) ?>
                                     </span>
                                 </td>
@@ -254,6 +253,29 @@ sort($priorities);
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Pagination footer -->
+        <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+            <!-- Record count -->
+            <span id="worklist-record-count" class="text-xs text-gray-500"></span>
+
+            <!-- Prev / Page info / Next -->
+            <div class="flex items-center gap-3">
+                <button id="worklist-prev-btn"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled>
+                    <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
+                </button>
+
+                <span id="worklist-page-info" class="text-xs font-medium text-gray-600 min-w-[90px] text-center">Page 1 of 1</span>
+
+                <button id="worklist-next-btn"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled>
+                    Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -297,6 +319,9 @@ sort($priorities);
         const tbody = document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
 
+        const ROWS_PER_PAGE = 8;
+        let currentPage = 1;
+
         function updateTable() {
             if (!searchInput || !filterBranch || !filterPriority || !sortOption) return;
 
@@ -320,11 +345,13 @@ sort($priorities);
 
             // Sort rows
             allRows.sort((a, b) => {
-                // STAT ALWAYS first overrides everything
-                const emA = parseInt(a.dataset.stat);
-                const emB = parseInt(b.dataset.stat);
-                if (emA !== emB) {
-                    return emB - emA; // 1 before 0
+                // STAT ALWAYS first overrides everything EXCEPT when sorting by priority explicitly
+                if (!sortValue.startsWith('priority_')) {
+                    const emA = parseInt(a.dataset.stat);
+                    const emB = parseInt(b.dataset.stat);
+                    if (emA !== emB) {
+                        return emB - emA; // 1 before 0
+                    }
                 }
 
                 // Normal sorting if neither is stat, or if both are stat
@@ -333,10 +360,6 @@ sort($priorities);
                     val = parseInt(b.dataset.date) - parseInt(a.dataset.date);
                 } else if (sortValue === 'date_asc') {
                     val = parseInt(a.dataset.date) - parseInt(b.dataset.date);
-                } else if (sortValue === 'branch_asc') {
-                    val = a.dataset.branch.localeCompare(b.dataset.branch);
-                } else if (sortValue === 'branch_desc') {
-                    val = b.dataset.branch.localeCompare(a.dataset.branch);
                 } else if (sortValue === 'priority_desc') {
                     val = parseInt(b.dataset.pweight) - parseInt(a.dataset.pweight);
                 } else if (sortValue === 'priority_asc') {
@@ -349,8 +372,11 @@ sort($priorities);
                 return val;
             });
 
-            // Apply filtering and sorting to DOM
-            let visibleCount = 0;
+            // Reorder in DOM
+            allRows.forEach(row => tbody.appendChild(row));
+
+            // Apply filtering
+            let filteredRows = [];
             allRows.forEach(row => {
                 const matchesSearch = row.dataset.search.includes(searchTerm);
                 const matchesBranch = branchValue === '' || row.dataset.branch === branchValue;
@@ -362,13 +388,24 @@ sort($priorities);
                 const matchesPriority = priorityValue === '' || rowPriority === priorityValue || mappedPriority === priorityValue;
 
                 if (matchesSearch && matchesBranch && matchesPriority) {
-                    row.style.display = '';
-                    visibleCount++;
+                    filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
                 }
+            });
 
-                tbody.appendChild(row); // Reorders them in the DOM
+            // Pagination calculation
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+            const endIdx = startIdx + ROWS_PER_PAGE;
+            
+            const visibleSet = new Set(filteredRows.slice(startIdx, endIdx));
+
+            filteredRows.forEach(row => {
+                row.style.display = visibleSet.has(row) ? '' : 'none';
             });
 
             // Handle "No records found" state
@@ -379,7 +416,7 @@ sort($priorities);
                 return;
             }
 
-            if (visibleCount === 0 && allRows.length > 0) {
+            if (filteredRows.length === 0 && allRows.length > 0) {
                 if (!noRecordsRow) {
                     noRecordsRow = document.createElement('tr');
                     noRecordsRow.className = 'no-records';
@@ -392,6 +429,37 @@ sort($priorities);
             } else if (noRecordsRow) {
                 noRecordsRow.style.display = 'none';
             }
+
+            // Update Pagination UI
+            updatePaginationUI(filteredRows.length, totalPages);
+        }
+
+        function updatePaginationUI(totalFiltered, totalPages) {
+            const prevBtn = document.getElementById('worklist-prev-btn');
+            const nextBtn = document.getElementById('worklist-next-btn');
+            const pageInfo = document.getElementById('worklist-page-info');
+            const recordCountInfo = document.getElementById('worklist-record-count');
+
+            if (!prevBtn || !nextBtn || !pageInfo) return;
+
+            const startIdx = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
+            const endIdx = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
+
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+            if (recordCountInfo) {
+                recordCountInfo.textContent = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing ${startIdx}–${endIdx} of ${totalFiltered} record${totalFiltered !== 1 ? 's' : ''}`;
+            }
+
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+
+            prevBtn.classList.toggle('opacity-40', currentPage <= 1);
+            prevBtn.classList.toggle('cursor-not-allowed', currentPage <= 1);
+            nextBtn.classList.toggle('opacity-40', currentPage >= totalPages);
+            nextBtn.classList.toggle('cursor-not-allowed', currentPage >= totalPages);
         }
 
         const paramsList = new window.URLSearchParams(window.location.search);
@@ -401,10 +469,31 @@ sort($priorities);
         if (urlBranch && filterBranch) filterBranch.value = urlBranch;
         if (urlPriority && filterPriority) filterPriority.value = urlPriority;
 
-        if (searchInput) searchInput.addEventListener('input', updateTable);
-        if (filterBranch) filterBranch.addEventListener('change', updateTable);
-        if (filterPriority) filterPriority.addEventListener('change', updateTable);
-        if (sortOption) sortOption.addEventListener('change', updateTable);
+        // Reset to page 1 on filter/sort change
+        function onFilterSortChange() {
+            currentPage = 1;
+            updateTable();
+        }
+
+        if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
+        if (filterBranch) filterBranch.addEventListener('change', onFilterSortChange);
+        if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
+        if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
+
+        // Pagination buttons
+        const prevBtn = document.getElementById('worklist-prev-btn');
+        const nextBtn = document.getElementById('worklist-next-btn');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) { currentPage--; updateTable(); }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                currentPage++; updateTable();
+            });
+        }
 
         // Initial sort
         updateTable();

@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
         $auditLogModel->addLog(
             $radiologistId,
             'Unlocked Findings Report',
-            'Findings & Reports',
+            'Report Correction',
             'Case',
             $caseId,
             "Patient: {$patientName} | Case #{$caseId} | Unlocked for editing",

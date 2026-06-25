@@ -39,7 +39,7 @@ function applyFilters() {
         const rowBranch = row.dataset.branch || '';
 
         const matchSearch = name.includes(search) || id.includes(search);
-        const matchBranch = branch === 'Filter by Branch' || branch === 'All' || branch === rowBranch;
+        const matchBranch = branch === 'All Branches' || branch === 'Filter by Branch' || branch === 'All' || branch === rowBranch;
 
         row.style.display = (matchSearch && matchBranch) ? '' : 'none';
         if (matchSearch && matchBranch) visibleCount++;
@@ -69,6 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
             applyFilters();
         }
     }, 100);
+});
+
+// Re-apply filters when real-time polling updates the table content
+document.addEventListener('realtime:updated', () => {
+    applyFilters();
 });
 
 // ── Record Request Modal Logic ──────────────────────────────────────────────

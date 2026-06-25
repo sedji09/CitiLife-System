@@ -495,6 +495,19 @@ if (isset($_GET['export_pdf'])) {
     $canvas->page_text($mx + $px, $textY, 'Generated: ' . date('F j, Y g:i A'), $font, 8, $color);
     $canvas->page_text($w - $mx - $px - 65, $textY, 'Page {PAGE_NUM} of {PAGE_COUNT}', $font, 8, $color);
 
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (PDF)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $rangeLabel, Branches: " . (empty($branchIds) ? 'All' : implode(',', $branchIds)),
+        null // Central admin may not have branch_id
+    );
+
     $dompdf->stream("Central_Report_" . date('Ymd') . ".pdf", ["Attachment" => true]);
     exit;
 }
@@ -623,6 +636,20 @@ if (isset($_GET['export_excel'])) {
 
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (Excel)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $startDate to $endDate, Branches: " . (empty($branchIds) ? 'All' : implode(',', $branchIds)),
+        null
+    );
+
     exit;
 }
 
