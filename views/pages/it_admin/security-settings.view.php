@@ -7,11 +7,6 @@
             <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Security Policies</h1>
             <p class="text-sm text-gray-500 mt-1">Configure system-wide encryption and session protocols.</p>
         </div>
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-full">
-            <i data-lucide="shield-check" class="w-4 h-4 text-rose-600"></i>
-            <span class="text-[10px] font-black text-rose-700 uppercase tracking-widest leading-none">Security Guard
-                Active</span>
-        </div>
     </div>
 
     <?php if ($success): ?>
@@ -113,7 +108,7 @@
                 class="px-6 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm">
                 Discard Changes
             </button>
-            <button type="button" 
+            <button type="button"
                 onclick="confirmFormAction(this, 'update_security', 'Confirm Policy Update', 'Are you sure you want to apply these system-wide security changes? All staff accounts will be immediately affected.', 'action', event)"
                 class="px-8 py-3 rounded-xl bg-red-600 text-sm font-bold text-white hover:bg-red-700 shadow-lg shadow-red-500/30 transition transform active:scale-95">
                 Save Security Policies

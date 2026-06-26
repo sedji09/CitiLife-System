@@ -315,3 +315,183 @@
     }
   }
 }
+
+/* IT Command Center Dynamic Theme */
+.noc-dashboard {
+    /* LIGHT MODE DEFAULTS */
+    --noc-bg: #f8fafc;
+    --noc-card-bg: #ffffff;
+    --noc-card-alt: #f1f5f9;
+    --noc-border: #e2e8f0;
+    --noc-text-main: #0f172a;
+    --noc-text-muted: #64748b;
+    --noc-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --noc-grid-opacity: 0.2;
+    --noc-grid-color: #94a3b8;
+    --noc-accent-indigo: #4f46e5;
+    --noc-accent-cyan: #06b6d4;
+    --noc-accent-emerald: #10b981;
+    --noc-accent-rose: #e11d48;
+    --noc-accent-amber: #d97706;
+}
+
+/* DARK MODE OVERRIDES */
+html.dark .noc-dashboard, html.theme-dark .noc-dashboard, body.dark .noc-dashboard, body.theme-dark .noc-dashboard {
+    --noc-bg: #0f172a;
+    --noc-card-bg: #1e293b;
+    --noc-card-alt: #0b0f19;
+    --noc-border: #334155;
+    --noc-text-main: #f8fafc;
+    --noc-text-muted: #94a3b8;
+    --noc-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --noc-grid-opacity: 0.05;
+    --noc-grid-color: #ffffff;
+    --noc-accent-indigo: #818cf8;
+    --noc-accent-cyan: #22d3ee;
+    --noc-accent-emerald: #34d399;
+    --noc-accent-rose: #fb7185;
+    --noc-accent-amber: #fbbf24;
+}
+
+/* Base Classes */
+.noc-dashboard { color: var(--noc-text-main); }
+.noc-card { background-color: var(--noc-card-bg); border: 1px solid var(--noc-border); box-shadow: var(--noc-shadow); }
+.noc-card-alt { background-color: var(--noc-card-alt); border: 1px solid var(--noc-border); }
+.noc-border-b { border-bottom: 1px solid var(--noc-border); }
+.noc-text-main { color: var(--noc-text-main); }
+.noc-text-muted { color: var(--noc-text-muted); }
+.noc-hover:hover { background-color: var(--noc-card-alt); }
+
+/* Accent Colors */
+.noc-text-indigo { color: var(--noc-accent-indigo); }
+.noc-bg-indigo { background-color: var(--noc-accent-indigo); }
+.noc-text-cyan { color: var(--noc-accent-cyan); }
+.noc-bg-cyan { background-color: var(--noc-accent-cyan); }
+.noc-text-emerald { color: var(--noc-accent-emerald); }
+.noc-bg-emerald { background-color: var(--noc-accent-emerald); }
+.noc-text-rose { color: var(--noc-accent-rose); }
+.noc-bg-rose { background-color: var(--noc-accent-rose); }
+.noc-text-amber { color: var(--noc-accent-amber); }
+.noc-bg-amber { background-color: var(--noc-accent-amber); }
+
+/* Custom Scrollbar for Widgets */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--noc-border);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--noc-text-muted);
+}
+
+/* IT Dashboard paired rows — equal-height side-by-side cards */
+.noc-dashboard-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+.noc-dashboard-row-main,
+.noc-dashboard-row-side {
+    min-width: 0;
+    display: flex;
+}
+.noc-dashboard-row-main > .noc-card,
+.noc-dashboard-row-side > .noc-card {
+    flex: 1;
+    width: 100%;
+}
+@media (min-width: 1024px) {
+    .noc-dashboard-row {
+        flex-direction: row;
+    }
+    .noc-dashboard-row-main {
+        flex: 2;
+    }
+    .noc-dashboard-row-side {
+        flex: 1;
+    }
+}
+
+/* 4-Panel IT Dashboard Grid */
+.it-dash-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.it-dash-col-main,
+.it-dash-col-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+@media (min-width: 1024px) {
+    .it-dash-col-main,
+    .it-dash-col-side {
+        /* column fills the row height so flex-1 children can shrink to fit */
+        align-self: stretch;
+    }
+}
+/* it-dash-grow: card that fills remaining vertical space in its column */
+.it-dash-col-main .it-dash-grow,
+.it-dash-col-side .it-dash-grow {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* mobile: fixed height */
+    height: 380px;
+}
+.it-dash-col-main .it-dash-grow .noc-feed-card-body,
+.it-dash-col-side .it-dash-grow .noc-feed-card-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+@media (min-width: 1024px) {
+    .it-dash-col-main .it-dash-grow,
+    .it-dash-col-side .it-dash-grow {
+        flex: 1;
+        height: auto;
+        min-height: 280px;
+    }
+}
+@media (min-width: 1024px) {
+    .it-dash-grid {
+        flex-direction: row;
+        align-items: stretch;
+    }
+    .it-dash-col-main {
+        flex: 2;
+    }
+    .it-dash-col-side {
+        flex: 1;
+    }
+}
+
+/* IT Dashboard feed cards — scrollable body, height driven by context */
+.noc-feed-card {
+    display: flex;
+    flex-direction: column;
+}
+.noc-feed-card-header {
+    flex-shrink: 0;
+    min-height: 57px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--noc-border);
+}
+.noc-feed-card-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 1rem;
+}

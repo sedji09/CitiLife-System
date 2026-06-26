@@ -68,15 +68,39 @@ if ($isPatient) {
 }
 
 
-$menus = require __DIR__ . '/../../config/menus.php';
+$menusPath = __DIR__ . '/../../config/menus.php';
+if (function_exists('opcache_invalidate')) {
+  opcache_invalidate($menusPath, true);
+}
+$menus = require $menusPath;
+
 $allRoleMenus = $menus[$role] ?? [];
+$systemFeatures = $menus['system_feature_menus'] ?? [];
 
 // Dynamic RBAC Filter
 $menuItems = [];
+$addedPerms = [];
+
+// 1. Add all native menus that the user is allowed to see
 foreach ($allRoleMenus as $item) {
   $permKey = $item['perm_key'] ?? null;
   if (!$permKey || hasPermission($role, $permKey) > 0) {
     $menuItems[] = $item;
+    if ($permKey) $addedPerms[] = $permKey;
+  }
+}
+
+// 2. Add extra dynamic menus from system features if they have permission but it's not their native menu
+// IT Admin uses a fixed sidebar — skip injecting backup/audit extras here (available via dashboard quick actions)
+$itAdminDynamicSkip = ['backup_mgmt', 'audit_logs', 'user_mgmt', 'branch_mgmt', 'system_security'];
+if ($role !== 'patient') {
+  foreach ($systemFeatures as $permKey => $item) {
+    if ($role === 'it_admin' && in_array($permKey, $itAdminDynamicSkip, true)) {
+      continue;
+    }
+    if (!in_array($permKey, $addedPerms) && hasPermission($role, $permKey) > 0) {
+      $menuItems[] = $item;
+    }
   }
 }
 

@@ -1338,7 +1338,7 @@
           if (targetPage === 'patient-lists' && ['patient-lists', 'patient-approval', 'patient-details'].includes(currentPage)) {
             return true;
           }
-          if (targetPage === 'patient-records' && ['patient-records', 'patient-details', 'patient-history'].includes(currentPage)) {
+          if (targetPage === 'patient-records' && ['patient-records', 'patient-details', 'patient-history', 'records-history'].includes(currentPage)) {
             return true;
           }
           if (targetPage === 'xray-patient-records' && ['xray-patient-records', 'records-history'].includes(currentPage)) {

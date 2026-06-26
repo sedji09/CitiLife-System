@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Log the change
         $adminId = $_SESSION['user_id'] ?? 0;
         $details = "Updated Security Policies: Min Password Length = $newMinPass, Auto-Logout = $newAutoLogout minutes.";
-        $auditLogModel->addLog($adminId, 'Update Security Settings', 'IT Admin', 'System Settings', 0, $details);
+        $auditLogModel->addLog($adminId, 'Update Security Settings', 'Security Settings', 'System Settings', 0, $details);
 
         $pdo->commit();
         $_SESSION['success'] = "Security policies updated successfully.";

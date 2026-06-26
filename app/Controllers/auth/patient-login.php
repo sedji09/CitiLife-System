@@ -78,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             $auditLogModel->addLog(
                                 $user['id'],
                                 'Patient Login',
-                                'IT Admin',
                                 'Authentication',
+                                'Session',
                                 $user['id'],
                                 "Successful login via remembered device",
                                 $user['branch_id']
@@ -150,6 +150,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     if ($attempts['attempts'] >= 3) {
                         $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
                     }
+
+                    // Log the failed attempt
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    $failedUserId = $user ? $user['id'] : 0;
+                    $auditLogModel->addLog(
+                        $failedUserId,
+                        'Failed Patient Login',
+                        'Authentication',
+                        'Session',
+                        $failedUserId,
+                        "Invalid email or password (" . substr($email, 0, 50) . ")"
+                    );
                 }
             }
         }

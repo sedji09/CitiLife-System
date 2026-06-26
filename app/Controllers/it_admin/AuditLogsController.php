@@ -41,7 +41,7 @@ $currentBranchId = $_SESSION['branch_id'] ?? null;
 try {
     $logs = $auditLogModel->getFilteredLogs($filters, $limit, $offset, $currentRole, $currentBranchId);
     $total_count = $auditLogModel->getTotalFilteredLogsCount($filters, $currentRole, $currentBranchId);
-    $distinctModules = $auditLogModel->getDistinctModules();
+    $distinctModules = $auditLogModel->getDistinctModules($currentRole);
     $distinctRoles = $auditLogModel->getDistinctRoles();
 } catch (\Exception $e) {
     $error = "System Error: Failed to retrieve logs. " . $e->getMessage();

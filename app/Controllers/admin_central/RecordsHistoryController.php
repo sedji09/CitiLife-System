@@ -2,7 +2,7 @@
 
 namespace App\Controllers\admin_central;
 
-class PatientHistoryController
+class RecordsHistoryController
 {
     public function handle()
     {

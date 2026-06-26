@@ -25,6 +25,11 @@ try {
     $database = new Database($dbConfig);
     // Expose global PDO instance for models and backward compatibility
     $pdo = $database->conn;
+    
+    // Update last activity for real-time tracking
+    if (isset($_SESSION['user_id'])) {
+        $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$_SESSION['user_id']]);
+    }
 } catch (Exception $e) {
     die("Database initialization failed: " . $e->getMessage());
 }

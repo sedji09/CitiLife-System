@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controllers\it_admin;
+namespace App\Controllers\admin_central;
 
 class UserRoleSettingsController
 {
@@ -22,8 +22,8 @@ unset($_SESSION['success'], $_SESSION['error']);
 
 // 1. Define UI categories (Hardcoded because these represent functional blocks in the code)
 $roles = [
-    'it_admin'      => 'IT System Admin',
     'admin_central' => 'Admin (Central)',
+    'it_admin'      => 'IT System Admin',
     'branch_admin'  => 'Branch Admin',
     'radtech'       => 'RadTech (Staff)',
     'radiologist'   => 'Radiologist',
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 // Log the change
                 $adminId = $_SESSION['user_id'] ?? 0;
                 $details = "Updated Permission: Role [$roleKey], Perm [$permKey] set to level [$level].";
-                $auditLogModel->addLog($adminId, 'Update Role Permission', 'IT Admin', 'RBAC', 0, $details);
+                $auditLogModel->addLog($adminId, 'Update Role Permission', 'Security Settings', 'RBAC', 0, $details);
                 echo json_encode(['success' => true]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'DB execution failed']);

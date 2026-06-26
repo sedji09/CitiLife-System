@@ -9,13 +9,17 @@ $userId = $_SESSION['user_id'] ?? null;
 $branchId = $_SESSION['branch_id'] ?? null;
 
 if ($userId) {
+    // Clear last_activity immediately so they don't appear in Active Users
+    $stmt = $pdo->prepare("UPDATE users SET last_activity = NULL WHERE id = ?");
+    $stmt->execute([$userId]);
+
     require_once basePath('app/Models/AuditLogModel.php');
     $auditLogModel = new \AuditLogModel($pdo);
     $auditLogModel->addLog(
         $userId,
         $role === 'patient' ? 'Patient Logout' : 'Staff Logout',
-        'IT Admin',
         'Authentication',
+        'Session',
         $userId,
         "User logged out",
         $branchId

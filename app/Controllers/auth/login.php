@@ -5,6 +5,29 @@ if (session_status() === PHP_SESSION_NONE) {
 
 global $pdo;
 
+// Ensure login lockout column exists
+try {
+    $pdo->exec('ALTER TABLE users ADD COLUMN login_locked_until DATETIME DEFAULT NULL AFTER otp_locked_until');
+} catch (\Exception $e) {
+}
+
+if (!function_exists('persistStaffLoginLock')) {
+    function persistStaffLoginLock($pdo, $email, $lockedUntilTimestamp) {
+        if (empty($email) || $lockedUntilTimestamp <= time()) {
+            return;
+        }
+        $stmt = $pdo->prepare("UPDATE users SET login_locked_until = ? WHERE email = ? AND role != 'patient'");
+        $stmt->execute([date('Y-m-d H:i:s', $lockedUntilTimestamp), $email]);
+    }
+}
+
+if (!function_exists('clearStaffLoginLock')) {
+    function clearStaffLoginLock($pdo, $userId) {
+        $stmt = $pdo->prepare('UPDATE users SET login_locked_until = NULL WHERE id = ?');
+        $stmt->execute([$userId]);
+    }
+}
+
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['role'])) {
     header("Location: /" . PROJECT_DIR . "/dashboard");
@@ -62,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             } else {
                 // Password is correct, start session
                 unset($_SESSION['staff_login_attempts']);
+                clearStaffLoginLock($pdo, $user['id']);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['email'] = $user['email'];
@@ -74,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 $auditLogModel->addLog(
                     $user['id'],
                     'Staff Login',
-                    'IT Admin',
                     'Authentication',
+                    'Session',
                     $user['id'],
                     "Successful login",
                     $user['branch_id']
@@ -89,29 +113,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             $attempts['attempts']++;
             if ($attempts['attempts'] >= 8) {
                 $attempts['locked_until'] = time() + 900; // 15 minutes
-                header("Location: /" . PROJECT_DIR . "/login");
-                exit;
             } elseif ($attempts['attempts'] == 7) {
                 $attempts['locked_until'] = time() + 300; // 5 minutes
-                header("Location: /" . PROJECT_DIR . "/login");
-                exit;
             } elseif ($attempts['attempts'] == 6) {
                 $attempts['locked_until'] = time() + 60; // 1 minute
-                header("Location: /" . PROJECT_DIR . "/login");
-                exit;
             } elseif ($attempts['attempts'] == 5) {
                 $attempts['locked_until'] = time() + 30; // 30 seconds
+            }
+
+            if ($attempts['attempts'] >= 5) {
+                persistStaffLoginLock($pdo, $email, $attempts['locked_until']);
                 header("Location: /" . PROJECT_DIR . "/login");
                 exit;
-            } else {
-                $error = 'Invalid email or password.';
-                if ($attempts['attempts'] >= 3) {
-                    $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
-                }
             }
+
+            $error = 'Invalid email or password.';
+            if ($attempts['attempts'] >= 3) {
+                $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
+            }
+
+            require_once basePath('app/Models/AuditLogModel.php');
+            $auditLogModel = new \AuditLogModel($pdo);
+            $failedUserId = $user ? $user['id'] : 0;
+            $auditLogModel->addLog(
+                $failedUserId,
+                'Failed Staff Login',
+                'Authentication',
+                'Session',
+                $failedUserId,
+                "Invalid email or password (" . substr($email, 0, 50) . ")"
+            );
         }
-    }
-} else {
+        }
+    } else {
         $error = 'Please enter both email and password.';
     }
 }

@@ -46,10 +46,32 @@ class AuditLogModel {
     /**
      * Get distinct modules for filtering.
      */
-    public function getDistinctModules() {
-        $stmt = $this->pdo->prepare("SELECT DISTINCT module FROM audit_logs WHERE module IS NOT NULL ORDER BY module ASC");
+    public function getDistinctModules($currentRole = 'admin_central') {
+        // For IT Admin, always return the fixed list of technical/system modules
+        // regardless of whether there are existing logs for them yet.
+        if ($currentRole === 'it_admin') {
+            $modules = ['Authentication', 'Branch Management', 'Security Settings', 'System', 'User Management'];
+            sort($modules);
+            return $modules;
+        }
+
+        $query = "SELECT DISTINCT module FROM audit_logs WHERE module IS NOT NULL";
+        $stmt = $this->pdo->prepare($query);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $dbModules = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Merge with all known modules to ensure they are always visible in the dropdown
+        // even if no logs currently exist for them.
+        $allKnownModules = [
+            'Authentication', 'Branch Management', 'Case Review', 'Findings & Reports',
+            'Patient Approvals', 'Patient Feedback', 'Patient Records', 'Patient Registration',
+            'Record Requests', 'Report Correction', 'Reports Generation', 'Security Settings',
+            'System', 'User Management', 'Worklist'
+        ];
+
+        $modules = array_unique(array_merge($allKnownModules, $dbModules));
+        sort($modules);
+        return $modules;
     }
 
     /**
@@ -78,6 +100,11 @@ class AuditLogModel {
         if (!in_array($currentRole, ['admin_central', 'it_admin']) && $currentBranchId) {
             $query .= " AND al.branch_id = ?";
             $params[] = $currentBranchId;
+        }
+
+        // IT Admin sees only system-related logs
+        if ($currentRole === 'it_admin') {
+            $query .= " AND al.module IN ('User Management', 'Branch Management', 'Authentication', 'System', 'Security Settings')";
         }
 
         if (!empty($filters['search'])) {
@@ -134,6 +161,11 @@ class AuditLogModel {
         if (!in_array($currentRole, ['admin_central', 'it_admin']) && $currentBranchId) {
             $query .= " AND al.branch_id = ?";
             $params[] = $currentBranchId;
+        }
+
+        // IT Admin sees only system-related logs
+        if ($currentRole === 'it_admin') {
+            $query .= " AND al.module IN ('User Management', 'Branch Management', 'Authentication', 'System', 'Security Settings')";
         }
 
         if (!empty($filters['search'])) {

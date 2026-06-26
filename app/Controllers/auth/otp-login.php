@@ -114,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $auditLogModel->addLog(
                         $_SESSION['user_id'],
                         'Patient Login',
-                        'IT Admin',
                         'Authentication',
+                        'Session',
                         $_SESSION['user_id'],
                         "Successful login via OTP",
                         $_SESSION['branch_id']

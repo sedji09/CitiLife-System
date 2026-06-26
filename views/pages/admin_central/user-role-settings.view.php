@@ -1,7 +1,7 @@
 <?php
 $roles = [
-    'it_admin' => 'IT System Admin',
     'admin_central' => 'Admin (Central)',
+    'it_admin' => 'IT System Admin',
     'branch_admin' => 'Branch Admin',
     'radtech' => 'RadTech (Staff)',
     'radiologist' => 'Radiologist',
@@ -9,8 +9,8 @@ $roles = [
 ];
 
 $roleDescriptions = [
-    'it_admin' => 'Manages system infrastructure, security, backups, and audit logs.',
     'admin_central' => 'Oversees all branches, users, and reports at the system level.',
+    'it_admin' => 'Manages system infrastructure, security, backups, and audit logs.',
     'branch_admin' => 'Manages records and operations within their assigned branch.',
     'radtech' => 'Handles patient registration, worklist, and record requests.',
     'radiologist' => 'Reviews cases, reads images, and submits diagnostic reports.',
@@ -83,14 +83,13 @@ function getRoleColor($roleKey)
                 class="w-full flex items-center justify-between px-3 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="flex items-center gap-3">
                     <div id="selected-role-icon-bg"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
-                        <i id="selected-role-icon" data-lucide="shield-alert" class="w-4 h-4"></i>
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-pink-50 text-pink-600">
+                        <i id="selected-role-icon" data-lucide="building-2" class="w-4 h-4"></i>
                     </div>
                     <div class="text-left">
-                        <p id="selected-role-title" class="text-sm font-semibold text-gray-900 leading-tight">IT System
-                            Admin</p>
+                        <p id="selected-role-title" class="text-sm font-semibold text-gray-900 leading-tight">Admin (Central)</p>
                         <p id="selected-role-desc" class="text-[10px] text-gray-400 mt-0.5 truncate max-w-[200px]">
-                            Manages system infrastructure, security, backups, and audit logs.</p>
+                            Oversees all branches, users, and reports at the system level.</p>
                     </div>
                 </div>
                 <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
@@ -177,7 +176,7 @@ function getRoleColor($roleKey)
     const activeMatrix = <?= json_encode($activeMatrix) ?>;
 
     // State
-    let currentRole = localStorage.getItem('citilife_rbac_role') || 'it_admin';
+    let currentRole = localStorage.getItem('citilife_rbac_role') || 'admin_central';
     let currentMatrix = JSON.parse(JSON.stringify(activeMatrix));
 
     // Initialize Page
@@ -263,12 +262,12 @@ function getRoleColor($roleKey)
     let pendingChanges = {};
 
     function setPermission(permKey, level) {
-        // Safe-guard to prevent IT Admin from locking themselves out
-        if (currentRole === 'it_admin' && permKey === 'system_security' && level === 0) {
+        // Safe-guard to prevent Admin Central from locking themselves out
+        if (currentRole === 'admin_central' && permKey === 'system_security' && level === 0) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Security Lock',
-                text: 'You cannot remove System Security access from the IT Admin role as it would lock you out of this page.',
+                text: 'You cannot remove System Security access from the Admin Central role as it would lock you out of this page.',
                 confirmButtonColor: '#4f46e5',
                 confirmButtonText: 'Understood'
             });

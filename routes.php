@@ -101,6 +101,7 @@ $router->get('/app/api/case_activity.php', 'App/Api/case_activity.php');
 $router->post('/app/api/case_activity.php', 'App/Api/case_activity.php');
 $router->get('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->post('/app/api/notifications.php', 'App/Api/notifications.php');
+$router->get('/app/api/active_users_count.php', 'App/Api/active_users_count.php');
 $router->get('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->post('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->get('/branch-dashboard', 'auth/branch-dashboard.php');

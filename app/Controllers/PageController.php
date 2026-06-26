@@ -94,8 +94,36 @@ class PageController
 
         // 3. Resolve and run controller (Class-based OOP if exists, fallback to procedural)
         $controllerName = str_replace('-', '', ucwords($page, '-')) . 'Controller.php';
-        $controllerFile = basePath("app/Controllers/{$role}/{$controllerName}");
-        $className = "App\\Controllers\\{$role}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
+
+        $pageOwnerMap = [
+            'branches'            => 'admin_central',
+            'users'               => 'admin_central',
+            'patient-records'     => 'admin_central',
+            'feedback'            => 'admin_central',
+            'reports'             => 'admin_central',
+            'audit-logs'          => 'it_admin',
+            'security-settings'   => 'it_admin',
+            'user-role-settings'  => 'admin_central',
+            'backup-maintenance'  => 'it_admin',
+            'patient-registration'=> 'radtech',
+            'patient-lists'       => 'radtech',
+            'xray-patient-records'=> 'radtech',
+            'record-request'      => 'radtech',
+            'worklist'            => 'radiologist',
+            'patient-history'     => 'radiologist',
+            'records-history'     => 'admin_central',
+            'case-review'         => 'radiologist',
+            'branch-xray-cases'   => 'branch_admin',
+            'record-requests'     => 'branch_admin',
+            'xray-status'         => 'patient',
+            'my-records'          => 'patient',
+            'registration'        => 'patient'
+        ];
+
+        $resolvedRole = $pageOwnerMap[$page] ?? $role;
+
+        $controllerFile = basePath("app/Controllers/{$resolvedRole}/{$controllerName}");
+        $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
 
         // Read file to check if it's class-based to avoid triggering class loader on legacy procedural files
         $isClassBased = false;
@@ -127,7 +155,7 @@ class PageController
         if ($page === 'print-report') {
             $contentView = "pages/radtech/print-report";
         } else {
-            $contentView = "pages/{$role}/{$page}";
+            $contentView = "pages/{$resolvedRole}/{$page}";
         }
 
         // Intercept specific AJAX requests before loading the layout
