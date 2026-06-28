@@ -62,7 +62,7 @@
 </div>
 
 <!-- Table View -->
-<div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+<div id="xray-cases-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
@@ -215,27 +215,13 @@
     </div>
 
     <!-- Pagination Footer -->
-    <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
         <!-- Record count -->
-        <span id="xray-record-count" class="text-xs font-medium text-gray-500">
-            Showing 0-0 of 0 records
-        </span>
+        <span id="xray-record-count" class="text-xs text-gray-500 font-medium"></span>
 
-        <!-- Prev / Page info / Next -->
-        <div class="flex items-center gap-4">
-            <button id="xray-prev-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
-            </button>
-
-            <span id="xray-page-info" class="text-xs font-bold text-gray-700 min-w-[80px] text-center">
-                Page 1 of 1
-            </span>
-
-            <button id="xray-next-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </button>
+        <!-- Pagination Controls -->
+        <div class="flex items-center flex-wrap gap-1.5" id="xray-pagination-controls">
+            <!-- Dynamic page buttons will be inserted here -->
         </div>
     </div>
 </div>
@@ -250,10 +236,6 @@
         const sortDate = document.getElementById('sort-date');
         const tableBody = document.getElementById('table-body');
 
-        const prevBtn = document.getElementById('xray-prev-btn');
-        const nextBtn = document.getElementById('xray-next-btn');
-        const pageInfo = document.getElementById('xray-page-info');
-        const recordCountInfo = document.getElementById('xray-record-count');
 
         function getFilteredRows() {
             const searchTerm = searchInput.value.toLowerCase();
@@ -282,6 +264,95 @@
 
                 return matchesSearch && matchesPriority;
             });
+        }
+
+        function renderPaginationControls(totalPages) {
+            const container = document.getElementById('xray-pagination-controls');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Helper to create a button
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+                
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+                
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        renderPage();
+                        const card = document.getElementById('xray-cases-table-card');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            // Helper to create ellipsis
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            // First Button
+            container.appendChild(createButton('&laquo; First', 1, currentPage === 1));
+
+            // Back Button
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage === 1));
+
+            // Page numbers
+            if (totalPages <= 7) {
+                // Show all pages
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+            } else {
+                // We have many pages
+                if (currentPage <= 4) {
+                    // Near start: 1, 2, 3, 4, 5, ..., T
+                    for (let i = 1; i <= 5; i++) {
+                        container.appendChild(createButton(i, i, false, i === currentPage));
+                    }
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+                } else if (currentPage >= totalPages - 3) {
+                    // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                        container.appendChild(createButton(i, i, false, i === currentPage));
+                    }
+                } else {
+                    // Middle: 1, ..., C-1, C, C+1, ..., T
+                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createEllipsis());
+                    
+                    container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                    container.appendChild(createButton(currentPage, currentPage, false, true));
+                    container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                    
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            // Next Button
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage === totalPages));
+
+            // Last Button
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage === totalPages));
         }
 
         function renderPage() {
@@ -320,14 +391,17 @@
             }
 
             // Update Pagination UI
+            const recordCountInfo = document.getElementById('xray-record-count');
             const displayStart = totalFiltered === 0 ? 0 : startIdx + 1;
             const displayEnd = Math.min(endIdx, totalFiltered);
 
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            recordCountInfo.textContent = `Showing ${displayStart}–${displayEnd} of ${totalFiltered} records`;
+            if (recordCountInfo) {
+                recordCountInfo.innerHTML = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing <span class="font-semibold text-gray-800">${displayStart}</span> to <span class="font-semibold text-gray-800">${displayEnd}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> records`;
+            }
 
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= totalPages;
+            renderPaginationControls(totalPages);
         }
 
         function applyFilters() {
@@ -342,22 +416,6 @@
 
         document.addEventListener('realtime:updated', () => {
             renderPage();
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage();
-            }
-        });
-
-        nextBtn.addEventListener('click', () => {
-            const filteredRows = getFilteredRows();
-            const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderPage();
-            }
         });
 
         // Initial Render

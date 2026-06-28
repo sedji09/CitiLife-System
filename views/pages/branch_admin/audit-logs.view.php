@@ -246,7 +246,7 @@
     </div>
 
     <!-- Audit Logs Table Card -->
-    <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-12 audit-card">
+    <div id="audit-log-card" class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-12 audit-card">
         <div class="overflow-x-auto">
             <table class="w-full text-sm audit-table">
                 <thead>
@@ -338,7 +338,6 @@
         </div>
 
         <!-- Pagination -->
-        <!-- Pagination -->
         <?php
         $total_count = $total_count ?? 0;
         $page_num = $page_num ?? 1;
@@ -348,23 +347,82 @@
         $end = min($offset + $limit, $total_count);
         $totalPages = ceil($total_count / $limit) ?: 1;
         ?>
-        <div class="px-6 py-3 flex items-center justify-between audit-pagination bg-gray-50 border-t border-gray-200">
+        <div class="px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 audit-pagination bg-gray-50 border-t border-gray-200">
             <span class="text-xs font-medium text-gray-500 audit-text-dim">
-                Showing <?= $total_count > 0 ? $start : 0 ?>–<?= $total_count > 0 ? $end : 0 ?> of <?= $total_count ?>
-                records
+                Showing <span class="font-semibold text-gray-800 audit-text-main"><?= $start ?></span> to <span class="font-semibold text-gray-800 audit-text-main"><?= $end ?></span> of <span class="font-semibold text-gray-800 audit-text-main"><?= $total_count ?></span> records
             </span>
-            <div class="flex items-center gap-4">
-                <a href="?role=branch_admin&page=audit-logs&p=<?= max(1, $page_num - 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&rl=<?= urlencode($filters['role']) ?>&sort=<?= urlencode($filters['sort'] ?? '') ?>"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition <?= $page_num <= 1 || $total_count == 0 ? 'pointer-events-none opacity-50' : '' ?> nav-button">
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
-                </a>
-                <div class="text-xs font-bold text-gray-700 px-1 audit-text-muted min-w-[80px] text-center">
-                    Page <?= $page_num ?> of <?= $totalPages ?>
-                </div>
-                <a href="?role=branch_admin&page=audit-logs&p=<?= min($totalPages, $page_num + 1) ?>&search=<?= urlencode($filters['search']) ?>&module=<?= urlencode($filters['module']) ?>&rl=<?= urlencode($filters['role']) ?>&sort=<?= urlencode($filters['sort'] ?? '') ?>"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:shadow-sm transition <?= $page_num >= $totalPages || $total_count == 0 ? 'pointer-events-none opacity-50' : '' ?> nav-button">
-                    Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </a>
+            <div class="flex items-center flex-wrap gap-1.5">
+                <?php
+                $renderPageBtn = function($label, $targetPage, $disabled, $isActive = false) use ($filters) {
+                    $params = [
+                        'role' => 'branch_admin',
+                        'page' => 'audit-logs',
+                        'p' => $targetPage,
+                        'search' => $filters['search'] ?? '',
+                        'module' => $filters['module'] ?? '',
+                        'rl' => $filters['role'] ?? '',
+                        'sort' => $filters['sort'] ?? ''
+                    ];
+                    // Remove empty params
+                    $params = array_filter($params, function($v) { return $v !== ''; });
+                    $url = '?' . http_build_query($params);
+                    
+                    if ($isActive) {
+                        return '<span class="px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black audit-text-main">' . $label . '</span>';
+                    }
+                    
+                    if ($disabled) {
+                        return '<span class="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed shadow-sm opacity-60 nav-button">' . $label . '</span>';
+                    }
+                    
+                    return '<a href="' . htmlspecialchars($url) . '" class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition shadow-sm nav-button">' . $label . '</a>';
+                };
+
+                $renderEllipsis = function() {
+                    return '<span class="px-2 py-1 text-xs text-gray-400 font-semibold select-none audit-text-muted">...</span>';
+                };
+
+                // First Button
+                echo $renderPageBtn('&laquo; First', 1, $page_num === 1);
+
+                // Back Button
+                echo $renderPageBtn('&lsaquo; Back', $page_num - 1, $page_num === 1);
+
+                // Page numbers
+                if ($totalPages <= 7) {
+                    for ($i = 1; $i <= $totalPages; $i++) {
+                        echo $renderPageBtn($i, $i, false, $i === $page_num);
+                    }
+                } else {
+                    if ($page_num <= 4) {
+                        for ($i = 1; $i <= 5; $i++) {
+                            echo $renderPageBtn($i, $i, false, $i === $page_num);
+                        }
+                        echo $renderEllipsis();
+                        echo $renderPageBtn($totalPages, $totalPages, false, $totalPages === $page_num);
+                    } elseif ($page_num >= $totalPages - 3) {
+                        echo $renderPageBtn(1, 1, false, 1 === $page_num);
+                        echo $renderEllipsis();
+                        for ($i = $totalPages - 4; $i <= $totalPages; $i++) {
+                            echo $renderPageBtn($i, $i, false, $i === $page_num);
+                        }
+                    } else {
+                        echo $renderPageBtn(1, 1, false, 1 === $page_num);
+                        echo $renderEllipsis();
+                        echo $renderPageBtn($page_num - 1, $page_num - 1, false, false);
+                        echo $renderPageBtn($page_num, $page_num, false, true);
+                        echo $renderPageBtn($page_num + 1, $page_num + 1, false, false);
+                        echo $renderEllipsis();
+                        echo $renderPageBtn($totalPages, $totalPages, false, false);
+                    }
+                }
+
+                // Next Button
+                echo $renderPageBtn('Next &rsaquo;', $page_num + 1, $page_num === $totalPages);
+
+                // Last Button
+                echo $renderPageBtn('Last &raquo;', $totalPages, $page_num === $totalPages);
+                ?>
             </div>
         </div>
     </div>
@@ -374,4 +432,40 @@
     if (window.lucide) {
         lucide.createIcons();
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Restore scroll position if flag is set
+        if (sessionStorage.getItem('should_restore_scroll') === 'true') {
+            const savedScrollY = sessionStorage.getItem('audit_logs_scroll_y');
+            if (savedScrollY !== null) {
+                window.scrollTo(0, parseInt(savedScrollY, 10));
+            }
+            sessionStorage.removeItem('should_restore_scroll');
+        }
+
+        const saveScroll = () => {
+            sessionStorage.setItem('should_restore_scroll', 'true');
+            sessionStorage.setItem('audit_logs_scroll_y', window.scrollY);
+        };
+
+        // Save scroll on pagination click
+        document.querySelectorAll('a').forEach(link => {
+            const href = link.getAttribute('href') || '';
+            if (href.includes('p=') || link.closest('.audit-pagination')) {
+                link.addEventListener('click', saveScroll);
+            }
+        });
+
+        // Save scroll on form submissions
+        document.querySelectorAll('form').forEach(form => {
+            if (form.querySelector('[name="page"][value="audit-logs"]') || form.action.includes('audit-logs')) {
+                form.addEventListener('submit', saveScroll);
+            }
+        });
+
+        // Save scroll on select changes
+        document.querySelectorAll('select.filter-control, select[name="module"], select[name="rl"], select[name="role"], select[name="sort"]').forEach(select => {
+            select.addEventListener('change', saveScroll);
+        });
+    });
 </script>

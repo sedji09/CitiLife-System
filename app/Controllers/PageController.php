@@ -122,6 +122,11 @@ class PageController
 
         $resolvedRole = $pageOwnerMap[$page] ?? $role;
 
+        // If a role-specific view exists for this page, prioritize the user's role
+        if (file_exists(basePath("views/pages/{$role}/{$page}.view.php"))) {
+            $resolvedRole = $role;
+        }
+
         $controllerFile = basePath("app/Controllers/{$resolvedRole}/{$controllerName}");
         $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
 
