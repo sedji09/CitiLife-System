@@ -87,7 +87,7 @@
         </div>
 
         <!-- Branches Table Card -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="branches-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -207,26 +207,13 @@
             </div>
 
             <!-- Pagination Footer -->
-            <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-                <div class="text-xs text-gray-500 font-medium">
-                    Showing <span id="startIndex">0</span>-<span id="endIndex">0</span> of <span
-                        id="totalRecords">0</span> records
+            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+                <div class="text-xs text-gray-500">
+                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex" class="font-semibold text-gray-800">0</span> of <span
+                        id="totalRecords" class="font-semibold text-gray-800">0</span> records
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="changePage(-1)" id="prevBtn"
-                        class="flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                        Previous
-                    </button>
-                    <div class="px-4 py-3">
-                        <span class="text-xs font-medium text-gray-500">Page <span id="currentPageDisplay">1</span> of
-                            <span id="totalPagesDisplay">1</span></span>
-                    </div>
-                    <button onclick="changePage(1)" id="nextBtn"
-                        class="flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                        Next
-                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </button>
+                <div class="flex items-center flex-wrap gap-1.5" id="paginationControls">
+                    <!-- Dynamic page buttons will be inserted here -->
                 </div>
             </div>
         </div>
@@ -607,6 +594,95 @@
         updatePagination(rows.filter(r => !r.classList.contains('hidden')));
     }
 
+    function renderPaginationControls(totalPages) {
+        const container = document.getElementById('paginationControls');
+        if (!container) return;
+        container.innerHTML = '';
+
+        // Helper to create a button
+        function createButton(label, page, disabled, isActive = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = label;
+            
+            if (isActive) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+            }
+            
+            if (disabled) {
+                btn.disabled = true;
+            } else {
+                btn.onclick = () => {
+                    currentPage = page;
+                    filterAndSortBranches(false);
+                    const card = document.getElementById('branches-table-card');
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                };
+            }
+            return btn;
+        }
+
+        // Helper to create ellipsis
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+            span.innerText = '...';
+            return span;
+        }
+
+        // First Button
+        container.appendChild(createButton('&laquo; First', 1, currentPage === 1));
+
+        // Back Button
+        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage === 1));
+
+        // Page numbers
+        if (totalPages <= 7) {
+            // Show all pages
+            for (let i = 1; i <= totalPages; i++) {
+                container.appendChild(createButton(i, i, false, i === currentPage));
+            }
+        } else {
+            // We have many pages
+            if (currentPage <= 4) {
+                // Near start: 1, 2, 3, 4, 5, ..., T
+                for (let i = 1; i <= 5; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+            } else if (currentPage >= totalPages - 3) {
+                // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                container.appendChild(createEllipsis());
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+            } else {
+                // Middle: 1, ..., C-1, C, C+1, ..., T
+                container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                container.appendChild(createEllipsis());
+                
+                container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                container.appendChild(createButton(currentPage, currentPage, false, true));
+                container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, false));
+            }
+        }
+
+        // Next Button
+        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage === totalPages));
+
+        // Last Button
+        container.appendChild(createButton('Last &raquo;', totalPages, currentPage === totalPages));
+    }
+
     function updatePagination(visibleRows) {
         const totalRecords = visibleRows.length;
         const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
@@ -630,24 +706,13 @@
         const startIndexEl = document.getElementById('startIndex');
         const endIndexEl = document.getElementById('endIndex');
         const totalRecordsEl = document.getElementById('totalRecords');
-        const currentPageDisplay = document.getElementById('currentPageDisplay');
-        const totalPagesDisplay = document.getElementById('totalPagesDisplay');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
 
         if (startIndexEl) startIndexEl.innerText = totalRecords === 0 ? 0 : startIdx + 1;
         if (endIndexEl) endIndexEl.innerText = endIdx;
         if (totalRecordsEl) totalRecordsEl.innerText = totalRecords;
-        if (currentPageDisplay) currentPageDisplay.innerText = currentPage;
-        if (totalPagesDisplay) totalPagesDisplay.innerText = totalPages;
 
-        if (prevBtn) prevBtn.disabled = (currentPage === 1);
-        if (nextBtn) nextBtn.disabled = (currentPage === totalPages || totalRecords === 0);
-    }
-
-    function changePage(delta) {
-        currentPage += delta;
-        filterAndSortBranches(false);
+        // Render dynamic page controls
+        renderPaginationControls(totalPages);
     }
 
     document.addEventListener('DOMContentLoaded', () => {

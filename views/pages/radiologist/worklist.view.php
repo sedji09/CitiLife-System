@@ -113,7 +113,7 @@ sort($priorities);
 </div>
 
 <div class="px-4">
-    <div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+    <div id="worklist-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
         <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
             <table class="w-full text-sm">
                 <thead class="sticky top-0 z-10">
@@ -256,25 +256,13 @@ sort($priorities);
         </div>
         
         <!-- Pagination footer -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
             <!-- Record count -->
-            <span id="worklist-record-count" class="text-xs text-gray-500"></span>
+            <span id="worklist-record-count" class="text-xs text-gray-500 font-medium"></span>
 
-            <!-- Prev / Page info / Next -->
-            <div class="flex items-center gap-3">
-                <button id="worklist-prev-btn"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    disabled>
-                    <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
-                </button>
-
-                <span id="worklist-page-info" class="text-xs font-medium text-gray-600 min-w-[90px] text-center">Page 1 of 1</span>
-
-                <button id="worklist-next-btn"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    disabled>
-                    Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                </button>
+            <!-- Pagination Controls -->
+            <div class="flex items-center flex-wrap gap-1.5" id="worklist-pagination-controls">
+                <!-- Dynamic page buttons will be inserted here -->
             </div>
         </div>
     </div>
@@ -435,31 +423,103 @@ sort($priorities);
         }
 
         function updatePaginationUI(totalFiltered, totalPages) {
-            const prevBtn = document.getElementById('worklist-prev-btn');
-            const nextBtn = document.getElementById('worklist-next-btn');
-            const pageInfo = document.getElementById('worklist-page-info');
             const recordCountInfo = document.getElementById('worklist-record-count');
-
-            if (!prevBtn || !nextBtn || !pageInfo) return;
+            const container = document.getElementById('worklist-pagination-controls');
 
             const startIdx = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
             const endIdx = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
 
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
             if (recordCountInfo) {
-                recordCountInfo.textContent = totalFiltered === 0
+                recordCountInfo.innerHTML = totalFiltered === 0
                     ? 'No records'
-                    : `Showing ${startIdx}–${endIdx} of ${totalFiltered} record${totalFiltered !== 1 ? 's' : ''}`;
+                    : `Showing <span class="font-semibold text-gray-800">${startIdx}</span> to <span class="font-semibold text-gray-800">${endIdx}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> record${totalFiltered !== 1 ? 's' : ''}`;
             }
 
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= totalPages;
+            if (!container) return;
+            container.innerHTML = '';
 
-            prevBtn.classList.toggle('opacity-40', currentPage <= 1);
-            prevBtn.classList.toggle('cursor-not-allowed', currentPage <= 1);
-            nextBtn.classList.toggle('opacity-40', currentPage >= totalPages);
-            nextBtn.classList.toggle('cursor-not-allowed', currentPage >= totalPages);
+            // Helper to create a button
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+                
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+                
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        updateTable();
+                        const card = document.getElementById('worklist-table-card');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            // Helper to create ellipsis
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            // First Button
+            container.appendChild(createButton('&laquo; First', 1, currentPage === 1));
+
+            // Back Button
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage === 1));
+
+            // Page numbers
+            if (totalPages <= 7) {
+                // Show all pages
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+            } else {
+                // We have many pages
+                if (currentPage <= 4) {
+                    // Near start: 1, 2, 3, 4, 5, ..., T
+                    for (let i = 1; i <= 5; i++) {
+                        container.appendChild(createButton(i, i, false, i === currentPage));
+                    }
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+                } else if (currentPage >= totalPages - 3) {
+                    // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                        container.appendChild(createButton(i, i, false, i === currentPage));
+                    }
+                } else {
+                    // Middle: 1, ..., C-1, C, C+1, ..., T
+                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createEllipsis());
+                    
+                    container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                    container.appendChild(createButton(currentPage, currentPage, false, true));
+                    container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                    
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            // Next Button
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage === totalPages));
+
+            // Last Button
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage === totalPages));
         }
 
         const paramsList = new window.URLSearchParams(window.location.search);
@@ -479,21 +539,6 @@ sort($priorities);
         if (filterBranch) filterBranch.addEventListener('change', onFilterSortChange);
         if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
         if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
-
-        // Pagination buttons
-        const prevBtn = document.getElementById('worklist-prev-btn');
-        const nextBtn = document.getElementById('worklist-next-btn');
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                if (currentPage > 1) { currentPage--; updateTable(); }
-            });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                currentPage++; updateTable();
-            });
-        }
 
         // Initial sort
         updateTable();

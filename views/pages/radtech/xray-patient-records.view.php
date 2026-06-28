@@ -30,7 +30,7 @@ $records = $caseModel->getReleasedRecords($branchId);
     </div>
 </div>
 
-<div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+<div id="xray-records-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="sticky top-0 z-10">
@@ -124,26 +124,13 @@ $records = $caseModel->getReleasedRecords($branchId);
     </div>
 
     <!-- Pagination footer -->
-    <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
         <!-- Record count -->
-        <span id="xray-record-count" class="text-xs text-gray-500"></span>
+        <span id="xray-record-count" class="text-xs text-gray-500 font-medium"></span>
 
-        <!-- Prev / Page info / Next -->
-        <div class="flex items-center gap-3">
-            <button id="xray-prev-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                disabled>
-                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
-            </button>
-
-            <span id="xray-page-info" class="text-xs font-medium text-gray-600 min-w-[90px] text-center">Page 1 of
-                1</span>
-
-            <button id="xray-next-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                disabled>
-                Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </button>
+        <!-- Pagination Controls -->
+        <div class="flex items-center flex-wrap gap-1.5" id="xray-pagination-controls">
+            <!-- Dynamic page buttons will be inserted here -->
         </div>
     </div>
 </div>

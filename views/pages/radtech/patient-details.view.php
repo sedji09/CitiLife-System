@@ -148,8 +148,14 @@ if (isset($caseNotFound) && $caseNotFound) {
 
     </div>
 
+    <?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed']); ?>
+    
+    <?php if ($isReportReady): ?>
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+    <?php endif; ?>
+
     <!-- Image Upload -->
-    <div class="mt-8 rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
+    <div class="<?= $isReportReady ? '' : 'mt-8' ?> rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Upload</h3>
             <?php if (!$isReadOnly): ?>
@@ -214,7 +220,6 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <div id="file-preview-area"
                     style="display:flex;flex-direction:column;gap:0.6rem;max-height:22rem;overflow-y:auto;">
                     <p id="no-file-msg" style="font-size:0.875rem;color:#9ca3af;font-style:italic;">No files selected yet.
-                    </p>
                 </div>
             </div>
 
@@ -234,8 +239,9 @@ if (isset($caseNotFound) && $caseNotFound) {
             <?php if (!empty($savedPaths)): ?>
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($savedPaths as $idx => $sPath): ?>
-                        <div
-                            class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm">
+                        <div onclick="window.open('/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseId ?>&preview=true', '_blank')"
+                            class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm"
+                            title="Click to view full report & image">
                             <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
                                 class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
                             <div
@@ -357,6 +363,70 @@ if (isset($caseNotFound) && $caseNotFound) {
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if ($isReportReady): ?>
+        <!-- Radiologist Report Findings Card -->
+        <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center gap-2">
+                <i data-lucide="file-text" class="h-5 w-5 text-red-500"></i>
+                <h3 class="text-lg font-semibold text-gray-800">Radiologist Report Findings</h3>
+            </div>
+            
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+                <?php
+                $findingsRaw = trim($caseDetails['findings'] ?? '');
+                $impressionRaw = trim($caseDetails['impression'] ?? '');
+                $isMultiExam = false;
+                $parsedFindings = [];
+
+                if (!empty($findingsRaw) && (str_starts_with($findingsRaw, '{') || str_starts_with($findingsRaw, '['))) {
+                    $decoded = json_decode($findingsRaw, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $isMultiExam = true;
+                        $parsedFindings = $decoded;
+                    }
+                }
+                ?>
+
+                <?php if ($isMultiExam): ?>
+                    <?php foreach ($parsedFindings as $examName => $reportData): ?>
+                        <div class="mb-4 last:mb-0 border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                            <h5 class="text-xs font-bold text-red-600 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                <?= htmlspecialchars($examName) ?>
+                            </h5>
+                            <div class="space-y-3 pl-3">
+                                <div>
+                                    <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
+                                    <p class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed"><?= htmlspecialchars($reportData['findings'] ?? '—') ?></p>
+                                </div>
+                                <?php if (!empty($reportData['impression'])): ?>
+                                <div>
+                                    <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
+                                    <p class="text-sm text-gray-950 font-bold whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm"><?= htmlspecialchars($reportData['impression']) ?></p>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
+                            <div class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm"><?= htmlspecialchars($findingsRaw ?: '—') ?></div>
+                        </div>
+                        <?php if (!empty($impressionRaw)): ?>
+                        <div>
+                            <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
+                            <div class="text-sm text-gray-950 font-bold whitespace-pre-wrap leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm"><?= htmlspecialchars($impressionRaw) ?></div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        </div> <!-- End of Grid -->
+    <?php endif; ?>
 </form>
 
 
