@@ -169,12 +169,9 @@ if (isset($_GET['action'])) {
 $branchId = $_SESSION['branch_id'] ?? 1;
 $allPatients = $caseModel->getWorklist($branchId, null, null);
 
-// Filter logic from original view: Today + Not Released + Approved
+// Filter logic: Show all unreleased and active cases (includes backlogs)
 $patients = array_filter($allPatients, function ($p) {
-    $isToday = date('Y-m-d', strtotime($p['created_at'])) === date('Y-m-d');
-    return $p['released'] == 0
-        && $p['status'] !== 'Rejected'
-        && ($isToday || $p['status'] === 'Report Ready');
+    return $p['released'] == 0 && $p['status'] !== 'Rejected';
 });
 
         return get_defined_vars();

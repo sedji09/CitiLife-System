@@ -150,13 +150,8 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                             $serverOk = $serverStatus === 'Running';
                             $serverWarn = $serverStatus === 'Warning';
                             ?>
-                            <div class="w-3 h-3 rounded-full shrink-0 border border-white/40 <?= $serverOk ? 'bg-emerald-500' : ($serverWarn ? 'bg-amber-400' : 'bg-rose-500') ?>"
-                                style="
-                    box-shadow:
-                        inset 0 1px 1px rgba(255,255,255,.45),
-                        inset 0 -1px 2px rgba(0,0,0,.25),
-                        0 0 6px <?= $serverOk ? '#10b981' : ($serverWarn ? '#f59e0b' : '#f43f5e') ?>;
-                ">
+                            <div class="w-2.5 h-2.5 rounded-full shrink-0"
+                                style="background-color: <?= $serverOk ? '#10b981' : ($serverWarn ? '#f59e0b' : '#f43f5e') ?>; box-shadow: 0 0 12px <?= $serverOk ? 'rgba(16,185,129,0.6)' : ($serverWarn ? 'rgba(245,158,11,0.6)' : 'rgba(244,63,94,0.6)') ?>;">
                             </div>
 
                             <div>
@@ -171,13 +166,8 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                         <div class="flex items-center gap-3">
                             <?php $dbOk = ($dbProfile['status'] ?? '') === 'Online'; ?>
 
-                            <div class="w-3 h-3 rounded-full shrink-0 border border-white/40 <?= $dbOk ? 'bg-emerald-500' : 'bg-rose-500' ?>"
-                                style="
-                    box-shadow:
-                        inset 0 1px 1px rgba(255,255,255,.45),
-                        inset 0 -1px 2px rgba(0,0,0,.25),
-                        0 0 6px <?= $dbOk ? '#10b981' : '#f43f5e' ?>;
-                ">
+                            <div class="w-2.5 h-2.5 rounded-full shrink-0"
+                                style="background-color: <?= $dbOk ? '#10b981' : '#f43f5e' ?>; box-shadow: 0 0 12px <?= $dbOk ? 'rgba(16,185,129,0.6)' : 'rgba(244,63,94,0.6)' ?>;">
                             </div>
 
                             <div>
@@ -197,13 +187,8 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                                 (time() - $lastBackupTimestamp) <= 7 * 86400;
                             ?>
 
-                            <div class="w-3 h-3 rounded-full shrink-0 border border-white/40 <?= $backupOk ? 'bg-emerald-500' : 'bg-amber-400' ?>"
-                                style="
-                    box-shadow:
-                        inset 0 1px 1px rgba(255,255,255,.45),
-                        inset 0 -1px 2px rgba(0,0,0,.25),
-                        0 0 6px <?= $backupOk ? '#10b981' : '#f59e0b' ?>;
-                ">
+                            <div class="w-2.5 h-2.5 rounded-full shrink-0"
+                                style="background-color: <?= $backupOk ? '#10b981' : '#f59e0b' ?>; box-shadow: 0 0 12px <?= $backupOk ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)' ?>;">
                             </div>
 
                             <div>
@@ -221,13 +206,8 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                             $storageWarn = $diskUsagePercentage < 95;
                             ?>
 
-                            <div class="w-3 h-3 rounded-full shrink-0 border border-white/40 <?= $storageOk ? 'bg-emerald-500' : ($storageWarn ? 'bg-amber-400' : 'bg-rose-500') ?>"
-                                style="
-                    box-shadow:
-                        inset 0 1px 1px rgba(255,255,255,.45),
-                        inset 0 -1px 2px rgba(0,0,0,.25),
-                        0 0 6px <?= $storageOk ? '#10b981' : ($storageWarn ? '#f59e0b' : '#f43f5e') ?>;
-                ">
+                            <div class="w-2.5 h-2.5 rounded-full shrink-0"
+                                style="background-color: <?= $storageOk ? '#10b981' : ($storageWarn ? '#f59e0b' : '#f43f5e') ?>; box-shadow: 0 0 12px <?= $storageOk ? 'rgba(16,185,129,0.6)' : ($storageWarn ? 'rgba(245,158,11,0.6)' : 'rgba(244,63,94,0.6)') ?>;">
                             </div>
 
                             <div>

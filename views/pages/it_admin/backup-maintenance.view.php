@@ -81,15 +81,18 @@
                         Storage</span>
                 </div>
 
-                <div class="overflow-x-auto overflow-y-auto" style="max-height: 380px;">
+                <div class="overflow-x-auto overflow-y-auto" style="max-height: 450px;">
                     <table class="w-full text-left border-collapse">
                         <thead class="sticky top-0 z-10">
                             <tr class="bg-white border-b border-gray-100 shadow-[0_1px_2px_-1px_rgba(0,0,0,0.05)]">
-                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
+                                <th
+                                    class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
                                     Filename</th>
-                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
+                                <th
+                                    class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
                                     Size</th>
-                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
+                                <th
+                                    class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white">
                                     Actions</th>
                             </tr>
                         </thead>

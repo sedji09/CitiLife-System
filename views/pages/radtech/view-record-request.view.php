@@ -123,16 +123,16 @@
                             $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseDetails['id'] . "&preview=true";
                             ?>
 
-                            <a href="<?= $reportUrl ?>" target="_blank"
+                            <button type="button" aria-label="Open Findings Preview" onclick="openReportViewer('<?= $reportUrl ?>')"
                                 class="group relative w-full h-full flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-400 hover:bg-red-50 transition-all cursor-pointer mt-4">
                                 <div
                                     class="bg-white p-4 rounded-full shadow-md mb-4 group-hover:scale-110 transition-transform">
                                     <i data-lucide="file-text" class="w-10 h-10 text-red-500"></i>
                                 </div>
                                 <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Open
-                                    HTML Preview</span>
-                                <span class="text-sm text-gray-500 mt-1">View the report document in a new tab</span>
-                            </a>
+                                    Findings Preview</span>
+                                <span class="text-sm text-gray-500 mt-1">Open report in a popup window</span>
+                            </button>
                         <?php else: ?>
                             <div
                                 class="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 w-full mb-auto mt-auto">
@@ -498,5 +498,15 @@
 <script>
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+    }
+
+    function openReportViewer(url) {
+        // Open the report in a popup window similar to the COR viewer
+        const popupWidth = 850;
+        const popupHeight = 800;
+        const left = (screen.width - popupWidth) / 2;
+        const top = (screen.height - popupHeight) / 2;
+        
+        window.open(url, 'ReportViewer', `width=${popupWidth},height=${popupHeight},top=${top},left=${left},scrollbars=yes,resizable=yes`);
     }
 </script>

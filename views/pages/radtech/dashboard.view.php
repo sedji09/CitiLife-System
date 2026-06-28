@@ -24,6 +24,7 @@ $pendingApprovals = $stats['pending'];
 $priorityCases = $stats['priority'];
 $emergencyCases = $stats['stat'];
 $completedCases = $stats['completed'];
+$backlogCases = $stats['backlog'];
 
 // Fetch Recent Cases
 $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 5);
@@ -46,7 +47,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
   <div class="flex items-center justify-between">
     <div>
       <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">RadTech Dashboard</h2>
-      <p class="text-sm text-gray-500 mt-1">Overview of activity for <span id="period-label" class="realtime-update"><?= htmlspecialchars($periodLabel) ?></span> and quick
+      <p class="text-sm text-gray-500 mt-1">Overview of activity for <span id="period-label"
+          class="realtime-update"><?= htmlspecialchars($periodLabel) ?></span> and quick
         actions.</p>
     </div>
     <div class="flex items-center gap-2">
@@ -61,17 +63,21 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <!-- Monthly Picker -->
       <div id="monthlyFilter" class="relative <?= $filter === 'monthly' ? '' : 'hidden' ?>">
         <button type="button" id="monthPickerTrigger" onclick="toggleMonthPicker()"
-            class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[140px] justify-between">
-            <span id="monthPickerLabel" class="whitespace-nowrap"><?= date('F Y', strtotime($selectedMonth . '-01')) ?></span>
-            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+          class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[140px] justify-between">
+          <span id="monthPickerLabel"
+            class="whitespace-nowrap"><?= date('F Y', strtotime($selectedMonth . '-01')) ?></span>
+          <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
         </button>
-        <div id="monthPickerPanel" class="hidden absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3 w-[260px]">
-            <div class="flex items-center justify-between mb-3 px-1">
-                <button type="button" onclick="changePickerYear(-1)" class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
-                <span id="pickerYearLabel" class="font-semibold text-gray-800 text-sm"></span>
-                <button type="button" onclick="changePickerYear(1)" class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
-            </div>
-            <div id="monthGrid" class="grid grid-cols-4 gap-1"></div>
+        <div id="monthPickerPanel"
+          class="hidden absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3 w-[260px]">
+          <div class="flex items-center justify-between mb-3 px-1">
+            <button type="button" onclick="changePickerYear(-1)"
+              class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
+            <span id="pickerYearLabel" class="font-semibold text-gray-800 text-sm"></span>
+            <button type="button" onclick="changePickerYear(1)"
+              class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
+          </div>
+          <div id="monthGrid" class="grid grid-cols-4 gap-1"></div>
         </div>
         <input type="hidden" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>">
       </div>
@@ -79,12 +85,13 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <!-- Yearly Picker -->
       <div id="yearlyFilter" class="relative <?= $filter === 'yearly' ? '' : 'hidden' ?>">
         <button type="button" id="yearPickerTrigger" onclick="toggleYearPicker()"
-            class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[100px] justify-between">
-            <span id="yearPickerLabel" class="whitespace-nowrap"><?= htmlspecialchars($selectedYear) ?></span>
-            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+          class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[100px] justify-between">
+          <span id="yearPickerLabel" class="whitespace-nowrap"><?= htmlspecialchars($selectedYear) ?></span>
+          <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
         </button>
-        <div id="yearPickerPanel" class="hidden absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-2 w-[110px] max-h-64 overflow-y-auto">
-            <div id="yearGrid" class="flex flex-col gap-1"></div>
+        <div id="yearPickerPanel"
+          class="hidden absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-2 w-[110px] max-h-64 overflow-y-auto">
+          <div id="yearGrid" class="flex flex-col gap-1"></div>
         </div>
         <input type="hidden" id="yearPicker" value="<?= htmlspecialchars($selectedYear) ?>">
       </div>
@@ -110,7 +117,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
           if (filter === 'monthly') url += '&month=' + document.getElementById('monthPicker').value;
           if (filter === 'yearly') url += '&year=' + document.getElementById('yearPicker').value;
 
-          window.history.pushState({path: url}, '', url);
+          window.history.pushState({ path: url }, '', url);
           if (window.__APP__) window.__APP__.currentPath = url; // Ensure global polling uses new URL
 
           // Smooth fetch
@@ -136,143 +143,152 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
         let _pickerYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
 
         function renderMonthGrid() {
-            document.getElementById('pickerYearLabel').textContent = _pickerYear;
-            const grid = document.getElementById('monthGrid');
-            grid.innerHTML = '';
-            MONTH_NAMES.forEach((name, i) => {
-                const m = i + 1;
-                let savedYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
-                let savedMonth = parseInt(document.getElementById('monthPicker').value.split('-')[1]);
-                const isSelected = (m === savedMonth && _pickerYear === savedYear);
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = name;
-                btn.className = 'text-sm rounded-lg py-1.5 text-center transition-colors ' +
-                    (isSelected
-                        ? 'bg-red-600 text-white font-semibold'
-                        : 'text-gray-700 hover:bg-gray-100');
-                btn.onclick = () => selectMonth(m);
-                grid.appendChild(btn);
-            });
+          document.getElementById('pickerYearLabel').textContent = _pickerYear;
+          const grid = document.getElementById('monthGrid');
+          grid.innerHTML = '';
+          MONTH_NAMES.forEach((name, i) => {
+            const m = i + 1;
+            let savedYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
+            let savedMonth = parseInt(document.getElementById('monthPicker').value.split('-')[1]);
+            const isSelected = (m === savedMonth && _pickerYear === savedYear);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = name;
+            btn.className = 'text-sm rounded-lg py-1.5 text-center transition-colors ' +
+              (isSelected
+                ? 'bg-red-600 text-white font-semibold'
+                : 'text-gray-700 hover:bg-gray-100');
+            btn.onclick = () => selectMonth(m);
+            grid.appendChild(btn);
+          });
         }
 
         function selectMonth(m) {
-            const mm = String(m).padStart(2, '0');
-            document.getElementById('monthPicker').value = _pickerYear + '-' + mm;
-            document.getElementById('monthPickerLabel').textContent = MONTH_FULL[m - 1] + ' ' + _pickerYear;
-            document.getElementById('monthPickerPanel').classList.add('hidden');
-            renderMonthGrid();
-            handleFilterChange();
+          const mm = String(m).padStart(2, '0');
+          document.getElementById('monthPicker').value = _pickerYear + '-' + mm;
+          document.getElementById('monthPickerLabel').textContent = MONTH_FULL[m - 1] + ' ' + _pickerYear;
+          document.getElementById('monthPickerPanel').classList.add('hidden');
+          renderMonthGrid();
+          handleFilterChange();
         }
 
         function changePickerYear(delta) {
-            const newYear = _pickerYear + delta;
-            if (newYear < 2000 || newYear > <?= date('Y') ?>) return;
-            _pickerYear = newYear;
-            renderMonthGrid();
+          const newYear = _pickerYear + delta;
+          if (newYear < 2000 || newYear > <?= date('Y') ?>) return;
+          _pickerYear = newYear;
+          renderMonthGrid();
         }
 
         function toggleMonthPicker() {
-            const panel = document.getElementById('monthPickerPanel');
-            panel.classList.toggle('hidden');
-            if (!panel.classList.contains('hidden')) {
-                _pickerYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
-                renderMonthGrid();
-            }
+          const panel = document.getElementById('monthPickerPanel');
+          panel.classList.toggle('hidden');
+          if (!panel.classList.contains('hidden')) {
+            _pickerYear = parseInt(document.getElementById('monthPicker').value.split('-')[0]);
+            renderMonthGrid();
+          }
         }
 
         let _pickerYearValue = parseInt(document.getElementById('yearPicker').value);
 
         function renderYearGrid() {
-            const grid = document.getElementById('yearGrid');
-            grid.innerHTML = '';
-            for (let y = <?= date('Y') ?>; y >= 2000; y--) {
-                const isSelected = (y === _pickerYearValue);
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = y;
-                btn.className = 'text-sm rounded-lg py-2 px-3 text-center transition-colors w-full ' +
-                    (isSelected
-                        ? 'bg-red-600 text-white font-semibold'
-                        : 'text-gray-700 hover:bg-gray-100');
-                btn.onclick = () => selectYear(y);
-                grid.appendChild(btn);
-            }
+          const grid = document.getElementById('yearGrid');
+          grid.innerHTML = '';
+          for (let y = <?= date('Y') ?>; y >= 2000; y--) {
+            const isSelected = (y === _pickerYearValue);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = y;
+            btn.className = 'text-sm rounded-lg py-2 px-3 text-center transition-colors w-full ' +
+              (isSelected
+                ? 'bg-red-600 text-white font-semibold'
+                : 'text-gray-700 hover:bg-gray-100');
+            btn.onclick = () => selectYear(y);
+            grid.appendChild(btn);
+          }
         }
 
         function selectYear(y) {
-            _pickerYearValue = y;
-            document.getElementById('yearPicker').value = y;
-            document.getElementById('yearPickerLabel').textContent = y;
-            document.getElementById('yearPickerPanel').classList.add('hidden');
-            renderYearGrid();
-            handleFilterChange();
+          _pickerYearValue = y;
+          document.getElementById('yearPicker').value = y;
+          document.getElementById('yearPickerLabel').textContent = y;
+          document.getElementById('yearPickerPanel').classList.add('hidden');
+          renderYearGrid();
+          handleFilterChange();
         }
 
         function toggleYearPicker() {
-            const panel = document.getElementById('yearPickerPanel');
-            panel.classList.toggle('hidden');
-            if (!panel.classList.contains('hidden')) {
-                _pickerYearValue = parseInt(document.getElementById('yearPicker').value);
-                renderYearGrid();
-            }
+          const panel = document.getElementById('yearPickerPanel');
+          panel.classList.toggle('hidden');
+          if (!panel.classList.contains('hidden')) {
+            _pickerYearValue = parseInt(document.getElementById('yearPicker').value);
+            renderYearGrid();
+          }
         }
 
         document.addEventListener('click', function (e) {
-            const monthFilter = document.getElementById('monthlyFilter');
-            if (monthFilter && !monthFilter.contains(e.target)) {
-                document.getElementById('monthPickerPanel').classList.add('hidden');
-            }
-            const yearFilter = document.getElementById('yearlyFilter');
-            if (yearFilter && !yearFilter.contains(e.target)) {
-                document.getElementById('yearPickerPanel').classList.add('hidden');
-            }
+          const monthFilter = document.getElementById('monthlyFilter');
+          if (monthFilter && !monthFilter.contains(e.target)) {
+            document.getElementById('monthPickerPanel').classList.add('hidden');
+          }
+          const yearFilter = document.getElementById('yearlyFilter');
+          if (yearFilter && !yearFilter.contains(e.target)) {
+            document.getElementById('yearPickerPanel').classList.add('hidden');
+          }
         });
       </script>
     </div>
   </div>
 
   <!-- Stats -->
-  <div id="radtech-dashboard-stats" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 realtime-update">
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+  <div id="radtech-dashboard-stats" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6 realtime-update">
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterDate=Today" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
       <div class="flex items-center justify-between">
         <p class="text-sm text-gray-500">Total Patients Today</p>
         <i data-lucide="users" class="w-5 h-5 text-blue-400"></i>
       </div>
       <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($totalPatients) ?></p>
-    </div>
+    </a>
 
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&search=Pending" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
       <div class="flex items-center justify-between">
         <p class="text-sm text-gray-500">Pending</p>
         <i data-lucide="clock-3" class="w-5 h-5 text-orange-400"></i>
       </div>
       <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($pendingApprovals) ?></p>
-    </div>
+    </a>
 
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterPriority=Urgent" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
       <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Priority Cases</p>
+        <p class="text-sm text-gray-500">Urgent Cases</p>
         <i data-lucide="chart-spline" class="w-5 h-5 text-yellow-400"></i>
       </div>
       <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($priorityCases) ?></p>
-    </div>
+    </a>
 
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterPriority=STAT" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
       <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Emergencies</p>
+        <p class="text-sm text-gray-500">STAT</p>
         <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
       </div>
       <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($emergencyCases) ?></p>
-    </div>
+    </a>
 
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition">
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=xray-patient-records" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
       <div class="flex items-center justify-between">
         <p class="text-sm text-gray-500">Completed</p>
-        <i data-lucide="circle-check-big" class="w-5 h-5 text-green-400"></i>
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
       </div>
       <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($completedCases) ?></p>
-    </div>
+    </a>
+
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterDate=Backlog"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
+      <div class="flex items-center justify-between">
+        <p class="text-sm text-gray-500">Backlog</p>
+        <i data-lucide="archive" class="w-5 h-5 text-purple-400"></i>
+      </div>
+      <p class="text-3xl font-bold mt-2 text-purple-600"><?= htmlspecialchars($backlogCases) ?></p>
+    </a>
   </div>
 
   <!-- Radiologists Status -->
@@ -285,15 +301,18 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
         <?php foreach ($radiologistsWorkload as $rad): ?>
           <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition flex flex-col">
             <div class="flex items-center gap-3 mb-3">
-              <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+              <div
+                class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
                 <?= htmlspecialchars(strtoupper(substr($rad['radiologist_name'], 0, 1))) ?>
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name']) ?>"><?= htmlspecialchars($rad['radiologist_name']) ?></p>
+                <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name']) ?>">
+                  <?= htmlspecialchars($rad['radiologist_name']) ?>
+                </p>
                 <p class="text-xs text-gray-500 truncate">Radiologist</p>
               </div>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-2 mt-auto">
               <div class="bg-orange-50/50 border border-orange-100 rounded-lg p-2 text-center">
                 <p class="text-xs text-orange-600/80 mb-0.5">Pending/Reading</p>
@@ -386,7 +405,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                   $displayStatus = ($case['approval_status'] === 'Rejected' || $case['status'] === 'Rejected') ? 'Rejected' : $case['status'];
                   $isOverdue = (time() - strtotime($case['created_at'])) >= 3 * 3600;
                   if ($displayStatus === 'Pending' && $isOverdue) {
-                      $displayStatus = 'Overdue';
+                    $displayStatus = 'Overdue';
                   }
 
                   $sStyles = ['border' => '1.5px solid #facc15', 'background' => '#fefce8', 'color' => '#a16207'];

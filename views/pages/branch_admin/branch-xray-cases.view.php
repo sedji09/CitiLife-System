@@ -9,7 +9,7 @@
 <div class="flex items-center justify-between">
     <div>
         <h2 class="text-xl font-semibold text-gray-900">Branch X-ray Cases</h2>
-        <p class="text-sm text-gray-500 mt-1">Monitor today's patient queue and view completed branch records</p>
+        <p class="text-sm text-gray-500 mt-1">Monitor active patient queue and view completed branch records</p>
     </div>
 </div>
 
@@ -18,7 +18,7 @@
     <nav class="flex">
         <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=queue"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'queue' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Today's Queue
+            Active Queue
             <?php if (count($todayQueue) > 0): ?>
                 <span
                     class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-100">
@@ -36,25 +36,18 @@
 <!-- Search & Filters -->
 <div class="mt-6 flex flex-col gap-4">
     <div class="flex gap-4 items-center">
-        <div class="relative flex-1 group" style="position: relative; flex: 1 1 0%;">
-            <div
-                style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
-                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors"
-                    style="width: 1.1rem; height: 1.1rem;"></i>
-            </div>
-            <input type="text" id="search-input" placeholder="Search by patient name or case number..."
-                style="padding-left: 2.75rem !important;"
-                class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-        </div>
-        <select id="filter-priority"
-            class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
-            <option value="All" selected>All Priorities</option>
-            <option value="Routine">Routine</option>
-            <option value="Urgent">Urgent</option>
-            <option value="STAT">STAT</option>
+        <input type="text" id="search-input" placeholder="Search patient records (Name or ID)..."
+            class="w-80 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+
+        <select id="filter-date"
+            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="All">All Dates</option>
+            <option value="Today" selected>Today's Cases</option>
+            <option value="Backlog">Backlogs</option>
         </select>
+
         <select id="sort-date"
-            class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
+            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option>Newest Case</option>
             <option>Oldest Case</option>
         </select>
@@ -91,7 +84,7 @@
                                     class="w-12 h-12 mb-3 opacity-20"></i>
                                 <p class="text-base font-medium">No records found</p>
                                 <p class="text-sm">There are no
-                                    <?= ($currentTab === 'queue') ? "active patients in today's queue" : "released patient records" ?>
+                                    <?= ($currentTab === 'queue') ? "active patients in the queue" : "released patient records" ?>
                                     at the moment.
                                 </p>
                             </div>
@@ -99,12 +92,14 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($data as $row): ?>
+                        <?php $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d')); ?>
                         <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-case="<?= htmlspecialchars($row['case_number']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority'] ?? '') ?>"
-                            data-date="<?= htmlspecialchars($row['created_at']) ?>">
+                            data-date="<?= htmlspecialchars($row['created_at']) ?>"
+                            data-is-today="<?= $isToday ? 'true' : 'false' ?>">
                             <td class="py-3 px-4 font-medium text-gray-900"><?= htmlspecialchars($row['case_number']) ?></td>
                             <td class="py-3 px-4 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
                             <td class="py-3 px-4">
@@ -166,9 +161,12 @@
                                 </td>
                             <?php endif; ?>
                             <td class="py-3 px-4 text-gray-500 whitespace-nowrap">
-                                <?= date('M d, Y', strtotime($row['created_at'])) ?>
-                                <span
-                                    class="text-[10px] block opacity-70"><?= date('h:i A', strtotime($row['created_at'])) ?></span>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span><?= date('M d, Y', strtotime($row['created_at'])) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($row['created_at'])) ?></span></span>
+                                    <?php if ($currentTab === 'queue' && !$isToday): ?>
+                                        <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
@@ -246,8 +244,9 @@
         let currentPage = parseInt(sessionStorage.getItem('CitiLife_branchXray_page_<?= $currentTab ?>')) || 1;
 
         const searchInput = document.getElementById('search-input');
-        const filterPriority = document.getElementById('filter-priority');
         const sortDate = document.getElementById('sort-date');
+        const filterDate = document.getElementById('filter-date');
+        const filterPriority = document.getElementById('filter-priority');
         const tableBody = document.getElementById('table-body');
 
         const prevBtn = document.getElementById('xray-prev-btn');
@@ -257,7 +256,7 @@
 
         function getFilteredRows() {
             const searchTerm = searchInput.value.toLowerCase();
-            const priorityFilter = filterPriority.value;
+            const priorityFilter = filterPriority ? filterPriority.value : null;
             const sortOrder = sortDate.value;
             const rows = Array.from(tableBody.querySelectorAll('tr.record-row'));
 
@@ -276,11 +275,16 @@
                 const name = row.getAttribute('data-name').toLowerCase();
                 const caseNo = row.getAttribute('data-case').toLowerCase();
                 const priority = row.getAttribute('data-priority');
+                const isToday = row.getAttribute('data-is-today') === 'true';
 
                 const matchesSearch = name.includes(searchTerm) || caseNo.includes(searchTerm);
-                const matchesPriority = priorityFilter === 'All' || priority === priorityFilter;
+                const matchesPriority = priorityFilter ? (priorityFilter === 'All' || priority === priorityFilter) : true;
+                
+                let matchesDate = true;
+                if (filterDate && filterDate.value === 'Today') matchesDate = isToday;
+                if (filterDate && filterDate.value === 'Backlog') matchesDate = !isToday;
 
-                return matchesSearch && matchesPriority;
+                return matchesSearch && matchesPriority && matchesDate;
             });
         }
 
@@ -337,8 +341,9 @@
 
         // Event Listeners
         searchInput.addEventListener('input', applyFilters);
-        filterPriority.addEventListener('change', applyFilters);
+        if (filterPriority) filterPriority.addEventListener('change', applyFilters);
         sortDate.addEventListener('change', applyFilters);
+        if (filterDate) filterDate.addEventListener('change', applyFilters);
 
         document.addEventListener('realtime:updated', () => {
             renderPage();

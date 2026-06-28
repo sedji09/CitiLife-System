@@ -76,16 +76,16 @@ class PageController
         require_once basePath('app/Helpers/AuthHelper.php');
 
         $pagePermMap = [
-            'users'               => 'user_mgmt',
-            'branches'            => 'branch_mgmt',
+            'users' => 'user_mgmt',
+            'branches' => 'branch_mgmt',
             'patient-registration' => 'patient_reg',
-            'patient-approvals'   => 'approvals',
-            'audit-logs'          => 'audit_logs',
-            'reports'             => 'global_reports',
-            'security-settings'   => 'system_security',
-            'user-role-settings'  => 'system_security',
-            'settings'            => 'system_security',
-            'backup-maintenance'  => 'backup_mgmt'
+            'patient-approvals' => 'approvals',
+            'audit-logs' => 'audit_logs',
+            'reports' => 'global_reports',
+            'security-settings' => 'system_security',
+            'user-role-settings' => 'system_security',
+            'settings' => 'system_security',
+            'backup-maintenance' => 'backup_mgmt'
         ];
 
         if (isset($pagePermMap[$page])) {
@@ -96,31 +96,36 @@ class PageController
         $controllerName = str_replace('-', '', ucwords($page, '-')) . 'Controller.php';
 
         $pageOwnerMap = [
-            'branches'            => 'admin_central',
-            'users'               => 'admin_central',
-            'patient-records'     => 'admin_central',
-            'feedback'            => 'admin_central',
-            'reports'             => 'admin_central',
-            'audit-logs'          => 'it_admin',
-            'security-settings'   => 'it_admin',
-            'user-role-settings'  => 'admin_central',
-            'backup-maintenance'  => 'it_admin',
-            'patient-registration'=> 'radtech',
-            'patient-lists'       => 'radtech',
-            'xray-patient-records'=> 'radtech',
-            'record-request'      => 'radtech',
-            'worklist'            => 'radiologist',
-            'patient-history'     => 'radiologist',
-            'records-history'     => 'admin_central',
-            'case-review'         => 'radiologist',
-            'branch-xray-cases'   => 'branch_admin',
-            'record-requests'     => 'branch_admin',
-            'xray-status'         => 'patient',
-            'my-records'          => 'patient',
-            'registration'        => 'patient'
+            'branches' => 'admin_central',
+            'users' => 'admin_central',
+            'patient-records' => 'admin_central',
+            'feedback' => 'admin_central',
+            'reports' => 'admin_central',
+            'audit-logs' => 'it_admin',
+            'security-settings' => 'it_admin',
+            'user-role-settings' => 'admin_central',
+            'backup-maintenance' => 'it_admin',
+            'patient-registration' => 'radtech',
+            'patient-lists' => 'radtech',
+            'xray-patient-records' => 'radtech',
+            'record-request' => 'radtech',
+            'worklist' => 'radiologist',
+            'patient-history' => 'radiologist',
+            'records-history' => 'admin_central',
+            'case-review' => 'radiologist',
+            'branch-xray-cases' => 'branch_admin',
+            'record-requests' => 'branch_admin',
+            'xray-status' => 'patient',
+            'my-records' => 'patient',
+            'registration' => 'patient'
         ];
 
         $resolvedRole = $pageOwnerMap[$page] ?? $role;
+
+        //If a role-specific view exists for this page, prioritize the user's role
+        if (file_exists(basePath("views/pages/{$role}/{$page}.view.php"))) {
+            $resolvedRole = $role;
+        }
 
         $controllerFile = basePath("app/Controllers/{$resolvedRole}/{$controllerName}");
         $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';

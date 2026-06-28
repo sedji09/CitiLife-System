@@ -23,11 +23,10 @@ $caseModel->ensureSchema();
 $branchId = $_SESSION['branch_id'] ?? 1;
 
 // 2. Fetch Data for both tabs
-// Tab 1: Today's Queue
+// Tab 1: Active Queue (Includes Today and Backlogs)
 $allQueue = $caseModel->getWorklist($branchId, null, null);
 $todayQueue = array_filter($allQueue, function($p) {
-    return date('Y-m-d', strtotime($p['created_at'])) === date('Y-m-d') 
-           && $p['released'] == 0 
+    return $p['released'] == 0 
            && $p['approval_status'] === 'Approved';
 });
 

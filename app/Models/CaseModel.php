@@ -72,12 +72,18 @@ class CaseModel
         $stmt->execute([$branchId]);
         $completed = $stmt->fetchColumn();
 
+        // Backlog
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE released = 0 AND status != 'Rejected' AND DATE(created_at) < CURDATE() AND branch_id = ?");
+        $stmt->execute([$branchId]);
+        $backlog = $stmt->fetchColumn();
+
         return [
             'total' => $total,
             'pending' => $pending,
             'priority' => $priority,
             'stat' => $stat,
-            'completed' => $completed
+            'completed' => $completed,
+            'backlog' => $backlog
         ];
     }
 

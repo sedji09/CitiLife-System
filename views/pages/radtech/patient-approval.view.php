@@ -65,6 +65,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
         color: #ffffff !important;
         border-color: #dc2626 !important;
     }
+
     html body .datepicker-cell.today:not(.selected),
     html body .datepicker-picker .datepicker-cell.today:not(.selected) {
         background-color: #f3f4f6 !important;
@@ -72,6 +73,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
         font-weight: 600 !important;
         border: 1px solid #d1d5db !important;
     }
+
     html body .datepicker-cell.today.focused:not(.selected) {
         background-color: #e5e7eb !important;
     }
@@ -104,7 +106,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
     <nav class="flex gap-3">
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-lists' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Today's Queue
+            Patient Queue
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-500 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
@@ -160,7 +162,8 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                             data-priority="<?= htmlspecialchars($patient['priority']) ?>"
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($patient['created_at']) ?>">
-                            <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?></td>
+                            <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?>
+                            </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
                                 title="<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>">
                                 <?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>
@@ -172,11 +175,13 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                             </td>
                             <td class="py-3 px-3">
                                 <?php if ($patient['status'] === 'Rejected'): ?>
-                                    <span class="inline-flex items-center rounded-full border border-red-400 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-red-400 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
                                         Rejected
                                     </span>
                                 <?php else: ?>
-                                    <span class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
                                         Pending Approval
                                     </span>
                                 <?php endif; ?>
@@ -241,8 +246,10 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                         <label class="block text-sm font-medium text-gray-700">Birthdate</label>
                         <div class="relative mt-1">
                             <input type="text" id="modalBirthdate" readonly placeholder="Select birthdate"
-                                class="text-sm text-gray-900 bg-gray-50 p-2 pr-8 rounded w-full border border-gray-200" required>
-                            <i data-lucide="calendar" class="absolute right-2 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                                class="text-sm text-gray-900 bg-gray-50 p-2 pr-8 rounded w-full border border-gray-200"
+                                required>
+                            <i data-lucide="calendar"
+                                class="absolute right-2 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"></i>
                         </div>
                     </div>
                     <div>
@@ -256,12 +263,16 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Contact Number</label>
-                    <input type="tel" id="modalContact" class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full border border-gray-200"
-                        required maxlength="11" pattern="09[0-9]{9}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);" placeholder="09XXXXXXXXX">
+                    <input type="tel" id="modalContact"
+                        class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full border border-gray-200" required
+                        maxlength="11" pattern="09[0-9]{9}"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);"
+                        placeholder="09XXXXXXXXX">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Home Address</label>
-                    <input type="text" id="modalAddress" class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
+                    <input type="text" id="modalAddress"
+                        class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">PhilHealth Status</label>
