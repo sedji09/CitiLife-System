@@ -332,18 +332,7 @@
 
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
-            const priorityMap = { 'STAT': 3, 'Urgent': 2, 'Routine': 1 };
-
             rows.sort((a, b) => {
-                // Primary Sort: Priority Level (STAT > Urgent > Routine)
-                const scoreA = priorityMap[a.dataset.priority] || 0;
-                const scoreB = priorityMap[b.dataset.priority] || 0;
-
-                if (scoreA !== scoreB) {
-                    return scoreB - scoreA;
-                }
-
-                // Secondary Sort: Date
                 const dateA = new Date(a.dataset.date).getTime();
                 const dateB = new Date(b.dataset.date).getTime();
                 return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
