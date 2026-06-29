@@ -24,13 +24,21 @@ class FeedbackController
         $feedbacks = [];
         $stats = null;
 
+        $limit = 5;
+        $page_num = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+        if ($page_num < 1) $page_num = 1;
+        $offset = ($page_num - 1) * $limit;
+
         if ($filterBranchId) {
-            $feedbacks = $feedbackModel->getBranchFeedback($filterBranchId);
+            $feedbacks = $feedbackModel->getBranchFeedback($filterBranchId, $limit, $offset);
+            $totalFeedbacks = $feedbackModel->countBranchFeedback($filterBranchId);
             $stats = $feedbackModel->getFeedbackStats($filterBranchId);
         } else {
-            $feedbacks = $feedbackModel->getAllFeedback();
+            $feedbacks = $feedbackModel->getAllFeedback($limit, $offset);
+            $totalFeedbacks = $feedbackModel->countAllFeedback();
             $stats = $feedbackModel->getFeedbackStats();
         }
+        $totalPages = ceil($totalFeedbacks / $limit);
 
         require_once __DIR__ . '/../../Models/AuditLogModel.php';
         $auditLogModel = new \AuditLogModel($pdo);

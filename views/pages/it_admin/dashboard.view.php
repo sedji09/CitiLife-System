@@ -120,10 +120,10 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
     </div>
 
     <!-- Main 2-Column Grid -->
-    <div class="it-dash-grid">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- LEFT COLUMN -->
-        <div class="it-dash-col-main">
+        <div class="lg:col-span-2 flex flex-col gap-6">
 
             <!-- System Health -->
             <div class="rounded-xl overflow-hidden relative noc-card">
@@ -304,7 +304,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
             </div>
 
             <!-- Recent System Activities -->
-            <div class="rounded-xl overflow-hidden noc-card it-dash-grow">
+            <div class="rounded-xl overflow-hidden noc-card flex-1 flex flex-col">
                 <div class="noc-feed-card-header">
                     <h3 class="font-bold text-sm noc-text-main flex items-center gap-2">
                         <i data-lucide="list-tree" class="w-4 h-4 noc-text-cyan"></i>
@@ -319,7 +319,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                         <tbody>
                             <?php foreach ($recentActivities as $log): ?>
                                 <tr class="transition-colors noc-hover noc-border-b">
-                                    <td class="py-2.5 pr-4 whitespace-nowrap noc-text-muted">
+                                    <td class="py-2.5 pl-4 pr-4 whitespace-nowrap noc-text-muted">
                                         [<?= date('M d H:i', strtotime($log['created_at'])) ?>]
                                     </td>
                                     <td class="py-2.5 px-4 whitespace-nowrap noc-text-emerald">
@@ -328,7 +328,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                                     <td class="py-2.5 px-4 w-full noc-text-main">
                                         &gt; <?= htmlspecialchars($log['action']) ?>
                                     </td>
-                                    <td class="py-2.5 pl-4 text-right whitespace-nowrap">
+                                    <td class="py-2.5 pl-4 pr-4 text-right whitespace-nowrap">
                                         <span
                                             class="text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded noc-text-muted"
                                             style="border: 1px solid var(--noc-border); background-color: var(--noc-card-bg);">
@@ -351,7 +351,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
         </div><!-- end LEFT COLUMN -->
 
         <!-- RIGHT COLUMN -->
-        <div class="it-dash-col-side">
+        <div class="flex flex-col gap-6">
 
             <!-- Quick Actions (natural/compact height) -->
             <div class="rounded-xl p-6 relative overflow-hidden noc-card">
@@ -391,7 +391,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
             </div>
 
             <!-- Security Alerts (flex-1: fills remaining height to match Recent Activities) -->
-            <div class="rounded-xl overflow-hidden noc-card it-dash-grow">
+            <div class="rounded-xl overflow-hidden noc-card flex-1 flex flex-col">
                 <div class="noc-feed-card-header">
                     <div class="flex items-center gap-2">
                         <i data-lucide="alert-circle" class="w-4 h-4 noc-text-rose"></i>
@@ -409,7 +409,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                             &gt; No security alerts at this time.
                         </div>
                     <?php else: ?>
-                        <div class="space-y-3">
+                        <div class="space-y-1 p-2">
                             <?php foreach ($securityAlerts as $alert): ?>
                                 <?php
                                 $severityClass = match ($alert['severity']) {

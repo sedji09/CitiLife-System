@@ -1165,8 +1165,8 @@ if (!$isMultiExam) {
 
             const pBtn = document.querySelector('.prev-btn');
             const nBtn = document.querySelector('.next-btn');
-            if (pBtn) pBtn.disabled = (currentPage === 1);
-            if (nBtn) nBtn.disabled = (currentPage === totalPages);
+            if (pBtn) pBtn.disabled = (currentPage <= 1);
+            if (nBtn) nBtn.disabled = (currentPage >= totalPages);
 
             resetPan();
             baseScale = getBaseScale();

@@ -20,9 +20,18 @@ class FeedbackController
         $feedbacks = [];
         $stats = null;
 
+        $limit = 5;
+        $page_num = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+        if ($page_num < 1) $page_num = 1;
+        $offset = ($page_num - 1) * $limit;
+
         if ($branchId) {
-            $feedbacks = $feedbackModel->getBranchFeedback($branchId);
+            $feedbacks = $feedbackModel->getBranchFeedback($branchId, $limit, $offset);
+            $totalFeedbacks = $feedbackModel->countBranchFeedback($branchId);
+            $totalPages = ceil($totalFeedbacks / $limit);
             $stats = $feedbackModel->getFeedbackStats($branchId);
+        } else {
+            $totalPages = 1;
         }
 
         require_once __DIR__ . '/../../Models/AuditLogModel.php';

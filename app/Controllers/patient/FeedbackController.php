@@ -11,6 +11,7 @@ class FeedbackController
         require_once __DIR__ . '/../../Models/FeedbackModel.php';
         require_once __DIR__ . '/../../Models/PatientModel.php';
         require_once __DIR__ . '/../../Models/AuditLogModel.php';
+        require_once __DIR__ . '/../../Helpers/mailer_helper.php';
 
         $feedbackModel = new \FeedbackModel($pdo);
         $patientModel = new \PatientModel($pdo);
@@ -93,6 +94,55 @@ class FeedbackController
                             null,
                             'admin_central'
                         );
+
+                        // EMAIL ALERTS FOR CRITICAL FEEDBACK
+                        if ($rating <= 2) {
+                            $patientNameForEmail = $patientData['first_name'] . ' ' . $patientData['last_name'];
+                            $branchName = 'Unknown Branch';
+                            if ($branchId) {
+                                $stmtBranch = $pdo->prepare("SELECT name FROM branches WHERE id = ?");
+                                $stmtBranch->execute([$branchId]);
+                                $branchName = $stmtBranch->fetchColumn() ?: 'Unknown Branch';
+                            }
+                            
+                            $emailSubject = "(URGENT) Critical Patient Feedback - {$branchName}";
+                            $emailBody = "
+                                <h2>Critical Patient Feedback Received</h2>
+                                <p>A patient has submitted a <strong>{$rating}-Star</strong> feedback rating.</p>
+                                <ul>
+                                    <li><strong>Patient Name:</strong> {$patientNameForEmail}</li>
+                                    <li><strong>Branch:</strong> {$branchName}</li>
+                                    <li><strong>Case Number:</strong> " . ($postCaseId ?: 'N/A') . "</li>
+                                    <li><strong>Rating:</strong> {$rating} / 5</li>
+                                    <li><strong>Comments:</strong><br><em>" . nl2br(htmlspecialchars($comments)) . "</em></li>
+                                </ul>
+                                <p>Please log in to the dashboard to review and address this feedback immediately.</p>
+                            ";
+
+                            $emailsToNotify = [];
+                            
+                            // Get branch admins
+                            if ($branchId) {
+                                $stmt = $pdo->prepare("SELECT email FROM users WHERE role = 'branch_admin' AND branch_id = ? AND status = 'Active'");
+                                $stmt->execute([$branchId]);
+                                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                                    if (!empty($row['email'])) $emailsToNotify[] = $row['email'];
+                                }
+                            }
+                            
+                            // Get central admins
+                            $stmt = $pdo->prepare("SELECT email FROM users WHERE role = 'admin_central' AND status = 'Active'");
+                            $stmt->execute();
+                            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                                if (!empty($row['email'])) $emailsToNotify[] = $row['email'];
+                            }
+                            
+                            $emailsToNotify = array_unique($emailsToNotify);
+                            
+                            foreach ($emailsToNotify as $adminEmail) {
+                                sendEmail($adminEmail, "Administrator", $emailSubject, $emailBody);
+                            }
+                        }
 
                     } catch (\Exception $e) {
                         $errorMsg = "An error occurred while submitting your feedback. Please try again later.";

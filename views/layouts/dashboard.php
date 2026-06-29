@@ -27,6 +27,12 @@ if ($userId > 0) {
     header("Location: /" . PROJECT_DIR . "/login?error=" . $reason);
     exit();
   }
+  // Sync session and local variables with DB
+  $_SESSION['email'] = $currentUser['email'];
+  $_SESSION['name'] = $currentUser['name'];
+  $_SESSION['role'] = $currentUser['role'];
+  $userEmail = $currentUser['email'];
+  $role = $currentUser['role'];
 }
 // ----------------------------
 $branchNameDisplay = $branchModel->getBranchDisplayName($branchId);

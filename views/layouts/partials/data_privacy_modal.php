@@ -1,6 +1,6 @@
 <?php
-// Only show if not accepted and role is patient
-if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient' && empty($_SESSION['data_privacy_accepted'])):
+// Only show if not accepted
+if (empty($_SESSION['data_privacy_accepted'])):
     ?>
     <style>
         /* Premium CitiLife Theme Styles */
@@ -431,8 +431,13 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient' && empty($_SESSI
                     </svg>
                 </div>
                 <div id="dpm-header-text">
-                    <h2 id="dpm-title">Data Privacy Notice</h2>
-                    <p id="dpm-subtitle">Your privacy is our top priority at CitiLife.</p>
+                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient'): ?>
+                        <h2 id="dpm-title">Data Privacy Notice</h2>
+                        <p id="dpm-subtitle">Your privacy is our top priority at CitiLife.</p>
+                    <?php else: ?>
+                        <h2 id="dpm-title">Confidentiality Agreement</h2>
+                        <p id="dpm-subtitle">Protecting patient data is our top priority.</p>
+                    <?php endif; ?>
                 </div>
                 <span id="dpm-badge">Required Notice</span>
             </div>
@@ -440,65 +445,121 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient' && empty($_SESSI
             <!-- 2. SUB-HEADER -->
             <div id="dpm-sub-header"
                 style="text-align: justify; background-color: #fbe3e3ff; border-bottom: 1px solid #ff0000ff; border-top: 1px solid #ff0000ff">
-                <strong>Consent Notice:</strong> By clicking 'I Accept & Continue', you authorize CitiLife to securely collect and use your personal data. Your information is strictly used for medical records, diagnostic testing, and necessary healthcare operations, in full compliance with the Data Privacy Act of 2012.
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient'): ?>
+                    <strong>Consent Notice:</strong> By clicking 'I Accept & Continue', you authorize CitiLife to securely collect and use your personal data. Your information is strictly used for medical records, diagnostic testing, and necessary healthcare operations, in full compliance with the Data Privacy Act of 2012.
+                <?php else: ?>
+                    <strong>Agreement Notice:</strong> By clicking 'I Accept & Continue', you agree to maintain the absolute confidentiality of all patient records and sensitive information you access during your duties, in strict compliance with the Data Privacy Act of 2012.
+                <?php endif; ?>
             </div>
 
             <!-- 3. SCROLLABLE BODY -->
             <div id="dpm-scroll-area">
 
-                <!-- Hero Card -->
-                <div id="dpm-hero-card">
-                    <div id="dpm-hero-logo">
-                        <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
-                            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
-                    </div>
-                    <div id="dpm-hero-content">
-                        <span id="dpm-hero-eyebrow">CitiLife Diagnostic Center</span>
-                        <h3 id="dpm-hero-title">Protecting Your Data</h3>
-                        <p id="dpm-hero-text">
-                            At CitiLife Diagnostics, we hold the privacy and security of your personal information in the highest regard, ensuring that all data collected across our platforms remains strictly confidential.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Section 1 -->
-                <div class="dpm-section-card">
-                    <div class="dpm-section-header">
-                        <div class="dpm-section-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient'): ?>
+                    <!-- Hero Card (Patient) -->
+                    <div id="dpm-hero-card">
+                        <div id="dpm-hero-logo">
+                            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
                         </div>
-                        <h4 class="dpm-section-title">How CitiLife collects and protects data</h4>
-                    </div>
-                    <div class="dpm-section-content">
-                        <p>To deliver the highest quality of medical diagnostic services, CitiLife requires the collection of specific personal and medical information from our patients.</p>
-                        <p>While handling your data, we guarantee the strict protection of your privacy and the absolute confidentiality of your records, adhering firmly to the mandates of the <strong>Data
-                                Privacy Act of 2012 (Republic Act No. 10173)</strong>.</p>
-                        <p>Your sensitive information is exclusively accessible to authorized healthcare professionals and personnel. Any transmission of data occurs through highly encrypted web channels, and your records are safely archived in secure databases that meet all strict regulatory standards and government guidelines.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Section 2 -->
-                <div class="dpm-section-card">
-                    <div class="dpm-section-header">
-                        <div class="dpm-section-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
+                        <div id="dpm-hero-content">
+                            <span id="dpm-hero-eyebrow">CitiLife Diagnostic Center</span>
+                            <h3 id="dpm-hero-title">Protecting Your Data</h3>
+                            <p id="dpm-hero-text">
+                                At CitiLife Diagnostics, we hold the privacy and security of your personal information in the highest regard, ensuring that all data collected across our platforms remains strictly confidential.
+                            </p>
                         </div>
-                        <h4 class="dpm-section-title">Your Rights as a Patient</h4>
                     </div>
-                    <div class="dpm-section-content">
-                        <p>As a valued patient, you are entitled to request a copy of any personal or medical records we maintain about you. Furthermore, you have the right to request the correction of any inaccurate information, or demand the deletion of your data given valid and lawful reasons.</p>
+
+                    <!-- Section 1 (Patient) -->
+                    <div class="dpm-section-card">
+                        <div class="dpm-section-header">
+                            <div class="dpm-section-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                            <h4 class="dpm-section-title">How CitiLife collects and protects data</h4>
+                        </div>
+                        <div class="dpm-section-content">
+                            <p>To deliver the highest quality of medical diagnostic services, CitiLife requires the collection of specific personal and medical information from our patients.</p>
+                            <p>While handling your data, we guarantee the strict protection of your privacy and the absolute confidentiality of your records, adhering firmly to the mandates of the <strong>Data
+                                    Privacy Act of 2012 (Republic Act No. 10173)</strong>.</p>
+                            <p>Your sensitive information is exclusively accessible to authorized healthcare professionals and personnel. Any transmission of data occurs through highly encrypted web channels, and your records are safely archived in secure databases that meet all strict regulatory standards and government guidelines.
+                            </p>
+                        </div>
                     </div>
-                </div>
+
+                    <!-- Section 2 (Patient) -->
+                    <div class="dpm-section-card">
+                        <div class="dpm-section-header">
+                            <div class="dpm-section-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </div>
+                            <h4 class="dpm-section-title">Your Rights as a Patient</h4>
+                        </div>
+                        <div class="dpm-section-content">
+                            <p>As a valued patient, you are entitled to request a copy of any personal or medical records we maintain about you. Furthermore, you have the right to request the correction of any inaccurate information, or demand the deletion of your data given valid and lawful reasons.</p>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <!-- Hero Card (Staff) -->
+                    <div id="dpm-hero-card">
+                        <div id="dpm-hero-logo">
+                            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                                onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
+                        </div>
+                        <div id="dpm-hero-content">
+                            <span id="dpm-hero-eyebrow">CitiLife Diagnostic Center</span>
+                            <h3 id="dpm-hero-title">Staff Confidentiality Agreement</h3>
+                            <p id="dpm-hero-text">
+                                As an authorized personnel of CitiLife Diagnostics, you are entrusted with sensitive patient data and medical records. Strict confidentiality is expected at all times.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Section 1 (Staff) -->
+                    <div class="dpm-section-card">
+                        <div class="dpm-section-header">
+                            <div class="dpm-section-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="dpm-section-title">Your Responsibilities</h4>
+                        </div>
+                        <div class="dpm-section-content">
+                            <p>You are required to maintain the absolute confidentiality of all patient records, test results, and personal information you access during your duties.</p>
+                            <p>Handling of patient data must adhere strictly to the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>.</p>
+                            <p>Unauthorized sharing, viewing, transmission, or mishandling of patient information is strictly prohibited and may result in immediate disciplinary action or legal consequences.</p>
+                        </div>
+                    </div>
+
+                    <!-- Section 2 (Staff) -->
+                    <div class="dpm-section-card">
+                        <div class="dpm-section-header">
+                            <div class="dpm-section-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"></path>
+                                    <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"></path>
+                                </svg>
+                            </div>
+                            <h4 class="dpm-section-title">Data Security Protocol</h4>
+                        </div>
+                        <div class="dpm-section-content">
+                            <p>Ensure that you log out or lock your terminal when away from your workstation. Do not share your login credentials with anyone, and report any suspicious activities or data breaches to the IT Administrator immediately.</p>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Contact Section -->
                 <div style="text-align: center; margin-top: 2rem; padding: 0 0.5rem;">

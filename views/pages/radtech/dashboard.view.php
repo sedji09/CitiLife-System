@@ -241,53 +241,56 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
 
   <!-- Stats -->
   <div id="radtech-dashboard-stats" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6 realtime-update">
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterDate=Today" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Total Patients Today</p>
-        <i data-lucide="users" class="w-5 h-5 text-blue-400"></i>
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterDate=Today" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <p class="text-sm text-gray-500 font-medium">Total Patients</p>
+          <p class="text-xs text-gray-400 mt-0.5"><?= htmlspecialchars($periodLabel) ?></p>
+        </div>
+        <i data-lucide="users" class="w-5 h-5 text-blue-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($totalPatients) ?></p>
+      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($totalPatients) ?></p>
     </a>
 
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&search=Pending" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Pending</p>
-        <i data-lucide="clock-3" class="w-5 h-5 text-orange-400"></i>
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&status=Pending&filterDate=All" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-sm text-gray-500 font-medium">Pending</p>
+        <i data-lucide="clock-3" class="w-5 h-5 text-orange-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($pendingApprovals) ?></p>
+      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($pendingApprovals) ?></p>
     </a>
 
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterPriority=Urgent" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Urgent Cases</p>
-        <i data-lucide="chart-spline" class="w-5 h-5 text-yellow-400"></i>
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterPriority=Urgent" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-sm text-gray-500 font-medium">Urgent Cases</p>
+        <i data-lucide="chart-spline" class="w-5 h-5 text-yellow-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($priorityCases) ?></p>
+      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($priorityCases) ?></p>
     </a>
 
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterPriority=STAT" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">STAT</p>
-        <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterPriority=STAT" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-sm text-gray-500 font-medium">STAT</p>
+        <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($emergencyCases) ?></p>
+      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($emergencyCases) ?></p>
     </a>
 
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=xray-patient-records" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Completed</p>
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=xray-patient-records" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-sm text-gray-500 font-medium">Completed</p>
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-2"><?= htmlspecialchars($completedCases) ?></p>
+      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($completedCases) ?></p>
     </a>
 
     <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&filterDate=Backlog"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer block">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-500">Backlog</p>
-        <i data-lucide="archive" class="w-5 h-5 text-purple-400"></i>
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+      <div class="flex items-start justify-between gap-2">
+        <p class="text-sm text-gray-500 font-medium">Backlog</p>
+        <i data-lucide="archive" class="w-5 h-5 text-purple-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-2 text-purple-600"><?= htmlspecialchars($backlogCases) ?></p>
+      <p class="text-3xl font-bold mt-auto pt-2 text-purple-600"><?= htmlspecialchars($backlogCases) ?></p>
     </a>
   </div>
 

@@ -19,12 +19,6 @@
         <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=queue"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'queue' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Active Queue
-            <?php if (count($todayQueue) > 0): ?>
-                <span
-                    class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-100">
-                    <?= count($todayQueue) ?>
-                </span>
-            <?php endif; ?>
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=records"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'records' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
@@ -35,16 +29,29 @@
 
 <!-- Search & Filters -->
 <div class="mt-6 flex flex-col gap-4">
-    <div class="flex gap-4 items-center">
+    <div class="flex gap-4 items-center w-full">
         <input type="text" id="search-input" placeholder="Search patient records (Name or ID)..."
-            class="w-80 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+            class="<?= $currentTab === 'queue' ? 'flex-1' : 'w-80' ?> rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
 
-        <select id="filter-date"
-            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option value="All">All Dates</option>
-            <option value="Today" selected>Today's Cases</option>
-            <option value="Backlog">Backlogs</option>
-        </select>
+        <?php if ($currentTab === 'queue'): ?>
+            <select id="filter-priority"
+                class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                <option value="All">All Priorities</option>
+                <option value="Routine">Routine</option>
+                <option value="Urgent">Urgent</option>
+                <option value="STAT">STAT</option>
+            </select>
+        <?php endif; ?>
+
+        <?php if ($currentTab === 'queue'): ?>
+            <?php $urlDateFilter = $_GET['date'] ?? 'Today'; ?>
+            <select id="filter-date"
+                class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                <option value="All" <?= $urlDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
+                <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's Cases</option>
+                <option value="Backlog" <?= $urlDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
+            </select>
+        <?php endif; ?>
 
         <select id="sort-date"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
@@ -144,19 +151,26 @@
                                 <td class="py-3 px-4">
                                     <?php
                                     $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
+                                    
+                                    // Check if Overdue (more than 3 hours)
+                                    $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+                                    if ($displayStatus === 'Pending' && $isOverdue) {
+                                        $displayStatus = 'Overdue';
+                                    }
+
                                     $sColor = 'yellow';
                                     if ($displayStatus === 'Report Ready')
                                         $sColor = 'indigo';
                                     elseif ($displayStatus === 'Under Reading')
                                         $sColor = 'blue';
+                                    elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected')
+                                        $sColor = 'red';
                                     elseif ($displayStatus === 'Completed')
                                         $sColor = 'green';
-                                    elseif ($displayStatus === 'Rejected')
-                                        $sColor = 'red';
                                     ?>
                                     <span
                                         class="inline-flex items-center rounded-full border border-<?= $sColor ?>-200 bg-<?= $sColor ?>-50 px-2.5 py-1 text-xs font-semibold text-<?= $sColor ?>-700 shadow-sm">
-                                        <?= htmlspecialchars($displayStatus ?: 'Pending') ?>
+                                        <?= htmlspecialchars($displayStatus) ?>
                                     </span>
                                 </td>
                             <?php endif; ?>
@@ -282,9 +296,9 @@
                 btn.innerHTML = label;
                 
                 if (isActive) {
-                    btn.className = "px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black";
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
                 } else {
-                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
                 }
                 
                 if (disabled) {
@@ -311,36 +325,36 @@
             }
 
             // First Button
-            container.appendChild(createButton('&laquo; First', 1, currentPage === 1));
+            container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
 
             // Back Button
-            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage === 1));
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
 
             // Page numbers
             if (totalPages <= 7) {
                 // Show all pages
                 for (let i = 1; i <= totalPages; i++) {
-                    container.appendChild(createButton(i, i, false, i === currentPage));
+                    container.appendChild(createButton(i, i, false, i == currentPage));
                 }
             } else {
                 // We have many pages
                 if (currentPage <= 4) {
                     // Near start: 1, 2, 3, 4, 5, ..., T
                     for (let i = 1; i <= 5; i++) {
-                        container.appendChild(createButton(i, i, false, i === currentPage));
+                        container.appendChild(createButton(i, i, false, i == currentPage));
                     }
                     container.appendChild(createEllipsis());
-                    container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
                 } else if (currentPage >= totalPages - 3) {
                     // Near end: 1, ..., T-4, T-3, T-2, T-1, T
-                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
                     for (let i = totalPages - 4; i <= totalPages; i++) {
-                        container.appendChild(createButton(i, i, false, i === currentPage));
+                        container.appendChild(createButton(i, i, false, i == currentPage));
                     }
                 } else {
                     // Middle: 1, ..., C-1, C, C+1, ..., T
-                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
                     
                     container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
@@ -353,10 +367,10 @@
             }
 
             // Next Button
-            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage === totalPages));
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
 
             // Last Button
-            container.appendChild(createButton('Last &raquo;', totalPages, currentPage === totalPages));
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
         function renderPage() {

@@ -120,7 +120,7 @@ function getRoleColor($roleKey)
 
         <!-- Save Button -->
         <button type="button" onclick="saveAllPermissions()" id="btn-save-all"
-            class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 shadow-sm">
+            class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm">
             <i data-lucide="save" class="w-3.5 h-3.5"></i>
             Save Changes
         </button>
@@ -236,7 +236,7 @@ function getRoleColor($roleKey)
     }
 
     function updateSegmentedControlUI(permKey, level) {
-        const activeClasses = 'bg-indigo-500 text-white hover:bg-indigo-600';
+        const activeClasses = 'bg-blue-500 text-white hover:bg-blue-600';
         const inactiveClasses = 'bg-gray-50 text-gray-600 hover:bg-gray-100';
 
         const buttons = [

@@ -52,8 +52,8 @@ class CaseModel
         $stmt->execute([$branchId]);
         $total = $stmt->fetchColumn();
 
-        // Pending
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status = 'Pending' AND $dateCondition AND branch_id = ?");
+        // Pending (Global for the branch, regardless of date filter)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE (status = 'Pending' OR status = '' OR status IS NULL) AND released = 0 AND branch_id = ?");
         $stmt->execute([$branchId]);
         $pending = $stmt->fetchColumn();
 
@@ -142,12 +142,12 @@ class CaseModel
         $forRevision = $stmt->fetchColumn() ?: 0;
 
         return [
-            'totalPending'   => $totalPending,
+            'totalPending' => $totalPending,
             'emergencyCases' => $emergencyCases,
-            'overdueCases'   => $overdueCases,
+            'overdueCases' => $overdueCases,
             'completedToday' => $completedToday,
-            'inProgress'     => $inProgress,
-            'forRevision'    => $forRevision,
+            'inProgress' => $inProgress,
+            'forRevision' => $forRevision,
         ];
     }
 
@@ -170,9 +170,16 @@ class CaseModel
         $stmt->execute();
         $emergencyCases = $stmt->fetchColumn() ?: 0;
 
+        // Completed Cases
+        $completedDateCondition = str_replace('created_at', 'date_completed', $dateCondition);
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Report Ready', 'Completed') AND $completedDateCondition $radFilter");
+        $stmt->execute();
+        $completedCases = $stmt->fetchColumn() ?: 0;
+
         return [
             'totalPending' => $totalPending,
-            'emergencyCases' => $emergencyCases
+            'emergencyCases' => $emergencyCases,
+            'completedCases' => $completedCases
         ];
     }
 
@@ -576,7 +583,7 @@ class CaseModel
     /**
      * Get patient's case history across all branches.
      */
-    public function getPatientHistory($patientNumber, $excludeCaseId = null)
+    public function getPatientHistory($patientNumber, $excludeCaseId = null, $limit = null, $offset = 0)
     {
         $sql = "SELECT c.*, b.name as branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, 
                        COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name
@@ -593,9 +600,35 @@ class CaseModel
         }
 
         $sql .= " ORDER BY c.created_at DESC";
+
+        if ($limit !== null) {
+            $sql .= " LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
+        }
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Count patient's case history for pagination.
+     */
+    public function countPatientHistory($patientNumber, $excludeCaseId = null)
+    {
+        $sql = "SELECT COUNT(*)
+                FROM cases c
+                JOIN patients p ON c.patient_id = p.id
+                WHERE p.patient_number = ?";
+        $params = [$patientNumber];
+
+        if ($excludeCaseId) {
+            $sql .= " AND c.id != ?";
+            $params[] = $excludeCaseId;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
     }
 
     /**
@@ -655,26 +688,33 @@ class CaseModel
             $stmtB->execute([$branchId]);
             $branchName = $stmtB->fetchColumn() ?: 'General';
 
-            if (stripos($branchName, 'Gapan') !== false) $branchCode = 'GAP';
-            elseif (stripos($branchName, 'Bongabon') !== false) $branchCode = 'BON';
-            elseif (stripos($branchName, 'Peñaranda') !== false) $branchCode = 'PEN';
-            elseif (stripos($branchName, 'General Tinio') !== false || stripos($branchName, 'General Tion') !== false) $branchCode = 'GTI';
-            elseif (stripos($branchName, 'San Antonio') !== false) $branchCode = 'SAN';
-            elseif (stripos($branchName, 'Sto Domingo') !== false) $branchCode = 'STD';
-            elseif (stripos($branchName, 'Pantabangan') !== false) $branchCode = 'PAN';
+            if (stripos($branchName, 'Gapan') !== false)
+                $branchCode = 'GAP';
+            elseif (stripos($branchName, 'Bongabon') !== false)
+                $branchCode = 'BON';
+            elseif (stripos($branchName, 'Peñaranda') !== false)
+                $branchCode = 'PEN';
+            elseif (stripos($branchName, 'General Tinio') !== false || stripos($branchName, 'General Tion') !== false)
+                $branchCode = 'GTI';
+            elseif (stripos($branchName, 'San Antonio') !== false)
+                $branchCode = 'SAN';
+            elseif (stripos($branchName, 'Sto Domingo') !== false)
+                $branchCode = 'STD';
+            elseif (stripos($branchName, 'Pantabangan') !== false)
+                $branchCode = 'PAN';
         }
 
         $year = date('Y');
         $bId = $branchId ?: 1;
-        
+
         $this->pdo->prepare("INSERT IGNORE INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 0)")->execute([$bId, $year]);
-        
+
         // Transaction safety for generating numbers
         $stmt = $this->pdo->prepare("SELECT current_number FROM branch_case_sequences WHERE branch_id = ? AND year = ? FOR UPDATE");
         $stmt->execute([$bId, $year]);
-        $current = (int)$stmt->fetchColumn();
+        $current = (int) $stmt->fetchColumn();
         $next = $current + 1;
-        
+
         $this->pdo->prepare("UPDATE branch_case_sequences SET current_number = ? WHERE branch_id = ? AND year = ?")->execute([$next, $bId, $year]);
 
         return "{$branchCode}{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
@@ -687,14 +727,14 @@ class CaseModel
     {
         $year = date('Y');
         $this->pdo->prepare("INSERT IGNORE INTO request_sequences (year, current_number) VALUES (?, 0)")->execute([$year]);
-        
+
         $stmt = $this->pdo->prepare("SELECT current_number FROM request_sequences WHERE year = ? FOR UPDATE");
         $stmt->execute([$year]);
-        $current = (int)$stmt->fetchColumn();
+        $current = (int) $stmt->fetchColumn();
         $next = $current + 1;
-        
+
         $this->pdo->prepare("UPDATE request_sequences SET current_number = ? WHERE year = ?")->execute([$next, $year]);
-        
+
         return "REQ-{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
     }
 
@@ -1024,8 +1064,14 @@ class CaseModel
 
                 $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
                 $stmtCase->execute([
-                    $caseNumber, $requestData['patient_id'], $requestData['branch_id'], $requestData['exam_type'],
-                    $requestData['priority'], $requestData['philhealth_status'], $requestData['philhealth_id'], $id
+                    $caseNumber,
+                    $requestData['patient_id'],
+                    $requestData['branch_id'],
+                    $requestData['exam_type'],
+                    $requestData['priority'],
+                    $requestData['philhealth_status'],
+                    $requestData['philhealth_id'],
+                    $id
                 ]);
                 $caseId = $pdo->lastInsertId();
 
@@ -1036,7 +1082,7 @@ class CaseModel
                 if ($patientUserId) {
                     $notificationModel->add("Request Approved", "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.", "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}", $patientUserId, 'patient');
                 }
-                
+
                 $pdo->commit();
                 return ['success' => true, 'message' => "Request approved and case $caseNumber generated."];
 
@@ -1059,12 +1105,14 @@ class CaseModel
             $pdo->rollBack();
             return ['success' => false, 'message' => "Invalid action."];
         } catch (Exception $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($pdo->inTransaction())
+                $pdo->rollBack();
             return ['success' => false, 'message' => "Error: " . $e->getMessage()];
         }
     }
 
-    public function getPatientUserIdByPatientId($patientId) {
+    public function getPatientUserIdByPatientId($patientId)
+    {
         $stmt = $this->pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
         $stmt->execute([$patientId]);
         return $stmt->fetchColumn();

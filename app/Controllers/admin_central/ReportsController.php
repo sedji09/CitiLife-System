@@ -480,7 +480,7 @@ if (isset($_GET['export_pdf'])) {
 
     // ── Canvas Footer: draw both texts on the SAME y-baseline ──
     $canvas = $dompdf->getCanvas();
-    $font = $dompdf->getFontMetrics()->get_font('helvetica', 'normal');
+    $font = $dompdf->getFontMetrics()->getFont('helvetica', 'normal');
     $color = [148 / 255, 163 / 255, 184 / 255]; // #94a3b8
     $lineCol = [226 / 255, 232 / 255, 240 / 255]; // #e2e8f0
     $w = $canvas->get_width();        // ~595pt for A4

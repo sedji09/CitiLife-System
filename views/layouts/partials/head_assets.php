@@ -1,4 +1,5 @@
   <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?>">
+  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/noc-theme.css?v=<?= time() ?>">
   <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/drive-preview.css?v=<?= time() ?>">
   <script src="/<?= PROJECT_DIR ?>/public/assets/js/drive-preview.js?v=<?= time() ?>"></script>
 

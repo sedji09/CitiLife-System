@@ -170,8 +170,16 @@ $branchId = $_SESSION['branch_id'] ?? 1;
 $allPatients = $caseModel->getWorklist($branchId, null, null);
 
 // Filter logic: Show all unreleased and active cases (includes backlogs)
-$patients = array_filter($allPatients, function ($p) {
-    return $p['released'] == 0 && $p['status'] !== 'Rejected';
+$statusFilter = $_GET['status'] ?? null;
+$patients = array_filter($allPatients, function ($p) use ($statusFilter) {
+    if ($p['released'] != 0 || $p['status'] === 'Rejected') {
+        return false;
+    }
+    $pStatus = $p['status'] ?: 'Pending';
+    if ($statusFilter && $pStatus !== $statusFilter) {
+        return false;
+    }
+    return true;
 });
 
         return get_defined_vars();

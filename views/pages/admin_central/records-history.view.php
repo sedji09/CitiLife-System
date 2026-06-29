@@ -19,7 +19,8 @@
                     <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Clinical History</h1>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Record timeline for
                         <?= htmlspecialchars($patient['first_name'] ?? '') ?>
-                        <?= htmlspecialchars($patient['last_name'] ?? '') ?></p>
+                        <?= htmlspecialchars($patient['last_name'] ?? '') ?>
+                    </p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -44,16 +45,10 @@
         <?php else: ?>
             <!-- Timeline of Cases -->
             <div class="relative">
-                <!-- Vertical Line -->
-                <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-100 hidden sm:block"></div>
 
                 <div class="space-y-8">
                     <?php foreach ($history as $case): ?>
-                        <div class="relative pl-0 sm:pl-16">
-                            <!-- Timeline Dot for desktop -->
-                            <div
-                                class="absolute left-4 top-4 h-4 w-4 rounded-full bg-white border-4 border-red-500 z-10 hidden sm:block shadow-sm">
-                            </div>
+                        <div>
 
                             <div
                                 class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden group hover:border-red-200 dark:hover:border-red-500 transition-all">
@@ -77,7 +72,7 @@
                                         if ($case['priority'] === 'STAT')
                                             $priorityClass = 'bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800/50';
                                         elseif ($case['priority'] === 'Urgent')
-                                            $priorityClass = 'bg-orange-50 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/50';
+                                            $priorityClass = 'bg-yellow-50 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 border-yellow-100 dark:border-yellow-800/50';
                                         elseif ($case['priority'] === 'Routine')
                                             $priorityClass = 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50';
                                         ?>
@@ -95,17 +90,24 @@
                                 <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <!-- Case Type & Modality -->
                                     <div class="space-y-3">
-                                        <div class="flex items-start gap-4">
-                                            <div
-                                                class="h-10 w-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-600 flex-shrink-0">
-                                                <i data-lucide="<?= ($case['modality'] ?? 'X-Ray') === 'X-Ray' ? 'scan' : 'scan-face' ?>"
-                                                    class="w-5 h-5"></i>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-sm font-bold text-gray-900 dark:text-white">
-                                                    <?= htmlspecialchars($case['exam_type'] ?? 'General Diagnostic') ?></h4>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                    <?= htmlspecialchars($case['modality'] ?? 'Radiology') ?></p>
+                                        <div>
+                                            <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none mb-2">
+                                                Exam Type
+                                            </p>
+                                            <div class="flex flex-wrap gap-1.5 mt-1.5">
+                                                <?php 
+                                                $exams = explode(',', $case['exam_type'] ?? 'General Diagnostic');
+                                                foreach ($exams as $exam): 
+                                                    $exam = trim($exam);
+                                                    if (!empty($exam)):
+                                                ?>
+                                                    <span class="px-2 py-1 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded text-[11px] font-bold tracking-wide border border-gray-200 dark:border-gray-600 shadow-sm">
+                                                        <?= htmlspecialchars($exam) ?>
+                                                    </span>
+                                                <?php 
+                                                    endif;
+                                                endforeach; 
+                                                ?>
                                             </div>
                                         </div>
                                         <div class="pt-2">
@@ -163,19 +165,97 @@
                                                 <?= htmlspecialchars($case['findings'] ?? 'No findings recorded for this encounter.') ?>
                                             </p>
                                         </div>
-                                        <div class="pt-4">
-                                            <button onclick="viewCaseDetail('<?= $case['id'] ?>')"
-                                                class="w-full py-2 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-600 transition-all flex items-center justify-center gap-2">
-                                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                                                View Full Report
-                                            </button>
-                                        </div>
+                                        <?php if (!empty($case['findings'])): ?>
+                                            <div class="pt-4">
+                                                <button onclick="viewCaseDetail('<?= $case['id'] ?>')"
+                                                    class="w-full py-2 px-4 rounded-lg bg-gray-50 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-600 transition-all flex items-center justify-center gap-2">
+                                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                                    View Full Report
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
+
+                <?php if (isset($totalPages) && $totalPages > 1): ?>
+                    <div
+                        class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-6 mt-8 gap-4">
+                        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                            Showing <span
+                                class="font-semibold text-gray-800 dark:text-gray-200"><?= htmlspecialchars($offset + 1) ?></span>
+                            to <span
+                                class="font-semibold text-gray-800 dark:text-gray-200"><?= htmlspecialchars(min($offset + $itemsPerPage, $totalItems)) ?></span>
+                            of <span
+                                class="font-semibold text-gray-800 dark:text-gray-200"><?= htmlspecialchars($totalItems) ?></span>
+                            cases
+                        </span>
+
+                        <div class="flex items-center flex-wrap gap-1.5">
+                            <?php
+                            $currentPage = (int) ($currentPage ?? 1);
+                            // Check if records-history is accessed via route rewriting or index.php
+                            $baseUrl = "/" . PROJECT_DIR . "/records-history?patient_number=" . urlencode($patient['patient_number']) . "&p=";
+
+                            // Calculate sliding window
+                            $range = 2; // Show 2 pages before and after
+                            $start = max(1, $currentPage - $range);
+                            $end = min($totalPages, $currentPage + $range);
+
+                            // Adjust window if at edges to show up to 5 pages
+                            if ($end - $start < $range * 2) {
+                                if ($start === 1) {
+                                    $end = min($totalPages, $start + ($range * 2));
+                                } elseif ($end === $totalPages) {
+                                    $start = max(1, $end - ($range * 2));
+                                }
+                            }
+
+                            // Helper for disabled vs active buttons
+                            $renderButton = function ($label, $targetPage, $isDisabled) use ($baseUrl) {
+                                if ($isDisabled) {
+                                    return '<span class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-xs font-semibold text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60">' . $label . '</span>';
+                                } else {
+                                    return '<a href="' . $baseUrl . $targetPage . '" class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800 focus:ring-2 focus:ring-red-400 transition shadow-sm">' . $label . '</a>';
+                                }
+                            };
+                            ?>
+
+                            <!-- First -->
+                            <?= $renderButton('&laquo; First', 1, $currentPage <= 1) ?>
+
+                            <!-- Back -->
+                            <?= $renderButton('&lsaquo; Back', $currentPage - 1, $currentPage <= 1) ?>
+
+                            <!-- Left Ellipsis -->
+                            <?php if ($start > 1): ?>
+                                <span class="px-2 py-1.5 text-xs font-semibold text-gray-500">...</span>
+                            <?php endif; ?>
+
+                            <!-- Page Numbers -->
+                            <?php for ($i = $start; $i <= $end; $i++): ?>
+                                <a href="<?= $baseUrl . $i ?>"
+                                    class="<?= $i == $currentPage ? 'px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600' : 'px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800 focus:ring-2 focus:ring-red-400 transition shadow-sm' ?>">
+                                    <?= $i ?>
+                                </a>
+                            <?php endfor; ?>
+
+                            <!-- Right Ellipsis -->
+                            <?php if ($end < $totalPages): ?>
+                                <span class="px-2 py-1.5 text-xs font-semibold text-gray-500">...</span>
+                            <?php endif; ?>
+
+                            <!-- Next -->
+                            <?= $renderButton('Next &rsaquo;', $currentPage + 1, $currentPage >= $totalPages) ?>
+
+                            <!-- Last -->
+                            <?= $renderButton('Last &raquo;', $totalPages, $currentPage >= $totalPages) ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>

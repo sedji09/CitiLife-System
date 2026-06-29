@@ -116,9 +116,9 @@ if ($backId) {
         if ($caseDetails['priority'] === 'STAT')
             $pColor = 'red';
         if ($caseDetails['priority'] === 'Urgent')
-            $pColor = 'orange';
-        if ($caseDetails['priority'] === 'Priority')
             $pColor = 'yellow';
+        if ($caseDetails['priority'] === 'Priority')
+            $pColor = 'orange';
         ?>
         <span
             class="inline-flex items-center rounded-full border border-<?= $pColor ?>-400 bg-<?= $pColor ?>-50 px-3 py-1 text-xs font-semibold text-<?= $pColor ?>-700 shadow-sm">
@@ -162,6 +162,11 @@ if ($backId) {
                     <p class="text-gray-400 text-xs">Age / Sex</p>
                     <p class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['age']) ?> /
                         <?= htmlspecialchars(ucfirst($caseDetails['sex'])) ?>
+                    </p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs">Case Number</p>
+                    <p class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['case_number'] ?? 'N/A') ?>
                     </p>
                 </div>
                 <div>

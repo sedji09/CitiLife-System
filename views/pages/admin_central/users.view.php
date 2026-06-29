@@ -23,7 +23,8 @@
         $activeStaffCount = 0;
         $totalStaffCount = count($users);
         foreach ($users as $u) {
-            if ($u['status'] === 'Active') $activeStaffCount++;
+            if ($u['status'] === 'Active')
+                $activeStaffCount++;
         }
         ?>
         <!-- Summary Cards -->
@@ -142,8 +143,13 @@
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
                                             <div
-                                                class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase">
-                                                <?= substr($u['email'], 0, 2) ?>
+                                                class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
+                                                <?php if (!empty($u['avatar'])): ?>
+                                                    <img src="<?= htmlspecialchars($u['avatar']) ?>" alt="Avatar"
+                                                        class="h-full w-full object-cover">
+                                                <?php else: ?>
+                                                    <?= substr($u['email'], 0, 2) ?>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col">
                                                 <span
@@ -228,10 +234,12 @@
             </div>
 
             <!-- Pagination Footer -->
-            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+            <div
+                class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
                 <div class="text-xs text-gray-500">
-                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex" class="font-semibold text-gray-800">0</span> of <span
-                        id="totalRecords" class="font-semibold text-gray-800">0</span> records
+                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex"
+                        class="font-semibold text-gray-800">0</span> of <span id="totalRecords"
+                        class="font-semibold text-gray-800">0</span> records
                 </div>
                 <div class="flex items-center flex-wrap gap-1.5" id="paginationControls">
                     <!-- Dynamic page buttons will be inserted here -->
@@ -260,7 +268,7 @@
                 <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
                 <div class="relative">
                     <i data-lucide="mail" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="email" id="email" name="email" required placeholder="staff@citilife.com"
+                    <input type="email" id="email" name="email" required placeholder="staff@gmail.com"
                         autocomplete="off"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
@@ -286,6 +294,7 @@
                         <option value="radtech">RadTech</option>
                         <option value="radiologist">Radiologist</option>
                         <option value="it_admin">IT Admin</option>
+                        <option value="admin_central">Admin Central</option>
                     </select>
                 </div>
                 <div id="branchSelectWrapper">
@@ -335,7 +344,7 @@
                 <label for="edit_email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
                 <div class="relative">
                     <i data-lucide="mail" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="email" id="edit_email" name="email" required placeholder="staff@citilife.com"
+                    <input type="email" id="edit_email" name="email" required placeholder="staff@gmail.com"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
@@ -360,6 +369,7 @@
                         <option value="radtech">RadTech</option>
                         <option value="radiologist">Radiologist</option>
                         <option value="it_admin">IT Admin</option>
+                        <option value="admin_central">Admin Central</option>
                     </select>
                 </div>
                 <div id="edit_branchSelectWrapper">
@@ -463,8 +473,9 @@
     function toggleEditBranchSelect() {
         const role = document.getElementById('edit_role').value;
         const branchWrapper = document.getElementById('edit_branchSelectWrapper');
-        if (role === 'it_admin') {
+        if (role === 'it_admin' || role === 'admin_central' || role === 'radiologist') {
             branchWrapper.classList.add('opacity-30', 'pointer-events-none');
+            document.getElementById('edit_branch_id').value = '';
         } else {
             branchWrapper.classList.remove('opacity-30', 'pointer-events-none');
         }
@@ -473,8 +484,9 @@
     function toggleBranchSelect() {
         const role = document.getElementById('role').value;
         const branchWrapper = document.getElementById('branchSelectWrapper');
-        if (role === 'it_admin') {
+        if (role === 'it_admin' || role === 'admin_central' || role === 'radiologist') {
             branchWrapper.classList.add('opacity-30', 'pointer-events-none');
+            document.getElementById('branch_id').value = '';
         } else {
             branchWrapper.classList.remove('opacity-30', 'pointer-events-none');
         }
@@ -593,13 +605,13 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.innerHTML = label;
-            
+
             if (isActive) {
-                btn.className = "px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black";
+                btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
             } else {
-                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
             }
-            
+
             if (disabled) {
                 btn.disabled = true;
             } else {
@@ -624,52 +636,52 @@
         }
 
         // First Button
-        container.appendChild(createButton('&laquo; First', 1, currentPage === 1));
+        container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
 
         // Back Button
-        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage === 1));
+        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
 
         // Page numbers
         if (totalPages <= 7) {
             // Show all pages
             for (let i = 1; i <= totalPages; i++) {
-                container.appendChild(createButton(i, i, false, i === currentPage));
+                container.appendChild(createButton(i, i, false, i == currentPage));
             }
         } else {
             // We have many pages
             if (currentPage <= 4) {
                 // Near start: 1, 2, 3, 4, 5, ..., T
                 for (let i = 1; i <= 5; i++) {
-                    container.appendChild(createButton(i, i, false, i === currentPage));
+                    container.appendChild(createButton(i, i, false, i == currentPage));
                 }
                 container.appendChild(createEllipsis());
-                container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+                container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
             } else if (currentPage >= totalPages - 3) {
                 // Near end: 1, ..., T-4, T-3, T-2, T-1, T
-                container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                container.appendChild(createButton(1, 1, false, 1 == currentPage));
                 container.appendChild(createEllipsis());
                 for (let i = totalPages - 4; i <= totalPages; i++) {
-                    container.appendChild(createButton(i, i, false, i === currentPage));
+                    container.appendChild(createButton(i, i, false, i == currentPage));
                 }
             } else {
                 // Middle: 1, ..., C-1, C, C+1, ..., T
-                container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                container.appendChild(createButton(1, 1, false, 1 == currentPage));
                 container.appendChild(createEllipsis());
-                
+
                 container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
                 container.appendChild(createButton(currentPage, currentPage, false, true));
                 container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
-                
+
                 container.appendChild(createEllipsis());
                 container.appendChild(createButton(totalPages, totalPages, false, false));
             }
         }
 
         // Next Button
-        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage === totalPages));
+        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
 
         // Last Button
-        container.appendChild(createButton('Last &raquo;', totalPages, currentPage === totalPages));
+        container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
     }
 
     function updatePagination(visibleRows) {

@@ -98,28 +98,40 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div>
                 <label class="block text-gray-600 text-sm font-medium mb-1.5">Priority</label>
                 <?php
-                $pColor = 'blue';
-                if ($caseDetails['priority'] === 'STAT') $pColor = 'red';
-                elseif ($caseDetails['priority'] === 'Urgent') $pColor = 'yellow';
+                if ($caseDetails['priority'] === 'STAT') {
+                    $pClasses = 'border-red-400 bg-red-50 text-red-700';
+                } elseif ($caseDetails['priority'] === 'Urgent') {
+                    $pClasses = 'border-yellow-400 bg-yellow-50 text-yellow-700';
+                } else {
+                    $pClasses = 'border-blue-400 bg-blue-50 text-blue-700';
+                }
                 ?>
-                <span class="inline-flex items-center rounded-full border border-<?= $pColor ?>-200 bg-<?= $pColor ?>-50/50 px-2.5 py-1 text-xs font-semibold text-<?= $pColor ?>-700">
+                <span class="inline-flex items-center rounded-full border <?= $pClasses ?> px-2.5 py-1 text-xs font-semibold">
                     <?= htmlspecialchars($caseDetails['priority']) ?>
                 </span>
             </div>
             <div class="pt-1">
                 <span class="block text-gray-600 text-sm font-medium mb-1.5">Status</span>
                 <?php
-                if ($caseDetails['status'] === 'Completed')
+                $displayStatus = $caseDetails['status'] ?: 'Pending';
+                $isOverdue = (time() - strtotime($caseDetails['created_at'])) >= 3 * 3600;
+                if ($displayStatus === 'Pending' && $isOverdue) {
+                    $displayStatus = 'Overdue';
+                }
+
+                if ($displayStatus === 'Completed')
                     $sBadge = 'border border-green-400 bg-green-50 text-green-700';
-                elseif ($caseDetails['status'] === 'Under Reading')
+                elseif ($displayStatus === 'Under Reading')
                     $sBadge = 'border border-blue-400 bg-blue-50 text-blue-700';
-                elseif ($caseDetails['status'] === 'Report Ready')
+                elseif ($displayStatus === 'Report Ready')
                     $sBadge = 'border border-indigo-400 bg-indigo-50 text-indigo-700';
+                elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected')
+                    $sBadge = 'border border-red-400 bg-red-50 text-red-700';
                 else
                     $sBadge = 'border border-yellow-400 bg-yellow-50 text-yellow-700';
                 ?>
                 <span class="inline-block font-bold text-xs px-3 py-1.5 rounded-full <?= $sBadge ?>">
-                    <?= htmlspecialchars($caseDetails['status']) ?>
+                    <?= htmlspecialchars($displayStatus) ?>
                 </span>
             </div>
         </div>

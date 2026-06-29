@@ -367,7 +367,7 @@
 
         // 4. Branch Bar Chart
         const ctxBranchBar = document.getElementById('branchBarChart').getContext('2d');
-        const branchGradient = ctxBranchBar.createLinearGradient(0, 0, 0, 240);
+        const branchGradient = ctxBranchBar.createLinearGradient(0, 0, 400, 0);
         branchGradient.addColorStop(0, 'rgba(29, 78, 216, 0.9)');
         branchGradient.addColorStop(1, 'rgba(37, 99, 235, 0.1)');
 
@@ -383,6 +383,7 @@
             },
             options: {
                 ...commonOptions,
+                indexAxis: 'y',
                 plugins: {
                     ...commonOptions.plugins,
                     tooltip: {
@@ -398,13 +399,13 @@
                     }
                 },
                 scales: {
-                    y: {
+                    x: {
                         beginAtZero: true,
                         grid: { color: gridColor, borderDash: [5, 5] },
                         border: { display: false },
                         ticks: { font: { size: 10 }, color: tickColor, padding: 8, stepSize: 4 }
                     },
-                    x: {
+                    y: {
                         grid: { display: false },
                         border: { display: false },
                         ticks: { font: { size: 10, weight: 'bold' }, color: labelColor }

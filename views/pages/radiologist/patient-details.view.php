@@ -98,11 +98,15 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div>
                 <label class="block text-gray-600 text-sm font-medium mb-1.5">Priority</label>
                 <?php
-                $pColor = 'blue';
-                if ($caseDetails['priority'] === 'STAT') $pColor = 'red';
-                elseif ($caseDetails['priority'] === 'Urgent') $pColor = 'yellow';
+                if ($caseDetails['priority'] === 'STAT') {
+                    $pClasses = 'border-red-400 bg-red-50 text-red-700';
+                } elseif ($caseDetails['priority'] === 'Urgent') {
+                    $pClasses = 'border-yellow-400 bg-yellow-50 text-yellow-700';
+                } else {
+                    $pClasses = 'border-blue-400 bg-blue-50 text-blue-700';
+                }
                 ?>
-                <span class="inline-flex items-center rounded-full border border-<?= $pColor ?>-200 bg-<?= $pColor ?>-50/50 px-2.5 py-1 text-xs font-semibold text-<?= $pColor ?>-700">
+                <span class="inline-flex items-center rounded-full border <?= $pClasses ?> px-2.5 py-1 text-xs font-semibold">
                     <?= htmlspecialchars($caseDetails['priority']) ?>
                 </span>
             </div>

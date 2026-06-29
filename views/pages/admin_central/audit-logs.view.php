@@ -55,11 +55,6 @@
                     Clear Filters
                 </a>
             <?php endif; ?>
-            <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-100 rounded-full">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span class="text-[10px] font-black text-red-700 uppercase tracking-widest leading-none">Live
-                    Monitoring</span>
-            </div>
         </div>
     </div>
 
@@ -111,8 +106,10 @@
                 <div class="col-span-1 md:col-span-2 lg:col-span-1">
                     <select name="sort" onchange="document.getElementById('filterForm').submit()"
                         class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs tracking-wider focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer bg-white">
-                        <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>Newest First</option>
-                        <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Oldest First</option>
+                        <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>Newest First
+                        </option>
+                        <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Oldest First
+                        </option>
                     </select>
                 </div>
             </div>
@@ -163,9 +160,9 @@
                                             <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
                                         </span>
                                         <?php if (!empty($log['user_email'])): ?>
-                                        <span class="text-[10px] text-gray-500 mb-1 truncate">
-                                            <?= htmlspecialchars($log['user_email']) ?>
-                                        </span>
+                                            <span class="text-[10px] text-gray-500 mb-1 truncate">
+                                                <?= htmlspecialchars($log['user_email']) ?>
+                                            </span>
                                         <?php endif; ?>
                                         <span
                                             class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
@@ -236,57 +233,61 @@
             $start = $offset + 1;
             $end = min($offset + $limit, $total_count);
             ?>
-            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+            <div
+                class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
                 <div class="text-xs text-gray-500">
-                    Showing <span class="font-semibold text-gray-800"><?= $start ?></span> to <span class="font-semibold text-gray-800"><?= $end ?></span> of <span class="font-semibold text-gray-800"><?= $total_count ?></span> records
+                    Showing <span class="font-semibold text-gray-800"><?= $start ?></span> to <span
+                        class="font-semibold text-gray-800"><?= $end ?></span> of <span
+                        class="font-semibold text-gray-800"><?= $total_count ?></span> records
                 </div>
                 <div class="flex items-center flex-wrap gap-1.5">
                     <?php
-                    $renderPageBtn = function($label, $targetPage, $disabled, $isActive = false) use ($filters) {
+                    $page_num = (int) ($page_num ?? 1);
+                    $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) use ($filters) {
                         $query = http_build_query(array_merge(array_filter($filters), ['p' => $targetPage]));
                         $url = '/' . PROJECT_DIR . '/audit-logs?' . $query;
-                        
+
                         if ($isActive) {
-                            return '<span class="px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black">' . $label . '</span>';
+                            return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';
                         }
-                        
+
                         if ($disabled) {
                             return '<span class="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed shadow-sm opacity-60">' . $label . '</span>';
                         }
-                        
+
                         return '<a href="' . htmlspecialchars($url) . '" class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition shadow-sm">' . $label . '</a>';
                     };
 
-                    $renderEllipsis = function() {
+                    $renderEllipsis = function () {
                         return '<span class="px-2 py-1 text-xs text-gray-400 font-semibold select-none">...</span>';
                     };
 
                     // First Button
-                    echo $renderPageBtn('&laquo; First', 1, $page_num === 1);
+                    echo $renderPageBtn('&laquo; First', 1, $page_num <= 1);
 
                     // Back Button
-                    echo $renderPageBtn('&lsaquo; Back', $page_num - 1, $page_num === 1);
+                    echo $renderPageBtn('&lsaquo; Back', $page_num - 1, $page_num <= 1);
 
                     // Page numbers
                     if ($total_pages <= 7) {
                         for ($i = 1; $i <= $total_pages; $i++) {
-                            echo $renderPageBtn($i, $i, false, $i === $page_num);
+                            echo $renderPageBtn($i, $i, false, $i == $page_num);
                         }
                     } else {
                         if ($page_num <= 4) {
                             for ($i = 1; $i <= 5; $i++) {
-                                echo $renderPageBtn($i, $i, false, $i === $page_num);
+                                echo $renderPageBtn($i, $i, false, $i == $page_num);
                             }
                             echo $renderEllipsis();
-                            echo $renderPageBtn($total_pages, $total_pages, false, $total_pages === $page_num);
+                            echo $renderPageBtn($total_pages, $total_pages, false, $total_pages == $page_num);
                         } elseif ($page_num >= $total_pages - 3) {
-                            echo $renderPageBtn(1, 1, false, 1 === $page_num);
+                            echo $renderPageBtn(1, 1, false, 1 == $page_num);
                             echo $renderEllipsis();
                             for ($i = $total_pages - 4; $i <= $total_pages; $i++) {
-                                echo $renderPageBtn($i, $i, false, $i === $page_num);
+                                echo $renderPageBtn($i, $i, false, $i == $page_num);
                             }
                         } else {
-                            echo $renderPageBtn(1, 1, false, 1 === $page_num);
+                            echo $renderPageBtn(1, 1, false, 1 == $page_num);
                             echo $renderEllipsis();
                             echo $renderPageBtn($page_num - 1, $page_num - 1, false, false);
                             echo $renderPageBtn($page_num, $page_num, false, true);
@@ -297,10 +298,10 @@
                     }
 
                     // Next Button
-                    echo $renderPageBtn('Next &rsaquo;', $page_num + 1, $page_num === $total_pages);
+                    echo $renderPageBtn('Next &rsaquo;', $page_num + 1, $page_num >= $total_pages);
 
                     // Last Button
-                    echo $renderPageBtn('Last &raquo;', $total_pages, $page_num === $total_pages);
+                    echo $renderPageBtn('Last &raquo;', $total_pages, $page_num >= $total_pages);
                     ?>
                 </div>
             </div>
@@ -364,7 +365,7 @@
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
-        
+
         // Restore scroll position if flag is set
         if (sessionStorage.getItem('should_restore_scroll') === 'true') {
             const savedScrollY = sessionStorage.getItem('audit_logs_scroll_y');

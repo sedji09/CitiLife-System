@@ -34,6 +34,8 @@ if ($statusParam === 'overdue') {
     $records = array_values($records);
 } elseif ($statusParam === 'For Revision') {
     $records = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
+} elseif ($statusParam === 'pending') {
+    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
 } else {
     $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'Report Ready'], true, $radiologistId);
 }
@@ -61,6 +63,9 @@ sort($priorities);
         } elseif ($statusParam === 'For Revision') {
             $wlTitle = 'Cases For Revision';
             $wlSubtitle = 'Cases flagged for editing or correction';
+        } elseif ($statusParam === 'pending') {
+            $wlTitle = 'Pending Cases';
+            $wlSubtitle = 'Cases waiting to be read';
         }
         ?>
         <h2 id="worklist-title" class="text-2xl font-semibold text-gray-900"><?= htmlspecialchars($wlTitle) ?></h2>
@@ -445,9 +450,9 @@ sort($priorities);
                 btn.innerHTML = label;
                 
                 if (isActive) {
-                    btn.className = "px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black";
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
                 } else {
-                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
                 }
                 
                 if (disabled) {
@@ -474,36 +479,36 @@ sort($priorities);
             }
 
             // First Button
-            container.appendChild(createButton('&laquo; First', 1, currentPage === 1));
+            container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
 
             // Back Button
-            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage === 1));
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
 
             // Page numbers
             if (totalPages <= 7) {
                 // Show all pages
                 for (let i = 1; i <= totalPages; i++) {
-                    container.appendChild(createButton(i, i, false, i === currentPage));
+                    container.appendChild(createButton(i, i, false, i == currentPage));
                 }
             } else {
                 // We have many pages
                 if (currentPage <= 4) {
                     // Near start: 1, 2, 3, 4, 5, ..., T
                     for (let i = 1; i <= 5; i++) {
-                        container.appendChild(createButton(i, i, false, i === currentPage));
+                        container.appendChild(createButton(i, i, false, i == currentPage));
                     }
                     container.appendChild(createEllipsis());
-                    container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
                 } else if (currentPage >= totalPages - 3) {
                     // Near end: 1, ..., T-4, T-3, T-2, T-1, T
-                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
                     for (let i = totalPages - 4; i <= totalPages; i++) {
-                        container.appendChild(createButton(i, i, false, i === currentPage));
+                        container.appendChild(createButton(i, i, false, i == currentPage));
                     }
                 } else {
                     // Middle: 1, ..., C-1, C, C+1, ..., T
-                    container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
                     
                     container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
@@ -516,10 +521,10 @@ sort($priorities);
             }
 
             // Next Button
-            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage === totalPages));
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
 
             // Last Button
-            container.appendChild(createButton('Last &raquo;', totalPages, currentPage === totalPages));
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
         const paramsList = new window.URLSearchParams(window.location.search);

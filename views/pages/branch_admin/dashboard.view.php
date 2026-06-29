@@ -303,61 +303,73 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
     <!-- Total Patients of Branch Card -->
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition group">
+    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition group">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-semibold text-gray-500 group-hover:text-blue-600 transition">Total Patients of Branch
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-blue-600 transition">Total Patients
         </p>
-        <div class="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition">
-          <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
+        <div class="p-1.5 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition">
+          <i data-lucide="users" class="w-4 h-4 text-blue-600"></i>
         </div>
       </div>
-      <p class="text-3xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
-      <p class="text-xs text-gray-400 mt-1">Registered in this branch</p>
+      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1">Registered in branch</p>
     </div>
 
     <!-- X-ray Cases Today Card -->
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition group">
+    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition group">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-semibold text-gray-500 group-hover:text-red-600 transition">X-ray Cases
-          <?= htmlspecialchars($periodLabel ?? 'Today') ?>
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">X-ray Cases
         </p>
-        <div class="p-2 bg-red-50 rounded-lg group-hover:bg-red-100 transition">
-          <i data-lucide="scan-eye" class="w-5 h-5 text-red-600"></i>
+        <div class="p-1.5 bg-red-50 rounded-lg group-hover:bg-red-100 transition">
+          <i data-lucide="scan-eye" class="w-4 h-4 text-red-600"></i>
         </div>
       </div>
-      <p class="text-3xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
-      <p class="text-xs text-gray-400 mt-1"><?= ($filter === 'today') ? date('F d, Y') : 'Based on selected filter' ?>
+      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : 'Selected filter' ?>
       </p>
     </div>
 
     <!-- Pending Cases Card -->
-    <a href="/<?= PROJECT_DIR ?>/branch-xray-cases"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition block group">
+    <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&status=Pending&date=All"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-semibold text-gray-500 group-hover:text-yellow-600 transition">Pending Cases</p>
-        <div class="p-2 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition">
-          <i data-lucide="hourglass" class="w-5 h-5 text-yellow-600"></i>
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-yellow-600 transition">Pending</p>
+        <div class="p-1.5 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition">
+          <i data-lucide="hourglass" class="w-4 h-4 text-yellow-600"></i>
         </div>
       </div>
-      <p class="text-3xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['pending'] ?? 0) ?></p>
-      <p class="text-xs text-gray-400 mt-1">Cases waiting for action</p>
+      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['pending'] ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1">Waiting for action</p>
+    </a>
+
+    <!-- Backlog Cases Card -->
+    <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&date=Backlog"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">Backlogs</p>
+        <div class="p-1.5 bg-red-50 rounded-lg group-hover:bg-red-100 transition">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
+        </div>
+      </div>
+      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['backlog'] ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1">Unreleased past cases</p>
     </a>
 
     <!--Pending Record Requests Card -->
     <a href="/<?= PROJECT_DIR ?>/record-requests"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md transition block group">
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-semibold text-gray-500 group-hover:text-amber-600 transition">
-          Pending Record Requests</p>
-        <div class="p-2 bg-amber-50 rounded-lg group-hover:bg-amber-100 transition">
-          <i data-lucide="file-text" class="w-5 h-5 text-amber-600"></i>
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-amber-600 transition">
+          Record Requests</p>
+        <div class="p-1.5 bg-amber-50 rounded-lg group-hover:bg-amber-100 transition">
+          <i data-lucide="file-text" class="w-4 h-4 text-amber-600"></i>
         </div>
       </div>
-      <p class="text-3xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingRequestsCount ?? 0) ?></p>
-      <p class="text-xs text-gray-400 mt-1">Pending from other branches</p>
+      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingRequestsCount ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1">From other branches</p>
     </a>
 
 

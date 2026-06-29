@@ -21,7 +21,8 @@ $globalStats = $caseModel->getGlobalPendingStats($radiologistId);
 $emergencyCases = $globalStats['emergencyCases'];
 $totalPending = $globalStats['totalPending'];
 $overdueCases = $globalStats['overdueCases'];
-$completedToday = $globalStats['completedToday'];
+$chartStatsInitial = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
+$completedFiltered = $chartStatsInitial['completedCases'] ?? 0;
 $inProgress = $globalStats['inProgress'];
 $forRevision = $globalStats['forRevision'];
 
@@ -97,6 +98,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $chartStats = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
     echo json_encode([
         'emergencyCases' => $chartStats['emergencyCases'],
+        'completedFiltered' => $chartStats['completedCases'] ?? 0,
         'totalPending' => $chartStats['totalPending'],
         'labels' => $labels,
         'emergencyData' => $emergencyData,
@@ -315,6 +317,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     if (filter === 'yearly') url += '&year=' + document.getElementById('yearPickerValue').value;
 
                     window.history.pushState({ path: url }, '', url);
+                    if (window.__APP__) window.__APP__.currentPath = url;
 
                     if (typeof fetchDashboardData === 'function') {
                         fetchDashboardData();
@@ -328,7 +331,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
 
         <!-- Card 1: Pending STAT -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT"
+        <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT&status=pending"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 p-2 rounded-lg">
@@ -349,7 +352,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 2: Total Pending -->
-        <a href="/<?= PROJECT_DIR ?>/worklist"
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=pending"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #fed7aa;" onmouseenter="this.style.borderColor='#fb923c'"
             onmouseleave="this.style.borderColor='#fed7aa'">
@@ -426,10 +429,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                 </div>
-                <span id="completed-count" class="text-2xl font-extrabold text-green-600"><?= $completedToday ?></span>
+                <span id="completed-count" class="text-2xl font-extrabold text-green-600"><?= $completedFiltered ?></span>
             </div>
             <div>
-                <p class="text-xs font-semibold text-gray-800">Completed Today</p>
+                <p id="completed-label" class="text-xs font-semibold text-gray-800">Completed <?= htmlspecialchars($periodLabel) ?></p>
                 <p class="text-[10px] text-gray-400">Reports submitted</p>
             </div>
         </div>
@@ -475,6 +478,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     // NOTE: stat-count and pending-count are global (not date-filtered),
                                     // so they are intentionally NOT updated here.
                                     document.getElementById('period-label').innerText = data.periodLabel;
+                                    document.getElementById('completed-count').innerText = data.completedFiltered;
+                                    document.getElementById('completed-label').innerText = 'Completed ' + data.periodLabel;
 
                                     if (window.priorityChart) {
                                         window.priorityChart.data.labels = data.labels;
@@ -657,7 +662,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     document.getElementById('pending-count').innerText = data.totalPending;
                     document.getElementById('overdue-count').innerText = data.overdueCases;
                     document.getElementById('inprogress-count').innerText = data.inProgress;
-                    document.getElementById('completed-count').innerText = data.completedToday;
                     document.getElementById('revision-count').innerText = data.forRevision;
                 })
                 .catch(() => { });

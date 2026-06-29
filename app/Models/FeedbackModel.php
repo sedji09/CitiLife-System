@@ -80,9 +80,9 @@ class FeedbackModel
     /**
      * Get feedback for a specific branch
      */
-    public function getBranchFeedback($branchId)
+    public function getBranchFeedback($branchId, $limit = null, $offset = 0)
     {
-        $stmt = $this->pdo->prepare("
+        $sql = "
             SELECT f.*, p.first_name, p.last_name, p.patient_number, b.name as branch_name, c.case_number, c.exam_type, u.avatar
             FROM feedbacks f
             LEFT JOIN patients p ON f.patient_id = p.id
@@ -91,17 +91,30 @@ class FeedbackModel
             LEFT JOIN users u ON f.user_id = u.id
             WHERE f.branch_id = ?
             ORDER BY f.created_at DESC
-        ");
+        ";
+        
+        if ($limit !== null) {
+            $sql .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$branchId]);
         return $stmt->fetchAll();
+    }
+
+    public function countBranchFeedback($branchId)
+    {
+        $stmt = $this->pdo->prepare("SELECT count(*) FROM feedbacks WHERE branch_id = ?");
+        $stmt->execute([$branchId]);
+        return (int) $stmt->fetchColumn();
     }
 
     /**
      * Get all feedback across all branches
      */
-    public function getAllFeedback()
+    public function getAllFeedback($limit = null, $offset = 0)
     {
-        $stmt = $this->pdo->prepare("
+        $sql = "
             SELECT f.*, p.first_name, p.last_name, p.patient_number, b.name as branch_name, c.case_number, c.exam_type, u.avatar
             FROM feedbacks f
             LEFT JOIN patients p ON f.patient_id = p.id
@@ -109,9 +122,22 @@ class FeedbackModel
             LEFT JOIN cases c ON f.case_id = c.id
             LEFT JOIN users u ON f.user_id = u.id
             ORDER BY f.created_at DESC
-        ");
+        ";
+
+        if ($limit !== null) {
+            $sql .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    public function countAllFeedback()
+    {
+        $stmt = $this->pdo->prepare("SELECT count(*) FROM feedbacks");
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
     }
 
     /**

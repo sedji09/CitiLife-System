@@ -44,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
 
+        if (in_array($inputRole, ['it_admin', 'admin_central', 'radiologist'])) {
+            $branchId = null;
+        }
+
         if (empty($email) || empty($password) || empty($inputRole)) {
             $error = "All fields are required.";
         } else {
@@ -80,6 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
         $password = $_POST['password'] ?? null;
+
+        if (in_array($inputRole, ['it_admin', 'admin_central', 'radiologist'])) {
+            $branchId = null;
+        }
 
         if ($userId && !empty($email) && !empty($inputRole)) {
             $existing = $userModel->getUserByEmail($email);

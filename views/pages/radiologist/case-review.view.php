@@ -38,7 +38,7 @@ if ($backId) {
     </div>
     <div class="flex items-center flex-wrap gap-1.5">
         <?php
-        $pColor = match($caseDetails['priority']) { 'STAT' => 'red', 'Urgent' => 'orange', 'Priority' => 'orange', default => 'blue' };
+        $pColor = match($caseDetails['priority']) { 'STAT' => 'red', 'Urgent' => 'yellow', 'Priority' => 'orange', default => 'blue' };
         $sColor = ($isSubmitted || $caseDetails['status'] === 'Report Ready') ? 'indigo' : ($caseDetails['status'] === 'Completed' ? 'green' : ($caseDetails['status'] === 'Under Reading' ? 'blue' : 'yellow'));
         $statusDisplay = $isSubmitted ? 'Report Ready' : $caseDetails['status'];
         ?>

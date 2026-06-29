@@ -368,7 +368,7 @@
                     $url = '?' . http_build_query($params);
                     
                     if ($isActive) {
-                        return '<span class="px-3 py-1.5 rounded-lg bg-black text-xs font-bold text-white shadow-sm border border-black audit-text-main">' . $label . '</span>';
+                        return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600 audit-text-main">' . $label . '</span>';
                     }
                     
                     if ($disabled) {
@@ -383,31 +383,31 @@
                 };
 
                 // First Button
-                echo $renderPageBtn('&laquo; First', 1, $page_num === 1);
+                echo $renderPageBtn('&laquo; First', 1, $page_num <= 1);
 
                 // Back Button
-                echo $renderPageBtn('&lsaquo; Back', $page_num - 1, $page_num === 1);
+                echo $renderPageBtn('&lsaquo; Back', $page_num - 1, $page_num <= 1);
 
                 // Page numbers
                 if ($totalPages <= 7) {
                     for ($i = 1; $i <= $totalPages; $i++) {
-                        echo $renderPageBtn($i, $i, false, $i === $page_num);
+                        echo $renderPageBtn($i, $i, false, $i == $page_num);
                     }
                 } else {
                     if ($page_num <= 4) {
                         for ($i = 1; $i <= 5; $i++) {
-                            echo $renderPageBtn($i, $i, false, $i === $page_num);
+                            echo $renderPageBtn($i, $i, false, $i == $page_num);
                         }
                         echo $renderEllipsis();
-                        echo $renderPageBtn($totalPages, $totalPages, false, $totalPages === $page_num);
+                        echo $renderPageBtn($totalPages, $totalPages, false, $totalPages == $page_num);
                     } elseif ($page_num >= $totalPages - 3) {
-                        echo $renderPageBtn(1, 1, false, 1 === $page_num);
+                        echo $renderPageBtn(1, 1, false, 1 == $page_num);
                         echo $renderEllipsis();
                         for ($i = $totalPages - 4; $i <= $totalPages; $i++) {
-                            echo $renderPageBtn($i, $i, false, $i === $page_num);
+                            echo $renderPageBtn($i, $i, false, $i == $page_num);
                         }
                     } else {
-                        echo $renderPageBtn(1, 1, false, 1 === $page_num);
+                        echo $renderPageBtn(1, 1, false, 1 == $page_num);
                         echo $renderEllipsis();
                         echo $renderPageBtn($page_num - 1, $page_num - 1, false, false);
                         echo $renderPageBtn($page_num, $page_num, false, true);
@@ -418,10 +418,10 @@
                 }
 
                 // Next Button
-                echo $renderPageBtn('Next &rsaquo;', $page_num + 1, $page_num === $totalPages);
+                echo $renderPageBtn('Next &rsaquo;', $page_num + 1, $page_num >= $totalPages);
 
                 // Last Button
-                echo $renderPageBtn('Last &raquo;', $totalPages, $page_num === $totalPages);
+                echo $renderPageBtn('Last &raquo;', $totalPages, $page_num >= $totalPages);
                 ?>
             </div>
         </div>
