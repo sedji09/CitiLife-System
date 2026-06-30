@@ -21,7 +21,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2">
-    <a href="?role=radtech&page=xray-patient-records" aria-label="Go back to records" class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
+    <a href="?role=radtech&page=xray-patient-records" aria-label="Go back to records"
+        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
     <div>
@@ -54,8 +55,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Age / Sex</span>
-                    <span class="text-gray-400 text-sm"><?= htmlspecialchars($caseDetails['sex']) ?> /
-                        <?= htmlspecialchars($caseDetails['age']) ?></span>
+                    <span class="text-gray-400 text-sm"> <?= htmlspecialchars($caseDetails['age']) ?> /
+                        <?= htmlspecialchars($caseDetails['sex']) ?></span>
                 </div>
 
                 <!-- Contact Number -->
@@ -123,12 +124,14 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                     $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
                     ?>
 
-                    <button type="button" aria-label="Download or Print Report" onclick="openReportViewer('<?= $reportUrl ?>')"
+                    <button type="button" aria-label="Download or Print Report"
+                        onclick="openReportViewer('<?= $reportUrl ?>')"
                         class="group relative w-full h-full flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-400 hover:bg-red-50 transition-all cursor-pointer">
                         <div class="bg-white p-4 rounded-full shadow-md mb-4 group-hover:scale-110 transition-transform">
                             <i data-lucide="file-text" class="w-10 h-10 text-red-500"></i>
                         </div>
-                        <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Download / Print Report</span>
+                        <span class="font-bold text-gray-800 text-lg group-hover:text-red-600 transition-colors">Download /
+                            Print Report</span>
                         <span class="text-sm text-gray-500 mt-1">Open report in a popup window</span>
                     </button>
                 <?php else: ?>
@@ -200,14 +203,14 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                         <!-- Zoom Controls -->
                         <div
                             class="flex items-center gap-3 bg-black/20 rounded-xl px-3 py-1.5 border border-white/5 shadow-inner">
-                            <button id="btn-zoom-out" aria-label="Zoom Out" class="text-white/60 hover:text-white transition-colors"
-                                title="Zoom Out">
+                            <button id="btn-zoom-out" aria-label="Zoom Out"
+                                class="text-white/60 hover:text-white transition-colors" title="Zoom Out">
                                 <i data-lucide="minus-circle" class="w-4 h-4"></i>
                             </button>
                             <span id="zoom-level"
                                 class="text-[10px] font-black text-white min-w-[35px] text-center tabular-nums"><?= isset($isZoomed) ? $isZoomed : '100%' ?></span>
-                            <button id="btn-zoom-in" aria-label="Zoom In" class="text-white/60 hover:text-white transition-colors"
-                                title="Zoom In">
+                            <button id="btn-zoom-in" aria-label="Zoom In"
+                                class="text-white/60 hover:text-white transition-colors" title="Zoom In">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -227,7 +230,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                                 <?php foreach ($savedPaths as $index => $path): ?>
                                     <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
                                         data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>">
-                                        <img src="<?= htmlspecialchars($path) ?>" class="w-full h-full object-cover" alt="X-ray thumbnail <?= $index + 1 ?>">
+                                        <img src="<?= htmlspecialchars($path) ?>" class="w-full h-full object-cover"
+                                            alt="X-ray thumbnail <?= $index + 1 ?>">
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -453,16 +457,16 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
             <?php endif; ?>
         </div>
 
-</div>
+    </div>
 
-<script>
-    function openReportViewer(url) {
-        // Open the report in a popup window similar to the COR viewer
-        const popupWidth = 850;
-        const popupHeight = 800;
-        const left = (screen.width - popupWidth) / 2;
-        const top = (screen.height - popupHeight) / 2;
-        
-        window.open(url, 'ReportViewer', `width=${popupWidth},height=${popupHeight},top=${top},left=${left},scrollbars=yes,resizable=yes`);
-    }
-</script>
+    <script>
+        function openReportViewer(url) {
+            // Open the report in a popup window similar to the COR viewer
+            const popupWidth = 850;
+            const popupHeight = 800;
+            const left = (screen.width - popupWidth) / 2;
+            const top = (screen.height - popupHeight) / 2;
+
+            window.open(url, 'ReportViewer', `width=${popupWidth},height=${popupHeight},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+        }
+    </script>

@@ -253,6 +253,7 @@
                     <tr class="border-b text-gray-500 font-medium">
                         <th class="text-left px-4 py-3.5">Date</th>
                         <th class="text-left px-4 py-3.5">User</th>
+                        <th class="text-left px-4 py-3.5">Role</th>
                         <th class="text-left px-4 py-3.5">Action</th>
                         <th class="text-left px-4 py-3.5">Status</th>
                     </tr>
@@ -260,7 +261,7 @@
                 <tbody class="divide-y divide-gray-50 text-gray-800">
                     <?php if (empty($logs)): ?>
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-gray-400 italic">
+                            <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic">
                                 No logs found for the selected filters.
                             </td>
                         </tr>
@@ -314,6 +315,11 @@
                                     <div class="text-[11px] text-gray-400 audit-text-dim">
                                         <?= htmlspecialchars($log['user_email'] ?? '') ?>
                                     </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-700">
+                                        <?= htmlspecialchars(ucwords(str_replace('_', ' ', $log['user_role'] ?? 'N/A'))) ?>
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="font-bold leading-tight audit-text-main">

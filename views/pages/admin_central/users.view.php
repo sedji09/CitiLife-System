@@ -278,9 +278,8 @@
                 <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Initial Password</label>
                 <div class="relative">
                     <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="password" id="password" name="password" required placeholder="••••••••"
-                        autocomplete="new-password"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                    <input type="text" id="password" name="password" required readonly
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-100 text-gray-600 text-sm focus:outline-none transition-all cursor-not-allowed">
                 </div>
             </div>
 
@@ -439,10 +438,17 @@
         }
     }
 
+
+    function generateRandomPassword() {
+        const year = new Date().getFullYear();
+        const randomNum = Math.floor(10000 + Math.random() * 90000);
+        return `${year}_${randomNum}`;
+    }
+
     function openAddUserModal() {
         // Clear inputs to prevent lingering values or autofill
         document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
+        document.getElementById('password').value = generateRandomPassword();
         document.getElementById('role').value = '';
         document.getElementById('branch_id').value = '';
 

@@ -40,9 +40,9 @@ try {
     // Branch Admin only sees their own branch logs
     $logs = $auditLogModel->getFilteredLogs($filters, $limit, $offset, $currentRole, $currentBranchId);
     $total_count = $auditLogModel->getTotalFilteredLogsCount($filters, $currentRole, $currentBranchId);
-    $distinctModules = $auditLogModel->getDistinctModules();
+    $distinctModules = $auditLogModel->getDistinctModules($currentRole, $currentBranchId);
     // For roles, we might only want to show staff roles, but keeping it general for now
-    $distinctRoles = $auditLogModel->getDistinctRoles();
+    $distinctRoles = $auditLogModel->getDistinctRoles($currentRole);
 } catch (\Exception $e) {
     $error = "Failed to retrieve logs: " . $e->getMessage();
     $logs = [];

@@ -46,9 +46,32 @@ try {
         exit;
     }
 
+    // Fetch details before deleting
+    $stmtDetails = $pdo->prepare("SELECT request_number, branch_id FROM requests WHERE id = ?");
+    $stmtDetails->execute([$caseId]);
+    $requestDetails = $stmtDetails->fetch();
+    $branchId = $requestDetails['branch_id'] ?? null;
+    $caseNumber = $requestDetails['request_number'] ?? 'Unknown';
+
     // Delete the request
     $stmtDel = $pdo->prepare("DELETE FROM requests WHERE id = ?");
     $stmtDel->execute([$caseId]);
+
+    require_once __DIR__ . '/../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $userId = $_SESSION['user_id'] ?? null;
+    
+    if ($userId) {
+        $auditLogModel->addLog(
+            $userId,
+            'Cancelled X-Ray Request',
+            'Portal X-Ray Request',
+            'Patient',
+            $patientId,
+            "Patient cancelled their X-ray request ($caseNumber)",
+            $branchId
+        );
+    }
 
     echo json_encode(['success' => true, 'message' => 'Request cancelled successfully']);
 } catch (Exception $e) {

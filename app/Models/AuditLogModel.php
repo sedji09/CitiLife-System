@@ -46,7 +46,7 @@ class AuditLogModel {
     /**
      * Get distinct modules for filtering.
      */
-    public function getDistinctModules($currentRole = 'admin_central') {
+    public function getDistinctModules($currentRole = 'admin_central', $currentBranchId = null) {
         // For IT Admin, always return the fixed list of technical/system modules
         // regardless of whether there are existing logs for them yet.
         if ($currentRole === 'it_admin') {
@@ -55,30 +55,34 @@ class AuditLogModel {
             return $modules;
         }
 
-        $query = "SELECT DISTINCT module FROM audit_logs WHERE module IS NOT NULL";
+        $params = [];
+        // For branch admin, only fetch modules that actually have logs in their branch
+        if ($currentRole === 'branch_admin' && $currentBranchId) {
+            $query = "SELECT DISTINCT al.module FROM audit_logs al 
+                      LEFT JOIN users u ON al.user_id = u.id 
+                      WHERE al.module IS NOT NULL AND al.branch_id = ? 
+                      AND (u.role IS NULL OR u.role NOT IN ('admin_central', 'it_admin'))";
+            $params[] = $currentBranchId;
+        } else {
+            $query = "SELECT DISTINCT module FROM audit_logs WHERE module IS NOT NULL";
+        }
+
         $stmt = $this->pdo->prepare($query);
-        $stmt->execute();
+        $stmt->execute($params);
         $dbModules = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        // Merge with all known modules to ensure they are always visible in the dropdown
-        // even if no logs currently exist for them.
-        $allKnownModules = [
-            'Authentication', 'Branch Management', 'Case Review', 'Findings & Reports',
-            'Patient Approvals', 'Patient Feedback', 'Patient Records', 'Patient Registration',
-            'Record Requests', 'Report Correction', 'Reports Generation', 'Security Settings',
-            'System', 'User Management', 'Worklist'
-        ];
-
-        $modules = array_unique(array_merge($allKnownModules, $dbModules));
-        sort($modules);
-        return $modules;
+        sort($dbModules);
+        return $dbModules;
     }
 
-    /**
-     * Get distinct roles for filtering.
-     */
-    public function getDistinctRoles() {
-        $stmt = $this->pdo->prepare("SELECT DISTINCT role FROM users WHERE role != 'patient' ORDER BY role ASC");
+    public function getDistinctRoles($currentRole = 'admin_central') {
+        $query = "SELECT DISTINCT role FROM users WHERE role != 'patient'";
+        if ($currentRole === 'branch_admin') {
+            $query .= " AND role NOT IN ('admin_central', 'it_admin')";
+        }
+        $query .= " ORDER BY role ASC";
+        
+        $stmt = $this->pdo->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
@@ -100,6 +104,8 @@ class AuditLogModel {
         if (!in_array($currentRole, ['admin_central', 'it_admin']) && $currentBranchId) {
             $query .= " AND al.branch_id = ?";
             $params[] = $currentBranchId;
+            // Exclude logs from central admins in branch view
+            $query .= " AND (u.role IS NULL OR u.role NOT IN ('admin_central', 'it_admin'))";
         }
 
         // IT Admin sees only system-related logs
@@ -161,6 +167,8 @@ class AuditLogModel {
         if (!in_array($currentRole, ['admin_central', 'it_admin']) && $currentBranchId) {
             $query .= " AND al.branch_id = ?";
             $params[] = $currentBranchId;
+            // Exclude logs from central admins in branch view
+            $query .= " AND (u.role IS NULL OR u.role NOT IN ('admin_central', 'it_admin'))";
         }
 
         // IT Admin sees only system-related logs

@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <?php endif; ?>
             <?php endif; ?>
 
-            <form method="POST" action="" class="space-y-4 sm:space-y-6">
+            <form id="patientLoginForm" name="patientLoginForm" method="POST" action="/<?= PROJECT_DIR ?>/patient-login" autocomplete="on" class="space-y-4 sm:space-y-6">
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
                     <div class="relative">

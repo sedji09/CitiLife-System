@@ -124,6 +124,7 @@
                     <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
                         <th class="text-left font-semibold px-4 py-4 whitespace-nowrap">Timestamp</th>
                         <th class="text-left font-semibold px-4 py-4 truncate">Actor</th>
+                        <th class="text-left font-semibold px-4 py-4">Role</th>
                         <th class="text-left font-semibold px-4 py-4">Branch</th>
                         <th class="text-left font-semibold px-4 py-4">Category</th>
                         <th class="text-left font-semibold px-4 py-4">Action</th>
@@ -134,7 +135,7 @@
                 <tbody class="text-gray-800 bg-white divide-y divide-gray-100">
                     <?php if (empty($logs)): ?>
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center gap-3">
                                     <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
                                         <i data-lucide="search-x" class="w-8 h-8 text-gray-300"></i>
@@ -164,11 +165,13 @@
                                                 <?= htmlspecialchars($log['user_email']) ?>
                                             </span>
                                         <?php endif; ?>
-                                        <span
-                                            class="text-[9px] font-black <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-500' : 'text-gray-400' ?> uppercase tracking-widest leading-none">
-                                            <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
-                                        </span>
                                     </div>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span
+                                        class="inline-block text-[10px] font-bold <?= ($log['user_role'] ?? '') === 'it_admin' ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-100' ?> px-2 py-1 rounded capitalize tracking-wider leading-none">
+                                        <?= htmlspecialchars(str_replace('_', ' ', $log['user_role'] ?? 'AUTOMATED')) ?>
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="text-sm text-gray-600 tracking-tight">

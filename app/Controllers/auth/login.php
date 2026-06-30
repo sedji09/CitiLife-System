@@ -12,7 +12,8 @@ try {
 }
 
 if (!function_exists('persistStaffLoginLock')) {
-    function persistStaffLoginLock($pdo, $email, $lockedUntilTimestamp) {
+    function persistStaffLoginLock($pdo, $email, $lockedUntilTimestamp)
+    {
         if (empty($email) || $lockedUntilTimestamp <= time()) {
             return;
         }
@@ -22,7 +23,8 @@ if (!function_exists('persistStaffLoginLock')) {
 }
 
 if (!function_exists('clearStaffLoginLock')) {
-    function clearStaffLoginLock($pdo, $userId) {
+    function clearStaffLoginLock($pdo, $userId)
+    {
         $stmt = $pdo->prepare('UPDATE users SET login_locked_until = NULL WHERE id = ?');
         $stmt->execute([$userId]);
     }
@@ -72,78 +74,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             $error = "Invalid email format.";
         } else {
             // Prepare statement to fetch user by email
-        $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
-        $stmt->execute(['email' => $email]);
-        $user = $stmt->fetch();
+            $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+            $stmt->execute(['email' => $email]);
+            $user = $stmt->fetch();
 
-        // Check if user exists and verify password
-        if ($user && password_verify($password, $user['password'])) {
-            if ($user['status'] === 'Inactive') {
-                $error = "Your account has been deactivated. Please contact the administrator.";
-            } elseif ($user['role'] === 'patient') {
-                $error = "This portal is for Staff and Administrators only. Please use the Patient Portal.";
+            // Check if user exists and verify password
+            if ($user && password_verify($password, $user['password'])) {
+                if ($user['status'] === 'Inactive') {
+                    $error = "Your account has been deactivated. Please contact the administrator.";
+                } elseif ($user['role'] === 'patient') {
+                    $error = "This portal is for Staff and Administrators only. Please use the Patient Portal.";
+                } else {
+                    // Password is correct, start session
+                    unset($_SESSION['staff_login_attempts']);
+                    clearStaffLoginLock($pdo, $user['id']);
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['role'] = $user['role'];
+                    $_SESSION['email'] = $user['email'];
+                    $_SESSION['name'] = $user['name'] ?? '';
+                    $_SESSION['avatar'] = $user['avatar'] ?? null;
+                    $_SESSION['branch_id'] = $user['branch_id'];
+
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    $auditLogModel->addLog(
+                        $user['id'],
+                        'Staff Login',
+                        'Authentication',
+                        'Session',
+                        $user['id'],
+                        "Successful login",
+                        $user['branch_id']
+                    );
+
+                    // Redirect to dashboard
+                    header("Location: /" . PROJECT_DIR . "/dashboard");
+                    exit;
+                }
             } else {
-                // Password is correct, start session
-                unset($_SESSION['staff_login_attempts']);
-                clearStaffLoginLock($pdo, $user['id']);
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['name'] = $user['name'] ?? '';
-                $_SESSION['avatar'] = $user['avatar'] ?? null;
-                $_SESSION['branch_id'] = $user['branch_id'];
+                $attempts['attempts']++;
+                if ($attempts['attempts'] >= 8) {
+                    $attempts['locked_until'] = time() + 900; // 15 minutes
+                } elseif ($attempts['attempts'] == 7) {
+                    $attempts['locked_until'] = time() + 300; // 5 minutes
+                } elseif ($attempts['attempts'] == 6) {
+                    $attempts['locked_until'] = time() + 60; // 1 minute
+                } elseif ($attempts['attempts'] == 5) {
+                    $attempts['locked_until'] = time() + 30; // 30 seconds
+                }
+
+                if ($attempts['attempts'] >= 5) {
+                    persistStaffLoginLock($pdo, $email, $attempts['locked_until']);
+                    header("Location: /" . PROJECT_DIR . "/login");
+                    exit;
+                }
+
+                $error = 'Invalid email or password.';
+                if ($attempts['attempts'] >= 3) {
+                    $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
+                }
 
                 require_once basePath('app/Models/AuditLogModel.php');
                 $auditLogModel = new \AuditLogModel($pdo);
+                $failedUserId = $user ? $user['id'] : 0;
                 $auditLogModel->addLog(
-                    $user['id'],
-                    'Staff Login',
+                    $failedUserId,
+                    'Failed Staff Login',
                     'Authentication',
                     'Session',
-                    $user['id'],
-                    "Successful login",
-                    $user['branch_id']
+                    $failedUserId,
+                    "Invalid email or password (" . substr($email, 0, 50) . ")"
                 );
-
-                // Redirect to dashboard
-                header("Location: /" . PROJECT_DIR . "/dashboard");
-                exit;
             }
-        } else {
-            $attempts['attempts']++;
-            if ($attempts['attempts'] >= 8) {
-                $attempts['locked_until'] = time() + 900; // 15 minutes
-            } elseif ($attempts['attempts'] == 7) {
-                $attempts['locked_until'] = time() + 300; // 5 minutes
-            } elseif ($attempts['attempts'] == 6) {
-                $attempts['locked_until'] = time() + 60; // 1 minute
-            } elseif ($attempts['attempts'] == 5) {
-                $attempts['locked_until'] = time() + 30; // 30 seconds
-            }
-
-            if ($attempts['attempts'] >= 5) {
-                persistStaffLoginLock($pdo, $email, $attempts['locked_until']);
-                header("Location: /" . PROJECT_DIR . "/login");
-                exit;
-            }
-
-            $error = 'Invalid email or password.';
-            if ($attempts['attempts'] >= 3) {
-                $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
-            }
-
-            require_once basePath('app/Models/AuditLogModel.php');
-            $auditLogModel = new \AuditLogModel($pdo);
-            $failedUserId = $user ? $user['id'] : 0;
-            $auditLogModel->addLog(
-                $failedUserId,
-                'Failed Staff Login',
-                'Authentication',
-                'Session',
-                $failedUserId,
-                "Invalid email or password (" . substr($email, 0, 50) . ")"
-            );
-        }
         }
     } else {
         $error = 'Please enter both email and password.';
@@ -189,7 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
                         class="h-10 w-10 sm:h-12 sm:w-12 object-contain"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
@@ -200,13 +203,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
             <?php if (isset($_GET['reason']) && $_GET['reason'] === 'timeout'): ?>
                 <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3 animate-pulse">
-                    <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
+                    <div
+                        class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
                         </svg>
                     </div>
                     <p class="text-xs font-bold text-red-700 leading-tight">
-                        Session expired due to inactivity. <span class="block text-[10px] font-normal opacity-70">Please log in again.</span>
+                        Session expired due to inactivity. <span class="block text-[10px] font-normal opacity-70">Please log
+                            in again.</span>
                     </p>
                 </div>
             <?php endif; ?>
@@ -215,11 +222,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <div class="mb-6 p-5 rounded-[20px] bg-red-50 text-red-700 flex flex-col items-center text-center">
                     <div class="flex items-center justify-center w-full mb-2">
                         <svg class="w-6 h-6 mr-2 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                                clip-rule="evenodd" />
                         </svg>
                         <h3 class="font-bold text-red-800 text-[16px]">Access Locked</h3>
                     </div>
-                    <p class="text-[14px] text-red-700 px-2">Too many failed attempts. Please try again after <strong id="lockTimer" data-remaining="<?= $remaining ?>"><?= $time_str ?></strong>.</p>
+                    <p class="text-[14px] text-red-700 px-2">Too many failed attempts. Please try again after <strong
+                            id="lockTimer" data-remaining="<?= $remaining ?>"><?= $time_str ?></strong>.</p>
                 </div>
             <?php else: ?>
                 <?php if ($error): ?>
@@ -233,16 +243,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     </div>
                 <?php endif; ?>
                 <?php if ($warning): ?>
-                    <div class="mb-6 p-4 rounded-lg bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 text-sm flex items-start">
+                    <div
+                        class="mb-6 p-4 rounded-lg bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 text-sm flex items-start">
                         <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
                         </svg>
                         <span><?= htmlspecialchars($warning) ?></span>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
 
-            <form method="POST" action="" class="space-y-4 sm:space-y-6">
+            <form id="loginForm" name="loginForm" method="POST" action="/<?= PROJECT_DIR ?>/login" autocomplete="on"
+                class="space-y-4 sm:space-y-6">
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
                     <div class="relative">
@@ -270,15 +284,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         <input id="password" name="password" type="password" required autocomplete="current-password"
                             class="pl-10 pr-10 appearance-none block w-full px-3 py-2.5 sm:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors sm:text-sm"
                             placeholder="••••••••">
-                        <button type="button" onclick="togglePassword('password', this)" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <button type="button" onclick="togglePassword('password', this)" tabindex="-1"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
                         </button>
                     </div>
                 </div>
 
                 <div class="pt-1 sm:pt-2">
-                    <button type="submit"
-                        <?= $is_locked ? 'disabled' : '' ?>
+                    <button type="submit" <?= $is_locked ? 'disabled' : '' ?>
                         class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white <?= $is_locked ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700' ?> focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
                         Sign In as Staff
                     </button>
@@ -295,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             const input = document.getElementById(inputId);
             const isPassword = input.getAttribute('type') === 'password';
             input.setAttribute('type', isPassword ? 'text' : 'password');
-            btn.innerHTML = isPassword ? 
+            btn.innerHTML = isPassword ?
                 '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>' :
                 '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>';
         }
