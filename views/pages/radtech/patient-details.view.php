@@ -11,7 +11,7 @@ if (isset($caseNotFound) && $caseNotFound) {
 
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="javascript:history.back()"
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
@@ -33,6 +33,13 @@ if (isset($caseNotFound) && $caseNotFound) {
     <div class="mt-5 rounded-lg bg-red-50 border border-red-300 p-4 flex items-center gap-3">
         <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 shrink-0"></i>
         <p class="text-sm text-red-700"><?= htmlspecialchars($errorMsg) ?></p>
+    </div>
+<?php endif; ?>
+
+<?php if ($successMsg ?? false): ?>
+    <div class="mt-5 rounded-lg bg-green-50 border border-green-300 p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-600 shrink-0"></i>
+        <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
     </div>
 <?php endif; ?>
 
@@ -158,12 +165,10 @@ if (isset($caseNotFound) && $caseNotFound) {
 
     <?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed']); ?>
     
-    <?php if ($isReportReady): ?>
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-    <?php endif; ?>
+    <div class="<?= $isReadOnly ? 'mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start' : 'mt-8' ?>">
 
     <!-- Image Upload -->
-    <div class="<?= $isReportReady ? '' : 'mt-8' ?> rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Upload</h3>
             <?php if (!$isReadOnly): ?>
@@ -292,10 +297,10 @@ if (isset($caseNotFound) && $caseNotFound) {
                     <div class="relative inline-block" id="custom-radiologist-select" style="min-width: 260px;">
                         <input type="hidden" name="radiologist_id" id="radiologist_id" required>
                         <button type="button"
-                            class="w-full text-left text-sm border border-gray-300 rounded-md py-1.5 pl-3 pr-8 bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm"
+                            class="w-full text-left text-sm border border-gray-300 rounded-md py-1.5 px-3 bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm"
                             onclick="document.getElementById('rad-options').classList.toggle('hidden')">
                             <span id="rad-selected-text" class="text-gray-700">-- Select Radiologist --</span>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 pointer-events-none"></i>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 pointer-events-none shrink-0 ml-2"></i>
                         </button>
                         <ul id="rad-options"
                             class="absolute z-50 mb-1 bottom-full w-full bg-white border border-gray-200 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
@@ -372,13 +377,15 @@ if (isset($caseNotFound) && $caseNotFound) {
         </div>
     </div>
 
-    <?php if ($isReportReady): ?>
-        <!-- Radiologist Report Findings Card -->
-        <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
-            <div class="mb-4 flex items-center gap-2">
-                <i data-lucide="file-text" class="h-5 w-5 text-red-500"></i>
-                <h3 class="text-lg font-semibold text-gray-800">Radiologist Report Findings</h3>
-            </div>
+    <?php if ($isReadOnly): ?>
+    <!-- Radiologist Report Findings Card -->
+    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col h-full">
+        <div class="mb-4 flex items-center gap-2">
+            <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
+            <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-500' ?>">Radiologist Report Findings</h3>
+        </div>
+        
+        <?php if ($isReportReady): ?>
             
             <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
                 <?php
@@ -433,8 +440,19 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <?php endif; ?>
             </div>
         </div>
-        </div> <!-- End of Grid -->
+        <?php else: ?>
+            <!-- Waiting for Report Empty State -->
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[200px]">
+                <div class="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                    <i data-lucide="clock" class="h-6 w-6 text-gray-400"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-gray-700 mb-1">Waiting for Report</h4>
+                <p class="text-xs text-gray-500 max-w-[280px]">The radiologist has not yet submitted the findings and impression for this case.</p>
+            </div>
+        <?php endif; ?>
+    </div>
     <?php endif; ?>
+    </div> <!-- End of Grid -->
 </form>
 
 

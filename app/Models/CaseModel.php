@@ -58,12 +58,12 @@ class CaseModel
         $pending = $stmt->fetchColumn();
 
         // Priority
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE priority IN ('Priority', 'Urgent') AND $dateCondition AND branch_id = ?");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE priority IN ('Priority', 'Urgent') AND (DATE(created_at) = CURDATE() OR released = 0) AND branch_id = ?");
         $stmt->execute([$branchId]);
         $priority = $stmt->fetchColumn();
 
         // STAT
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE priority = 'STAT' AND $dateCondition AND branch_id = ?");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE priority = 'STAT' AND (DATE(created_at) = CURDATE() OR released = 0) AND branch_id = ?");
         $stmt->execute([$branchId]);
         $stat = $stmt->fetchColumn();
 
@@ -194,6 +194,7 @@ class CaseModel
         $sql = "
             SELECT 
                 u.id, 
+                u.avatar,
                 COALESCE(NULLIF(u.full_name_report, ''), u.name) AS radiologist_name,
                 SUM(CASE WHEN c.branch_id = :branchId AND $cDateCondition THEN 1 ELSE 0 END) as total_assigned,
                 SUM(CASE WHEN c.status IN ('Pending', 'Under Reading') AND c.image_status = 'Uploaded' THEN 1 ELSE 0 END) as active_cases
@@ -1084,7 +1085,7 @@ class CaseModel
                 }
 
                 $pdo->commit();
-                return ['success' => true, 'message' => "Request approved and case $caseNumber generated."];
+                return ['success' => true, 'message' => "Request approved and case $caseNumber generated.", 'case_id' => $caseId];
 
             } elseif ($action === 'reject') {
                 $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = ? WHERE id = ?");

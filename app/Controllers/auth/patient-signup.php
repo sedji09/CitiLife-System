@@ -128,6 +128,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
 
                     $pdo->commit();
+                    
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    $auditLogModel->addLog(
+                        null,
+                        'Patient Registration',
+                        'Patient Portal',
+                        'Patient',
+                        $patientId,
+                        "Patient initiated account registration",
+                        $branchId
+                    );
+                    
                     $success = 'We found your record! Please check your email for the verification link to create your password.';
                 }
             }

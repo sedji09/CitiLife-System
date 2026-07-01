@@ -821,7 +821,29 @@
         this.showConfirmPassword = false;
 
         this.settingsModalOpen = true;
-        nextTick(() => this.renderIcons());
+        nextTick(() => {
+          this.renderIcons();
+          if (this.role === 'patient') {
+            const birthdateInput = document.getElementById('settingsBirthdate');
+            if (birthdateInput && typeof Datepicker !== 'undefined') {
+              if (birthdateInput.datepicker) {
+                birthdateInput.datepicker.destroy();
+              }
+              const picker = new Datepicker(birthdateInput, {
+                autohide: true,
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+              });
+              
+              if (!birthdateInput._hasDatepickerListener) {
+                birthdateInput.addEventListener('changeDate', (e) => {
+                  this.editBirthdate = birthdateInput.value;
+                });
+                birthdateInput._hasDatepickerListener = true;
+              }
+            }
+          }
+        });
       },
       selectSettingsTab(tab) {
         this.settingsActiveTab = tab;

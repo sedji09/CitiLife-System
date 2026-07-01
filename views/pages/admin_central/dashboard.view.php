@@ -94,8 +94,8 @@
         <div class="bg-white p-4 lg:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex-1" style="min-width: 140px;">
             <div class="flex items-start justify-between mb-3">
                 <h3 class="text-[13px] text-gray-500 font-medium">Routine Cases</h3>
-                <div class="p-1.5 rounded-lg bg-green-50 text-green-500">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <div class="p-1.5 rounded-lg bg-blue-50 text-blue-500">
+                    <i data-lucide="clipboard-list" class="w-4 h-4"></i>
                 </div>
             </div>
             <div class="text-2xl font-black text-gray-900" id="tot_routine">

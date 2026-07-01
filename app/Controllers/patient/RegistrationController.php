@@ -88,7 +88,7 @@ class RegistrationController
                                 $auditLogModel->addLog(
                                     $userId,
                                     'Submitted X-Ray Request',
-                                    'Portal X-Ray Request',
+                                    'Patient Portal',
                                     'Patient',
                                     $result['patient_id'] ?? $userId,
                                     "Patient requested a new X-ray via portal (New Patient)",
@@ -123,7 +123,7 @@ class RegistrationController
                                 $auditLogModel->addLog(
                                     $userId,
                                     'Submitted X-Ray Request',
-                                    'Portal X-Ray Request',
+                                    'Patient Portal',
                                     'Patient',
                                     $result['patient_id'] ?? $userId,
                                     "Patient requested a new X-ray via portal",

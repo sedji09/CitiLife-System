@@ -67,6 +67,19 @@ if (!$isReleased) {
 $isPreview = false;
 $isDownload = true;
 
+// Log download action
+require_once basePath('app/Models/AuditLogModel.php');
+$auditLogModel = new \AuditLogModel($pdo);
+$auditLogModel->addLog(
+    $_SESSION['user_id'],
+    'Downloaded Result',
+    'Patient Portal',
+    'Case',
+    $id,
+    "Patient downloaded X-Ray result PDF (" . $case['case_number'] . ")",
+    $case['branch_id']
+);
+
 // Fetch Radiologist Name via Model
 $radName = $case['radiologist_name'] ?? 'Radiologist on Duty';
 $radTitle = $case['radiologist_title'] ?? '';

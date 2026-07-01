@@ -30,11 +30,17 @@ if (isset($_GET['action']) && isset($_GET['id']) && !isset($_GET['ajax_polling']
             if ($action === 'approve') {
                 $logAction = "Approved patient registration";
                 $details = "Patient: $patientName, Request: $requestNum";
+                $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
+                
+                // Redirect straight to patient-details for immediate image upload
+                $_SESSION['flash_success'] = "Patient request approved. You can now upload diagnostic images.";
+                echo "<script>window.location.href = '/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . urlencode($result['case_id']) . "';</script>";
+                exit;
             } else {
                 $logAction = "Rejected X-ray request";
                 $details = "Request Number: $requestNum";
+                $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
             }
-            $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
         } else {
             $errorMsg = $result['message'];
         }

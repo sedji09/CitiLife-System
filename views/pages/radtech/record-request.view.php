@@ -94,6 +94,7 @@
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Patient Name
                         </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Type</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Date</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Form Branch
                         </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Date Requested
@@ -105,7 +106,7 @@
                 <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
                     <?php if (count($requests) === 0): ?>
                         <tr>
-                            <td colspan="7" class="text-center py-8 text-gray-500">No record requests found.</td>
+                            <td colspan="8" class="text-center py-8 text-gray-500">No record requests found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($requests as $req): ?>
@@ -131,6 +132,9 @@
                                                 title="<?= htmlspecialchars($req['exam_type']) ?>">+<?= $extraCount ?></span>
                                         <?php endif; ?>
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500 text-xs">
+                                    <?= !empty($req['exam_date']) ? date('M d, Y h:i A', strtotime($req['exam_date'])) : '—' ?>
                                 </td>
                                 <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($req['request_branch']) ?></td>
                                 <td class="px-6 py-4 text-gray-500 text-xs">

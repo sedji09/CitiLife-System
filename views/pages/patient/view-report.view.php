@@ -94,6 +94,19 @@ if ($isExpired) {
     exit;
 }
 
+// Log view action
+require_once basePath('app/Models/AuditLogModel.php');
+$auditLogModel = new \AuditLogModel($pdo);
+$auditLogModel->addLog(
+    $_SESSION['user_id'],
+    'Viewed Result',
+    'Patient Portal',
+    'Case',
+    $id,
+    "Patient viewed X-Ray result (" . $case['case_number'] . ")",
+    $case['branch_id']
+);
+
 // Fetch Radiologist Name via Model
 $radName = $case['radiologist_name'] ?? 'Radiologist on Duty';
 $radTitle = $case['radiologist_title'] ?? '';

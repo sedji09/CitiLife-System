@@ -18,7 +18,7 @@ if ($userId) {
     $auditLogModel->addLog(
         $userId,
         $role === 'patient' ? 'Patient Logout' : 'Staff Logout',
-        'Authentication',
+        $role === 'patient' ? 'Patient Portal' : 'Authentication',
         'Session',
         $userId,
         "User logged out",

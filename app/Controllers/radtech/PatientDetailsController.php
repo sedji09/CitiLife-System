@@ -25,7 +25,13 @@ class PatientDetailsController
 
         $caseId = $_GET['id'] ?? 0;
         $errorMsg = '';
+        $successMsg = '';
         $branchId = $_SESSION['branch_id'] ?? 1;
+
+        if (!empty($_SESSION['flash_success'])) {
+            $successMsg = $_SESSION['flash_success'];
+            unset($_SESSION['flash_success']);
+        }
 
         // 2. Handle Submit to Radiologist
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_radiologist'])) {
@@ -45,7 +51,7 @@ class PatientDetailsController
 
                 if ($result['success']) {
                     $_SESSION['flash_success'] = $result['message'];
-                    header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists");
+                    header("Location: /" . PROJECT_DIR . "/index.php?page=patient-details&id=" . $caseId);
                     exit;
                 } else {
                     $errorMsg = $result['message'];

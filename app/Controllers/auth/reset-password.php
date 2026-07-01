@@ -17,7 +17,7 @@ if (empty($token)) {
 
 // Verify token
 $stmt = $pdo->prepare("
-    SELECT u.id, u.name, u.role, p.first_name 
+    SELECT u.id, u.name, u.role, u.branch_id, p.first_name 
     FROM users u 
     LEFT JOIN patients p ON u.patient_id = p.id 
     WHERE u.reset_password_token = ? AND u.reset_password_expires_at > NOW() 
@@ -51,6 +51,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $updateStmt = $pdo->prepare("UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires_at = NULL WHERE id = ?");
         $updateStmt->execute([$hashedPassword, $user['id']]);
+
+        require_once basePath('app/Models/AuditLogModel.php');
+        $auditLogModel = new \AuditLogModel($pdo);
+        $auditLogModel->addLog(
+            $user['id'],
+            $user['role'] === 'patient' ? 'Patient Password Reset' : 'Staff Password Reset',
+            $user['role'] === 'patient' ? 'Patient Portal' : 'Authentication',
+            'User',
+            $user['id'],
+            "User successfully reset their password",
+            $user['branch_id']
+        );
 
         $success = "Your password has been reset successfully. You can now log in.";
         $validToken = false; // Hide form after success

@@ -33,17 +33,23 @@
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Patient Information</h3>
         </div>
         <div class="p-6">
-            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-                <div>
-                    <dt class="text-sm font-medium text-gray-500">Case No.</dt>
-                    <dd class="mt-1 text-base font-semibold text-gray-900">
-                        <?= htmlspecialchars($request['patient_no']) ?>
-                    </dd>
-                </div>
+            <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5">
                 <div>
                     <dt class="text-sm font-medium text-gray-500">Patient Name</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900">
                         <?= htmlspecialchars($request['patient_name']) ?>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Patient No.</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900">
+                        <?= htmlspecialchars($request['patient_number'] ?? 'N/A') ?>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Case No.</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900">
+                        <?= htmlspecialchars($request['patient_no']) ?>
                     </dd>
                 </div>
             </dl>

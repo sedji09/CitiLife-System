@@ -76,7 +76,7 @@ class AuditLogModel {
     }
 
     public function getDistinctRoles($currentRole = 'admin_central') {
-        $query = "SELECT DISTINCT role FROM users WHERE role != 'patient'";
+        $query = "SELECT DISTINCT role FROM users WHERE role IS NOT NULL";
         if ($currentRole === 'branch_admin') {
             $query .= " AND role NOT IN ('admin_central', 'it_admin')";
         }

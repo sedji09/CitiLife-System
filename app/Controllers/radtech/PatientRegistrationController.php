@@ -90,7 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // If it's the exact same submission within 60s, silently redirect to the success state 
                 // if it exists, or just redirect back to prevent double processing.
-                header("Location: index.php?role=radtech&page=patient-registration");
+                $lastId = $_SESSION['last_reg_case_id'] ?? '';
+                if ($lastId) {
+                    header("Location: index.php?role=radtech&page=patient-details&id=" . urlencode($lastId));
+                } else {
+                    header("Location: index.php?role=radtech&page=patient-registration");
+                }
                 exit;
             }
 
@@ -114,15 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Store idempotency data
             $_SESSION['last_reg_hash'] = $submissionHash;
             $_SESSION['last_reg_time'] = time();
+            $_SESSION['last_reg_case_id'] = $result['case_id'] ?? null;
 
-            // PRG Pattern: Store success in session and redirect
-            $_SESSION['registration_success'] = [
-                'case_number' => $result['case_number'],
-                'patient_name' => "{$logFirstName} {$logLastName}",
-                'message' => ($regData['form_mode'] === 'new-patient') ? "Patient registered successfully." : "Case created successfully."
-            ];
+            // PRG Pattern: Store success in session and redirect to Patient Details
+            $_SESSION['flash_success'] = ($regData['form_mode'] === 'new-patient') ? "Patient registered successfully." : "Case created successfully.";
             
-            header("Location: index.php?role=radtech&page=patient-registration");
+            $redirectUrl = "index.php?role=radtech&page=patient-details&id=" . urlencode($result['case_id'] ?? '');
+            header("Location: $redirectUrl");
             exit;
         }
     } catch (\Exception $e) {

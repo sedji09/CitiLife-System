@@ -19,20 +19,8 @@
         $regSuccess = $_SESSION['registration_success'] ?? null;
         if ($regSuccess):
             unset($_SESSION['registration_success']); // Clear for next load
-            ?>
-            <div
-                class="rounded-lg bg-green-50 border border-green-300 p-4 mb-6 animate-in fade-in slide-in-from-top-4 duration-500 flex items-center gap-3">
-                <i data-lucide="check-circle-2" class="w-6 h-6 text-green-600"></i>
-                <div>
-                    <h3 class="font-semibold text-green-800">Registration Successful</h3>
-                    <p class="text-sm text-green-700">
-                        <?= htmlspecialchars($regSuccess['message']) ?>
-                        (Case: <strong><?= htmlspecialchars($regSuccess['case_number']) ?></strong> for
-                        <?= htmlspecialchars($regSuccess['patient_name']) ?>)
-                    </p>
-                </div>
-            </div>
-        <?php endif; ?>
+        endif; 
+        ?>
 
         <?php if ($error): ?>
             <div class="rounded-lg bg-red-50 border border-red-300 p-4 mb-6">

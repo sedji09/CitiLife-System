@@ -199,7 +199,7 @@
                                             </a>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&id=<?= $row['id'] ?>"
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=records-history&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Record Details">
                                             <i data-lucide="eye" class="w-4 h-4"></i>

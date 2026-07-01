@@ -312,8 +312,11 @@
               style="border:1px solid var(--modal-border, #e5e7eb);border-radius:10px;background-color: var(--modal-bg-alt, #f9fafb);padding:10px 14px;">
               <label
                 style="display:block;font-size:10px;color: var(--modal-text-light, #9ca3af);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Birthdate</label>
-              <input type="date" v-model="editBirthdate"
-                style="width:100%;background:transparent;border:none;outline:none;font-size:14px;color: var(--modal-text, #111827);" />
+              <div style="position: relative;">
+                <input type="text" id="settingsBirthdate" v-model="editBirthdate" placeholder="Select birthdate" readonly
+                  style="width:100%;background:transparent;border:none;outline:none;font-size:14px;color: var(--modal-text, #111827); padding-left: 24px; cursor: pointer;" />
+                <i data-lucide="calendar" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--modal-text-light, #9ca3af);"></i>
+              </div>
             </div>
             <div
               style="border:1px solid var(--modal-border, #e5e7eb);border-radius:10px;background-color: var(--modal-bg-alt, #f9fafb);padding:10px 14px;">
@@ -502,3 +505,7 @@
     </div><!-- end right content -->
   </div><!-- end modal shell -->
 </div><!-- end settings modal -->
+
+<!-- Vanilla JS Datepicker for Settings Modal -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>

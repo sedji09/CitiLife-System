@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             $auditLogModel->addLog(
                                 $user['id'],
                                 'Patient Login',
-                                'Authentication',
+                                'Patient Portal',
                                 'Session',
                                 $user['id'],
                                 "Successful login via remembered device",
@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     $auditLogModel->addLog(
                         $failedUserId,
                         'Failed Patient Login',
-                        'Authentication',
+                        'Patient Portal',
                         'Session',
                         $failedUserId,
                         "Invalid email or password (" . substr($email, 0, 50) . ")"
