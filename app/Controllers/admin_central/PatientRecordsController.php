@@ -1,11 +1,18 @@
 <?php
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
-$patientModel = new PatientModel($pdo);
-$branchModel = new BranchModel($pdo);
-$auditLogModel = new AuditLogModel($pdo);
+namespace App\Controllers\admin_central;
+
+class PatientRecordsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
+
+$patientModel = new \PatientModel($pdo);
+$branchModel = new \BranchModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $currentUserId = $_SESSION['user_id'] ?? 0;
 $currentBranchId = $_SESSION['branch_id'] ?? null;
 
@@ -23,14 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'last_name' => trim($_POST['last_name'] ?? ''),
             'birthdate' => trim($_POST['birthdate'] ?? ''),
             'sex' => $_POST['sex'] ?? '',
-            'contact_number' => trim($_POST['contact_number'] ?? '')
+            'contact_number' => trim($_POST['contact_number'] ?? ''),
+            'home_address' => trim($_POST['home_address'] ?? '')
         ];
 
         if ($id && !empty($data['first_name']) && !empty($data['last_name'])) {
+            $existingPatient = $patientModel->getPatientById($id);
+            $patientBranchId = $existingPatient['branch_id'] ?? null;
             if ($patientModel->updatePatient($id, $data)) {
                 $success = "Patient information updated successfully!";
                 $details = "Updated patient: " . $data['first_name'] . " " . $data['last_name'];
-                $auditLogModel->addLog($currentUserId, "Updated patient record", 'Patient Records', 'Patient', $id, $details, $_POST['branch_id'] ?? $currentBranchId);
+                $auditLogModel->addLog($currentUserId, "Updated patient record", 'Patient Records', 'Patient', $id, $details, $patientBranchId ?? $currentBranchId);
             } else {
                 $error = "Failed to update patient information.";
             }
@@ -43,3 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch all data
 $patients = $patientModel->getAllPatientsWithBranches();
 $branches = $branchModel->getAllBranches();
+
+        return get_defined_vars();
+    }
+}

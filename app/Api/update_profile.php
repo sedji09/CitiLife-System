@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $birthdate = trim($_POST['birthdate'] ?? '');
             $sex = $_POST['sex'] ?? 'Male';
             $contactNumber = trim($_POST['contact_number'] ?? '');
+            $homeAddress = trim($_POST['home_address'] ?? '');
             $password = $_POST['password'] ?? '';
 
             if (empty($firstName) || empty($lastName) || empty($birthdate) || empty($contactNumber)) {
@@ -154,8 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $patientId = $stmtUser->fetchColumn();
 
                 if ($patientId) {
-                    $stmtPatient = $pdo->prepare("UPDATE patients SET first_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ? WHERE id = ?");
-                    $stmtPatient->execute([$firstName, $lastName, $birthdate, $sex, $contactNumber, $patientId]);
+                    $stmtPatient = $pdo->prepare("UPDATE patients SET first_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, home_address = ? WHERE id = ?");
+                    $stmtPatient->execute([$firstName, $lastName, $birthdate, $sex, $contactNumber, $homeAddress, $patientId]);
                 }
             }
 
@@ -184,6 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['birthdate'] = htmlspecialchars($birthdate);
                 $response['sex'] = htmlspecialchars($sex);
                 $response['contact_number'] = htmlspecialchars($contactNumber);
+                $response['home_address'] = htmlspecialchars($homeAddress);
             }
             echo json_encode($response);
         } catch(Exception $e) {
@@ -194,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userId = $_SESSION['user_id'];
         $newName = trim($_POST['report_full_name'] ?? '');
         $professionalTitle = trim($_POST['professional_title'] ?? '');
+        $isAvailable = isset($_POST['is_available']) ? (int)$_POST['is_available'] : 1;
         
         $signaturePath = null;
         if (isset($_FILES['signature']) && $_FILES['signature']['error'] === UPLOAD_ERR_OK) {
@@ -219,18 +222,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             if ($signaturePath) {
-                $stmt = $pdo->prepare("UPDATE users SET full_name_report = ?, professional_title = ?, signature = ? WHERE id = ?");
-                $success = $stmt->execute([$newName, $professionalTitle, $signaturePath, $userId]);
+                $stmt = $pdo->prepare("UPDATE users SET full_name_report = ?, professional_title = ?, signature = ?, is_available = ? WHERE id = ?");
+                $success = $stmt->execute([$newName, $professionalTitle, $signaturePath, $isAvailable, $userId]);
             } else {
-                $stmt = $pdo->prepare("UPDATE users SET full_name_report = ?, professional_title = ? WHERE id = ?");
-                $success = $stmt->execute([$newName, $professionalTitle, $userId]);
+                $stmt = $pdo->prepare("UPDATE users SET full_name_report = ?, professional_title = ?, is_available = ? WHERE id = ?");
+                $success = $stmt->execute([$newName, $professionalTitle, $isAvailable, $userId]);
             }
 
             if ($success) {
                 $response = [
                     'success' => true,
                     'full_name_report' => htmlspecialchars($newName),
-                    'professional_title' => htmlspecialchars($professionalTitle)
+                    'professional_title' => htmlspecialchars($professionalTitle),
+                    'is_available' => $isAvailable === 1
                 ];
                 if ($signaturePath) {
                     $response['signature'] = htmlspecialchars($signaturePath);

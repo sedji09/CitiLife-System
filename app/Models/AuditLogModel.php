@@ -15,7 +15,16 @@ class AuditLogModel {
      * Add a new audit log entry.
      */
     public function addLog($userId, $action, $module, $entityType, $entityId, $details = null, $branchId = null) {
-        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $ipAddress = '0.0.0.0';
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Sometimes it's a comma separated list, get the first one
+            $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ipAddress = trim($ipList[0]);
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ipAddress = $_SERVER['REMOTE_ADDR'];
+        }
         
         $stmt = $this->pdo->prepare("
             INSERT INTO audit_logs (user_id, branch_id, module, action, entity_type, entity_id, details, ip_address) 
@@ -37,17 +46,43 @@ class AuditLogModel {
     /**
      * Get distinct modules for filtering.
      */
-    public function getDistinctModules() {
-        $stmt = $this->pdo->prepare("SELECT DISTINCT module FROM audit_logs WHERE module IS NOT NULL ORDER BY module ASC");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    public function getDistinctModules($currentRole = 'admin_central', $currentBranchId = null) {
+        // For IT Admin, always return the fixed list of technical/system modules
+        // regardless of whether there are existing logs for them yet.
+        if ($currentRole === 'it_admin') {
+            $modules = ['Authentication', 'Branch Management', 'Security Settings', 'System', 'User Management'];
+            sort($modules);
+            return $modules;
+        }
+
+        $params = [];
+        // For branch admin, only fetch modules that actually have logs in their branch
+        if ($currentRole === 'branch_admin' && $currentBranchId) {
+            $query = "SELECT DISTINCT al.module FROM audit_logs al 
+                      LEFT JOIN users u ON al.user_id = u.id 
+                      WHERE al.module IS NOT NULL AND al.branch_id = ? 
+                      AND (u.role IS NULL OR u.role NOT IN ('admin_central', 'it_admin'))";
+            $params[] = $currentBranchId;
+        } else {
+            $query = "SELECT DISTINCT module FROM audit_logs WHERE module IS NOT NULL";
+        }
+
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute($params);
+        $dbModules = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        sort($dbModules);
+        return $dbModules;
     }
 
-    /**
-     * Get distinct roles for filtering.
-     */
-    public function getDistinctRoles() {
-        $stmt = $this->pdo->prepare("SELECT DISTINCT role FROM users WHERE role != 'patient' ORDER BY role ASC");
+    public function getDistinctRoles($currentRole = 'admin_central') {
+        $query = "SELECT DISTINCT role FROM users WHERE role IS NOT NULL";
+        if ($currentRole === 'branch_admin') {
+            $query .= " AND role NOT IN ('admin_central', 'it_admin')";
+        }
+        $query .= " ORDER BY role ASC";
+        
+        $stmt = $this->pdo->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
@@ -60,6 +95,7 @@ class AuditLogModel {
             SELECT COUNT(*)
             FROM audit_logs al
             LEFT JOIN users u ON al.user_id = u.id
+            LEFT JOIN patients p ON u.patient_id = p.id
             WHERE 1=1
         ";
         $params = [];
@@ -68,10 +104,17 @@ class AuditLogModel {
         if (!in_array($currentRole, ['admin_central', 'it_admin']) && $currentBranchId) {
             $query .= " AND al.branch_id = ?";
             $params[] = $currentBranchId;
+            // Exclude logs from central admins in branch view
+            $query .= " AND (u.role IS NULL OR u.role NOT IN ('admin_central', 'it_admin'))";
+        }
+
+        // IT Admin sees only system-related logs
+        if ($currentRole === 'it_admin') {
+            $query .= " AND al.module IN ('User Management', 'Branch Management', 'Authentication', 'System', 'Security Settings')";
         }
 
         if (!empty($filters['search'])) {
-            $query .= " AND (al.action LIKE ? OR u.name LIKE ? OR al.details LIKE ? OR al.module LIKE ?)";
+            $query .= " AND (al.action LIKE ? OR COALESCE(u.name, CONCAT(p.first_name, ' ', p.last_name)) LIKE ? OR al.details LIKE ? OR al.module LIKE ?)";
             $searchTerm = "%" . $filters['search'] . "%";
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -109,9 +152,12 @@ class AuditLogModel {
      */
     public function getFilteredLogs($filters = [], $limit = 50, $offset = 0, $currentRole = 'admin_central', $currentBranchId = null) {
         $query = "
-            SELECT al.*, u.email as user_email, u.role as user_role, u.name as user_name, b.name as branch_name
+            SELECT al.*, u.email as user_email, u.role as user_role, 
+                   COALESCE(u.name, CONCAT(p.first_name, ' ', p.last_name)) as user_name, 
+                   b.name as branch_name
             FROM audit_logs al
             LEFT JOIN users u ON al.user_id = u.id
+            LEFT JOIN patients p ON u.patient_id = p.id
             LEFT JOIN branches b ON al.branch_id = b.id
             WHERE 1=1
         ";
@@ -121,10 +167,17 @@ class AuditLogModel {
         if (!in_array($currentRole, ['admin_central', 'it_admin']) && $currentBranchId) {
             $query .= " AND al.branch_id = ?";
             $params[] = $currentBranchId;
+            // Exclude logs from central admins in branch view
+            $query .= " AND (u.role IS NULL OR u.role NOT IN ('admin_central', 'it_admin'))";
+        }
+
+        // IT Admin sees only system-related logs
+        if ($currentRole === 'it_admin') {
+            $query .= " AND al.module IN ('User Management', 'Branch Management', 'Authentication', 'System', 'Security Settings')";
         }
 
         if (!empty($filters['search'])) {
-            $query .= " AND (al.action LIKE ? OR u.name LIKE ? OR al.details LIKE ? OR al.module LIKE ?)";
+            $query .= " AND (al.action LIKE ? OR COALESCE(u.name, CONCAT(p.first_name, ' ', p.last_name)) LIKE ? OR al.details LIKE ? OR al.module LIKE ?)";
             $searchTerm = "%" . $filters['search'] . "%";
             $params[] = $searchTerm;
             $params[] = $searchTerm;

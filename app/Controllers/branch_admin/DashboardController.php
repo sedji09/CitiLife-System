@@ -1,14 +1,18 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class DashboardController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * DashboardController.php - Branch Admin
  * Fetches statistics and recent activity for the branch admin dashboard.
  */
-
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/RecordRequestModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $patientModel = new \PatientModel($pdo);
@@ -41,10 +45,11 @@ $pendingRequestsCount = $recordRequestModel->countPendingRequestsForBranch($bran
 // 3. New Dashboard Metrics (for Branch Admin)
 $casesFilteredCount = $caseModel->getDashboardStats($branchId, $dateCondition)['total'];
 
-// Total Patients of Branch
-$branchTotalPatients = $pdo->prepare("SELECT COUNT(*) FROM patients WHERE branch_id = ?");
-$branchTotalPatients->execute([$branchId]);
-$branchTotalPatients = $branchTotalPatients->fetchColumn();
+// Total Unique Patients with cases in the filtered period
+$branchTotalPatientsQuery = "SELECT COUNT(DISTINCT patient_id) FROM cases WHERE branch_id = ? AND $dateCondition";
+$branchTotalPatientsStmt = $pdo->prepare($branchTotalPatientsQuery);
+$branchTotalPatientsStmt->execute([$branchId]);
+$branchTotalPatients = $branchTotalPatientsStmt->fetchColumn();
 
 // 4. Fetch Recent Activity (Sync with date filters)
 $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 8);
@@ -67,3 +72,7 @@ if ($filter === 'today') {
 }
 
 $recentActivity = $auditLogModel->getFilteredLogs($auditFilters, 8, 0, 'branch_admin', $branchId);
+
+        return get_defined_vars();
+    }
+}

@@ -1,16 +1,23 @@
 <?php
+
+namespace App\Controllers\radtech;
+
+class PatientRegistrationController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * PatientRegistrationController.php
  * Handles backend logic for walk-in patient registration and returning patient lookups.
  */
 
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-
 $patientModel = new \PatientModel($pdo);
 $caseModel = new \CaseModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
+
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
 // --- 1. AJAX Endpoints ---
@@ -25,7 +32,7 @@ if (isset($_GET['ajax_search'])) {
         try {
             $results = $patientModel->searchPatients($query);
             echo json_encode($results);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo json_encode(['error' => $e->getMessage()]);
         }
     }
@@ -44,10 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'form_mode'         => $_POST['form-mode'] ?? 'new-patient',
             'patient_id'        => $_POST['existing-patient-id'] ?? null,
             'first_name'        => trim($_POST['first-name'] ?? ''),
+            'middle_name'       => trim($_POST['middle-name'] ?? ''),
             'last_name'         => trim($_POST['last-name'] ?? ''),
             'birthdate'         => $_POST['birthdate'] ?? '',
             'sex'               => $_POST['sex'] ?? 'Male',
             'contact_number'    => str_replace(['-', ' '], '', trim($_POST['contact'] ?? '')),
+            'email'             => trim($_POST['email'] ?? ''),
+            'home_address'      => trim($_POST['home_address'] ?? ''),
             'branch_id'         => $branchId,
             'exam_type'         => $_POST['exam-type'] ?? '',
             'priority'          => $_POST['priority'] ?? 'Routine',
@@ -80,7 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // If it's the exact same submission within 60s, silently redirect to the success state 
                 // if it exists, or just redirect back to prevent double processing.
-                header("Location: index.php?role=radtech&page=patient-registration");
+                $lastId = $_SESSION['last_reg_case_id'] ?? '';
+                if ($lastId) {
+                    header("Location: index.php?role=radtech&page=patient-details&id=" . urlencode($lastId));
+                } else {
+                    header("Location: index.php?role=radtech&page=patient-registration");
+                }
                 exit;
             }
 
@@ -104,18 +119,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Store idempotency data
             $_SESSION['last_reg_hash'] = $submissionHash;
             $_SESSION['last_reg_time'] = time();
+            $_SESSION['last_reg_case_id'] = $result['case_id'] ?? null;
 
-            // PRG Pattern: Store success in session and redirect
-            $_SESSION['registration_success'] = [
-                'case_number' => $result['case_number'],
-                'patient_name' => "{$logFirstName} {$logLastName}",
-                'message' => ($regData['form_mode'] === 'new-patient') ? "Patient registered successfully." : "Case created successfully."
-            ];
+            // PRG Pattern: Store success in session and redirect to Patient Details
+            $_SESSION['flash_success'] = ($regData['form_mode'] === 'new-patient') ? "Patient registered successfully." : "Case created successfully.";
             
-            header("Location: index.php?role=radtech&page=patient-registration");
+            $redirectUrl = "index.php?role=radtech&page=patient-details&id=" . urlencode($result['case_id'] ?? '');
+            header("Location: $redirectUrl");
             exit;
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         $error = "Registration failed: " . $e->getMessage();
+    }
+}
+
+        return get_defined_vars();
     }
 }

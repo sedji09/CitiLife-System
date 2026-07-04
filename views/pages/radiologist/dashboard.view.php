@@ -1,34 +1,34 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/BranchModel.php';
-require_once __DIR__ . '/../../../models/NotificationModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $branchModel = new \BranchModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 
-$filter = $_GET['filter'] ?? 'daily';
-$selectedDate = $_GET['date'] ?? date('Y-m-d');
-$selectedMonth = $_GET['month'] ?? date('Y'); // Correcting from Y-m to match buildDateCondition
+$priorityFilter = $_GET['priority'] ?? 'all';
+$filter = $_GET['filter'] ?? 'today';
+$selectedMonth = $_GET['month'] ?? date('Y-m');
 $selectedYear = $_GET['year'] ?? date('Y');
-if ($filter === 'daily') {
-    $dateCondition = "DATE(created_at) = " . $pdo->quote($selectedDate);
-    $periodLabel = date('F j, Y', strtotime($selectedDate));
-} else {
-    $dateData = $caseModel->buildDateCondition($filter, $_GET['month'] ?? date('Y-m'), $_GET['year'] ?? date('Y'));
-    $dateCondition = $dateData['condition'];
-    $periodLabel = $dateData['label'];
-}
+
+$dateInfo = $caseModel->buildDateCondition($filter, $selectedMonth, $selectedYear);
+$dateCondition = $dateInfo['condition'];
+$periodLabel = $dateInfo['label'];
 
 // 1. Fetch Stats (Backend logic)
-$stats = $caseModel->getRadiologistStats($dateCondition);
-$emergencyCases = $stats['emergencyCases'];
-$totalPending = $stats['totalPending'];
+$radiologistId = $_SESSION['user_id'] ?? null;
+// Global stats — NOT date-filtered. These cards always show all unfinished pending cases.
+$globalStats = $caseModel->getGlobalPendingStats($radiologistId);
+$emergencyCases = $globalStats['emergencyCases'];
+$totalPending = $globalStats['totalPending'];
+$overdueCases = $globalStats['overdueCases'];
+$chartStatsInitial = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
+$completedFiltered = $chartStatsInitial['completedCases'] ?? 0;
+$inProgress = $globalStats['inProgress'];
+$forRevision = $globalStats['forRevision'];
 
 // 2. Fetch Aggregated Chart Data (Backend logic)
 $branchesList = $branchModel->getAllBranches();
-$branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition);
+$branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition, $radiologistId, 'all');
 
 // Process for Chart.js (Frontend-specific formatting)
 $branchStats = [];
@@ -42,7 +42,7 @@ $branchColors = [];
 foreach ($branchesList as $b) {
     $branchStats[$b['id']] = [
         'name' => $b['name'],
-        'Emergency' => 0,
+        'STAT' => 0,
         'Urgent' => 0,
         'Routine' => 0
     ];
@@ -63,22 +63,43 @@ $colorIndex = 0;
 
 foreach ($branchStats as $stat) {
     $labels[] = $stat['name'];
-    $emergencyData[] = $stat['Emergency'];
-    $urgentData[] = $stat['Urgent'];
-    $routineData[] = $stat['Routine'];
+    $emergencyData[] = ($priorityFilter === 'all' || $priorityFilter === 'STAT') ? $stat['STAT'] : 0;
+    $urgentData[] = ($priorityFilter === 'all' || $priorityFilter === 'Urgent') ? $stat['Urgent'] : 0;
+    $routineData[] = ($priorityFilter === 'all' || $priorityFilter === 'Routine') ? $stat['Routine'] : 0;
 
-    $total = $stat['Emergency'] + $stat['Urgent'] + $stat['Routine'];
+    $total = $stat['STAT'] + $stat['Urgent'] + $stat['Routine'];
     $branchTotals[] = $total;
     $branchColors[] = $availableColors[$colorIndex++ % count($availableColors)];
 }
 
-// Handle AJAX updates
-if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
-    ob_clean();
+// Handle AJAX: global stat cards refresh (no date filter)
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1' && isset($_GET['global_stats'])) {
+    if (ob_get_length())
+        ob_clean();
     header('Content-Type: application/json');
+    $gs = $caseModel->getGlobalPendingStats($radiologistId);
     echo json_encode([
-        'emergencyCases' => $emergencyCases,
-        'totalPending' => $totalPending,
+        'emergencyCases' => $gs['emergencyCases'],
+        'totalPending' => $gs['totalPending'],
+        'overdueCases' => $gs['overdueCases'],
+        'completedToday' => $gs['completedToday'],
+        'inProgress' => $gs['inProgress'],
+        'forRevision' => $gs['forRevision'],
+    ]);
+    exit;
+}
+
+// Handle AJAX updates (date-filtered charts)
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+    if (ob_get_length())
+        ob_clean();
+    header('Content-Type: application/json');
+    // Re-fetch chart stats using the date condition (not global)
+    $chartStats = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
+    echo json_encode([
+        'emergencyCases' => $chartStats['emergencyCases'],
+        'completedFiltered' => $chartStats['completedCases'] ?? 0,
+        'totalPending' => $chartStats['totalPending'],
         'labels' => $labels,
         'emergencyData' => $emergencyData,
         'urgentData' => $urgentData,
@@ -96,41 +117,325 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 <div class="space-y-6">
 
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Radiologist Dashboard</h2>
-            <p class="text-sm text-gray-500 mt-1">Overview of pending patients for <span
+            <p class="text-sm text-gray-500 mt-1">Overview of patients for <span
                     id="period-label"><?= htmlspecialchars($periodLabel) ?></span> in all branches.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <select id="filterSelect" onchange="handleFilterChange()"
+                class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 shadow-sm">
+                <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
+                <option value="weekly" <?= $filter === 'weekly' ? 'selected' : '' ?>>This Week</option>
+                <option value="monthly" <?= $filter === 'monthly' ? 'selected' : '' ?>>Monthly</option>
+                <option value="yearly" <?= $filter === 'yearly' ? 'selected' : '' ?>>Yearly</option>
+            </select>
+
+            <!-- Custom Month Picker Popup -->
+            <div id="monthPickerWrapper" class="<?= $filter === 'monthly' ? '' : 'hidden' ?> relative">
+                <!-- Trigger Button -->
+                <button type="button" id="monthPickerTrigger" onclick="toggleMonthPicker()"
+                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[140px] justify-between">
+                    <span id="monthPickerLabel"
+                        class="whitespace-nowrap"><?= date('F Y', strtotime($selectedMonth . '-01')) ?></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+                    </svg>
+                </button>
+
+                <!-- Popup Panel -->
+                <div id="monthPickerPanel"
+                    class="hidden absolute right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3 w-[260px]">
+                    <!-- Year Navigation -->
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <button type="button" onclick="changePickerYear(-1)"
+                            class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
+                        <span id="pickerYearLabel" class="font-semibold text-gray-800 text-sm"></span>
+                        <button type="button" onclick="changePickerYear(1)"
+                            class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
+                    </div>
+                    <!-- Month Grid -->
+                    <div id="monthGrid" class="grid grid-cols-4 gap-1"></div>
+                </div>
+
+                <!-- Hidden inputs to hold selected values (read by JS) -->
+                <input type="hidden" id="monthPickerMonth" value="<?= date('m', strtotime($selectedMonth . '-01')) ?>">
+                <input type="hidden" id="monthPickerYear" value="<?= date('Y', strtotime($selectedMonth . '-01')) ?>">
+            </div>
+
+            <!-- Custom Year Picker Popup -->
+            <div id="yearPickerWrapper" class="<?= $filter === 'yearly' ? '' : 'hidden' ?> relative">
+                <!-- Trigger Button -->
+                <button type="button" id="yearPickerTrigger" onclick="toggleYearPicker()"
+                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[100px] justify-between">
+                    <span id="yearPickerLabel" class="whitespace-nowrap"><?= htmlspecialchars($selectedYear) ?></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+                    </svg>
+                </button>
+
+                <!-- Popup Panel -->
+                <div id="yearPickerPanel"
+                    class="hidden absolute right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-2 w-[110px] max-h-64 overflow-y-auto">
+                    <!-- Year List -->
+                    <div id="yearGrid" class="flex flex-col gap-1"></div>
+                </div>
+
+                <!-- Hidden inputs to hold selected values (read by JS) -->
+                <input type="hidden" id="yearPickerValue" value="<?= htmlspecialchars($selectedYear) ?>">
+            </div>
+
+            <script>
+                const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+                let _pickerYear = parseInt(document.getElementById('monthPickerYear').value);
+                let _pickerMonth = parseInt(document.getElementById('monthPickerMonth').value); // 1-based
+
+                function renderMonthGrid() {
+                    document.getElementById('pickerYearLabel').textContent = _pickerYear;
+                    const grid = document.getElementById('monthGrid');
+                    grid.innerHTML = '';
+                    MONTH_NAMES.forEach((name, i) => {
+                        const m = i + 1;
+                        const isSelected = (m === _pickerMonth && _pickerYear === parseInt(document.getElementById('monthPickerYear').value));
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = name;
+                        btn.className = 'text-sm rounded-lg py-1.5 text-center transition-colors ' +
+                            (isSelected
+                                ? 'bg-red-600 text-white font-semibold'
+                                : 'text-gray-700 hover:bg-gray-100');
+                        btn.onclick = () => selectMonth(m);
+                        grid.appendChild(btn);
+                    });
+                }
+
+                function selectMonth(m) {
+                    _pickerMonth = m;
+                    const mm = String(m).padStart(2, '0');
+                    document.getElementById('monthPickerMonth').value = mm;
+                    document.getElementById('monthPickerYear').value = _pickerYear;
+                    document.getElementById('monthPickerLabel').textContent = MONTH_FULL[m - 1] + ' ' + _pickerYear;
+                    document.getElementById('monthPickerPanel').classList.add('hidden');
+                    renderMonthGrid();
+                    handleFilterChange();
+                }
+
+                function changePickerYear(delta) {
+                    const newYear = _pickerYear + delta;
+                    if (newYear < 2000 || newYear > <?= date('Y') ?>) return;
+                    _pickerYear = newYear;
+                    renderMonthGrid();
+                }
+
+                function toggleMonthPicker() {
+                    const panel = document.getElementById('monthPickerPanel');
+                    panel.classList.toggle('hidden');
+                    if (!panel.classList.contains('hidden')) {
+                        _pickerYear = parseInt(document.getElementById('monthPickerYear').value);
+                        _pickerMonth = parseInt(document.getElementById('monthPickerMonth').value);
+                        renderMonthGrid();
+                    }
+                }
+
+                let _pickerYearValue = parseInt(document.getElementById('yearPickerValue').value);
+
+                function renderYearGrid() {
+                    const grid = document.getElementById('yearGrid');
+                    grid.innerHTML = '';
+                    for (let y = <?= date('Y') ?>; y >= 2000; y--) {
+                        const isSelected = (y === _pickerYearValue);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = y;
+                        btn.className = 'text-sm rounded-lg py-2 px-3 text-center transition-colors w-full ' +
+                            (isSelected
+                                ? 'bg-red-600 text-white font-semibold'
+                                : 'text-gray-700 hover:bg-gray-100');
+                        btn.onclick = () => selectYear(y);
+                        grid.appendChild(btn);
+                    }
+                }
+
+                function selectYear(y) {
+                    _pickerYearValue = y;
+                    document.getElementById('yearPickerValue').value = y;
+                    document.getElementById('yearPickerLabel').textContent = y;
+                    document.getElementById('yearPickerPanel').classList.add('hidden');
+                    renderYearGrid();
+                    handleFilterChange();
+                }
+
+                function toggleYearPicker() {
+                    const panel = document.getElementById('yearPickerPanel');
+                    panel.classList.toggle('hidden');
+                    if (!panel.classList.contains('hidden')) {
+                        _pickerYearValue = parseInt(document.getElementById('yearPickerValue').value);
+                        renderYearGrid();
+                    }
+                }
+
+                // Close when clicking outside
+                document.addEventListener('click', function (e) {
+                    const monthWrapper = document.getElementById('monthPickerWrapper');
+                    if (monthWrapper && !monthWrapper.contains(e.target)) {
+                        document.getElementById('monthPickerPanel').classList.add('hidden');
+                    }
+                    const yearWrapper = document.getElementById('yearPickerWrapper');
+                    if (yearWrapper && !yearWrapper.contains(e.target)) {
+                        document.getElementById('yearPickerPanel').classList.add('hidden');
+                    }
+                });
+
+                function handleFilterChange() {
+                    const filter = document.getElementById('filterSelect').value;
+                    const monthWrapper = document.getElementById('monthPickerWrapper');
+                    const yearWrapper = document.getElementById('yearPickerWrapper');
+
+                    if (filter === 'monthly') {
+                        monthWrapper.classList.remove('hidden');
+                        yearWrapper.classList.add('hidden');
+                    } else if (filter === 'yearly') {
+                        monthWrapper.classList.add('hidden');
+                        yearWrapper.classList.remove('hidden');
+                    } else {
+                        monthWrapper.classList.add('hidden');
+                        yearWrapper.classList.add('hidden');
+                    }
+
+                    const monthNum = document.getElementById('monthPickerMonth').value;
+                    const monthYear = document.getElementById('monthPickerYear').value;
+
+                    let url = '?role=radiologist&page=dashboard&filter=' + filter;
+                    if (filter === 'monthly') url += '&month=' + monthYear + '-' + monthNum;
+                    if (filter === 'yearly') url += '&year=' + document.getElementById('yearPickerValue').value;
+
+                    window.history.pushState({ path: url }, '', url);
+                    if (window.__APP__) window.__APP__.currentPath = url;
+
+                    if (typeof fetchDashboardData === 'function') {
+                        fetchDashboardData();
+                    }
+                }
+            </script>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div id="radio-dashboard-top-stats" class="grid grid-cols-1 gap-4 sm:grid-cols-2 realtime-update">
-        <!-- Card 1 -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?priority=Emergency"
-            class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md transition decoration-none">
-            <div id="emergency-count"
-                class="bg-red-100 text-red-600 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
-                <?= $emergencyCases ?>
+    <!-- Stats Grid: 6 cards in 2 rows of 3 -->
+    <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
+
+        <!-- Card 1: Pending STAT -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT&status=pending"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-red-100 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                </div>
+                <span id="stat-count" class="text-2xl font-extrabold text-red-600"><?= $emergencyCases ?></span>
             </div>
             <div>
-                <p class="text-xs text-gray-500">Emergency Cases</p>
-                <p class="text-sm font-semibold text-gray-800">Across all branches</p>
+                <p class="text-xs font-semibold text-gray-800">Pending STAT</p>
+                <p class="text-[10px] text-gray-400">Across all branches</p>
             </div>
         </a>
 
-        <!-- Card 2 -->
-        <a href="/<?= PROJECT_DIR ?>/worklist"
-            class="block cursor-pointer flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition decoration-none">
-            <div id="pending-count"
-                class="bg-gray-100 text-gray-700 font-bold text-lg w-10 h-10 flex items-center justify-center rounded-lg">
-                <?= $totalPending ?>
+        <!-- Card 2: Total Pending -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=pending"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+            style="border: 1px solid #fed7aa;" onmouseenter="this.style.borderColor='#fb923c'"
+            onmouseleave="this.style.borderColor='#fed7aa'">
+            <div class="flex items-center justify-between">
+                <div class="bg-orange-100 p-2 rounded-lg group-hover:bg-orange-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-orange-600" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                </div>
+                <span id="pending-count" class="text-2xl font-extrabold text-orange-600"><?= $totalPending ?></span>
             </div>
             <div>
-                <p class="text-xs text-gray-500">Total Pending</p>
-                <p class="text-sm font-semibold text-gray-800">All branches combined</p>
+                <p class="text-xs font-semibold text-gray-800">Total Pending</p>
+                <p class="text-[10px] text-gray-400">All branches</p>
             </div>
         </a>
+
+        <!-- Card 3: Overdue -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=overdue"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-red-100 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                </div>
+                <span id="overdue-count" class="text-2xl font-extrabold text-red-600"><?= $overdueCases ?></span>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-800">Overdue</p>
+                <p class="text-[10px] text-gray-400">Unread cases</p>
+            </div>
+        </a>
+
+        <!-- Card 4: In Progress -->
+        <a href="/<?= PROJECT_DIR ?>/worklist?status=Under+Reading"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+            style="border: 1px solid #bfdbfe;" onmouseenter="this.style.borderColor='#60a5fa'"
+            onmouseleave="this.style.borderColor='#bfdbfe'">
+            <div class="flex items-center justify-between">
+                <div class="bg-blue-100 p-2 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12" />
+                        <path d="M12 12 L16 14" />
+                        <path d="M8 6 l8 0" opacity=".3" />
+                    </svg>
+                </div>
+                <span id="inprogress-count" class="text-2xl font-extrabold text-blue-600"><?= $inProgress ?></span>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-800">In Progress</p>
+                <p class="text-[10px] text-gray-400">Under Reading Cases</p>
+            </div>
+        </a>
+
+        <!-- Card 5: Completed Today -->
+        <div class="flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+            style="border: 1px solid #bbf7d0;" onmouseenter="this.style.borderColor='#4ade80'"
+            onmouseleave="this.style.borderColor='#bbf7d0'">
+            <div class="flex items-center justify-between">
+                <div class="bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-green-600" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                </div>
+                <span id="completed-count" class="text-2xl font-extrabold text-green-600"><?= $completedFiltered ?></span>
+            </div>
+            <div>
+                <p id="completed-label" class="text-xs font-semibold text-gray-800">Completed <?= htmlspecialchars($periodLabel) ?></p>
+                <p class="text-[10px] text-gray-400">Reports submitted</p>
+            </div>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -142,36 +447,27 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 class="flex flex-col md:flex-row items-center justify-between px-6 py-4 border-b border-gray-300 gap-4">
                 <h3 class="font-bold text-gray-900 text-lg">Case Priority Overview</h3>
                 <div class="flex items-center gap-2">
-                    <select id="filterSelect" onchange="handleFilterChange()"
+                    <select id="priorityFilter" onchange="fetchDashboardData()"
                         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm">
-                        <option value="daily" <?= $filter === 'daily' ? 'selected' : '' ?>>Per Day</option>
-                        <option value="monthly" <?= $filter === 'monthly' ? 'selected' : '' ?>>Per Month</option>
-                        <option value="yearly" <?= $filter === 'yearly' ? 'selected' : '' ?>>Per Year</option>
+                        <option value="all" <?= $priorityFilter === 'all' ? 'selected' : '' ?>>All Priorities</option>
+                        <option value="STAT" <?= $priorityFilter === 'STAT' ? 'selected' : '' ?>>STAT Only</option>
+                        <option value="Urgent" <?= $priorityFilter === 'Urgent' ? 'selected' : '' ?>>Urgent Only</option>
+                        <option value="Routine" <?= $priorityFilter === 'Routine' ? 'selected' : '' ?>>Routine Only
+                        </option>
                     </select>
-
-                    <input type="date" id="datePicker" value="<?= htmlspecialchars($selectedDate) ?>"
-                        onchange="handleFilterChange()"
-                        class="<?= $filter === 'daily' ? '' : 'hidden' ?> bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
-
-                    <input type="month" id="monthPicker" value="<?= htmlspecialchars($selectedMonth) ?>"
-                        onchange="handleFilterChange()"
-                        class="<?= $filter === 'monthly' ? '' : 'hidden' ?> bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
-
-                    <input type="number" id="yearPicker" min="2000" max="2100"
-                        value="<?= htmlspecialchars($selectedYear) ?>" onchange="handleFilterChange()"
-                        class="<?= $filter === 'yearly' ? '' : 'hidden' ?> bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm w-24">
 
                     <script>
                         function fetchDashboardData() {
+                            const priority = document.getElementById('priorityFilter').value;
                             const filter = document.getElementById('filterSelect').value;
-                            let url = '?role=radiologist&page=dashboard&filter=' + filter + '&ajax=1';
-                            if (filter === 'daily') {
-                                url += '&date=' + document.getElementById('datePicker').value;
-                            } else if (filter === 'monthly') {
-                                url += '&month=' + document.getElementById('monthPicker').value;
-                            } else if (filter === 'yearly') {
-                                url += '&year=' + document.getElementById('yearPicker').value;
-                            }
+                            const monthNum = document.getElementById('monthPickerMonth').value;
+                            const monthYear = document.getElementById('monthPickerYear').value;
+                            const month = monthYear + '-' + monthNum;
+                            const year = document.getElementById('yearPickerValue').value;
+
+                            let url = '?role=radiologist&page=dashboard&priority=' + priority + '&filter=' + filter + '&ajax=1';
+                            if (filter === 'monthly' && month) url += '&month=' + month;
+                            if (filter === 'yearly' && year) url += '&year=' + year;
 
                             fetch(url, { cache: 'no-store' })
                                 .then(res => {
@@ -179,9 +475,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     return res.json();
                                 })
                                 .then(data => {
-                                    document.getElementById('emergency-count').innerText = data.emergencyCases;
-                                    document.getElementById('pending-count').innerText = data.totalPending;
+                                    // NOTE: stat-count and pending-count are global (not date-filtered),
+                                    // so they are intentionally NOT updated here.
                                     document.getElementById('period-label').innerText = data.periodLabel;
+                                    document.getElementById('completed-count').innerText = data.completedFiltered;
+                                    document.getElementById('completed-label').innerText = 'Completed ' + data.periodLabel;
 
                                     if (window.priorityChart) {
                                         window.priorityChart.data.labels = data.labels;
@@ -201,19 +499,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                 .catch(err => console.error('Error fetching realtime dashboard data:', err));
                         }
 
-                        function handleFilterChange() {
-                            const filter = document.getElementById('filterSelect').value;
 
-                            document.getElementById('datePicker').classList.add('hidden');
-                            document.getElementById('monthPicker').classList.add('hidden');
-                            document.getElementById('yearPicker').classList.add('hidden');
-
-                            if (filter === 'daily') document.getElementById('datePicker').classList.remove('hidden');
-                            if (filter === 'monthly') document.getElementById('monthPicker').classList.remove('hidden');
-                            if (filter === 'yearly') document.getElementById('yearPicker').classList.remove('hidden');
-
-                            fetchDashboardData();
-                        }
                     </script>
                 </div>
             </div>
@@ -246,7 +532,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 labels: <?= json_encode($labels) ?>,
                 datasets: [
                     {
-                        label: 'Emergency',
+                        label: 'STAT',
                         data: <?= json_encode($emergencyData) ?>,
                         backgroundColor: '#EF4444', // Red-500
                         borderRadius: 4,
@@ -363,7 +649,24 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             }
         });
 
-        // Polling for real-time updates every 5 seconds
+        // Poll chart data (date-filtered) every 5 seconds
         setInterval(fetchDashboardData, 5000);
+
+        // Poll global stat cards separately — always without date filter
+        function refreshGlobalStats() {
+            fetch('?role=radiologist&page=dashboard&filter=all&ajax=1&global_stats=1', { cache: 'no-store' })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (!data) return;
+                    document.getElementById('stat-count').innerText = data.emergencyCases;
+                    document.getElementById('pending-count').innerText = data.totalPending;
+                    document.getElementById('overdue-count').innerText = data.overdueCases;
+                    document.getElementById('inprogress-count').innerText = data.inProgress;
+                    document.getElementById('revision-count').innerText = data.forRevision;
+                })
+                .catch(() => { });
+        }
+        refreshGlobalStats();
+        setInterval(refreshGlobalStats, 5000);
     });
 </script>

@@ -1,11 +1,18 @@
 <?php
+
+namespace App\Controllers\branch_admin;
+
+class ReportsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * ReportsController.php
  * Handles report generation and exporting for Branch Administrators.
  */
-
-require_once __DIR__ . '/../../Models/CaseModel.php';
-require_once __DIR__ . '/../../Models/BranchModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $branchModel = new \BranchModel($pdo);
@@ -43,7 +50,7 @@ if (isset($_GET['ajax_get_stats'])) {
             'data' => $stats,
             'monthly' => $monthlyCounts
         ]);
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
@@ -320,7 +327,7 @@ if (isset($_GET['export_pdf'])) {
                 </td>
                 <td style="width: 19%;">
                     <div class="summary-card red-accent">
-                        <div class="card-label">Emergency</div>
+                        <div class="card-label">STAT</div>
                         <div class="card-value"><?= number_format($stats['emergency_count'] ?? 0) ?></div>
                     </div>
                 </td>
@@ -350,7 +357,7 @@ if (isset($_GET['export_pdf'])) {
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Emergency / Critical</strong></td>
+                    <td><strong>STAT / Critical</strong></td>
                     <td class="text-right"><?= number_format($stats['emergency_count'] ?? 0) ?></td>
                     <td class="text-right">
                         <?= ($stats['total_patients'] ?? 0) > 0 ? number_format(($stats['emergency_count'] ?? 0) / $stats['total_patients'] * 100, 1) . '%' : '0.0%' ?>
@@ -436,6 +443,20 @@ if (isset($_GET['export_pdf'])) {
     $canvas->page_text($w - $mx - $px - 65, $textY, 'Page {PAGE_NUM} of {PAGE_COUNT}', $font, 8, $color);
 
     $filename = "Report_" . str_replace(' ', '_', $branchName) . "_" . date('Ymd') . ".pdf";
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (PDF)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $rangeLabel",
+        $branchId
+    );
+
     $dompdf->stream($filename, ["Attachment" => true]);
     exit;
 }
@@ -449,7 +470,7 @@ if (isset($_GET['export_excel'])) {
 
     $stats = $caseModel->getBranchBreakdown($branchId, $startDate, $endDate);
 
-    require_once __DIR__ . '/../../../vendor/autoload.php';
+
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -497,7 +518,7 @@ if (isset($_GET['export_excel'])) {
         ["General", "Total Registered Patients", $stats['total_patients'] ?? 0],
         ["PhilHealth", "Patients with PhilHealth", $stats['with_philhealth'] ?? 0],
         ["PhilHealth", "Patients without PhilHealth", $stats['without_philhealth'] ?? 0],
-        ["Case Priority", "Emergency / Critical Cases", $stats['emergency_count'] ?? 0],
+        ["Case Priority", "STAT / Critical Cases", $stats['emergency_count'] ?? 0],
         ["Case Priority", "Urgent / Priority Cases", $stats['urgent_count'] ?? 0],
         ["Case Priority", "Routine / Normal Cases", $stats['routine_count'] ?? 0],
     ];
@@ -545,5 +566,23 @@ if (isset($_GET['export_excel'])) {
 
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (Excel)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $startDate to $endDate",
+        $branchId
+    );
+
     exit;
+}
+
+        return get_defined_vars();
+    }
 }

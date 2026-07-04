@@ -1,9 +1,17 @@
 <?php
-require_once __DIR__ . '/../../Models/PatientModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
 
-$patientModel = new PatientModel($pdo);
-$caseModel = new CaseModel($pdo);
+namespace App\Controllers\admin_central;
+
+class PatientDetailsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
+
+$patientModel = new \PatientModel($pdo);
+$caseModel = new \CaseModel($pdo);
 
 $patientId = $_GET['id'] ?? 0;
 $patient = $patientModel->getPatientById($patientId);
@@ -16,3 +24,10 @@ if (!$patient) {
 
 // Fetch latest case just for context if any
 $latestCase = $caseModel->getLatestCaseByPatient($patientId);
+
+// Fetch case statistics for the patient
+$patientStats = $caseModel->getPatientCaseStats($patientId);
+
+        return get_defined_vars();
+    }
+}

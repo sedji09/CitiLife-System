@@ -1,11 +1,56 @@
 let currentEditId = null;
 
-function openEditModal(id, name, birthdate, sex, contact, philhealth, philhealthId) {
+function setModalInputsDisabled(disabled) {
+    document.getElementById('modalName').disabled = disabled;
+    document.getElementById('modalBirthdate').disabled = disabled;
+    document.getElementById('modalSex').disabled = disabled;
+    document.getElementById('modalContact').disabled = disabled;
+    document.getElementById('modalAddress').disabled = disabled;
+    document.getElementById('modalPhilHealth').disabled = disabled;
+    document.getElementById('modalPhilHealthId').disabled = disabled;
+
+    const okBtn = document.getElementById('modalOkBtn');
+    if (okBtn) {
+        okBtn.style.display = disabled ? 'none' : 'block';
+    }
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    if (cancelBtn) {
+        cancelBtn.innerText = disabled ? 'Close' : 'Cancel';
+    }
+}
+
+function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId) {
     currentEditId = id;
+    setModalInputsDisabled(false);
     document.getElementById('modalName').value = name;
-    document.getElementById('modalBirthdate').value = birthdate;
+    // Set the datepicker date (use the picker if available, fallback to direct value)
+    const modalBirthdateInput = document.getElementById('modalBirthdate');
+    modalBirthdateInput.value = birthdate;
+    if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+        modalDatePicker.setDate(birthdate);
+    }
     document.getElementById('modalSex').value = sex;
     document.getElementById('modalContact').value = contact;
+    document.getElementById('modalAddress').value = homeAddress || '';
+    document.getElementById('modalPhilHealth').value = philhealth;
+    document.getElementById('modalPhilHealthId').value = philhealthId || '';
+    document.getElementById('editModal').classList.remove('hidden');
+    togglePhilHealthId();
+}
+
+function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId) {
+    currentEditId = id;
+    setModalInputsDisabled(true);
+    document.getElementById('modalName').value = name;
+    // Set the datepicker date (use the picker if available, fallback to direct value)
+    const modalBirthdateInput = document.getElementById('modalBirthdate');
+    modalBirthdateInput.value = birthdate;
+    if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+        modalDatePicker.setDate(birthdate);
+    }
+    document.getElementById('modalSex').value = sex;
+    document.getElementById('modalContact').value = contact;
+    document.getElementById('modalAddress').value = homeAddress || '';
     document.getElementById('modalPhilHealth').value = philhealth;
     document.getElementById('modalPhilHealthId').value = philhealthId || '';
     document.getElementById('editModal').classList.remove('hidden');
@@ -53,6 +98,7 @@ function saveEditModal() {
     const birthdate = document.getElementById('modalBirthdate').value;
     const sex = document.getElementById('modalSex').value;
     const contact = document.getElementById('modalContact').value;
+    const homeAddress = document.getElementById('modalAddress').value;
     const philhealth = document.getElementById('modalPhilHealth').value;
     const philhealthId = document.getElementById('modalPhilHealthId').value;
 
@@ -88,6 +134,7 @@ function saveEditModal() {
         { name: 'birthdate', value: birthdate },
         { name: 'sex', value: sex },
         { name: 'contact', value: contact },
+        { name: 'home_address', value: homeAddress },
         { name: 'philhealth', value: philhealth },
         { name: 'philhealth_id', value: philhealthId, required: true }
     ];
@@ -108,20 +155,21 @@ function saveEditModal() {
 }
 
 document.addEventListener('input', (e) => {
-    if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'sort-date')) {
+    if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'sort-date' || e.target.id === 'filter-status')) {
         applyFilters();
     }
 });
 
 document.addEventListener('change', (e) => {
-    if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'sort-date')) {
+    if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'sort-date' || e.target.id === 'filter-status')) {
         applyFilters();
     }
 });
 
 function applyFilters() {
     const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const sort = document.getElementById('sort-date')?.value || 'Sort by:';
+    const sort = document.getElementById('sort-date')?.value || 'Newest Request';
+    const filterStatus = document.getElementById('filter-status')?.value || 'All';
 
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
@@ -144,10 +192,13 @@ function applyFilters() {
     rows.forEach(row => {
         const name = (row.dataset.name || '').toLowerCase();
         const id = (row.dataset.id || '').toLowerCase();
+        const statusSpan = row.querySelector('td:nth-child(6) span');
+        const status = statusSpan ? statusSpan.textContent.trim() : '';
 
         const matchSearch = name.includes(search) || id.includes(search);
+        const matchStatus = filterStatus === 'All' || status === filterStatus;
 
-        if (matchSearch) {
+        if (matchSearch && matchStatus) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -173,11 +224,7 @@ function applyFilters() {
 // Initial sorting on load and re-applying filters after real-time updates
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        const sortSelect = document.getElementById('sort-date');
-        if (sortSelect && sortSelect.value === 'Sort by:') {
-            sortSelect.value = 'Newest Request';
-            applyFilters();
-        }
+        applyFilters();
     }, 100);
 });
 

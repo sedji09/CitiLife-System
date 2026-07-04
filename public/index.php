@@ -1,12 +1,9 @@
 <?php
-
-// 1. Session start
 session_start();
 
-// 2. Load global helpers (which defines basePath)
 require_once __DIR__ . '/../helpers.php';
 
-// 3. Define PROJECT_DIR dynamic constant for root routing compatibility
+// Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
 if (!defined('PROJECT_DIR')) {
     $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/CitiLife-System/public/index.php';
     $parts = explode('/', $scriptPath);
@@ -14,10 +11,10 @@ if (!defined('PROJECT_DIR')) {
     define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'CitiLife-System');
 }
 
-// 4. Load Composer Autoloader
+// I-load muna ang Composer Autoloader
 require_once basePath('vendor/autoload.php');
 
-// 5. Load Database configuration
+// Load Database configuration
 $dbConfig = require basePath('config/db.php');
 
 // 6. Bootstrap Database using our Framework Database wrapper
@@ -28,6 +25,11 @@ try {
     $database = new Database($dbConfig);
     // Expose global PDO instance for models and backward compatibility
     $pdo = $database->conn;
+    
+    // Update last activity for real-time tracking
+    if (isset($_SESSION['user_id'])) {
+        $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$_SESSION['user_id']]);
+    }
 } catch (Exception $e) {
     die("Database initialization failed: " . $e->getMessage());
 }
@@ -40,4 +42,12 @@ require_once basePath('routes.php');
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
-$router->route($uri, $method);
+try {
+    $router->route($uri, $method);
+} catch (\Throwable $e) {
+    // I-log ang totoong error sa server para ma-check mo later kung bakit nag-error
+    error_log($e->getMessage());
+    
+    // I-load ang 500 error view kapag may pumalyang code
+    $router->error(500);
+}

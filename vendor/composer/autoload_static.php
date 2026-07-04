@@ -202,6 +202,7 @@ class ComposerStaticInitac2d307f4ed514763a8119f3523066bb
         'CaseModel' => __DIR__ . '/../..' . '/app/Models/CaseModel.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Dompdf\\Cpdf' => __DIR__ . '/..' . '/dompdf/dompdf/lib/Cpdf.php',
+        'FeedbackModel' => __DIR__ . '/../..' . '/app/Models/FeedbackModel.php',
         'NotificationModel' => __DIR__ . '/../..' . '/app/Models/NotificationModel.php',
         'PatientModel' => __DIR__ . '/../..' . '/app/Models/PatientModel.php',
         'RecordRequestModel' => __DIR__ . '/../..' . '/app/Models/RecordRequestModel.php',

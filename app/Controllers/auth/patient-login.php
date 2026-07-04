@@ -58,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 } else if (isset($user['status']) && $user['status'] === 'Inactive') {
                     $error = 'Your account has been deactivated. Please contact the clinic.';
                 } else {
+
                     // Check if device is remembered (Skip OTP if valid token exists)
                     $rememberToken = $_COOKIE['remember_device'] ?? null;
                     if ($rememberToken) {
@@ -72,6 +73,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             $_SESSION['name'] = ($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '');
                             $_SESSION['branch_id'] = $user['branch_id'];
 
+                            require_once basePath('app/Models/AuditLogModel.php');
+                            $auditLogModel = new \AuditLogModel($pdo);
+                            $auditLogModel->addLog(
+                                $user['id'],
+                                'Patient Login',
+                                'Patient Portal',
+                                'Session',
+                                $user['id'],
+                                "Successful login via remembered device",
+                                $user['branch_id']
+                            );
+
                             header("Location: /" . PROJECT_DIR . "/dashboard");
                             exit;
                         }
@@ -85,8 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     $updateStmt->execute([$otpCode, $expiresAt, $user['id']]);
                     
                     // Send email
-                    require_once basePath('app/Helpers/mailer_helper.php');
-                    $firstName = $user['first_name'] ?? 'Patient';
+                                        $firstName = $user['first_name'] ?? 'Patient';
                     $emailBody = "
                         <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
                             <h2 style='color: #1f2937;'>CitiLife System - Login Verification</h2>
@@ -138,6 +150,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     if ($attempts['attempts'] >= 3) {
                         $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
                     }
+
+                    // Log the failed attempt
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    $failedUserId = $user ? $user['id'] : 0;
+                    $auditLogModel->addLog(
+                        $failedUserId,
+                        'Failed Patient Login',
+                        'Patient Portal',
+                        'Session',
+                        $failedUserId,
+                        "Invalid email or password (" . substr($email, 0, 50) . ")"
+                    );
                 }
             }
         }
@@ -249,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <?php endif; ?>
             <?php endif; ?>
 
-            <form method="POST" action="" class="space-y-4 sm:space-y-6">
+            <form id="patientLoginForm" name="patientLoginForm" method="POST" action="/<?= PROJECT_DIR ?>/patient-login" autocomplete="on" class="space-y-4 sm:space-y-6">
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
                     <div class="relative">
@@ -303,14 +328,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 </div>
 
                 <div class="text-center mt-4 border-t pt-4">
-                    <p class="text-sm text-gray-600 mb-2">
+                    <p class="text-sm text-gray-600">
                         Don't have an account? <a href="patient-signup"
                             class="font-bold text-red-600 hover:text-red-500 hover:underline">Sign up here</a>
-                    </p>
-                    <p class="text-xs text-gray-500">
-                        Are you a staff member? <a href="login"
-                            class="font-medium text-gray-700 hover:text-gray-900 border-b border-gray-300 hover:border-gray-900">Go
-                            to Staff Portal</a>
                     </p>
                 </div>
             </form>

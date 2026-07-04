@@ -9,7 +9,7 @@
     <div class="mx-auto max-w-6xl space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Branch Management</h1>
+                <h1 class="text-2xl font-semibold text-gray-900">Branch Management</h1>
                 <p class="text-sm text-gray-500">Create and manage facility locations across the system</p>
             </div>
             <button type="button" onclick="openAddBranchModal()"
@@ -17,6 +17,35 @@
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 Add New Branch
             </button>
+        </div>
+
+        <?php
+        $activeBranchesCount = 0;
+        $totalBranchesCount = count($branches);
+        foreach ($branches as $b) {
+            if ($b['status'] === 'Active') $activeBranchesCount++;
+        }
+        ?>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Active Branches</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $activeBranchesCount ?></h3>
+                </div>
+                <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <i data-lucide="building-2" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Branches</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $totalBranchesCount ?></h3>
+                </div>
+                <div class="p-3 bg-gray-50 text-gray-600 rounded-lg">
+                    <i data-lucide="list" class="w-6 h-6"></i>
+                </div>
+            </div>
         </div>
 
         <?php if ($success): ?>
@@ -58,7 +87,7 @@
         </div>
 
         <!-- Branches Table Card -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="branches-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -66,7 +95,7 @@
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Branch Name</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Created Date</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-right">Actions</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="branchesTableBody" class="divide-y divide-gray-100">
@@ -130,7 +159,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                        <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($b['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
                                                     <input type="hidden" name="action" value="toggle-status">
@@ -178,26 +207,13 @@
             </div>
 
             <!-- Pagination Footer -->
-            <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-                <div class="text-xs text-gray-500 font-medium">
-                    Showing <span id="startIndex">0</span>-<span id="endIndex">0</span> of <span
-                        id="totalRecords">0</span> records
+            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+                <div class="text-xs text-gray-500">
+                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex" class="font-semibold text-gray-800">0</span> of <span
+                        id="totalRecords" class="font-semibold text-gray-800">0</span> records
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="changePage(-1)" id="prevBtn"
-                        class="flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                        Previous
-                    </button>
-                    <div class="px-4 py-3">
-                        <span class="text-xs font-medium text-gray-500">Page <span id="currentPageDisplay">1</span> of
-                            <span id="totalPagesDisplay">1</span></span>
-                    </div>
-                    <button onclick="changePage(1)" id="nextBtn"
-                        class="flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                        Next
-                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </button>
+                <div class="flex items-center flex-wrap gap-1.5" id="paginationControls">
+                    <!-- Dynamic page buttons will be inserted here -->
                 </div>
             </div>
         </div>
@@ -237,37 +253,44 @@
                 </div>
             </div>
             <div>
-                <label for="additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional Address / Direction</label>
+                <label for="additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional
+                    Address / Direction</label>
                 <div class="relative">
                     <i data-lucide="map" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="text" id="additional_address" name="additional_address" placeholder="e.g. In front of Hospital"
-                        autocomplete="off"
+                    <input type="text" id="additional_address" name="additional_address"
+                        placeholder="e.g. In front of Hospital" autocomplete="off"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="block text-sm font-semibold text-gray-700">Contact Numbers</label>
-                    <button type="button" onclick="addContactField('add')" id="add_btn_add" class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors">
+                    <button type="button" onclick="addContactField('add')" id="add_btn_add"
+                        class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors">
                         <i data-lucide="plus" class="w-3 h-3"></i> Add Number
                     </button>
                 </div>
                 <div class="space-y-2">
                     <div id="add_contact_1_wrapper">
-                        <input type="text" id="contact_number_1" name="contact_number_1" placeholder="Contact 1 (e.g. 0919-...)"
+                        <input type="text" id="contact_number_1" name="contact_number_1"
+                            placeholder="Contact 1 (e.g. 0919-...)"
                             class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                     </div>
                     <div id="add_contact_2_wrapper" class="hidden relative">
-                        <input type="text" id="contact_number_2" name="contact_number_2" placeholder="Contact 2 (e.g. 0919-...)"
+                        <input type="text" id="contact_number_2" name="contact_number_2"
+                            placeholder="Contact 2 (e.g. 0919-...)"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('add', 2)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('add', 2)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
                     <div id="add_contact_3_wrapper" class="hidden relative">
-                        <input type="text" id="contact_number_3" name="contact_number_3" placeholder="Contact 3 (e.g. 0919-...)"
+                        <input type="text" id="contact_number_3" name="contact_number_3"
+                            placeholder="Contact 3 (e.g. 0919-...)"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('add', 3)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('add', 3)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -311,7 +334,8 @@
                 </div>
             </div>
             <div>
-                <label for="edit_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch Address</label>
+                <label for="edit_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch
+                    Address</label>
                 <div class="relative">
                     <i data-lucide="map-pin" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="edit_address" name="address"
@@ -319,7 +343,8 @@
                 </div>
             </div>
             <div>
-                <label for="edit_additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional Address / Direction</label>
+                <label for="edit_additional_address" class="block text-sm font-semibold text-gray-700 mb-1.5">Additional
+                    Address / Direction</label>
                 <div class="relative">
                     <i data-lucide="map" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="edit_additional_address" name="additional_address"
@@ -329,7 +354,8 @@
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="block text-sm font-semibold text-gray-700">Contact Numbers</label>
-                    <button type="button" onclick="addContactField('edit')" id="edit_btn_add" class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
+                    <button type="button" onclick="addContactField('edit')" id="edit_btn_add"
+                        class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
                         <i data-lucide="plus" class="w-3 h-3"></i> Add Number
                     </button>
                 </div>
@@ -341,14 +367,16 @@
                     <div id="edit_contact_2_wrapper" class="hidden relative">
                         <input type="text" id="edit_contact_number_2" name="contact_number_2" placeholder="Contact 2"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('edit', 2)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('edit', 2)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
                     <div id="edit_contact_3_wrapper" class="hidden relative">
                         <input type="text" id="edit_contact_number_3" name="contact_number_3" placeholder="Contact 3"
                             class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <button type="button" onclick="removeContactField('edit', 3)" class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
+                        <button type="button" onclick="removeContactField('edit', 3)"
+                            class="absolute right-3 top-3 text-gray-400 hover:text-red-500 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -463,23 +491,23 @@
         document.getElementById('edit_contact_number_1').value = branch.contact_number_1 || '';
         document.getElementById('edit_contact_number_2').value = branch.contact_number_2 || '';
         document.getElementById('edit_contact_number_3').value = branch.contact_number_3 || '';
-        
+
         const wrapper2 = document.getElementById('edit_contact_2_wrapper');
         const wrapper3 = document.getElementById('edit_contact_3_wrapper');
         const btnAdd = document.getElementById('edit_btn_add');
-        
+
         if (branch.contact_number_2) {
             wrapper2.classList.remove('hidden');
         } else {
             wrapper2.classList.add('hidden');
         }
-        
+
         if (branch.contact_number_3) {
             wrapper3.classList.remove('hidden');
         } else {
             wrapper3.classList.add('hidden');
         }
-        
+
         if (branch.contact_number_2 && branch.contact_number_3) {
             btnAdd.classList.add('hidden');
         } else {
@@ -520,7 +548,7 @@
     }
 
     // Pagination State
-    let currentPage = 1;
+    let currentPage = parseInt(sessionStorage.getItem('CitiLife_adminBranches_page')) || 1;
     const itemsPerPage = 7;
 
     function filterAndSortBranches(resetPage = true) {
@@ -566,12 +594,103 @@
         updatePagination(rows.filter(r => !r.classList.contains('hidden')));
     }
 
+    function renderPaginationControls(totalPages) {
+        const container = document.getElementById('paginationControls');
+        if (!container) return;
+        container.innerHTML = '';
+
+        // Helper to create a button
+        function createButton(label, page, disabled, isActive = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = label;
+            
+            if (isActive) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+            }
+            
+            if (disabled) {
+                btn.disabled = true;
+            } else {
+                btn.onclick = () => {
+                    currentPage = page;
+                    filterAndSortBranches(false);
+                    const card = document.getElementById('branches-table-card');
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                };
+            }
+            return btn;
+        }
+
+        // Helper to create ellipsis
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+            span.innerText = '...';
+            return span;
+        }
+
+        // First Button
+        container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+
+        // Back Button
+        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+        // Page numbers
+        if (totalPages <= 7) {
+            // Show all pages
+            for (let i = 1; i <= totalPages; i++) {
+                container.appendChild(createButton(i, i, false, i == currentPage));
+            }
+        } else {
+            // We have many pages
+            if (currentPage <= 4) {
+                // Near start: 1, 2, 3, 4, 5, ..., T
+                for (let i = 1; i <= 5; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
+            } else if (currentPage >= totalPages - 3) {
+                // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                container.appendChild(createEllipsis());
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+            } else {
+                // Middle: 1, ..., C-1, C, C+1, ..., T
+                container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                container.appendChild(createEllipsis());
+                
+                container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                container.appendChild(createButton(currentPage, currentPage, false, true));
+                container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, false));
+            }
+        }
+
+        // Next Button
+        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+
+        // Last Button
+        container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
+    }
+
     function updatePagination(visibleRows) {
         const totalRecords = visibleRows.length;
         const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
 
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
+
+        sessionStorage.setItem('CitiLife_adminBranches_page', currentPage);
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);
@@ -587,24 +706,13 @@
         const startIndexEl = document.getElementById('startIndex');
         const endIndexEl = document.getElementById('endIndex');
         const totalRecordsEl = document.getElementById('totalRecords');
-        const currentPageDisplay = document.getElementById('currentPageDisplay');
-        const totalPagesDisplay = document.getElementById('totalPagesDisplay');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
 
         if (startIndexEl) startIndexEl.innerText = totalRecords === 0 ? 0 : startIdx + 1;
         if (endIndexEl) endIndexEl.innerText = endIdx;
         if (totalRecordsEl) totalRecordsEl.innerText = totalRecords;
-        if (currentPageDisplay) currentPageDisplay.innerText = currentPage;
-        if (totalPagesDisplay) totalPagesDisplay.innerText = totalPages;
 
-        if (prevBtn) prevBtn.disabled = (currentPage === 1);
-        if (nextBtn) nextBtn.disabled = (currentPage === totalPages || totalRecords === 0);
-    }
-
-    function changePage(delta) {
-        currentPage += delta;
-        filterAndSortBranches(false);
+        // Render dynamic page controls
+        renderPaginationControls(totalPages);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -623,15 +731,15 @@
         // Auto-format contact numbers
         const contactInputs = document.querySelectorAll('input[name^="contact_number"]');
         contactInputs.forEach(input => {
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 let val = this.value.replace(/\D/g, ''); // Remove non-digits
                 if (val.length > 11) val = val.substring(0, 11); // Limit to 11 digits
-                
+
                 let formatted = '';
                 if (val.length > 0) formatted = val.substring(0, 4);
                 if (val.length > 4) formatted += '-' + val.substring(4, 7);
                 if (val.length > 7) formatted += '-' + val.substring(7, 11);
-                
+
                 this.value = formatted;
             });
         });

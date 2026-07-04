@@ -1,9 +1,17 @@
 <?php
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
-$branchModel = new BranchModel($pdo);
-$auditLogModel = new AuditLogModel($pdo);
+namespace App\Controllers\admin_central;
+
+class BranchesController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
+
+$branchModel = new \BranchModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $currentUserId = $_SESSION['user_id'] ?? 0;
 $currentBranchId = $_SESSION['branch_id'] ?? null;
 
@@ -86,3 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all branches
 $branches = $branchModel->getAllBranches();
+
+        return get_defined_vars();
+    }
+}

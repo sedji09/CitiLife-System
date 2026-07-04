@@ -9,24 +9,18 @@
 <div class="flex items-center justify-between">
     <div>
         <h2 class="text-xl font-semibold text-gray-900">Branch X-ray Cases</h2>
-        <p class="text-sm text-gray-500 mt-1">Monitor today's patient queue and view completed branch records</p>
+        <p class="text-sm text-gray-500 mt-1">Monitor active patient queue and view completed branch records</p>
     </div>
 </div>
 
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex">
-        <a href="?role=branch_admin&page=branch-xray-cases&tab=queue"
+        <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=queue"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'queue' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Today's Queue
-            <?php if (count($todayQueue) > 0): ?>
-                <span
-                    class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-100">
-                    <?= count($todayQueue) ?>
-                </span>
-            <?php endif; ?>
+            Active Queue
         </a>
-        <a href="?role=branch_admin&page=branch-xray-cases&tab=records"
+        <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=records"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'records' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Records
         </a>
@@ -35,27 +29,32 @@
 
 <!-- Search & Filters -->
 <div class="mt-6 flex flex-col gap-4">
-    <div class="flex gap-4 items-center">
-        <div class="relative flex-1 group" style="position: relative; flex: 1 1 0%;">
-            <div style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
-                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors" style="width: 1.1rem; height: 1.1rem;"></i>
-            </div>
-            <input type="text" id="search-input" placeholder="Search by patient name or case number..."
-                style="padding-left: 2.75rem !important;"
-                class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-        </div>
-        <select id="filter-exam"
-            class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
-            <option value="All">All Exam Types</option>
-            <option>Chest PA</option>
-            <option>Abdominal X-ray</option>
-            <option>Extremity X-ray</option>
-            <option>Skull X-ray</option>
-            <option>Lumbar Spine</option>
-            <option>Pelvis</option>
-        </select>
+    <div class="flex gap-4 items-center w-full">
+        <input type="text" id="search-input" placeholder="Search patient records (Name or ID)..."
+            class="<?= $currentTab === 'queue' ? 'flex-1' : 'w-80' ?> rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+
+        <?php if ($currentTab === 'queue'): ?>
+            <select id="filter-priority"
+                class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                <option value="All">All Priorities</option>
+                <option value="Routine">Routine</option>
+                <option value="Urgent">Urgent</option>
+                <option value="STAT">STAT</option>
+            </select>
+        <?php endif; ?>
+
+        <?php if ($currentTab === 'queue'): ?>
+            <?php $urlDateFilter = $_GET['date'] ?? 'Today'; ?>
+            <select id="filter-date"
+                class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+                <option value="All" <?= $urlDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
+                <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's Cases</option>
+                <option value="Backlog" <?= $urlDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
+            </select>
+        <?php endif; ?>
+
         <select id="sort-date"
-            class="w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
+            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option>Newest Case</option>
             <option>Oldest Case</option>
         </select>
@@ -63,7 +62,7 @@
 </div>
 
 <!-- Table View -->
-<div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+<div id="xray-cases-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
@@ -92,7 +91,7 @@
                                     class="w-12 h-12 mb-3 opacity-20"></i>
                                 <p class="text-base font-medium">No records found</p>
                                 <p class="text-sm">There are no
-                                    <?= ($currentTab === 'queue') ? "active patients in today's queue" : "released patient records" ?>
+                                    <?= ($currentTab === 'queue') ? "active patients in the queue" : "released patient records" ?>
                                     at the moment.
                                 </p>
                             </div>
@@ -100,11 +99,14 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($data as $row): ?>
-                        <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer" 
+                        <?php $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d')); ?>
+                        <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-case="<?= htmlspecialchars($row['case_number']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
-                            data-date="<?= htmlspecialchars($row['created_at']) ?>">
+                            data-priority="<?= htmlspecialchars($row['priority'] ?? '') ?>"
+                            data-date="<?= htmlspecialchars($row['created_at']) ?>"
+                            data-is-today="<?= $isToday ? 'true' : 'false' ?>">
                             <td class="py-3 px-4 font-medium text-gray-900"><?= htmlspecialchars($row['case_number']) ?></td>
                             <td class="py-3 px-4 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
                             <td class="py-3 px-4">
@@ -134,7 +136,7 @@
                                 <td class="py-3 px-4">
                                     <?php
                                     $pColor = 'blue';
-                                    if ($row['priority'] === 'Emergency')
+                                    if ($row['priority'] === 'STAT')
                                         $pColor = 'red';
                                     elseif ($row['priority'] === 'Urgent')
                                         $pColor = 'yellow';
@@ -149,37 +151,47 @@
                                 <td class="py-3 px-4">
                                     <?php
                                     $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
+                                    
+                                    // Check if Overdue (more than 3 hours)
+                                    $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+                                    if ($displayStatus === 'Pending' && $isOverdue) {
+                                        $displayStatus = 'Overdue';
+                                    }
+
                                     $sColor = 'yellow';
                                     if ($displayStatus === 'Report Ready')
                                         $sColor = 'indigo';
                                     elseif ($displayStatus === 'Under Reading')
                                         $sColor = 'blue';
+                                    elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected')
+                                        $sColor = 'red';
                                     elseif ($displayStatus === 'Completed')
                                         $sColor = 'green';
-                                    elseif ($displayStatus === 'Rejected')
-                                        $sColor = 'red';
                                     ?>
                                     <span
                                         class="inline-flex items-center rounded-full border border-<?= $sColor ?>-200 bg-<?= $sColor ?>-50 px-2.5 py-1 text-xs font-semibold text-<?= $sColor ?>-700 shadow-sm">
-                                        <?= htmlspecialchars($displayStatus ?: 'Pending') ?>
+                                        <?= htmlspecialchars($displayStatus) ?>
                                     </span>
                                 </td>
                             <?php endif; ?>
                             <td class="py-3 px-4 text-gray-500 whitespace-nowrap">
-                                <?= date('M d, Y', strtotime($row['created_at'])) ?>
-                                <span
-                                    class="text-[10px] block opacity-70"><?= date('h:i A', strtotime($row['created_at'])) ?></span>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span><?= date('M d, Y', strtotime($row['created_at'])) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($row['created_at'])) ?></span></span>
+                                    <?php if ($currentTab === 'queue' && !$isToday): ?>
+                                        <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <?php if ($currentTab === 'queue'): ?>
-                                        <a href="?role=branch_admin&page=patient-details&id=<?= $row['id'] ?>"
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Case Detals">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
                                         <?php if ($row['status'] === 'Report Ready'): ?>
-                                            <a href="javascript:void(0)" 
+                                            <a href="javascript:void(0)"
                                                 onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                                 class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                                                 title="Print Preliminary Report">
@@ -187,18 +199,18 @@
                                             </a>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <a href="?role=branch_admin&page=records-history&id=<?= $row['id'] ?>"
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=records-history&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Record Details">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
-                                        <a href="javascript:void(0)" 
+                                        <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                                             title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
-                                        <a href="javascript:void(0)" 
+                                        <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
                                             class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                                             title="Download PDF">
@@ -215,49 +227,32 @@
     </div>
 
     <!-- Pagination Footer -->
-    <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
         <!-- Record count -->
-        <span id="xray-record-count" class="text-xs font-medium text-gray-500">
-            Showing 0-0 of 0 records
-        </span>
+        <span id="xray-record-count" class="text-xs text-gray-500 font-medium"></span>
 
-        <!-- Prev / Page info / Next -->
-        <div class="flex items-center gap-4">
-            <button id="xray-prev-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
-            </button>
-
-            <span id="xray-page-info" class="text-xs font-bold text-gray-700 min-w-[80px] text-center">
-                Page 1 of 1
-            </span>
-
-            <button id="xray-next-btn"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </button>
+        <!-- Pagination Controls -->
+        <div class="flex items-center flex-wrap gap-1.5" id="xray-pagination-controls">
+            <!-- Dynamic page buttons will be inserted here -->
         </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ROWS_PER_PAGE = 8;
-        let currentPage = 1;
+        const ROWS_PER_PAGE = 6;
+        let currentPage = parseInt(sessionStorage.getItem('CitiLife_branchXray_page_<?= $currentTab ?>')) || 1;
 
         const searchInput = document.getElementById('search-input');
-        const filterExam = document.getElementById('filter-exam');
         const sortDate = document.getElementById('sort-date');
+        const filterDate = document.getElementById('filter-date');
+        const filterPriority = document.getElementById('filter-priority');
         const tableBody = document.getElementById('table-body');
 
-        const prevBtn = document.getElementById('xray-prev-btn');
-        const nextBtn = document.getElementById('xray-next-btn');
-        const pageInfo = document.getElementById('xray-page-info');
-        const recordCountInfo = document.getElementById('xray-record-count');
 
         function getFilteredRows() {
             const searchTerm = searchInput.value.toLowerCase();
-            const examFilter = filterExam.value;
+            const priorityFilter = filterPriority ? filterPriority.value : null;
             const sortOrder = sortDate.value;
             const rows = Array.from(tableBody.querySelectorAll('tr.record-row'));
 
@@ -275,13 +270,107 @@
             return rows.filter(row => {
                 const name = row.getAttribute('data-name').toLowerCase();
                 const caseNo = row.getAttribute('data-case').toLowerCase();
-                const exam = row.getAttribute('data-exam');
+                const priority = row.getAttribute('data-priority');
+                const isToday = row.getAttribute('data-is-today') === 'true';
 
                 const matchesSearch = name.includes(searchTerm) || caseNo.includes(searchTerm);
-                const matchesExam = examFilter === 'All' || exam.includes(examFilter);
+                const matchesPriority = priorityFilter ? (priorityFilter === 'All' || priority === priorityFilter) : true;
+                
+                let matchesDate = true;
+                if (filterDate && filterDate.value === 'Today') matchesDate = isToday;
+                if (filterDate && filterDate.value === 'Backlog') matchesDate = !isToday;
 
-                return matchesSearch && matchesExam;
+                return matchesSearch && matchesPriority && matchesDate;
             });
+        }
+
+        function renderPaginationControls(totalPages) {
+            const container = document.getElementById('xray-pagination-controls');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Helper to create a button
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+                
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+                
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        renderPage();
+                        const card = document.getElementById('xray-cases-table-card');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            // Helper to create ellipsis
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            // First Button
+            container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+
+            // Back Button
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+            // Page numbers
+            if (totalPages <= 7) {
+                // Show all pages
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+            } else {
+                // We have many pages
+                if (currentPage <= 4) {
+                    // Near start: 1, 2, 3, 4, 5, ..., T
+                    for (let i = 1; i <= 5; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentPage));
+                    }
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
+                } else if (currentPage >= totalPages - 3) {
+                    // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentPage));
+                    }
+                } else {
+                    // Middle: 1, ..., C-1, C, C+1, ..., T
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                    container.appendChild(createEllipsis());
+                    
+                    container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                    container.appendChild(createButton(currentPage, currentPage, false, true));
+                    container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                    
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            // Next Button
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+
+            // Last Button
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
         function renderPage() {
@@ -294,12 +383,14 @@
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
 
+            sessionStorage.setItem('CitiLife_branchXray_page_<?= $currentTab ?>', currentPage);
+
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
             const endIdx = startIdx + ROWS_PER_PAGE;
 
             // Hide all, then show specific page
             rows.forEach(r => r.style.display = 'none');
-            
+
             const visibleRows = filteredRows.slice(startIdx, endIdx);
             visibleRows.forEach(row => row.style.display = '');
 
@@ -318,48 +409,68 @@
             }
 
             // Update Pagination UI
+            const recordCountInfo = document.getElementById('xray-record-count');
             const displayStart = totalFiltered === 0 ? 0 : startIdx + 1;
             const displayEnd = Math.min(endIdx, totalFiltered);
 
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            recordCountInfo.textContent = `Showing ${displayStart}–${displayEnd} of ${totalFiltered} records`;
+            if (recordCountInfo) {
+                recordCountInfo.innerHTML = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing <span class="font-semibold text-gray-800">${displayStart}</span> to <span class="font-semibold text-gray-800">${displayEnd}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> records`;
+            }
 
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= totalPages;
+            renderPaginationControls(totalPages);
         }
 
         function applyFilters() {
             currentPage = 1;
+            
+            // Save state to sessionStorage
+            sessionStorage.setItem('CitiLife_branchXray_search_<?= $currentTab ?>', searchInput.value);
+            sessionStorage.setItem('CitiLife_branchXray_sort_<?= $currentTab ?>', sortDate.value);
+            if (filterDate) sessionStorage.setItem('CitiLife_branchXray_date_<?= $currentTab ?>', filterDate.value);
+            if (filterPriority) sessionStorage.setItem('CitiLife_branchXray_priority_<?= $currentTab ?>', filterPriority.value);
+
             renderPage();
+        }
+
+        // Restore state IF NOT SET via URL
+        const savedSearch = sessionStorage.getItem('CitiLife_branchXray_search_<?= $currentTab ?>');
+        const savedSort = sessionStorage.getItem('CitiLife_branchXray_sort_<?= $currentTab ?>');
+        const savedDate = sessionStorage.getItem('CitiLife_branchXray_date_<?= $currentTab ?>');
+        const savedPriority = sessionStorage.getItem('CitiLife_branchXray_priority_<?= $currentTab ?>');
+
+        if (savedSearch) searchInput.value = savedSearch;
+        if (savedSort) sortDate.value = savedSort;
+        if (filterPriority && savedPriority) filterPriority.value = savedPriority;
+        
+        // For filterDate, only restore if there's no ?date= in URL to respect dashboard links
+        const urlParams = new URLSearchParams(window.location.search);
+        if (filterDate && savedDate && !urlParams.has('date')) {
+            filterDate.value = savedDate;
         }
 
         // Event Listeners
         searchInput.addEventListener('input', applyFilters);
-        filterExam.addEventListener('change', applyFilters);
+        if (filterPriority) filterPriority.addEventListener('change', applyFilters);
         sortDate.addEventListener('change', applyFilters);
+        if (filterDate) filterDate.addEventListener('change', applyFilters);
 
         document.addEventListener('realtime:updated', () => {
             renderPage();
         });
 
-        prevBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage();
-            }
-        });
-
-        nextBtn.addEventListener('click', () => {
-            const filteredRows = getFilteredRows();
-            const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderPage();
-            }
-        });
-
         // Initial Render
         renderPage();
+
+        // Handle browser Back/Forward cache and delayed form restores
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                renderPage();
+            } else {
+                setTimeout(renderPage, 100);
+            }
+        });
 
         // Refresh Icons
         if (window.lucide) {

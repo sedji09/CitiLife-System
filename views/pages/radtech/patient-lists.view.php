@@ -1,6 +1,6 @@
 <?php
 /**
- * Today's Queue (Patient List) View
+ * Patient Queue (Patient List) View
  * Backend logic handled by PatientListsController.php
  */
 ?>
@@ -16,7 +16,7 @@
 <div class="flex items-center justify-between">
     <div>
         <h2 class="text-xl font-semibold text-gray-900">Patient List</h2>
-        <p class="text-sm text-gray-500 mt-1">Manage approvals and today's examination queue</p>
+        <p class="text-sm text-gray-500 mt-1">Manage approvals and active examination queue</p>
     </div>
 </div>
 
@@ -50,7 +50,7 @@
     <nav class="flex gap-3">
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-lists' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Today's Queue
+            Patient Queue
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
@@ -62,19 +62,26 @@
 <!-- Content -->
 <div class="mt-6 flex flex-col gap-4">
     <div class="flex gap-4 items-center">
-        <input type="text" id="search-input" placeholder="Search by patient name or case number..."
+        <?php $defaultSearch = $_GET['search'] ?? ''; ?>
+        <input type="text" id="search-input" placeholder="Search by patient name or case number..." value="<?= htmlspecialchars($defaultSearch) ?>"
             class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+        <?php $defaultPriorityFilter = $_GET['filterPriority'] ?? 'All'; ?>
         <select id="filter-priority"
-            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option value="All" hidden selected>Filter by Priority</option>
-            <option value="All">All</option>
-            <option>Routine</option>
-            <option>Urgent</option>
-            <option>Emergency</option>
+            class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="All" <?= $defaultPriorityFilter === 'All' ? 'selected' : '' ?>>All Priorities</option>
+            <option <?= $defaultPriorityFilter === 'Routine' ? 'selected' : '' ?>>Routine</option>
+            <option <?= $defaultPriorityFilter === 'Urgent' ? 'selected' : '' ?>>Urgent</option>
+            <option <?= $defaultPriorityFilter === 'STAT' ? 'selected' : '' ?>>STAT</option>
+        </select>
+        <?php $defaultDateFilter = $_GET['filterDate'] ?? (isset($_GET['highlight']) ? 'All' : 'Today'); ?>
+        <select id="filter-date"
+            class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="All" <?= $defaultDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
+            <option value="Today" <?= $defaultDateFilter === 'Today' ? 'selected' : '' ?>>Today's Cases</option>
+            <option value="Backlog" <?= $defaultDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
         </select>
         <select id="sort-date"
-            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option>Sort by:</option>
+            class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option>Newest Case</option>
             <option>Oldest Case</option>
         </select>
@@ -102,18 +109,46 @@
                 <?php if (count($patients) === 0): ?>
                     <tr>
                         <td colspan="9" class="text-center py-8 text-gray-500">
-                            No active patients found in Today's Queue.
+                            No active patients found in the Queue.
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($patients as $row): ?>
-                        <?php $isReportReady = ($row['status'] === 'Report Ready'); ?>
+                        <?php
+                        $isReportReady = ($row['status'] === 'Report Ready');
+                        $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d'));
+                        
+                        $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
+                        $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+                        if ($displayStatus === 'Pending' && $isOverdue) {
+                            $displayStatus = 'Overdue';
+                        }
+
+                        $initialDisplay = '';
+                        if ($defaultDateFilter === 'Today' && !$isToday) $initialDisplay = 'display: none;';
+                        if ($defaultDateFilter === 'Backlog' && $isToday) $initialDisplay = 'display: none;';
+                        if ($defaultPriorityFilter !== 'All' && $defaultPriorityFilter !== $row['priority']) $initialDisplay = 'display: none;';
+                        
+                        $sLower = strtolower($defaultSearch);
+                        if ($sLower !== '') {
+                            $nMatch = strpos(strtolower($row['first_name'] . ' ' . $row['last_name']), $sLower) !== false;
+                            $cMatch = strpos(strtolower($row['case_number']), $sLower) !== false;
+                            $pMatch = strpos(strtolower($row['patient_number'] ?? ''), $sLower) !== false;
+                            if (!$nMatch && !$cMatch && !$pMatch) {
+                                $initialDisplay = 'display: none;';
+                            }
+                        }
+                        ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
+                            style="<?= $initialDisplay ?>"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
-                            data-date="<?= htmlspecialchars($row['created_at']) ?>">
+                            data-date="<?= htmlspecialchars($row['created_at']) ?>"
+                            data-status="<?= htmlspecialchars($displayStatus ?: 'Pending') ?>"
+                            data-is-today="<?= $isToday ? 'true' : 'false' ?>">
                             <td class="py-3 px-3 font-medium whitespace-nowrap"><?= htmlspecialchars($row['case_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium whitespace-nowrap">
@@ -144,7 +179,7 @@
                                 $pBorder = '1.5px solid #60a5fa';
                                 $pBg = '#eff6ff';
                                 $pColor = '#1d4ed8';
-                                if ($row['priority'] === 'Emergency') {
+                                if ($row['priority'] === 'STAT') {
                                     $pBorder = '1.5px solid #f87171';
                                     $pBg = '#fef2f2';
                                     $pColor = '#b91c1c';
@@ -177,7 +212,7 @@
                             </td>
                             <td class="py-3 px-3">
                                 <?php
-                                $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
+                                // $displayStatus logic moved up to row attributes for searchability
                                 $sBorder = '1.5px solid #facc15';
                                 $sBg = '#fefce8';
                                 $sColor = '#a16207';
@@ -196,7 +231,7 @@
                                     $sBg = '#f0fdf4';
                                     $sColor = '#15803d';
                                 }
-                                if ($displayStatus === 'Rejected') {
+                                if ($displayStatus === 'Rejected' || $displayStatus === 'Overdue') {
                                     $sBorder = '1.5px solid #f87171';
                                     $sBg = '#fef2f2';
                                     $sColor = '#b91c1c';
@@ -209,7 +244,15 @@
                                 </span>
                             </td>
                             <td class="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
-                                <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span><?= date('M d, Y', strtotime($row['created_at'])) ?> <br> <span
+                                            class="opacity-70"><?= date('h:i A', strtotime($row['created_at'])) ?></span></span>
+                                    <?php if (!$isToday): ?>
+                                        <span
+                                            class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200"
+                                            title="This case was carried over from a previous day">BACKLOG</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
@@ -264,21 +307,22 @@
 
 <script>
     document.addEventListener('input', (e) => {
-        if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'sort-date')) {
+        if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'filter-date' || e.target.id === 'sort-date')) {
             applyFilters();
         }
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'sort-date')) {
+        if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'filter-date' || e.target.id === 'sort-date')) {
             applyFilters();
         }
     });
 
     function applyFilters() {
         const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-        const priority = document.getElementById('filter-priority')?.value || 'Filter by Priority';
-        const sort = document.getElementById('sort-date')?.value || 'Sort by:';
+        const priority = document.getElementById('filter-priority')?.value || '<?= htmlspecialchars($defaultPriorityFilter) ?>';
+        const dateFilter = document.getElementById('filter-date')?.value || '<?= htmlspecialchars($defaultDateFilter) ?>';
+        const sort = document.getElementById('sort-date')?.value || 'Newest Case';
 
         const tbody = document.getElementById('table-body');
         if (!tbody) return;
@@ -288,18 +332,24 @@
 
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
-            const priorityMap = { 'Emergency': 3, 'Urgent': 2, 'Routine': 1 };
-
             rows.sort((a, b) => {
-                // Primary Sort: Priority Level (Emergency > Urgent > Routine)
-                const scoreA = priorityMap[a.dataset.priority] || 0;
-                const scoreB = priorityMap[b.dataset.priority] || 0;
+                // Priority Weight: STAT > Urgent/Priority > Routine
+                const getPriorityWeight = (prio) => {
+                    const p = (prio || '').toUpperCase();
+                    if (p === 'STAT') return 3;
+                    if (p === 'URGENT' || p === 'PRIORITY') return 2;
+                    return 1;
+                };
 
-                if (scoreA !== scoreB) {
-                    return scoreB - scoreA;
+                const weightA = getPriorityWeight(a.dataset.priority);
+                const weightB = getPriorityWeight(b.dataset.priority);
+
+                // Sort by priority first (highest weight first)
+                if (weightA !== weightB) {
+                    return weightB - weightA;
                 }
 
-                // Secondary Sort: Date
+                // If same priority, sort by date
                 const dateA = new Date(a.dataset.date).getTime();
                 const dateB = new Date(b.dataset.date).getTime();
                 return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
@@ -312,12 +362,19 @@
         rows.forEach(row => {
             const name = (row.dataset.name || '').toLowerCase();
             const id = (row.dataset.id || '').toLowerCase();
+            const patient = (row.dataset.patient || '').toLowerCase();
             const rowPriority = row.dataset.priority || '';
+            const rowStatus = (row.dataset.status || '').toLowerCase();
+            const isToday = row.dataset.isToday === 'true';
 
-            const matchSearch = name.includes(search) || id.includes(search) || rowPriority.toLowerCase().includes(search);
+            const matchSearch = name.includes(search) || id.includes(search) || patient.includes(search) || rowPriority.toLowerCase().includes(search) || rowStatus.includes(search);
             const matchPriority = priority === 'Filter by Priority' || priority === 'All' || priority === rowPriority;
 
-            if (matchSearch && matchPriority) {
+            let matchDate = true;
+            if (dateFilter === 'Today') matchDate = isToday;
+            if (dateFilter === 'Backlog') matchDate = !isToday;
+
+            if (matchSearch && matchPriority && matchDate) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -344,11 +401,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Default Sort & Filter
         setTimeout(() => {
-            const sortSelect = document.getElementById('sort-date');
-            if (sortSelect && sortSelect.value === 'Sort by:') {
-                sortSelect.value = 'Newest Case';
-                applyFilters();
-            }
+            applyFilters();
         }, 100);
 
         // ── Highlight row from notification ───────────────────────────────
@@ -422,7 +475,7 @@
     class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
     <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mb-4"></div>
     <h3 class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing report snapshots...
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing the results...
     </p>
 </div>
 
@@ -479,7 +532,7 @@
                     let base64Images = [];
                     for (let i = 0; i < pages.length; i++) {
                         const page = pages[i];
-                        if (statusText) statusText.textContent = `Capturing page ${i + 1} of ${pages.length}...`;
+                        if (statusText) statusText.textContent = `Processing page ${i + 1} of ${pages.length}...`;
 
                         const canvas = await html2canvas(page, {
                             scale: pages.length > 5 ? 1.5 : 2, // Slightly lower scale for very large reports to prevent memory issues

@@ -70,19 +70,15 @@
                 class="w-72 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
             <select id="filter-branch"
                 class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                <option>Filter by Branch</option>
-                <option>All</option>
-                <option>Gapan</option>
-                <option>Bongabon</option>
-                <option>Peñaranda</option>
-                <option>General Tinio</option>
-                <option>Sto Domingo</option>
-                <option>San Antonio</option>
-                <option>Pantabangan</option>
+                <option selected>All Branches</option>
+                <?php foreach ($allBranches as $branch): ?>
+                    <?php if ($branch['id'] != $_SESSION['branch_id']): ?>
+                        <option><?= htmlspecialchars($branch['name']) ?></option>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             </select>
             <select id="sort-date"
                 class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-                <option>Sort by:</option>
                 <option>Newest Request</option>
                 <option>Oldest Request</option>
             </select>
@@ -94,10 +90,11 @@
             <table class="w-full text-sm border-separate border-spacing-0">
                 <thead class="sticky top-0 z-10">
                     <tr class="bg-gray-50 text-gray-600 border-b border-gray-200">
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Case No.</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Patient Name
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Case No.</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Patient Name
                         </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Type</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Date</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Form Branch
                         </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Date Requested
@@ -109,7 +106,7 @@
                 <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
                     <?php if (count($requests) === 0): ?>
                         <tr>
-                            <td colspan="7" class="text-center py-8 text-gray-500">No record requests found.</td>
+                            <td colspan="8" class="text-center py-8 text-gray-500">No record requests found.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($requests as $req): ?>
@@ -118,8 +115,8 @@
                                 data-name="<?= htmlspecialchars($req['patient_name']) ?>"
                                 data-branch="<?= htmlspecialchars($req['request_branch']) ?>"
                                 data-date="<?= htmlspecialchars($req['created_at']) ?>">
-                                <td class="px-6 py-4 font-medium"><?= htmlspecialchars($req['patient_no']) ?></td>
-                                <td class="px-6 py-4 font-medium"><?= htmlspecialchars($req['patient_name']) ?></td>
+                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_no']) ?></td>
+                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_name']) ?></td>
                                 <td class="px-6 py-4">
                                     <?php
                                     $exams = array_filter(array_map('trim', explode(',', $req['exam_type'])));
@@ -136,9 +133,22 @@
                                         <?php endif; ?>
                                     </div>
                                 </td>
+                                <td class="px-6 py-4 text-gray-500 text-xs whitespace-nowrap">
+                                    <?php if (!empty($req['exam_date'])): ?>
+                                        <div class="flex flex-col">
+                                            <span><?= date('M d, Y', strtotime($req['exam_date'])) ?></span>
+                                            <span class="opacity-70"><?= date('h:i A', strtotime($req['exam_date'])) ?></span>
+                                        </div>
+                                    <?php else: ?>
+                                        —
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($req['request_branch']) ?></td>
-                                <td class="px-6 py-4 text-gray-500 text-xs">
-                                    <?= date('M d, Y h:i A', strtotime($req['created_at'])) ?>
+                                <td class="px-6 py-4 text-gray-500 text-xs whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span><?= date('M d, Y', strtotime($req['created_at'])) ?></span>
+                                        <span class="opacity-70"><?= date('h:i A', strtotime($req['created_at'])) ?></span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <?php
@@ -210,13 +220,13 @@
                         <select id="search_request_branch"
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm">
                             <option value="" disabled selected>-- Select Branch --</option>
-                            <option value="Gapan">Gapan</option>
-                            <option value="Bongabon">Bongabon</option>
-                            <option value="Peñaranda">Peñaranda</option>
-                            <option value="General Tinio">General Tinio</option>
-                            <option value="Sto Domingo">Sto Domingo</option>
-                            <option value="San Antonio">San Antonio</option>
-                            <option value="Pantabangan">Pantabangan</option>
+                            <?php foreach ($allBranches as $branch): ?>
+                                <?php if ($branch['id'] != $_SESSION['branch_id']): ?>
+                                    <option value="<?= htmlspecialchars($branch['name']) ?>">
+                                        <?= htmlspecialchars($branch['name']) ?>
+                                    </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>

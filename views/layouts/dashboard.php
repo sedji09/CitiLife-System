@@ -27,6 +27,12 @@ if ($userId > 0) {
     header("Location: /" . PROJECT_DIR . "/login?error=" . $reason);
     exit();
   }
+  // Sync session and local variables with DB
+  $_SESSION['email'] = $currentUser['email'];
+  $_SESSION['name'] = $currentUser['name'];
+  $_SESSION['role'] = $currentUser['role'];
+  $userEmail = $currentUser['email'];
+  $role = $currentUser['role'];
 }
 // ----------------------------
 $branchNameDisplay = $branchModel->getBranchDisplayName($branchId);
@@ -41,6 +47,7 @@ $userAvatar = $displayInfo['avatar'];
 $userSignature = $currentUser['signature'] ?? '';
 $userProfessionalTitle = $currentUser['professional_title'] ?? '';
 $userFullNameReport = $currentUser['full_name_report'] ?? '';
+$userIsAvailable = $currentUser['is_available'] ?? 1;
 
 // AuthHelper is autoloaded via composer
 
@@ -51,6 +58,8 @@ $userLastName = '';
 $userBirthdate = '';
 $userSex = 'Male';
 $userContactNumber = '';
+$userHomeAddress = '';
+$userPatientNumber = '';
 
 if ($isPatient) {
   $patientModel = new \PatientModel($pdo);
@@ -61,19 +70,45 @@ if ($isPatient) {
     $userBirthdate = $patientData['birthdate'] ?? '';
     $userSex = $patientData['sex'] ?? 'Male';
     $userContactNumber = $patientData['contact_number'] ?? '';
+    $userHomeAddress = $patientData['home_address'] ?? '';
+    $userPatientNumber = $patientData['patient_number'] ?? '';
   }
 }
 
 
-$menus = require __DIR__ . '/../../config/menus.php';
+$menusPath = __DIR__ . '/../../config/menus.php';
+if (function_exists('opcache_invalidate')) {
+  opcache_invalidate($menusPath, true);
+}
+$menus = require $menusPath;
+
 $allRoleMenus = $menus[$role] ?? [];
+$systemFeatures = $menus['system_feature_menus'] ?? [];
 
 // Dynamic RBAC Filter
 $menuItems = [];
+$addedPerms = [];
+
+// 1. Add all native menus that the user is allowed to see
 foreach ($allRoleMenus as $item) {
   $permKey = $item['perm_key'] ?? null;
   if (!$permKey || hasPermission($role, $permKey) > 0) {
     $menuItems[] = $item;
+    if ($permKey) $addedPerms[] = $permKey;
+  }
+}
+
+// 2. Add extra dynamic menus from system features if they have permission but it's not their native menu
+// IT Admin uses a fixed sidebar — skip injecting backup/audit extras here (available via dashboard quick actions)
+$itAdminDynamicSkip = ['backup_mgmt', 'audit_logs', 'user_mgmt', 'branch_mgmt', 'system_security'];
+if ($role !== 'patient') {
+  foreach ($systemFeatures as $permKey => $item) {
+    if ($role === 'it_admin' && in_array($permKey, $itAdminDynamicSkip, true)) {
+      continue;
+    }
+    if (!in_array($permKey, $addedPerms) && hasPermission($role, $permKey) > 0) {
+      $menuItems[] = $item;
+    }
   }
 }
 
@@ -154,7 +189,13 @@ try {
 
       <?php require __DIR__ . '/partials/drive_preview_modal.php'; ?>
 
-      <?php require __DIR__ . '/partials/scripts.php'; ?>
+      <?php require __DIR__ . '/partials/chat_widget.php'; ?>
+
+    </div> <!-- End main content wrapper -->
+  </div> <!-- End #app Vue container -->
+
+  <?php require __DIR__ . '/partials/data_privacy_modal.php'; ?>
+  <?php require __DIR__ . '/partials/scripts.php'; ?>
 </body>
 
 </html>

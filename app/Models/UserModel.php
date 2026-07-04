@@ -166,13 +166,13 @@ class UserModel {
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $this->pdo->prepare("
                 UPDATE users SET email = ?, password = ?, role = ?, branch_id = ? 
-                WHERE id = ? AND role != 'admin_central'
+                WHERE id = ?
             ");
             return $stmt->execute([$email, $hashedPassword, $role, $branchId, $id]);
         } else {
             $stmt = $this->pdo->prepare("
                 UPDATE users SET email = ?, role = ?, branch_id = ? 
-                WHERE id = ? AND role != 'admin_central'
+                WHERE id = ?
             ");
             return $stmt->execute([$email, $role, $branchId, $id]);
         }
@@ -182,7 +182,7 @@ class UserModel {
      * Delete a staff account.
      */
     public function deleteStaffUser($id) {
-        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id = ? AND role != 'admin_central'");
+        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id = ?");
         return $stmt->execute([$id]);
     }
 

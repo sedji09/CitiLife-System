@@ -1,4 +1,4 @@
-
+/*
 document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
 }, false);
@@ -25,5 +25,6 @@ document.onkeydown = function (e) {
         return false;
     }
 };
+*/
 
 

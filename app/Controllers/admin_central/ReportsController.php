@@ -1,11 +1,19 @@
 <?php
+
+namespace App\Controllers\admin_central;
+
+class ReportsController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * ReportsController.php
  * Handles report generation for Admin Central.
  */
 
-require_once __DIR__ . '/../../Models/BranchModel.php';
-require_once __DIR__ . '/../../Models/CaseModel.php';
 
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
@@ -35,7 +43,7 @@ if (isset($_GET['ajax_generate'])) {
             'data' => $stats,
             'trends' => $monthlyTrends
         ]);
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
@@ -58,7 +66,7 @@ if (isset($_GET['export_pdf'])) {
         'total' => 0,
         'philhealth' => 0,
         'without_philhealth' => 0,
-        'emergency' => 0,
+        'stat' => 0,
         'urgent' => 0,
         'routine' => 0
     ];
@@ -66,7 +74,7 @@ if (isset($_GET['export_pdf'])) {
         $grandTotal['total'] += ($s['total_patients'] ?? 0);
         $grandTotal['philhealth'] += ($s['with_philhealth'] ?? 0);
         $grandTotal['without_philhealth'] += ($s['without_philhealth'] ?? 0);
-        $grandTotal['emergency'] += ($s['emergency_count'] ?? 0);
+        $grandTotal['stat'] += ($s['emergency_count'] ?? 0);
         $grandTotal['urgent'] += ($s['urgent_count'] ?? 0);
         $grandTotal['routine'] += ($s['routine_count'] ?? 0);
     }
@@ -331,8 +339,8 @@ if (isset($_GET['export_pdf'])) {
                 </td>
                 <td style="width: 19%;">
                     <div class="summary-card red-accent">
-                        <div class="card-label">Emergency</div>
-                        <div class="card-value"><?= number_format($grandTotal['emergency']) ?></div>
+                        <div class="card-label">STAT</div>
+                        <div class="card-value"><?= number_format($grandTotal['stat']) ?></div>
                     </div>
                 </td>
                 <td style="width: 19%;">
@@ -362,10 +370,10 @@ if (isset($_GET['export_pdf'])) {
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Emergency / Critical</strong></td>
-                    <td class="text-right"><?= number_format($grandTotal['emergency']) ?></td>
+                    <td><strong>STAT / Critical</strong></td>
+                    <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
                     <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['emergency'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['stat'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
                     </td>
                 </tr>
                 <tr>
@@ -426,7 +434,7 @@ if (isset($_GET['export_pdf'])) {
                     <th style="width: 25%;">Branch Location</th>
                     <th class="text-right">Total</th>
                     <th class="text-right">% Share</th>
-                    <th class="text-right">Emergency</th>
+                    <th class="text-right">STAT</th>
                     <th class="text-right">Urgent</th>
                     <th class="text-right">Routine</th>
                     <th class="text-right">PhilHealth</th>
@@ -452,7 +460,7 @@ if (isset($_GET['export_pdf'])) {
                     <td>SYSTEM TOTAL</td>
                     <td class="text-right"><?= number_format($grandTotal['total']) ?></td>
                     <td class="text-right">100%</td>
-                    <td class="text-right"><?= number_format($grandTotal['emergency']) ?></td>
+                    <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
                     <td class="text-right"><?= number_format($grandTotal['urgent']) ?></td>
                     <td class="text-right"><?= number_format($grandTotal['routine']) ?></td>
                     <td class="text-right"><?= number_format($grandTotal['philhealth']) ?></td>
@@ -472,7 +480,7 @@ if (isset($_GET['export_pdf'])) {
 
     // ── Canvas Footer: draw both texts on the SAME y-baseline ──
     $canvas = $dompdf->getCanvas();
-    $font = $dompdf->getFontMetrics()->get_font('helvetica', 'normal');
+    $font = $dompdf->getFontMetrics()->getFont('helvetica', 'normal');
     $color = [148 / 255, 163 / 255, 184 / 255]; // #94a3b8
     $lineCol = [226 / 255, 232 / 255, 240 / 255]; // #e2e8f0
     $w = $canvas->get_width();        // ~595pt for A4
@@ -486,6 +494,19 @@ if (isset($_GET['export_pdf'])) {
     $canvas->line($mx + $px, $lineY, $w - $mx - $px, $lineY, $lineCol, 0.5);
     $canvas->page_text($mx + $px, $textY, 'Generated: ' . date('F j, Y g:i A'), $font, 8, $color);
     $canvas->page_text($w - $mx - $px - 65, $textY, 'Page {PAGE_NUM} of {PAGE_COUNT}', $font, 8, $color);
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (PDF)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $rangeLabel, Branches: " . (empty($branchIds) ? 'All' : implode(',', $branchIds)),
+        null // Central admin may not have branch_id
+    );
 
     $dompdf->stream("Central_Report_" . date('Ymd') . ".pdf", ["Attachment" => true]);
     exit;
@@ -502,7 +523,7 @@ if (isset($_GET['export_excel'])) {
 
     $statsList = $caseModel->getReportStats($startDate, $endDate, $branchIds);
 
-    require_once __DIR__ . '/../../../vendor/autoload.php';
+
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -556,7 +577,7 @@ if (isset($_GET['export_excel'])) {
     $grand = [
         'total' => 0,
         'philhealth' => 0,
-        'emergency' => 0,
+        'stat' => 0,
         'urgent' => 0,
         'routine' => 0
     ];
@@ -572,7 +593,7 @@ if (isset($_GET['export_excel'])) {
         // Summation
         $grand['total'] += ($s['total_patients'] ?? 0);
         $grand['philhealth'] += ($s['with_philhealth'] ?? 0);
-        $grand['emergency'] += ($s['emergency_count'] ?? 0);
+        $grand['stat'] += ($s['emergency_count'] ?? 0);
         $grand['urgent'] += ($s['urgent_count'] ?? 0);
         $grand['routine'] += ($s['routine_count'] ?? 0);
 
@@ -588,7 +609,7 @@ if (isset($_GET['export_excel'])) {
     $sheet->setCellValue('A' . $currentRow, "GRAND TOTAL");
     $sheet->setCellValue('B' . $currentRow, $grand['total']);
     $sheet->setCellValue('C' . $currentRow, $grand['philhealth']);
-    $sheet->setCellValue('D' . $currentRow, $grand['emergency']);
+    $sheet->setCellValue('D' . $currentRow, $grand['stat']);
     $sheet->setCellValue('E' . $currentRow, $grand['urgent']);
     $sheet->setCellValue('F' . $currentRow, $grand['routine']);
     $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray($totalRowStyle);
@@ -615,8 +636,26 @@ if (isset($_GET['export_excel'])) {
 
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
+
+    // Add Audit Log
+    require_once __DIR__ . '/../../Models/AuditLogModel.php';
+    $auditLogModel = new \AuditLogModel($pdo);
+    $auditLogModel->addLog(
+        $_SESSION['user_id'],
+        'Downloaded Statistical Report (Excel)',
+        'Reports Generation',
+        'Reports',
+        null,
+        "Range: $startDate to $endDate, Branches: " . (empty($branchIds) ? 'All' : implode(',', $branchIds)),
+        null
+    );
+
     exit;
 }
 
 // Initial page load data
 $allBranches = $branchModel->getAllBranches();
+
+        return get_defined_vars();
+    }
+}

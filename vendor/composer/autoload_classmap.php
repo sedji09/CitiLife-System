@@ -11,6 +11,7 @@ return array(
     'CaseModel' => $baseDir . '/app/Models/CaseModel.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'Dompdf\\Cpdf' => $vendorDir . '/dompdf/dompdf/lib/Cpdf.php',
+    'FeedbackModel' => $baseDir . '/app/Models/FeedbackModel.php',
     'NotificationModel' => $baseDir . '/app/Models/NotificationModel.php',
     'PatientModel' => $baseDir . '/app/Models/PatientModel.php',
     'RecordRequestModel' => $baseDir . '/app/Models/RecordRequestModel.php',

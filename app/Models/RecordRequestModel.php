@@ -74,7 +74,13 @@ class RecordRequestModel {
      * Get request details by ID.
      */
     public function getRequestById($id) {
-        $stmt = $this->pdo->prepare("SELECT * FROM record_requests WHERE id = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT r.*, p.patient_number 
+            FROM record_requests r 
+            LEFT JOIN cases c ON r.patient_no = c.case_number 
+            LEFT JOIN patients p ON c.patient_id = p.id
+            WHERE r.id = ?
+        ");
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
@@ -84,9 +90,10 @@ class RecordRequestModel {
      */
     public function getRequestsByBranch($branchId) {
         $stmt = $this->pdo->prepare("
-            SELECT r.*, b.id as branch_id
+            SELECT r.*, b.id as branch_id, c.created_at as exam_date
             FROM record_requests r
             JOIN branches b ON r.request_branch = b.name
+            LEFT JOIN cases c ON r.patient_no = c.case_number
             WHERE r.branch_id = ?
             ORDER BY r.created_at DESC
         ");

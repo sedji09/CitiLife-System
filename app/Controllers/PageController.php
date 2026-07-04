@@ -64,6 +64,7 @@ class PageController
             'security-settings',
             'backup-maintenance',
             'print-report',
+            'feedback',
         ];
 
         // Fallback for page parameter
@@ -75,16 +76,19 @@ class PageController
         require_once basePath('app/Helpers/AuthHelper.php');
 
         $pagePermMap = [
-            'users'               => 'user_mgmt',
-            'branches'            => 'branch_mgmt',
+            'users' => 'user_mgmt',
+            'branches' => 'branch_mgmt',
             'patient-registration' => 'patient_reg',
-            'patient-approvals'   => 'approvals',
-            'audit-logs'          => 'audit_logs',
-            'reports'             => 'global_reports',
-            'security-settings'   => 'system_security',
-            'user-role-settings'  => 'system_security',
-            'settings'            => 'system_security',
-            'backup-maintenance'  => 'backup_mgmt'
+            'patient-approvals' => 'approvals',
+            'record-request' => 'submit_record_request',
+            'view-record-request' => 'submit_record_request',
+            'record-requests' => 'record_requests',
+            'audit-logs' => 'audit_logs',
+            'reports' => 'global_reports',
+            'security-settings' => 'system_security',
+            'user-role-settings' => 'system_security',
+            'settings' => 'system_security',
+            'backup-maintenance' => 'backup_mgmt'
         ];
 
         if (isset($pagePermMap[$page])) {
@@ -93,8 +97,32 @@ class PageController
 
         // 3. Resolve and run controller (Class-based OOP if exists, fallback to procedural)
         $controllerName = str_replace('-', '', ucwords($page, '-')) . 'Controller.php';
-        $controllerFile = basePath("app/Controllers/{$role}/{$controllerName}");
-        $className = "App\\Controllers\\{$role}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
+
+        $pageOwnerMap = [
+            'branches' => 'admin_central',
+            'users' => 'admin_central',
+            'patient-records' => 'admin_central',
+            'security-settings' => 'it_admin',
+            'user-role-settings' => 'admin_central',
+            'backup-maintenance' => 'it_admin',
+            'patient-registration' => 'radtech',
+            'patient-lists' => 'radtech',
+            'xray-patient-records' => 'radtech',
+            'record-request' => 'radtech',
+            'worklist' => 'radiologist',
+            'patient-history' => 'radiologist',
+            'case-review' => 'radiologist',
+            'branch-xray-cases' => 'branch_admin',
+            'record-requests' => 'branch_admin',
+            'xray-status' => 'patient',
+            'my-records' => 'patient',
+            'registration' => 'patient'
+        ];
+
+        $resolvedRole = $pageOwnerMap[$page] ?? $role;
+
+        $controllerFile = basePath("app/Controllers/{$resolvedRole}/{$controllerName}");
+        $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
 
         // Read file to check if it's class-based to avoid triggering class loader on legacy procedural files
         $isClassBased = false;
@@ -126,11 +154,11 @@ class PageController
         if ($page === 'print-report') {
             $contentView = "pages/radtech/print-report";
         } else {
-            $contentView = "pages/{$role}/{$page}";
+            $contentView = "pages/{$resolvedRole}/{$page}";
         }
 
         // Intercept specific AJAX requests before loading the layout
-        if (isset($_GET['ajax_polling']) || ($page === 'patient-registration' && isset($_GET['ajax_search']))) {
+        if (isset($_GET['ajax']) || isset($_GET['ajax_polling']) || isset($_POST['ajax_save']) || ($page === 'patient-registration' && isset($_GET['ajax_search']))) {
             loadView($contentView, get_defined_vars());
             exit;
         }

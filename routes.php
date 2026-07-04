@@ -37,7 +37,9 @@ $router->get('/reset-password.php', 'App\Controllers\AuthController@resetPasswor
 $router->post('/reset-password.php', 'App\Controllers\AuthController@resetPassword', []);
 
 $router->get('/verify', 'App\Controllers\AuthController@verify', ['guest']);
+$router->post('/verify', 'App\Controllers\AuthController@verify', ['guest']);
 $router->get('/verify.php', 'App\Controllers\AuthController@verify', ['guest']);
+$router->post('/verify.php', 'App\Controllers\AuthController@verify', ['guest']);
 
 $router->get('/otp-login', 'App\Controllers\AuthController@otpLogin', ['guest']);
 $router->post('/otp-login', 'App\Controllers\AuthController@otpLogin', ['guest']);
@@ -47,6 +49,9 @@ $router->post('/otp-login.php', 'App\Controllers\AuthController@otpLogin', ['gue
 // Logout Route (Auth required)
 $router->get('/logout', 'App\Controllers\AuthController@logout');
 $router->get('/logout.php', 'App\Controllers\AuthController@logout');
+
+// Privacy accept route
+$router->post('/accept-privacy', 'App\Controllers\AuthController@acceptPrivacy', ['auth']);
 
 // Whitelisted dashboard pages (routed dynamically to PageController)
 $dashboardPages = [
@@ -82,7 +87,8 @@ $dashboardPages = [
     'settings',
     'security-settings',
     'backup-maintenance',
-    'print-report'
+    'print-report',
+    'feedback'
 ];
 
 foreach ($dashboardPages as $page) {
@@ -95,14 +101,17 @@ $router->get('/app/api/case_activity.php', 'App/Api/case_activity.php');
 $router->post('/app/api/case_activity.php', 'App/Api/case_activity.php');
 $router->get('/app/api/notifications.php', 'App/Api/notifications.php');
 $router->post('/app/api/notifications.php', 'App/Api/notifications.php');
+$router->get('/app/api/active_users_count.php', 'App/Api/active_users_count.php');
 $router->get('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
 $router->post('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
+$router->get('/branch-dashboard', 'auth/branch-dashboard.php');
+$router->get('/patient-dashboard', 'auth/patient-dashboard.php');
+$router->get('/image', 'ImageController@serve');
+
+$router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
+$router->get('/app/api/messages.php', 'App/Api/messages.php');
+$router->post('/app/api/messages.php', 'App/Api/messages.php');
 $router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');
 $router->post('/app/api/request_password_reset.php', 'App/Api/request_password_reset.php');
+$router->post('/app/api/cancel_case.php', 'App/Api/cancel_case.php');
 $router->post('/app/config/update_patient.php', 'config/update_patient.php');
-
-// Temporary route to test the 500 error page
-$router->get('/test-500', function() {
-    loadView('errors/500');
-});
-

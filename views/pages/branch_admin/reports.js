@@ -1,4 +1,4 @@
-/**
+﻿/**
  * reports.js - Branch Admin Reports Logic
  */
 
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     priorityChart = new Chart(priorityCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Emergency', 'Urgent / Priority', 'Routine / Normal'],
+            labels: ['STAT', 'Urgent / Priority', 'Routine / Normal'],
             datasets: [{
                 data: [0, 0, 0],
                 backgroundColor: ['#EF4444', '#F97316', '#3B82F6'],
@@ -183,7 +183,7 @@ function updateUI(data, monthlyData) {
     // Summary Cards
     document.getElementById('stat-total').innerText = Number(data.total_patients).toLocaleString();
     document.getElementById('stat-philhealth').innerText = Number(data.with_philhealth).toLocaleString();
-    document.getElementById('stat-emergency').innerText = Number(data.emergency_count).toLocaleString();
+    document.getElementById('stat-stat').innerText = Number(data.emergency_count).toLocaleString();
     document.getElementById('stat-urgent').innerText = Number(data.urgent_count).toLocaleString();
 
     // Table Rows / Labels
@@ -191,7 +191,7 @@ function updateUI(data, monthlyData) {
     const urgentVal = Number(data.urgent_count || 0);
     const routineVal = Number(data.routine_count || 0);
 
-    document.getElementById('row-emergency').innerText = emergencyVal.toLocaleString();
+    document.getElementById('row-stat').innerText = emergencyVal.toLocaleString();
     document.getElementById('row-urgent').innerText = urgentVal.toLocaleString();
     document.getElementById('row-routine').innerText = routineVal.toLocaleString();
 

@@ -1,9 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
 
-require_once __DIR__ . '/../../../models/UserModel.php';
-require_once __DIR__ . '/../../../models/PatientModel.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
 
 $userModel = new \UserModel($pdo);
 $patientModel = new \PatientModel($pdo);
@@ -61,25 +58,23 @@ $displayStatus = 'Pending';
 $isRejected = ($userAccountStatus === 'Rejected');
 
 if ($latestCase) {
-    if (isset($latestCase['approval_status']) && $latestCase['approval_status'] === 'Rejected') {
+    $recordType = $latestCase['record_type'] ?? 'Case';
+
+    if ($latestCase['status'] === 'Rejected') {
         $currentStep = 0;
         $displayStatus = 'Rejected';
         $isRejected = true;
-    } elseif ($latestCase['status'] === 'Pending') {
-        if (isset($latestCase['approval_status']) && $latestCase['approval_status'] === 'Pending') {
-            $currentStep = 2; // Step 1 Done. Step 2 Active waiting for approval.
-            $displayStatus = 'Pending';
-        } elseif (isset($latestCase['approval_status']) && $latestCase['approval_status'] === 'Approved') {
-            if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
-                $currentStep = 4; // Step 3 Done. Step 4 Active waiting for radiologist.
-                $displayStatus = 'X-ray Taken';
-            } else {
-                $currentStep = 3; // Step 2 Done. Step 3 Active waiting for X-ray to be taken.
-                $displayStatus = 'Approved';
-            }
+    } elseif ($recordType === 'Request' && $latestCase['status'] === 'Pending Approval') {
+        $currentStep = 2;
+        $displayStatus = 'Pending';
+    } elseif ($recordType === 'Case' && $latestCase['status'] === 'Pending') {
+        // Case is created (which implies Approved) but no X-ray taken yet
+        if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
+            $currentStep = 4;
+            $displayStatus = 'X-ray Taken';
         } else {
-            $currentStep = 2;
-            $displayStatus = 'Pending';
+            $currentStep = 3;
+            $displayStatus = 'Approved';
         }
     } elseif ($latestCase['status'] === 'Under Reading') {
         $currentStep = 4;
@@ -90,10 +85,6 @@ if ($latestCase) {
     } elseif (in_array($latestCase['status'], ['Released', 'Completed'])) {
         $currentStep = 6;
         $displayStatus = $latestCase['status'];
-    } elseif ($latestCase['status'] === 'Rejected') {
-        $currentStep = 0;
-        $displayStatus = 'Rejected';
-        $isRejected = true;
     } else {
         $currentStep = 2;
         $displayStatus = $latestCase['status'] ?: 'Pending';
@@ -153,7 +144,7 @@ $statusDescriptions = [
 
     <!-- Welcome banner -->
     <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Welcome back,
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
             <?= htmlspecialchars($displayName) ?>
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Here's an overview of your X-ray examination status.</p>
@@ -163,9 +154,14 @@ $statusDescriptions = [
         <!-- Patient Profile Card -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-5">
             <div class="flex items-center gap-4 mb-4">
-                <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                    <i data-lucide="user" class="w-6 h-6 text-red-600"></i>
-                </div>
+                <?php if (!empty($displayInfo['avatar'])): ?>
+                    <img src="<?= htmlspecialchars($displayInfo['avatar']) ?>" alt="Profile"
+                        class="h-12 w-12 rounded-full object-cover shrink-0 border border-red-100 shadow-sm">
+                <?php else: ?>
+                    <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <i data-lucide="user" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                <?php endif; ?>
                 <div>
                     <h2 class="font-bold text-gray-900"><?= htmlspecialchars($displayName) ?></h2>
                     <p class="text-xs text-red-600 font-mono">#
@@ -300,7 +296,7 @@ $statusDescriptions = [
 
             <!-- View Full Status button -->
             <div class="px-5 pb-5">
-                <?php 
+                <?php
                 $statusLink = in_array($latestCase['status'], ['Completed', 'Released', 'Rejected']) ? 'case-status' : 'xray-status';
                 ?>
                 <a href="/<?= PROJECT_DIR ?>/<?= $statusLink ?>?case_id=<?= $latestCase['id'] ?>"

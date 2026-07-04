@@ -51,4 +51,15 @@ class AuthController
         global $pdo;
         require basePath('app/Controllers/auth/logout.php');
     }
+
+    public function acceptPrivacy()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['data_privacy_accepted'] = true;
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit;
+    }
 }

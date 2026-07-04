@@ -13,24 +13,32 @@ if (isset($caseNotFound) && $caseNotFound) {
 <!--  CASE REVIEW – Multi-Exam Radiologist Reporting Interface                 -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- Back nav -->
-<div class="mb-4">
-    <a href="?role=radiologist&page=patient-queue&branch_id=<?= $branchIdQuery ?>"
-       id="back-to-worklist-btn"
-       class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition">
-        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Worklist
-    </a>
-</div>
-
+<?php
+$backPage = $_GET['back_to'] ?? 'worklist';
+$backId   = $_GET['back_id'] ?? '';
+$backUrl  = "?role=radiologist&page=" . urlencode($backPage);
+if ($backId) {
+    $backUrl .= "&id=" . urlencode($backId);
+}
+?>
 <!-- Title row -->
-<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-5">
-    <div>
-        <h2 class="text-2xl font-black text-gray-900 tracking-tight"><?= htmlspecialchars($caseDetails['case_number'] ?? 'N/A') ?></h2>
-        <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars($caseDetails['branch_name']) ?> Branch</p>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+    <div class="flex items-center gap-4">
+        <a href="<?= htmlspecialchars($backUrl) ?>"
+           id="back-to-worklist-btn" title="Back"
+           class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">
+                Case Review
+            </h2>
+            <p class="text-gray-500 text-sm mt-0.5">Review patient case and submit diagnostic findings</p>
+        </div>
     </div>
     <div class="flex items-center flex-wrap gap-1.5">
         <?php
-        $pColor = match($caseDetails['priority']) { 'Emergency' => 'red', 'Urgent' => 'orange', 'Priority' => 'orange', default => 'blue' };
+        $pColor = match($caseDetails['priority']) { 'STAT' => 'red', 'Urgent' => 'yellow', 'Priority' => 'orange', default => 'blue' };
         $sColor = ($isSubmitted || $caseDetails['status'] === 'Report Ready') ? 'indigo' : ($caseDetails['status'] === 'Completed' ? 'green' : ($caseDetails['status'] === 'Under Reading' ? 'blue' : 'yellow'));
         $statusDisplay = $isSubmitted ? 'Report Ready' : $caseDetails['status'];
         ?>
@@ -50,7 +58,17 @@ if (isset($caseNotFound) && $caseNotFound) {
         <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
         <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
     </div>
-    <a href="?role=radiologist&page=worklist" class="text-xs font-bold text-green-700 hover:underline">Return to Worklist &rarr;</a>
+    <a href="<?= htmlspecialchars($backUrl) ?>" class="text-xs font-bold text-green-700 hover:underline">
+        <?php
+        if ($backPage === 'patient-records-history') {
+            echo 'Return to Patient Record';
+        } elseif ($backPage === 'patient-history') {
+            echo 'Return to Patient History';
+        } else {
+            echo 'Return to Worklist';
+        }
+        ?> &rarr;
+    </a>
 </div>
 <?php endif; ?>
 
@@ -72,10 +90,15 @@ if (isset($caseNotFound) && $caseNotFound) {
             <h3 class="font-bold text-gray-800 text-sm">Patient Information</h3>
         </div>
         <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm pl-1">
-            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Name</p><p class="font-semibold text-gray-900 text-xs"><?= $fullName ?></p></div>
+            <div>
+                <p class="text-gray-400 text-[10px] uppercase tracking-wide">Name</p>
+                <p class="font-semibold text-gray-900 text-xs">
+                    <?= $fullName ?>
+                </p>
+            </div>
+            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Case No.</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['case_number']) ?></p></div>
+            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Patient No.</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['patient_number'] ?? 'N/A') ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Age / Sex</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['age']) ?> / <?= htmlspecialchars(ucfirst($caseDetails['sex'])) ?></p></div>
-            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Patient No.</p><p class="font-semibold text-gray-900 text-xs font-mono"><?= htmlspecialchars($caseDetails['patient_number'] ?? 'N/A') ?></p></div>
-            <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Case No.</p><p class="font-semibold text-gray-900 text-xs font-mono"><?= htmlspecialchars($caseDetails['case_number']) ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Branch</p><p class="font-semibold text-gray-900 text-xs"><?= htmlspecialchars($caseDetails['branch_name']) ?></p></div>
             <div><p class="text-gray-400 text-[10px] uppercase tracking-wide">Date</p><p class="font-semibold text-gray-900 text-xs"><?= date('M d, Y', strtotime($caseDetails['created_at'])) ?></p></div>
             
@@ -201,6 +224,20 @@ if (isset($caseNotFound) && $caseNotFound) {
             </div>
         </div>
 
+        <!-- Clinical Information Panel -->
+        <?php if (!empty($caseDetails['clinical_information'])): ?>
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden p-5 mb-4 relative">
+            <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-red-500"></i>
+                <h3 class="font-bold text-gray-800 text-sm">Clinical Information</h3>
+            </div>
+            <p class="text-xs text-gray-700 leading-relaxed pl-1">
+                <?= nl2br(htmlspecialchars($caseDetails['clinical_information'])) ?>
+            </p>
+        </div>
+        <?php endif; ?>
+
         <!-- Patient History accordion -->
         <div class="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <button type="button" id="history-toggle"
@@ -221,7 +258,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <?php else: ?>
                 <?php foreach ($patientHistory as $h): ?>
                 <div class="px-5 py-3 hover:bg-red-50 transition cursor-pointer group"
-                     onclick="window.open('/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>','_blank')">
+                     onclick="window.location.href='/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>&back_to=case-review&back_id=<?= $caseId ?>'">
                     <div class="flex justify-between items-start">
                         <p class="text-xs font-bold text-gray-800 group-hover:text-red-600 transition"><?= htmlspecialchars($h['exam_type']) ?></p>
                         <span class="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5"><?= htmlspecialchars($h['branch_name']) ?></span>
@@ -313,16 +350,15 @@ if (isset($caseNotFound) && $caseNotFound) {
                     </div>
                 </div>
 
-                <div class="space-y-4 flex-1">
+                <div class="space-y-4 flex-1 flex flex-col">
                     <!-- Findings -->
-                    <div>
+                    <div class="flex flex-col" style="flex: 1.5;">
                         <div class="flex items-center justify-between mb-1.5 ml-1">
                             <label class="block text-[10px] font-bold text-red-500 uppercase tracking-wider ml-1">Radiographic Findings</label>
                             <span class="text-[10px] text-gray-400" id="findings-count-<?= $idx ?>">0 words</span>
                         </div>
                         <textarea
-                            class="exam-findings w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
-                            rows="6"
+                            class="exam-findings flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
                             placeholder="Describe radiographic findings for <?= htmlspecialchars($exam) ?>..."
@@ -330,14 +366,13 @@ if (isset($caseNotFound) && $caseNotFound) {
                     </div>
 
                     <!-- Impression -->
-                    <div>
+                    <div class="flex flex-col" style="flex: 1;">
                         <div class="flex items-center justify-between mb-1.5 ml-1">
                             <label class="block text-[10px] font-bold text-red-500 uppercase tracking-wider ml-1">Impression</label>
                             <span class="text-[10px] text-gray-400" id="impression-count-<?= $idx ?>">0 words</span>
                         </div>
                         <textarea
-                            class="exam-impression w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
-                            rows="3"
+                            class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
                             placeholder="Impression for <?= htmlspecialchars($exam) ?>..."
@@ -351,17 +386,23 @@ if (isset($caseNotFound) && $caseNotFound) {
 
         <!-- Submit footer -->
         <div class="border-t border-gray-100 px-5 py-4 rounded-b-xl">
-            <?php if ($isCompleted): ?>
-            <div class="w-full rounded-xl bg-red-50 border border-red-200 py-3 px-5 flex items-center justify-center gap-2">
-                <i data-lucide="check-circle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
-                <span class="text-sm font-bold text-red-600">Report Submitted &mdash; Ready for Release</span>
+            <div id="completed-footer-actions" class="<?= $isCompleted ? '' : 'hidden' ?> w-full flex flex-col gap-2">
+                <div class="w-full rounded-xl bg-red-50 border border-red-200 py-3 px-5 flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
+                    <span class="text-sm font-bold text-red-600">Report Submitted &mdash; Ready for Release</span>
+                </div>
+                <button type="button" id="btn-edit-report"
+                        class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Findings
+                </button>
             </div>
-            <?php else: ?>
-            <button type="button" id="btn-submit-report"
-                    class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm focus:ring-4 focus:ring-red-200 focus:outline-none transition-all">
-                <i data-lucide="send" class="w-4 h-4"></i> Submit Report
-            </button>
-            <?php endif; ?>
+            
+            <div id="editable-footer-actions" class="<?= $isCompleted ? 'hidden' : '' ?> w-full">
+                <button type="button" id="btn-submit-report"
+                        class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm focus:ring-4 focus:ring-red-200 focus:outline-none transition-all">
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit Report
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -374,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Exam data store ───────────────────────────────────────────────────────
     const examKeys  = <?= json_encode($examTypes) ?>;
     const savedData = <?= json_encode($savedReports) ?>;
-    const isCompleted = <?= $isCompleted ? 'true' : 'false' ?>;
+    let isCompleted = <?= $isCompleted ? 'true' : 'false' ?>;
     const STORAGE_KEY = `rad_case_draft_<?= $caseId ?>`;
 
     const store = {}; // { examKey: { findings, impression } }
@@ -574,6 +615,51 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('report-form').submit();
         }, 'Yes, Submit', false, e);
     });
+
+    // ── Unlock Report Findings for Editing ────────────────────────────────────
+    const btnEditReport = document.getElementById('btn-edit-report');
+    if (btnEditReport) {
+        btnEditReport.addEventListener('click', () => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Edit Report Findings?',
+                    text: 'Are you sure you want to unlock and edit the findings of this report? This will allow you to modify and resubmit the report.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, edit findings',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#2563eb', // Blue
+                    cancelButtonColor: '#4b5563',
+                    customClass: {
+                        popup: 'rounded-3xl',
+                        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm',
+                        cancelButton: 'rounded-xl px-5 py-2.5 font-semibold text-sm'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        unlockFormForEditing();
+                    }
+                });
+            } else {
+                if (confirm('Are you sure you want to unlock and edit the findings of this report?')) {
+                    unlockFormForEditing();
+                }
+            }
+        });
+    }
+
+    function unlockFormForEditing() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'unlock_report';
+        input.value = '1';
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
 
     // ── Image Viewer ──────────────────────────────────────────────────────────
     const images   = document.querySelectorAll('.dicom-img');

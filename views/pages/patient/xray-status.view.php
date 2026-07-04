@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/PatientModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $patientModel = new \PatientModel($pdo);
@@ -124,7 +122,7 @@ $statusDescriptions = [
 
     <!-- Page Header -->
     <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">X-ray Status</h1>
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">X-ray Status</h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1">Track your latest examination in real time.</p>
     </div>
 
@@ -160,25 +158,22 @@ $statusDescriptions = [
             $displayStatus = 'Pending';
             $isRejected = $isRejectedGlobal;
             
-            if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Rejected') {
+            $recordType = $caseRow['record_type'] ?? 'Case';
+
+            if ($caseRow['status'] === 'Rejected') {
                 $currentStep = 0;
                 $displayStatus = 'Rejected';
                 $isRejected = true;
-            } elseif ($caseRow['status'] === 'Pending') {
-                if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Pending') {
-                    $currentStep = 2;
-                    $displayStatus = 'Pending';
-                } elseif (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Approved') {
-                    if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
-                        $currentStep = 4;
-                        $displayStatus = 'X-ray Taken';
-                    } else {
-                        $currentStep = 3;
-                        $displayStatus = 'Approved';
-                    }
+            } elseif ($recordType === 'Request' && $caseRow['status'] === 'Pending Approval') {
+                $currentStep = 2;
+                $displayStatus = 'Pending';
+            } elseif ($recordType === 'Case' && $caseRow['status'] === 'Pending') {
+                if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
+                    $currentStep = 4;
+                    $displayStatus = 'X-ray Taken';
                 } else {
-                    $currentStep = 2;
-                    $displayStatus = 'Pending';
+                    $currentStep = 3;
+                    $displayStatus = 'Approved';
                 }
             } elseif ($caseRow['status'] === 'Under Reading') {
                 $currentStep = 4;
@@ -189,10 +184,6 @@ $statusDescriptions = [
             } elseif (in_array($caseRow['status'], ['Released', 'Completed'])) {
                 $currentStep = 6;
                 $displayStatus = $caseRow['status'];
-            } elseif ($caseRow['status'] === 'Rejected') {
-                $currentStep = 0;
-                $displayStatus = 'Rejected';
-                $isRejected = true;
             } else {
                 $currentStep = 2;
                 $displayStatus = $caseRow['status'] ?: 'Pending';
@@ -210,7 +201,13 @@ $statusDescriptions = [
                 <p class="text-sm text-gray-600">Your X-ray report for case <span
                         class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
                     has been released. You may view your result below.</p>
-                <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $caseRow['id']) ?>"
+                <?php
+                $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
+                $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $caseRow['id']);
+                $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
+                $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
+                ?>
+                <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                     class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
                     style="background: linear-gradient(135deg, #15803d, #16a34a);">
                     <i data-lucide="eye" class="w-4 h-4"></i>
@@ -222,8 +219,23 @@ $statusDescriptions = [
 
         <!-- Case Information Card -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-5">
-            <div class="px-5 py-4 border-b border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="font-bold text-gray-900">Case Information</h2>
+                <div class="flex items-center gap-2">
+                    <?php 
+                        $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
+                        if (!empty($contacts)): 
+                    ?>
+                        <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>)' class="text-xs font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="phone" class="w-3.5 h-3.5"></i> Contact Clinic
+                        </button>
+                    <?php endif; ?>
+                    <?php if ($displayStatus === 'Pending'): ?>
+                        <button type="button" onclick="cancelCase(<?= $caseRow['id'] ?>, '<?= htmlspecialchars($caseRow['case_number']) ?>')" class="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                            <i data-lucide="x" class="w-3 h-3"></i> Cancel Request
+                        </button>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div class="space-y-3">
@@ -232,7 +244,7 @@ $statusDescriptions = [
                             <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Case Number</p>
+                            <p class="text-xs text-gray-500">Reference #</p>
                             <p class="text-sm font-semibold text-red-600 font-mono">
                                 <?= htmlspecialchars($caseRow['case_number']) ?></p>
                         </div>
@@ -381,5 +393,119 @@ $statusDescriptions = [
             successBanner.style.opacity = '0';
             setTimeout(() => successBanner.remove(), 500);
         }, 8000);
+    }
+</script>
+
+<!-- Custom Expiry Alert Modal -->
+<div class="custom-alert-overlay" id="expired-alert-modal">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon-container">
+            <!-- Shield with lock/keyhole icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" fill="currentColor" opacity="0.15"/>
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"/>
+                <circle cx="12" cy="11" r="3"/>
+                <path d="M12 14v4"/>
+            </svg>
+        </div>
+        <h3 class="custom-alert-title">Result Access Expired</h3>
+        <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance</p>
+        <div class="custom-alert-buttons-container">
+            <a id="expired-alert-contact-btn" href="#" class="custom-alert-btn-secondary" style="text-decoration:none; display:none; justify-content:center; align-items:center;">Contact Us</a>
+            <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showExpiredAlert(e, contacts = []) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const contactBtn = document.getElementById('expired-alert-contact-btn');
+        if (contacts && contacts.length > 0) {
+            contactBtn.setAttribute('onclick', `showContactOptions(${JSON.stringify(contacts)}); document.getElementById('expired-alert-modal').classList.remove('show'); return false;`);
+            contactBtn.href = "#";
+            contactBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> Contact Clinic';
+            contactBtn.style.display = 'inline-flex';
+        } else {
+            contactBtn.style.display = 'none';
+        }
+        document.getElementById('expired-alert-modal').classList.add('show');
+    }
+
+    function showContactOptions(numbers) {
+        if (!numbers || numbers.length === 0) return;
+        
+        let html = '<div class="flex flex-col gap-3 mt-2">';
+        numbers.forEach(num => {
+            html += `<a href="tel:${num}" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-700 font-bold transition shadow-sm" style="text-decoration:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> 
+                ${num}
+            </a>`;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: 'Contact Clinic',
+            html: html,
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: () => {
+                const closeBtn = Swal.getCloseButton();
+                if (closeBtn) closeBtn.blur();
+            },
+            customClass: {
+                popup: 'rounded-2xl',
+                title: 'text-xl font-bold text-gray-800',
+                closeButton: '!outline-none !ring-0 !border-0 !shadow-none !text-gray-500 hover:!text-gray-800'
+            }
+        });
+    }
+
+    function cancelCase(caseId, caseNumber) {
+        Swal.fire({
+            title: 'Cancel Request?',
+            text: `Are you sure you want to cancel the request for ${caseNumber}? This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, cancel it!',
+            cancelButtonText: 'No, keep it',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Cancelling...',
+                    html: 'Please wait',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('/<?= PROJECT_DIR ?>/app/api/cancel_case.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ case_id: caseId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Cancelled!', 'Your request has been cancelled.', 'success').then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'Failed to cancel the request.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
+            }
+        });
     }
 </script>

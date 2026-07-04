@@ -8,4 +8,3 @@ function addNotification($pdo, $title, $message, $link = null, $user_id = null, 
     $stmt = $pdo->prepare("INSERT INTO notifications (user_id, role, branch_id, title, message, link) VALUES (?, ?, ?, ?, ?, ?)");
     return $stmt->execute([$user_id, $role, $branch_id, $title, $message, $link]);
 }
-?>

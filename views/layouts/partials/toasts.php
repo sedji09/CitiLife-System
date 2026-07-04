@@ -28,3 +28,16 @@
         </button>
       </div>
     </div>
+
+    <!-- Undo Delete Toast -->
+    <div v-if="showUndoToast" id="undo-toast-box" class="fixed z-[9999] px-4 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-8" style="top: 24px; left: 50%; transform: translateX(-50%); background: #222222; color: #f4f4f5; min-width: 300px; transition: all 0.3s ease;">
+      <span style="font-size: 14px; font-weight: 500; color: #f4f4f5;">Notification deleted.</span>
+      <div class="flex items-center gap-4" style="display: flex; align-items: center; gap: 16px;">
+        <button @click="undoDelete" style="color: #3b82f6; font-weight: 600; font-size: 14px; background: none; border: none; cursor: pointer;">Undo</button>
+        <button @click="closeUndoToast" style="background: #333333; color: #9ca3af; border: none; cursor: pointer; border-radius: 50%; padding: 4px; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">
+          <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>

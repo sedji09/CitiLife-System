@@ -5,10 +5,10 @@
 let philhealthChart = null;
 let trendChart = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initCharts();
     loadStats();
-    
+
     // Add event listeners for Enter key on inputs
     const inputs = document.querySelectorAll('input[type="month"], input[type="number"], input[type="date"]');
     inputs.forEach(input => {
@@ -43,7 +43,7 @@ function initCharts() {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: function(item) {
+                        label: function (item) {
                             const val = item.raw;
                             return ` ${item.label}: ${Number(val).toLocaleString()}`;
                         }
@@ -76,12 +76,12 @@ function initCharts() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { 
-                    beginAtZero: true, 
+                y: {
+                    beginAtZero: true,
                     ticks: { precision: 0, font: { size: 11 } },
                     grid: { color: 'rgba(0,0,0,0.03)', borderDash: [5, 5] }
                 },
-                x: { 
+                x: {
                     grid: { display: false },
                     ticks: { font: { weight: '600', size: 11 } }
                 }
@@ -129,7 +129,7 @@ function toggleFilterView() {
 function getFilters() {
     const type = document.getElementById('reportType').value;
     const mode = document.getElementById('branchMode').value;
-    
+
     // 1. Gather Dates
     let from, to;
     if (type === 'monthly') {
@@ -195,7 +195,7 @@ async function loadStats() {
  */
 function renderDashboard(data, trends) {
     const summary = {
-        total: 0, philhealth: 0, emergency: 0, urgent: 0, routine: 0, withoutPH: 0
+        total: 0, philhealth: 0, stat: 0, urgent: 0, routine: 0, withoutPH: 0
     };
 
     let tableHtml = "";
@@ -214,7 +214,7 @@ function renderDashboard(data, trends) {
             summary.total += total;
             summary.philhealth += ph;
             summary.withoutPH += wph;
-            summary.emergency += emg;
+            summary.stat += emg;
             summary.urgent += urg;
             summary.routine += rtn;
 
@@ -235,7 +235,7 @@ function renderDashboard(data, trends) {
     // Update Summary Cards
     document.getElementById('stat-total').innerText = summary.total.toLocaleString();
     document.getElementById('stat-philhealth').innerText = summary.philhealth.toLocaleString();
-    document.getElementById('stat-emergency').innerText = summary.emergency.toLocaleString();
+    document.getElementById('stat-stat').innerText = summary.stat.toLocaleString();
     document.getElementById('stat-urgent').innerText = summary.urgent.toLocaleString();
 
     // Update PhilHealth Legend
@@ -275,7 +275,7 @@ function renderDashboard(data, trends) {
 function exportReport(format) {
     const { from, to, branchIds } = getFilters();
     const typeKey = format === 'pdf' ? 'export_pdf' : 'export_excel';
-    
+
     const url = `${window.__APP__.basePath}/index.php?role=admin_central&page=reports&${typeKey}=1&date_from=${from}&date_to=${to}&branches=${branchIds}`;
     window.location.href = url;
 }

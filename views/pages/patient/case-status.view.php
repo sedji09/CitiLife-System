@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/PatientModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $patientModel = new \PatientModel($pdo);
@@ -45,11 +43,28 @@ if (!$patientId) {
 
 $caseRow = null;
 
+$reqId = isset($_GET['request_id']) ? (int) $_GET['request_id'] : 0;
+
 // 2. Fetch specific case
-if ($patientId && $caseId) {
-    $caseRow = $caseModel->getCaseById($caseId);
-    if ($caseRow && $caseRow['patient_id'] != $patientId) {
-        $caseRow = null; // Security check
+if ($patientId) {
+    if ($caseId) {
+        $caseRow = $caseModel->getCaseById($caseId);
+        if ($caseRow && $caseRow['patient_id'] != $patientId) {
+            $caseRow = null; // Security check
+        }
+    } elseif ($reqId) {
+        $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name, r.patient_id, 'Pending' as approval_status 
+                                  FROM requests r 
+                                  LEFT JOIN branches b ON r.branch_id = b.id 
+                                  WHERE r.id = ?");
+        $stmtReq->execute([$reqId]);
+        $caseRow = $stmtReq->fetch(PDO::FETCH_ASSOC);
+        if ($caseRow && $caseRow['patient_id'] != $patientId) {
+            $caseRow = null; // Security check
+        }
+        if ($caseRow && $caseRow['status'] === 'Rejected') {
+            $caseRow['approval_status'] = 'Rejected';
+        }
     }
 }
 
@@ -95,14 +110,15 @@ $statusDescriptions = [
 <div id="case-status-container" class="space-y-4 sm:space-y-5 pb-8 max-w-3xl mx-auto">
 
     <!-- Page Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <a href="javascript:history.back()" title="Back to Records"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">X-ray Status</h1>
+            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">X-ray Status</h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">Track your latest examination in real time.</p>
         </div>
-        <a href="/<?= PROJECT_DIR ?>/my-records" class="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-semibold text-sm transition-colors">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Records
-        </a>
     </div>
 
     <?php if (!$caseRow): ?>
@@ -174,7 +190,12 @@ $statusDescriptions = [
                 <p class="text-sm text-gray-600">Your X-ray report for case <span
                         class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
                     has been released. You may view your result below.</p>
-                <a href="/<?= PROJECT_DIR ?>/view-report?ref=<?= base64_encode('CitiLife_Case_' . $caseRow['id']) ?>"
+                <?php
+                $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
+                $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $caseRow['id']);
+                $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
+                ?>
+                <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                     class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
                     style="background: linear-gradient(135deg, #15803d, #16a34a);">
                     <i data-lucide="eye" class="w-4 h-4"></i>
@@ -186,8 +207,16 @@ $statusDescriptions = [
 
         <!-- Case Information Card -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-5">
-            <div class="px-5 py-4 border-b border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="font-bold text-gray-900">Case Information</h2>
+                <?php 
+                    $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
+                    if (!empty($contacts)): 
+                ?>
+                    <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>)' class="text-xs font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="phone" class="w-3.5 h-3.5"></i> Contact Clinic
+                    </button>
+                <?php endif; ?>
             </div>
             <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div class="space-y-3">
@@ -196,7 +225,7 @@ $statusDescriptions = [
                             <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Case Number</p>
+                            <p class="text-xs text-gray-500">Reference #</p>
                             <p class="text-sm font-semibold text-red-600 font-mono">
                                 <?= htmlspecialchars($caseRow['case_number']) ?></p>
                         </div>
@@ -244,6 +273,17 @@ $statusDescriptions = [
                                 <?= htmlspecialchars(date('F j, Y', strtotime($caseRow['created_at']))) ?></p>
                         </div>
                     </div>
+                    <?php if (!empty($caseRow['radiologist_name'])): ?>
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="stethoscope" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Radiologist</p>
+                                <p class="text-sm font-semibold text-gray-800">Dr. <?= htmlspecialchars($caseRow['radiologist_name']) ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -314,3 +354,69 @@ $statusDescriptions = [
         </div> <!-- End mb-10 wrapper -->
     <?php endif; ?>
 </div>
+
+<!-- Custom Expiry Alert Modal -->
+<div class="custom-alert-overlay" id="expired-alert-modal">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon-container">
+            <!-- Shield with lock/keyhole icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" fill="currentColor" opacity="0.15"/>
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"/>
+                <circle cx="12" cy="11" r="3"/>
+                <path d="M12 14v4"/>
+            </svg>
+        </div>
+        <h3 class="custom-alert-title">Result Access Expired</h3>
+        <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance</p>
+                <div class="custom-alert-buttons-container">
+                    <?php if (!empty($contacts)): ?>
+                        <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>); document.getElementById("expired-alert-modal").classList.remove("show");' class="custom-alert-btn-secondary" style="display:inline-flex; justify-content:center; align-items:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> Contact Clinic
+                        </button>
+                    <?php else: ?>
+                        <button type="button" class="custom-alert-btn-secondary" style="display:none;">Contact Us</button>
+                    <?php endif; ?>
+                    <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+                </div>
+    </div>
+</div>
+
+<script>
+    function showExpiredAlert(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        document.getElementById('expired-alert-modal').classList.add('show');
+    }
+
+    function showContactOptions(numbers) {
+        if (!numbers || numbers.length === 0) return;
+        
+        let html = '<div class="flex flex-col gap-3 mt-2">';
+        numbers.forEach(num => {
+            html += `<a href="tel:${num}" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-700 font-bold transition shadow-sm" style="text-decoration:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> 
+                ${num}
+            </a>`;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: 'Contact Clinic',
+            html: html,
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: () => {
+                const closeBtn = Swal.getCloseButton();
+                if (closeBtn) closeBtn.blur();
+            },
+            customClass: {
+                popup: 'rounded-2xl',
+                title: 'text-xl font-bold text-gray-800',
+                closeButton: '!outline-none !ring-0 !border-0 !shadow-none !text-gray-500 hover:!text-gray-800'
+            }
+        });
+    }
+</script>

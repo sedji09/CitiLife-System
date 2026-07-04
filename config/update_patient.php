@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/../models/PatientModel.php';
-require_once __DIR__ . '/../models/CaseModel.php';
+require_once __DIR__ . '/../app/Models/PatientModel.php';
+require_once __DIR__ . '/../app/Models/CaseModel.php';
 
 session_start();
 
@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $birthdate = isset($_POST['birthdate']) ? trim($_POST['birthdate']) : '';
     $sex = isset($_POST['sex']) ? $_POST['sex'] : '';
     $contact = isset($_POST['contact']) ? trim($_POST['contact']) : '';
+    $homeAddress = isset($_POST['home_address']) ? trim($_POST['home_address']) : '';
     $philhealth = isset($_POST['philhealth']) ? $_POST['philhealth'] : '';
     $philhealthId = isset($_POST['philhealth_id']) ? trim($_POST['philhealth_id']) : '';
 
@@ -25,21 +26,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($caseId && $firstName && $birthdate && $sex && $contact) {
         try {
             $branchId = $_SESSION['branch_id'] ?? 1;
-            $case = $caseModel->getCaseById($caseId);
+            $stmtReq = $pdo->prepare("SELECT branch_id, patient_id FROM requests WHERE id = ?");
+            $stmtReq->execute([$caseId]);
+            $request = $stmtReq->fetch(PDO::FETCH_ASSOC);
 
-            if ($case && $case['branch_id'] == $branchId) {
+            if ($request && $request['branch_id'] == $branchId) {
                 // 1. Update patient info
                 $patientData = [
                     'first_name' => $firstName,
                     'last_name' => $lastName,
                     'birthdate' => $birthdate,
                     'sex' => $sex,
-                    'contact_number' => $contact
+                    'contact_number' => $contact,
+                    'home_address' => $homeAddress
                 ];
-                $patientModel->updatePatient($case['patient_id'], $patientData);
+                $patientModel->updatePatient($request['patient_id'], $patientData);
 
-                // 2. Update case PhilHealth info
-                $caseModel->updateCasePhilHealth($caseId, $philhealth, $philhealthId);
+                // 2. Update request PhilHealth info
+                $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ? WHERE id = ?");
+                $stmtUp->execute([$philhealth, $philhealthId, $caseId]);
 
                 header('Location: /' . PROJECT_DIR . '/index.php?role=radtech&page=patient-approval&success=1');
                 exit;
@@ -53,4 +58,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 header('Location: /' . PROJECT_DIR . '/index.php?role=radtech&page=patient-approval');
 exit;
-?>

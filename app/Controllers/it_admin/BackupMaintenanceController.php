@@ -1,13 +1,21 @@
 <?php
+
+namespace App\Controllers\it_admin;
+
+class BackupMaintenanceController
+{
+    public function handle()
+    {
+        global $pdo;
+
+
 /**
  * BackupMaintenanceController.php
  * IT Admin module for database backups and system maintenance.
  */
 
-require_once __DIR__ . '/../../Models/AuditLogModel.php';
-require_once __DIR__ . '/../../helpers/AuthHelper.php';
 
-$auditLogModel = new AuditLogModel($pdo);
+$auditLogModel = new \AuditLogModel($pdo);
 $backupDir = __DIR__ . '/../../../storage/backups/';
 $success = $_SESSION['success'] ?? '';
 $error = $_SESSION['error'] ?? '';
@@ -36,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($returnVar === 0) {
             $adminId = $_SESSION['user_id'] ?? 0;
-            $auditLogModel->addLog($adminId, 'Generated DB Backup', 'IT Admin', 'Backup', 0, "Filename: $filename");
+            $auditLogModel->addLog($adminId, 'Generated DB Backup', 'System', 'Backup', 0, "Filename: $filename");
             $_SESSION['success'] = "Backup generated successfully: $filename";
         } else {
             $_SESSION['error'] = "Backup failed: " . implode("\n", $output);
@@ -53,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($fullPath && strpos($fullPath, realpath($backupDir)) === 0 && file_exists($fullPath)) {
             unlink($fullPath);
             $adminId = $_SESSION['user_id'] ?? 0;
-            $auditLogModel->addLog($adminId, 'Deleted DB Backup', 'IT Admin', 'Backup', 0, "Filename: $file");
+            $auditLogModel->addLog($adminId, 'Deleted DB Backup', 'System', 'Backup', 0, "Filename: $file");
             $_SESSION['success'] = "Backup deleted: $file";
         } else {
             $_SESSION['error'] = "Invalid file or access denied.";
@@ -111,4 +119,8 @@ function formatSize($bytes) {
         return number_format($bytes / 1024, 2) . ' KB';
     }
     return $bytes . ' bytes';
+}
+
+        return get_defined_vars();
+    }
 }

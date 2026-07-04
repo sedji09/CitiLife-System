@@ -1,8 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
-require_once __DIR__ . '/../../../models/NotificationModel.php';
-require_once __DIR__ . '/../../../models/AuditLogModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
@@ -14,7 +11,7 @@ $successMsg = '';
 $errorMsg = '';
 
 // 1. Handle Actions (Backend Logic)
-if (isset($_GET['action']) && isset($_GET['id'])) {
+if (isset($_GET['action']) && isset($_GET['id']) && !isset($_GET['ajax_polling'])) {
     try {
         $id = (int) $_GET['id'];
         $action = $_GET['action'];
@@ -24,11 +21,26 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
             $successMsg = $result['message'];
 
             // Log the action
-            $caseData = $caseModel->getCaseById($id);
-            $patientName = $caseData ? ($caseData['first_name'] . ' ' . $caseData['last_name']) : "Unknown";
-            $logAction = ($action === 'approve') ? "Approved patient registration" : "Rejected patient registration";
-            $details = "Patient: $patientName, Case: " . ($caseData['case_number'] ?? $id);
-            $auditLogModel->addLog($currentUserId, $logAction, 'Patient Records', 'Case', $id, $details, $branchId);
+            $stmtReq = $pdo->prepare("SELECT r.request_number, p.first_name, p.last_name FROM requests r JOIN patients p ON r.patient_id = p.id WHERE r.id = ?");
+            $stmtReq->execute([$id]);
+            $reqData = $stmtReq->fetch();
+            $patientName = $reqData ? ($reqData['first_name'] . ' ' . $reqData['last_name']) : "Unknown";
+            $requestNum = $reqData ? $reqData['request_number'] : $id;
+
+            if ($action === 'approve') {
+                $logAction = "Approved patient registration";
+                $details = "Patient: $patientName, Request: $requestNum";
+                $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
+                
+                // Redirect straight to patient-details for immediate image upload
+                $_SESSION['flash_success'] = "Patient request approved. You can now upload diagnostic images.";
+                echo "<script>window.location.href = '/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . urlencode($result['case_id']) . "';</script>";
+                exit;
+            } else {
+                $logAction = "Rejected X-ray request";
+                $details = "Request Number: $requestNum";
+                $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
+            }
         } else {
             $errorMsg = $result['message'];
         }
@@ -47,6 +59,31 @@ if (isset($_GET['error']) && $_GET['error'] == 1)
 $branchId = $_SESSION['branch_id'] ?? 1;
 $pendingPatients = $caseModel->getPendingCases($branchId);
 ?>
+
+<!-- Vanilla JS Datepicker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<style>
+    html body .datepicker-cell.selected,
+    html body .datepicker-cell.selected:hover,
+    html body .datepicker-picker .datepicker-cell.selected {
+        background-color: #dc2626 !important;
+        color: #ffffff !important;
+        border-color: #dc2626 !important;
+    }
+
+    html body .datepicker-cell.today:not(.selected),
+    html body .datepicker-picker .datepicker-cell.today:not(.selected) {
+        background-color: #f3f4f6 !important;
+        color: #111827 !important;
+        font-weight: 600 !important;
+        border: 1px solid #d1d5db !important;
+    }
+
+    html body .datepicker-cell.today.focused:not(.selected) {
+        background-color: #e5e7eb !important;
+    }
+</style>
 
 <!-- Header -->
 <div class="flex items-center justify-between">
@@ -75,7 +112,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
     <nav class="flex gap-3">
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-lists' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Today's Queue
+            Patient Queue
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-500 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
@@ -86,11 +123,16 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
 
 <div class="mt-6 flex flex-col gap-4">
     <div class="flex gap-4 items-center">
-        <input type="text" id="search-input" placeholder="Search by patient name or case number..."
+        <input type="text" id="search-input" placeholder="Search by patient name or request number..."
             class="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring">
+        <select id="filter-status"
+            class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
+            <option value="All">All Status</option>
+            <option value="Pending Approval">Pending Approval</option>
+            <option value="Rejected">Rejected</option>
+        </select>
         <select id="sort-date"
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
-            <option>Sort by:</option>
             <option>Newest Request</option>
             <option>Oldest Request</option>
         </select>
@@ -102,6 +144,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
         <table class="w-full text-sm">
             <thead class="sticky top-0 z-10">
                 <tr class="border-b border-gray-300 bg-gray-100 text-gray-500">
+                    <th class="text-left font-medium px-3 py-3">Request #</th>
                     <th class="text-left font-medium px-3 py-3 truncate max-w-[200px]">Name</th>
                     <th class="text-left font-medium px-3 py-3">Age</th>
                     <th class="text-left font-medium px-3 py-3">Sex</th>
@@ -120,11 +163,13 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 <?php else: ?>
                     <?php foreach ($pendingPatients as $patient): ?>
                         <tr class="border-b hover:bg-gray-50 transition-colors record-row"
-                            data-id="<?= htmlspecialchars($patient['case_number']) ?>"
+                            data-id="<?= htmlspecialchars($patient['request_number']) ?>"
                             data-name="<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>"
                             data-priority="<?= htmlspecialchars($patient['priority']) ?>"
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($patient['created_at']) ?>">
+                            <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?>
+                            </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
                                 title="<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>">
                                 <?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>
@@ -135,32 +180,52 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                                 <?= date('M d, Y h:i A', strtotime($patient['created_at'])) ?>
                             </td>
                             <td class="py-3 px-3">
-                                <span
-                                    class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
-                                    Pending Approval
-                                </span>
+                                <?php if ($patient['status'] === 'Rejected'): ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-red-400 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                                        Rejected
+                                    </span>
+                                <?php else: ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
+                                        Pending Approval
+                                    </span>
+                                <?php endif; ?>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
-                                        onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
-                                        class="text-sm font-medium text-green-600 hover:text-green-700 transition"
-                                        title="Approve">
-                                        <i data-lucide="circle-check-big"
-                                            class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
-                                    </a>
-                                    <button
-                                        onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
-                                        class="text-sm font-medium text-blue-600 hover:text-blue-700 transition" title="Edit">
-                                        <i data-lucide="edit"
-                                            class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
-                                    </button>
-                                    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
-                                        onclick="confirmAction('Confirm Rejection', 'Would you like to confirm rejecting this patient registration?', this.href, 'Yes, Proceed', false, event)"
-                                        class="text-sm font-medium text-red-600 hover:text-red-700 transition" title="Reject">
-                                        <i data-lucide="circle-x"
-                                            class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
-                                    </a>
+                                    <?php if ($patient['status'] !== 'Rejected'): ?>
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
+                                            onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
+                                            class="text-sm font-medium text-green-600 hover:text-green-700 transition"
+                                            title="Approve">
+                                            <i data-lucide="circle-check-big"
+                                                class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ($patient['status'] === 'Rejected'): ?>
+                                        <button
+                                            onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
+                                            class="text-sm font-medium text-gray-600 hover:text-gray-700 transition" title="View">
+                                            <i data-lucide="eye"
+                                                class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
+                                        </button>
+                                    <?php else: ?>
+                                        <button
+                                            onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
+                                            class="text-sm font-medium text-blue-600 hover:text-blue-700 transition" title="Edit">
+                                            <i data-lucide="edit"
+                                                class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ($patient['status'] !== 'Rejected'): ?>
+                                        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
+                                            onclick="confirmAction('Confirm Rejection', 'Would you like to confirm rejecting this patient registration?', this.href, 'Yes, Proceed', false, event)"
+                                            class="text-sm font-medium text-red-600 hover:text-red-700 transition" title="Reject">
+                                            <i data-lucide="circle-x"
+                                                class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -172,9 +237,9 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
 </div>
 
 <!-- Edit Modal -->
-<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white mt-20">
-        <div class="mt-3">
+<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+    <div class="w-full max-w-xl p-8 border shadow-xl rounded-2xl bg-white">
+        <div class="mt-1">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Patient Information</h3>
             <div class="space-y-3">
                 <div>
@@ -185,8 +250,13 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Birthdate</label>
-                        <input type="date" id="modalBirthdate"
-                            class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full" required>
+                        <div class="relative mt-1">
+                            <input type="text" id="modalBirthdate" readonly placeholder="Select birthdate"
+                                class="text-sm text-gray-900 bg-gray-50 p-2 pr-8 rounded w-full border border-gray-200"
+                                required>
+                            <i data-lucide="calendar"
+                                class="absolute right-2 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Sex</label>
@@ -199,8 +269,16 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Contact Number</label>
-                    <input type="tel" id="modalContact" class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full"
-                        required>
+                    <input type="tel" id="modalContact"
+                        class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full border border-gray-200" required
+                        maxlength="11" pattern="09[0-9]{9}"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);"
+                        placeholder="09XXXXXXXXX">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Home Address</label>
+                    <input type="text" id="modalAddress"
+                        class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">PhilHealth Status</label>
@@ -218,9 +296,9 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-4">
-                <button onclick="closeEditModal()"
+                <button onclick="closeEditModal()" id="modalCancelBtn"
                     class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600">Cancel</button>
-                <button onclick="saveEditModal()" type="button"
+                <button onclick="saveEditModal()" type="button" id="modalOkBtn"
                     class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">OK</button>
             </div>
         </div>
@@ -231,6 +309,20 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
     src="/<?= PROJECT_DIR ?>/views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
+    // ── Vanilla JS Datepicker init ─────────────────────────────────────────────
+    let modalDatePicker = null;
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) window.lucide.createIcons();
+        const modalBirthdateInput = document.getElementById('modalBirthdate');
+        if (modalBirthdateInput) {
+            modalDatePicker = new Datepicker(modalBirthdateInput, {
+                autohide: true,
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            });
+        }
+    });
+
     // ── Highlight row from notification ───────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         const params = new window.URLSearchParams(window.location.search);

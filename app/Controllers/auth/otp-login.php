@@ -46,8 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateStmt = $pdo->prepare("UPDATE users SET otp_code = ?, token_expires_at = ?, otp_resend_count = ?, last_otp_resend_at = NOW(), otp_locked_until = ? WHERE id = ?");
                 $updateStmt->execute([$otpCode, $expiresAt, $newResendCount, $lockedUntil, $_SESSION['temp_user_id']]);
 
-                require_once basePath('app/Helpers/mailer_helper.php');
-                $firstName = $_SESSION['temp_name'] ?: 'User';
+                                $firstName = $_SESSION['temp_name'] ?: 'User';
                 $emailBody = "
                     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
                         <h2 style='color: #1f2937;'>CitiLife System - New Login Code</h2>
@@ -108,8 +107,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     // Clear temp session
+                    $tempPortal = $_SESSION['temp_portal'];
                     unset($_SESSION['temp_user_id'], $_SESSION['temp_role'], $_SESSION['temp_email'], $_SESSION['temp_branch_id'], $_SESSION['temp_patient_id'], $_SESSION['temp_name'], $_SESSION['temp_avatar'], $_SESSION['temp_portal']);
                     
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    
+                    if ($tempPortal === 'patient') {
+                        $auditLogModel->addLog(
+                            $_SESSION['user_id'],
+                            'Patient Login',
+                            'Patient Portal',
+                            'Session',
+                            $_SESSION['user_id'],
+                            "Successful login via OTP",
+                            $_SESSION['branch_id']
+                        );
+                    } else {
+                        $auditLogModel->addLog(
+                            $_SESSION['user_id'],
+                            'Staff Login',
+                            'Authentication',
+                            'Session',
+                            $_SESSION['user_id'],
+                            "Successful login via OTP",
+                            $_SESSION['branch_id']
+                        );
+                    }
+
                     header("Location: /" . PROJECT_DIR . "/dashboard");
                     exit;
                 } else {

@@ -70,11 +70,10 @@
             class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
         <select id="filter-priority"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
-            <option value="All" hidden selected>Filter by Priority</option>
-            <option value="All">All</option>
+            <option value="All" selected>All</option>
             <option>Routine</option>
             <option>Urgent</option>
-            <option>Emergency</option>
+            <option>STAT</option>
         </select>
         <select id="sort-date"
             class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
@@ -146,7 +145,7 @@
                                 $pBorder = '1.5px solid #60a5fa';
                                 $pBg = '#eff6ff';
                                 $pColor = '#1d4ed8';
-                                if ($row['priority'] === 'Emergency') {
+                                if ($row['priority'] === 'STAT') {
                                     $pBorder = '1.5px solid #f87171';
                                     $pBg = '#fef2f2';
                                     $pColor = '#b91c1c';
@@ -239,7 +238,7 @@
 
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
-            const priorityMap = { 'Emergency': 3, 'Urgent': 2, 'Routine': 1 };
+            const priorityMap = { 'STAT': 3, 'Urgent': 2, 'Routine': 1 };
 
             rows.sort((a, b) => {
                 const scoreA = priorityMap[a.dataset.priority] || 0;
@@ -305,7 +304,7 @@
     class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
     <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mb-4"></div>
     <h3 class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing report snapshots...
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing the results...
     </p>
 </div>
 
@@ -350,7 +349,7 @@
                     let base64Images = [];
                     for (let i = 0; i < pages.length; i++) {
                         const page = pages[i];
-                        if (statusText) statusText.textContent = `Capturing page ${i + 1} of ${pages.length}...`;
+                        if (statusText) statusText.textContent = `Processing page ${i + 1} of ${pages.length}...`;
 
                         const canvas = await html2canvas(page, {
                             scale: pages.length > 5 ? 1.5 : 2,

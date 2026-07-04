@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
 
-require_once __DIR__ . '/../../../models/BranchModel.php';
-require_once __DIR__ . '/../../../models/CaseModel.php';
 
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
@@ -11,7 +9,36 @@ $caseModel = new \CaseModel($pdo);
 $branchesList = $branchModel->getAllBranches();
 
 // Fetch all pending cases (Standardized via Model)
-$records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true);
+$radiologistId = $_SESSION['user_id'] ?? null;
+
+// Support status URL filter for dashboard card deep-links
+$statusParam = $_GET['status'] ?? '';
+if ($statusParam === 'overdue') {
+    // Overdue: pending/under-reading for 3+ hours
+    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+    $records = array_filter($records, function ($r) {
+        return (time() - strtotime($r['created_at'])) >= 3 * 3600;
+    });
+    $records = array_values($records);
+} elseif ($statusParam === 'completed_today') {
+    $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
+    $records = array_filter($records, function ($r) {
+        return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');
+    });
+    $records = array_values($records);
+} elseif ($statusParam === 'Under Reading') {
+    $records = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
+    $records = array_filter($records, function ($r) {
+        return empty($r['findings']);
+    });
+    $records = array_values($records);
+} elseif ($statusParam === 'For Revision') {
+    $records = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
+} elseif ($statusParam === 'pending') {
+    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+} else {
+    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'Report Ready'], true, $radiologistId);
+}
 
 // Extract unique priorities for filters
 $priorities = array_unique(array_column($records, 'priority'));
@@ -21,8 +48,28 @@ sort($priorities);
 <!-- Header -->
 <div class="flex items-center justify-between mb-6">
     <div class="ml-5">
-        <h2 id="worklist-title" class="text-2xl font-bold text-gray-900">Worklist</h2>
-        <p id="worklist-subtitle" class="text-sm text-gray-500 mt-1">Manage pending cases across all branches</p>
+        <?php
+        $wlTitle = 'Worklist';
+        $wlSubtitle = 'Manage pending cases across all branches';
+        if ($statusParam === 'overdue') {
+            $wlTitle = 'Overdue Cases';
+            $wlSubtitle = 'Cases waiting 3+ hours without a completed reading';
+        } elseif ($statusParam === 'completed_today') {
+            $wlTitle = 'Completed Reports — Today';
+            $wlSubtitle = 'Reports submitted or completed today';
+        } elseif ($statusParam === 'Under Reading') {
+            $wlTitle = 'In Progress Cases';
+            $wlSubtitle = 'Cases opened by radiologist but findings not yet submitted';
+        } elseif ($statusParam === 'For Revision') {
+            $wlTitle = 'Cases For Revision';
+            $wlSubtitle = 'Cases flagged for editing or correction';
+        } elseif ($statusParam === 'pending') {
+            $wlTitle = 'Pending Cases';
+            $wlSubtitle = 'Cases waiting to be read';
+        }
+        ?>
+        <h2 id="worklist-title" class="text-2xl font-semibold text-gray-900"><?= htmlspecialchars($wlTitle) ?></h2>
+        <p id="worklist-subtitle" class="text-sm text-gray-500 mt-1"><?= htmlspecialchars($wlSubtitle) ?></p>
     </div>
 </div>
 
@@ -54,7 +101,7 @@ sort($priorities);
         <select id="filterPriority"
             class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
             <option value="">All Priorities</option>
-            <option value="Emergency">Emergency</option>
+            <option value="STAT">STAT</option>
             <option value="Urgent">Urgent</option>
             <option value="Routine">Routine</option>
         </select>
@@ -64,8 +111,6 @@ sort($priorities);
             class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
             <option value="date_desc">Newest Record</option>
             <option value="date_asc">Oldest Record</option>
-            <option value="branch_asc">Branch (A-Z)</option>
-            <option value="branch_desc">Branch (Z-A)</option>
             <option value="priority_desc">Priority (High-Low)</option>
             <option value="priority_asc">Priority (Low-High)</option>
         </select>
@@ -73,7 +118,7 @@ sort($priorities);
 </div>
 
 <div class="px-4">
-    <div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+    <div id="worklist-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
         <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
             <table class="w-full text-sm">
                 <thead class="sticky top-0 z-10">
@@ -84,21 +129,22 @@ sort($priorities);
                         <th class="text-left font-semibold px-3 py-3 truncate max-w-[150px]">Exam Type</th>
                         <th class="text-left font-semibold px-3 py-3">Priority</th>
                         <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Date Submitted</th>
+                        <th class="text-left font-semibold px-3 py-3">Status</th>
                         <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Action</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-800 bg-white divide-y divide-gray-100">
                     <?php if (count($records) === 0): ?>
                         <tr class="empty-state-row">
-                            <td colspan="7" class="text-center py-8 text-gray-500">
+                            <td colspan="8" class="text-center py-8 text-gray-500">
                                 No pending cases.
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($records as $row):
-                            // Map Priority Weight for sorting: Emergency > Urgent > Priority > Normal > Routine
+                            // Map Priority Weight for sorting: STAT > Urgent > Priority > Normal > Routine
                             $pWeight = 0;
-                            if ($row['priority'] === 'Emergency')
+                            if ($row['priority'] === 'STAT')
                                 $pWeight = 5;
                             elseif ($row['priority'] === 'Urgent')
                                 $pWeight = 4;
@@ -109,12 +155,12 @@ sort($priorities);
                             else
                                 $pWeight = 1;
 
-                            $isEmergency = ($row['priority'] === 'Emergency') ? 1 : 0;
+                            $isEmergency = ($row['priority'] === 'STAT') ? 1 : 0;
                             ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
-                                data-priority="<?= htmlspecialchars($row['priority']) ?>" data-emergency="<?= $isEmergency ?>"
+                                data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'])) ?>"
                                 data-date="<?= strtotime($row['created_at']) ?>">
@@ -136,7 +182,7 @@ sort($priorities);
                                 <td class="py-3 px-3">
                                     <?php
                                     $pColor = 'blue';
-                                    if ($row['priority'] === 'Emergency')
+                                    if ($row['priority'] === 'STAT')
                                         $pColor = 'red';
                                     if ($row['priority'] === 'Urgent')
                                         $pColor = 'yellow';
@@ -150,8 +196,57 @@ sort($priorities);
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="text-sm text-gray-500">
-                                        <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
+                                        <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
+                                        <?= date('M d, Y h:i A', strtotime($submitDate)) ?>
                                     </div>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <?php
+                                    $rawStatus = $row['status'] ?? 'Pending';
+                                    $displayStatus = $rawStatus;
+                                    $sBorder = '1.5px solid #facc15';
+                                    $sBg = '#fefce8';
+                                    $sColor = '#a16207';
+                                    $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+
+                                    if ($rawStatus === 'Pending') {
+                                        if ($isOverdue) {
+                                            $displayStatus = 'Overdue';
+                                            $sBorder = '1.5px solid #f87171';
+                                            $sBg = '#fef2f2';
+                                            $sColor = '#b91c1c';
+                                        } else {
+                                            $displayStatus = 'Pending';
+                                            $sBorder = '1.5px solid #facc15';
+                                            $sBg = '#fefce8';
+                                            $sColor = '#a16207';
+                                        }
+                                    } elseif ($rawStatus === 'Under Reading') {
+                                        $displayStatus = 'In Progress';
+                                        $sBorder = '1.5px solid #60a5fa';
+                                        $sBg = '#eff6ff';
+                                        $sColor = '#1d4ed8';
+                                    } elseif ($rawStatus === 'Report Ready') {
+                                        $displayStatus = 'Report Ready';
+                                        $sBorder = '1.5px solid #818cf8';
+                                        $sBg = '#eef2ff';
+                                        $sColor = '#4338ca';
+                                    } elseif ($rawStatus === 'For Revision') {
+                                        $displayStatus = 'For Revision';
+                                        $sBorder = '1.5px solid #f87171';
+                                        $sBg = '#fef2f2';
+                                        $sColor = '#b91c1c';
+                                    } elseif ($rawStatus === 'Completed') {
+                                        $displayStatus = 'Completed';
+                                        $sBorder = '1.5px solid #4ade80';
+                                        $sBg = '#f0fdf4';
+                                        $sColor = '#15803d';
+                                    }
+                                    ?>
+                                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold"
+                                        style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                                        <?= htmlspecialchars($displayStatus) ?>
+                                    </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
@@ -164,6 +259,17 @@ sort($priorities);
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Pagination footer -->
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+            <!-- Record count -->
+            <span id="worklist-record-count" class="text-xs text-gray-500 font-medium"></span>
+
+            <!-- Pagination Controls -->
+            <div class="flex items-center flex-wrap gap-1.5" id="worklist-pagination-controls">
+                <!-- Dynamic page buttons will be inserted here -->
+            </div>
         </div>
     </div>
 </div>
@@ -207,6 +313,9 @@ sort($priorities);
         const tbody = document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
 
+        const ROWS_PER_PAGE = 8;
+        let currentPage = 1;
+
         function updateTable() {
             if (!searchInput || !filterBranch || !filterPriority || !sortOption) return;
 
@@ -230,23 +339,21 @@ sort($priorities);
 
             // Sort rows
             allRows.sort((a, b) => {
-                // Emergency ALWAYS first overrides everything
-                const emA = parseInt(a.dataset.emergency);
-                const emB = parseInt(b.dataset.emergency);
-                if (emA !== emB) {
-                    return emB - emA; // 1 before 0
+                // STAT ALWAYS first overrides everything EXCEPT when sorting by priority explicitly
+                if (!sortValue.startsWith('priority_')) {
+                    const emA = parseInt(a.dataset.stat);
+                    const emB = parseInt(b.dataset.stat);
+                    if (emA !== emB) {
+                        return emB - emA; // 1 before 0
+                    }
                 }
 
-                // Normal sorting if neither is emergency, or if both are emergency
+                // Normal sorting if neither is stat, or if both are stat
                 let val;
                 if (sortValue === 'date_desc') {
                     val = parseInt(b.dataset.date) - parseInt(a.dataset.date);
                 } else if (sortValue === 'date_asc') {
                     val = parseInt(a.dataset.date) - parseInt(b.dataset.date);
-                } else if (sortValue === 'branch_asc') {
-                    val = a.dataset.branch.localeCompare(b.dataset.branch);
-                } else if (sortValue === 'branch_desc') {
-                    val = b.dataset.branch.localeCompare(a.dataset.branch);
                 } else if (sortValue === 'priority_desc') {
                     val = parseInt(b.dataset.pweight) - parseInt(a.dataset.pweight);
                 } else if (sortValue === 'priority_asc') {
@@ -259,8 +366,11 @@ sort($priorities);
                 return val;
             });
 
-            // Apply filtering and sorting to DOM
-            let visibleCount = 0;
+            // Reorder in DOM
+            allRows.forEach(row => tbody.appendChild(row));
+
+            // Apply filtering
+            let filteredRows = [];
             allRows.forEach(row => {
                 const matchesSearch = row.dataset.search.includes(searchTerm);
                 const matchesBranch = branchValue === '' || row.dataset.branch === branchValue;
@@ -272,13 +382,24 @@ sort($priorities);
                 const matchesPriority = priorityValue === '' || rowPriority === priorityValue || mappedPriority === priorityValue;
 
                 if (matchesSearch && matchesBranch && matchesPriority) {
-                    row.style.display = '';
-                    visibleCount++;
+                    filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
                 }
+            });
 
-                tbody.appendChild(row); // Reorders them in the DOM
+            // Pagination calculation
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+            const endIdx = startIdx + ROWS_PER_PAGE;
+            
+            const visibleSet = new Set(filteredRows.slice(startIdx, endIdx));
+
+            filteredRows.forEach(row => {
+                row.style.display = visibleSet.has(row) ? '' : 'none';
             });
 
             // Handle "No records found" state
@@ -289,11 +410,11 @@ sort($priorities);
                 return;
             }
 
-            if (visibleCount === 0 && allRows.length > 0) {
+            if (filteredRows.length === 0 && allRows.length > 0) {
                 if (!noRecordsRow) {
                     noRecordsRow = document.createElement('tr');
                     noRecordsRow.className = 'no-records';
-                    noRecordsRow.innerHTML = `<td colspan="7" class="text-center py-8 text-gray-500">No matching records found.</td>`;
+                    noRecordsRow.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No matching records found.</td>`;
                     tbody.appendChild(noRecordsRow);
                 } else {
                     noRecordsRow.style.display = '';
@@ -302,6 +423,109 @@ sort($priorities);
             } else if (noRecordsRow) {
                 noRecordsRow.style.display = 'none';
             }
+
+            // Update Pagination UI
+            updatePaginationUI(filteredRows.length, totalPages);
+        }
+
+        function updatePaginationUI(totalFiltered, totalPages) {
+            const recordCountInfo = document.getElementById('worklist-record-count');
+            const container = document.getElementById('worklist-pagination-controls');
+
+            const startIdx = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
+            const endIdx = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
+
+            if (recordCountInfo) {
+                recordCountInfo.innerHTML = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing <span class="font-semibold text-gray-800">${startIdx}</span> to <span class="font-semibold text-gray-800">${endIdx}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> record${totalFiltered !== 1 ? 's' : ''}`;
+            }
+
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Helper to create a button
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+                
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+                
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        updateTable();
+                        const card = document.getElementById('worklist-table-card');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            // Helper to create ellipsis
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            // First Button
+            container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+
+            // Back Button
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+            // Page numbers
+            if (totalPages <= 7) {
+                // Show all pages
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+            } else {
+                // We have many pages
+                if (currentPage <= 4) {
+                    // Near start: 1, 2, 3, 4, 5, ..., T
+                    for (let i = 1; i <= 5; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentPage));
+                    }
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
+                } else if (currentPage >= totalPages - 3) {
+                    // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentPage));
+                    }
+                } else {
+                    // Middle: 1, ..., C-1, C, C+1, ..., T
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                    container.appendChild(createEllipsis());
+                    
+                    container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                    container.appendChild(createButton(currentPage, currentPage, false, true));
+                    container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                    
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            // Next Button
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+
+            // Last Button
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
         const paramsList = new window.URLSearchParams(window.location.search);
@@ -311,10 +535,16 @@ sort($priorities);
         if (urlBranch && filterBranch) filterBranch.value = urlBranch;
         if (urlPriority && filterPriority) filterPriority.value = urlPriority;
 
-        if (searchInput) searchInput.addEventListener('input', updateTable);
-        if (filterBranch) filterBranch.addEventListener('change', updateTable);
-        if (filterPriority) filterPriority.addEventListener('change', updateTable);
-        if (sortOption) sortOption.addEventListener('change', updateTable);
+        // Reset to page 1 on filter/sort change
+        function onFilterSortChange() {
+            currentPage = 1;
+            updateTable();
+        }
+
+        if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
+        if (filterBranch) filterBranch.addEventListener('change', onFilterSortChange);
+        if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
+        if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
 
         // Initial sort
         updateTable();

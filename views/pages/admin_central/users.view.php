@@ -9,7 +9,7 @@
     <div class="mx-auto max-w-6xl space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
+                <h1 class="text-2xl font-semibold text-gray-900">User Management</h1>
                 <p class="text-sm text-gray-500">Create and manage staff accounts across all branches</p>
             </div>
             <button type="button" onclick="openAddUserModal()"
@@ -17,6 +17,36 @@
                 <i data-lucide="user-plus" class="w-4 h-4"></i>
                 Add New Staff
             </button>
+        </div>
+
+        <?php
+        $activeStaffCount = 0;
+        $totalStaffCount = count($users);
+        foreach ($users as $u) {
+            if ($u['status'] === 'Active')
+                $activeStaffCount++;
+        }
+        ?>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Active Staff</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $activeStaffCount ?></h3>
+                </div>
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <i data-lucide="user-check" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Staff</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $totalStaffCount ?></h3>
+                </div>
+                <div class="p-3 bg-gray-50 text-gray-600 rounded-lg">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+            </div>
         </div>
 
         <?php if ($success): ?>
@@ -58,7 +88,7 @@
                 </select>
                 <select id="statusFilter" onchange="filterAndSortUsers()"
                     class="flex-1 md:w-40 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-                    <option value="" selected>All Statuses</option>
+                    <option value="" selected>All Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
@@ -66,16 +96,17 @@
         </div>
 
         <!-- Users Table Card -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="users-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50/80 border-b border-gray-200">
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Email Address / User</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Role</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Branch Assignment</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Branch Assignment
+                            </th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-right">Actions</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody" class="divide-y divide-gray-100">
@@ -112,8 +143,13 @@
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
                                             <div
-                                                class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase">
-                                                <?= substr($u['email'], 0, 2) ?>
+                                                class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
+                                                <?php if (!empty($u['avatar'])): ?>
+                                                    <img src="<?= htmlspecialchars($u['avatar']) ?>" alt="Avatar"
+                                                        class="h-full w-full object-cover">
+                                                <?php else: ?>
+                                                    <?= substr($u['email'], 0, 2) ?>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col">
                                                 <span
@@ -124,13 +160,12 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-sm font-medium text-gray-600 tracking-tight uppercase">
+                                        <span class="text-sm text-gray-600 tracking-tight capitalize">
                                             <?= htmlspecialchars(str_replace('_', ' ', $u['role'])) ?>
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2 text-sm font-medium text-gray-500 tracking-tight">
-                                            <i data-lucide="map-pin" class="w-3.5 h-3.5 opacity-40"></i>
+                                        <div class="flex items-center gap-2 text-sm text-gray-500 tracking-tight">
                                             <?= htmlspecialchars($u['branch_name'] ?? 'Universal') ?>
                                         </div>
                                     </td>
@@ -150,8 +185,8 @@
                                             <?= htmlspecialchars($u['status']) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                    <td class="px-6 py-4 text-left">
+                                        <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($u['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
                                                     <input type="hidden" name="action" value="toggle-status">
@@ -199,26 +234,15 @@
             </div>
 
             <!-- Pagination Footer -->
-            <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-                <div class="text-xs text-gray-500 dark:text-slate-400 font-medium">
-                    Showing <span id="startIndex">0</span>-<span id="endIndex">0</span> of <span
-                        id="totalRecords">0</span> records
+            <div
+                class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+                <div class="text-xs text-gray-500">
+                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex"
+                        class="font-semibold text-gray-800">0</span> of <span id="totalRecords"
+                        class="font-semibold text-gray-800">0</span> records
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="changePage(-1)" id="prevBtn"
-                        class="flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                        Previous
-                    </button>
-                    <div class="px-4 py-3">
-                        <span class="text-xs font-medium text-gray-500">Page <span id="currentPageDisplay">1</span> of
-                            <span id="totalPagesDisplay">1</span></span>
-                    </div>
-                    <button onclick="changePage(1)" id="nextBtn"
-                        class="flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm">
-                        Next
-                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </button>
+                <div class="flex items-center flex-wrap gap-1.5" id="paginationControls">
+                    <!-- Dynamic page buttons will be inserted here -->
                 </div>
             </div>
         </div>
@@ -229,7 +253,7 @@
 <div id="addUserModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 class="text-lg font-bold text-gray-900">Create New Staff Account</h3>
             <button type="button" onclick="closeAddUserModal()"
@@ -244,7 +268,7 @@
                 <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
                 <div class="relative">
                     <i data-lucide="mail" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="email" id="email" name="email" required placeholder="staff@citilife.com"
+                    <input type="email" id="email" name="email" required placeholder="staff@gmail.com"
                         autocomplete="off"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
@@ -254,9 +278,8 @@
                 <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Initial Password</label>
                 <div class="relative">
                     <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="password" id="password" name="password" required placeholder="••••••••"
-                        autocomplete="new-password"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                    <input type="text" id="password" name="password" required readonly
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-100 text-gray-600 text-sm focus:outline-none transition-all cursor-not-allowed">
                 </div>
             </div>
 
@@ -264,18 +287,19 @@
                 <div>
                     <label for="role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
                     <select id="role" name="role" required onchange="toggleBranchSelect()"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Role</option>
                         <option value="branch_admin">Branch Admin</option>
                         <option value="radtech">RadTech</option>
                         <option value="radiologist">Radiologist</option>
                         <option value="it_admin">IT Admin</option>
+                        <option value="admin_central">Admin Central</option>
                     </select>
                 </div>
                 <div id="branchSelectWrapper">
                     <label for="branch_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch</label>
                     <select id="branch_id" name="branch_id"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
                             <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>
@@ -303,7 +327,7 @@
 <div id="editUserModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 class="text-lg font-bold text-gray-900">Edit Staff Account</h3>
             <button type="button" onclick="closeEditUserModal()"
@@ -319,7 +343,7 @@
                 <label for="edit_email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
                 <div class="relative">
                     <i data-lucide="mail" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="email" id="edit_email" name="email" required placeholder="staff@citilife.com"
+                    <input type="email" id="edit_email" name="email" required placeholder="staff@gmail.com"
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                 </div>
             </div>
@@ -338,18 +362,19 @@
                 <div>
                     <label for="edit_role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
                     <select id="edit_role" name="role" required onchange="toggleEditBranchSelect()"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Role</option>
                         <option value="branch_admin">Branch Admin</option>
                         <option value="radtech">RadTech</option>
                         <option value="radiologist">Radiologist</option>
                         <option value="it_admin">IT Admin</option>
+                        <option value="admin_central">Admin Central</option>
                     </select>
                 </div>
                 <div id="edit_branchSelectWrapper">
                     <label for="edit_branch_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch</label>
                     <select id="edit_branch_id" name="branch_id"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
                             <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>
@@ -413,10 +438,17 @@
         }
     }
 
+
+    function generateRandomPassword() {
+        const year = new Date().getFullYear();
+        const randomNum = Math.floor(10000 + Math.random() * 90000);
+        return `${year}_${randomNum}`;
+    }
+
     function openAddUserModal() {
         // Clear inputs to prevent lingering values or autofill
         document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
+        document.getElementById('password').value = generateRandomPassword();
         document.getElementById('role').value = '';
         document.getElementById('branch_id').value = '';
 
@@ -447,8 +479,9 @@
     function toggleEditBranchSelect() {
         const role = document.getElementById('edit_role').value;
         const branchWrapper = document.getElementById('edit_branchSelectWrapper');
-        if (role === 'it_admin') {
+        if (role === 'it_admin' || role === 'admin_central' || role === 'radiologist') {
             branchWrapper.classList.add('opacity-30', 'pointer-events-none');
+            document.getElementById('edit_branch_id').value = '';
         } else {
             branchWrapper.classList.remove('opacity-30', 'pointer-events-none');
         }
@@ -457,8 +490,9 @@
     function toggleBranchSelect() {
         const role = document.getElementById('role').value;
         const branchWrapper = document.getElementById('branchSelectWrapper');
-        if (role === 'it_admin') {
+        if (role === 'it_admin' || role === 'admin_central' || role === 'radiologist') {
             branchWrapper.classList.add('opacity-30', 'pointer-events-none');
+            document.getElementById('branch_id').value = '';
         } else {
             branchWrapper.classList.remove('opacity-30', 'pointer-events-none');
         }
@@ -489,7 +523,7 @@
     }
 
     // Pagination State
-    let currentPage = 1;
+    let currentPage = parseInt(sessionStorage.getItem('CitiLife_adminUsers_page')) || 1;
     const itemsPerPage = 7;
 
     // Real-time Filtering & Sorting Logic
@@ -567,6 +601,95 @@
         updatePagination(rows.filter(r => !r.classList.contains('hidden')));
     }
 
+    function renderPaginationControls(totalPages) {
+        const container = document.getElementById('paginationControls');
+        if (!container) return;
+        container.innerHTML = '';
+
+        // Helper to create a button
+        function createButton(label, page, disabled, isActive = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = label;
+
+            if (isActive) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+            }
+
+            if (disabled) {
+                btn.disabled = true;
+            } else {
+                btn.onclick = () => {
+                    currentPage = page;
+                    filterAndSortUsers(false);
+                    const card = document.getElementById('users-table-card');
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                };
+            }
+            return btn;
+        }
+
+        // Helper to create ellipsis
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+            span.innerText = '...';
+            return span;
+        }
+
+        // First Button
+        container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+
+        // Back Button
+        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+        // Page numbers
+        if (totalPages <= 7) {
+            // Show all pages
+            for (let i = 1; i <= totalPages; i++) {
+                container.appendChild(createButton(i, i, false, i == currentPage));
+            }
+        } else {
+            // We have many pages
+            if (currentPage <= 4) {
+                // Near start: 1, 2, 3, 4, 5, ..., T
+                for (let i = 1; i <= 5; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
+            } else if (currentPage >= totalPages - 3) {
+                // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                container.appendChild(createEllipsis());
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+            } else {
+                // Middle: 1, ..., C-1, C, C+1, ..., T
+                container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                container.appendChild(createEllipsis());
+
+                container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                container.appendChild(createButton(currentPage, currentPage, false, true));
+                container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, false));
+            }
+        }
+
+        // Next Button
+        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+
+        // Last Button
+        container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
+    }
+
     function updatePagination(visibleRows) {
         const totalRecords = visibleRows.length;
         const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
@@ -574,6 +697,8 @@
         // Sanitize current page
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
+
+        sessionStorage.setItem('CitiLife_adminUsers_page', currentPage);
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);
@@ -591,24 +716,13 @@
         const startIndexEl = document.getElementById('startIndex');
         const endIndexEl = document.getElementById('endIndex');
         const totalRecordsEl = document.getElementById('totalRecords');
-        const currentPageDisplay = document.getElementById('currentPageDisplay');
-        const totalPagesDisplay = document.getElementById('totalPagesDisplay');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
 
         if (startIndexEl) startIndexEl.innerText = totalRecords === 0 ? 0 : startIdx + 1;
         if (endIndexEl) endIndexEl.innerText = endIdx;
         if (totalRecordsEl) totalRecordsEl.innerText = totalRecords;
-        if (currentPageDisplay) currentPageDisplay.innerText = currentPage;
-        if (totalPagesDisplay) totalPagesDisplay.innerText = totalPages;
 
-        if (prevBtn) prevBtn.disabled = (currentPage === 1);
-        if (nextBtn) nextBtn.disabled = (currentPage === totalPages || totalRecords === 0);
-    }
-
-    function changePage(delta) {
-        currentPage += delta;
-        filterAndSortUsers(false); // Don't reset page when navigating
+        // Render dynamic page controls
+        renderPaginationControls(totalPages);
     }
 
     // Refresh Lucide icons after dynamic updates or modal show

@@ -9,9 +9,9 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-gray-900">
         <div>
-            <h2 class="text-xl font-bold tracking-tight">Incoming Record Requests</h2>
+            <h2 class="text-xl font-semibold tracking-tight">Incoming Record Requests</h2>
             <p class="text-sm text-gray-500 mt-1">Review requests from RadTechs in other branches asking for patient
-                records stored in your branch (<?= htmlspecialchars($myBranchName) ?>).</p>
+                records.</p>
         </div>
     </div>
 
@@ -39,12 +39,22 @@
             class="w-full md:w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
             <option value="All">All Branches</option>
             <?php
-            $branches = array_unique(array_column($pendingRequests, 'requester_branch_name'));
-            sort($branches);
-            foreach ($branches as $branch):
-                ?>
-                <option value="<?= htmlspecialchars($branch) ?>"><?= htmlspecialchars($branch) ?></option>
-            <?php endforeach; ?>
+            if (!empty($branchesList)) {
+                // Ensure array of branches is sorted by name
+                usort($branchesList, function($a, $b) {
+                    return strcmp($a['name'], $b['name']);
+                });
+                
+                foreach ($branchesList as $branch):
+                    // Skip the current admin's own branch if desired, or show all
+                    if ($branch['name'] !== $myBranchName):
+                    ?>
+                    <option value="<?= htmlspecialchars($branch['name']) ?>"><?= htmlspecialchars($branch['name']) ?></option>
+                <?php 
+                    endif;
+                endforeach;
+            }
+            ?>
         </select>
         <select id="sort-date"
             class="w-full md:w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
@@ -55,7 +65,7 @@
 
     <!-- Table Container -->
     <div id="record-requests-table"
-        class="realtime-update rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden min-h-[400px] flex flex-col">
+        class="rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -67,7 +77,7 @@
                         <th class="text-center font-semibold px-4 py-3.5">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100">
+                <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
                     <?php if (empty($pendingRequests)): ?>
                         <tr>
                             <td colspan="5" class="py-24">
@@ -136,20 +146,13 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 mt-auto">
-            <span id="record-count" class="text-xs font-medium text-gray-500">
-                Found <?= count($pendingRequests) ?> records
-            </span>
-            <div class="flex items-center gap-4">
-                <button id="prev-btn"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
-                </button>
-                <span id="page-info" class="text-xs font-bold text-gray-700">Page 1 of 1</span>
-                <button id="next-btn"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                    Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 mt-auto gap-4">
+            <!-- Record count -->
+            <span id="record-count" class="text-xs text-gray-500 font-medium"></span>
+
+            <!-- Pagination Controls -->
+            <div class="flex items-center flex-wrap gap-1.5" id="pagination-controls">
+                <!-- Dynamic page buttons will be inserted here -->
             </div>
         </div>
     </div>
@@ -157,17 +160,13 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ROWS_PER_PAGE = 8;
-        let currentPage = 1;
+        const ROWS_PER_PAGE = 6;
+        let currentPage = parseInt(sessionStorage.getItem('CitiLife_recordRequests_page')) || 1;
 
         const searchInput = document.getElementById('search-input');
         const filterBranch = document.getElementById('filter-branch');
         const sortDate = document.getElementById('sort-date');
         const tableBody = document.getElementById('table-body');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const pageInfo = document.getElementById('page-info');
-        const recordCountInfo = document.getElementById('record-count');
 
         function getFilteredRows() {
             const searchTerm = searchInput.value.toLowerCase();
@@ -198,6 +197,95 @@
             });
         }
 
+        function renderPaginationControls(totalPages) {
+            const container = document.getElementById('pagination-controls');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Helper to create a button
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+                
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+                
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        renderPage();
+                        const card = document.getElementById('record-requests-table');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            // Helper to create ellipsis
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            // First Button
+            container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+
+            // Back Button
+            container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+            // Page numbers
+            if (totalPages <= 7) {
+                // Show all pages
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i == currentPage));
+                }
+            } else {
+                // We have many pages
+                if (currentPage <= 4) {
+                    // Near start: 1, 2, 3, 4, 5, ..., T
+                    for (let i = 1; i <= 5; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentPage));
+                    }
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
+                } else if (currentPage >= totalPages - 3) {
+                    // Near end: 1, ..., T-4, T-3, T-2, T-1, T
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentPage));
+                    }
+                } else {
+                    // Middle: 1, ..., C-1, C, C+1, ..., T
+                    container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                    container.appendChild(createEllipsis());
+                    
+                    container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                    container.appendChild(createButton(currentPage, currentPage, false, true));
+                    container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                    
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            // Next Button
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+
+            // Last Button
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
+        }
+
         function renderPage() {
             const filteredRows = getFilteredRows();
             const rows = Array.from(tableBody.querySelectorAll('tr.record-row'));
@@ -206,6 +294,8 @@
 
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
+
+            sessionStorage.setItem('CitiLife_recordRequests_page', currentPage);
 
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
             const endIdx = startIdx + ROWS_PER_PAGE;
@@ -235,14 +325,17 @@
                 emptyState.style.display = 'none';
             }
 
+            const recordCountInfo = document.getElementById('record-count');
             const displayStart = totalFiltered === 0 ? 0 : startIdx + 1;
             const displayEnd = Math.min(endIdx, totalFiltered);
 
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            recordCountInfo.textContent = `Showing ${displayStart}–${displayEnd} of ${totalFiltered} records`;
+            if (recordCountInfo) {
+                recordCountInfo.innerHTML = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing <span class="font-semibold text-gray-800">${displayStart}</span> to <span class="font-semibold text-gray-800">${displayEnd}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> records`;
+            }
 
-            prevBtn.disabled = currentPage <= 1;
-            nextBtn.disabled = currentPage >= totalPages;
+            renderPaginationControls(totalPages);
         }
 
         function applyFilters() { currentPage = 1; renderPage(); }
@@ -250,11 +343,9 @@
         searchInput.addEventListener('input', applyFilters);
         filterBranch.addEventListener('change', applyFilters);
         sortDate.addEventListener('change', applyFilters);
-        prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
-        nextBtn.addEventListener('click', () => {
-            if (currentPage < Math.ceil(getFilteredRows().length / ROWS_PER_PAGE)) {
-                currentPage++; renderPage();
-            }
+
+        document.addEventListener('realtime:updated', () => {
+            renderPage();
         });
 
         renderPage();

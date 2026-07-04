@@ -17,7 +17,7 @@ if (empty($token)) {
 
 // Verify token
 $stmt = $pdo->prepare("
-    SELECT u.id, u.name, u.role, p.first_name 
+    SELECT u.id, u.name, u.role, u.branch_id, p.first_name 
     FROM users u 
     LEFT JOIN patients p ON u.patient_id = p.id 
     WHERE u.reset_password_token = ? AND u.reset_password_expires_at > NOW() 
@@ -51,6 +51,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $updateStmt = $pdo->prepare("UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires_at = NULL WHERE id = ?");
         $updateStmt->execute([$hashedPassword, $user['id']]);
+
+        require_once basePath('app/Models/AuditLogModel.php');
+        $auditLogModel = new \AuditLogModel($pdo);
+        $auditLogModel->addLog(
+            $user['id'],
+            $user['role'] === 'patient' ? 'Patient Password Reset' : 'Staff Password Reset',
+            $user['role'] === 'patient' ? 'Patient Portal' : 'Authentication',
+            'User',
+            $user['id'],
+            "User successfully reset their password",
+            $user['branch_id']
+        );
 
         $success = "Your password has been reset successfully. You can now log in.";
         $validToken = false; // Hide form after success
@@ -113,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
             <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
                 <?= htmlspecialchars($success) ?>
             </div>
-            <a href="login" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 text-center">
+            <a href="patient-login" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 text-center">
                 Go to Login
             </a>
         <?php endif; ?>

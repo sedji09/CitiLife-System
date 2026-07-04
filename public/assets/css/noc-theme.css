@@ -1,0 +1,62 @@
+/* Dashboard Theme Variables */
+:root {
+  --noc-card-bg: #ffffff;
+  --noc-card-alt-bg: #f8fafc;
+  --noc-border: #e2e8f0;
+  --noc-text-main: #0f172a;
+  --noc-text-muted: #64748b;
+  --noc-accent-emerald: #10b981;
+  --noc-accent-rose: #ef4444;
+  --noc-accent-amber: #f59e0b;
+  --noc-accent-indigo: #6366f1;
+  --noc-accent-cyan: #06b6d4;
+  --noc-grid-color: rgba(100, 116, 139, 0.05);
+  --noc-grid-opacity: 1;
+}
+
+body.theme-dark {
+  --noc-card-bg: #1e293b;
+  --noc-card-alt-bg: #0f172a;
+  --noc-border: #334155;
+  --noc-text-main: #f8fafc;
+  --noc-text-muted: #94a3b8;
+  --noc-grid-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Base Classes */
+.noc-dashboard { color: var(--noc-text-main); }
+.noc-card {
+  background-color: var(--noc-card-bg);
+  border: 1px solid var(--noc-border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+.noc-card-alt { background-color: var(--noc-card-alt-bg); }
+.noc-border-b { border-bottom: 1px solid var(--noc-border); }
+.noc-hover:hover { background-color: var(--noc-card-alt-bg); cursor: pointer; }
+
+/* Typography */
+.noc-text-main { color: var(--noc-text-main) !important; }
+.noc-text-muted { color: var(--noc-text-muted) !important; }
+.noc-text-emerald { color: var(--noc-accent-emerald) !important; }
+.noc-text-rose { color: var(--noc-accent-rose) !important; }
+.noc-text-amber { color: var(--noc-accent-amber) !important; }
+.noc-text-indigo { color: var(--noc-accent-indigo) !important; }
+.noc-text-cyan { color: var(--noc-accent-cyan) !important; }
+
+/* Backgrounds */
+.noc-bg-emerald { background-color: var(--noc-accent-emerald) !important; }
+.noc-bg-rose { background-color: var(--noc-accent-rose) !important; }
+.noc-bg-amber { background-color: var(--noc-accent-amber) !important; }
+.noc-bg-indigo { background-color: var(--noc-accent-indigo) !important; }
+.noc-bg-cyan { background-color: var(--noc-accent-cyan) !important; }
+
+/* Layout Components */
+.noc-feed-card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--noc-border);
+  background-color: var(--noc-card-alt-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.noc-feed-card-body { padding: 0; }

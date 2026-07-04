@@ -45,107 +45,118 @@ try {
     // Ignore error
 }
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $patientNumber = trim($_POST['patient_number'] ?? '');
     $firstName = trim($_POST['first_name'] ?? '');
     $lastName = trim($_POST['last_name'] ?? '');
     $birthdate = trim($_POST['birthdate'] ?? '');
     $sex = $_POST['sex'] ?? 'Male';
     $contactNumber = trim($_POST['contact_number'] ?? '');
+    $homeAddress = trim($_POST['home_address'] ?? '');
     $branchId = $_POST['branch_id'] ?? '';
-    if ($branchId === '')
-        $branchId = null;
+    if ($branchId === '') $branchId = null;
 
     $email = trim($_POST['email'] ?? '');
-    // SANITATION using filter_var();
     $email = filter_var($email, FILTER_SANITIZE_EMAIL);
 
-    $password = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
-
-    // VALIDATION using preg_match();
     $namePattern = "/^[a-zA-Z\s]+$/";
     $isNameValid = preg_match($namePattern, $firstName) && preg_match($namePattern, $lastName);
-
-    // VALIDATION using filter_var();
     $isEmailValid = filter_var($email, FILTER_VALIDATE_EMAIL);
-
-    // VALIDATION for contact number
     $contactPattern = "/^09\d{9}$/";
-    $isContactValid = preg_match($contactPattern, $contactNumber);
+    $isContactValid = empty($contactNumber) ? true : preg_match($contactPattern, $contactNumber);
 
-    if (empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($password) || empty($branchId)) {
+    if (empty($patientNumber) || empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($branchId)) {
         $error = 'Please fill out all required fields.';
     } elseif (!$isNameValid) {
         $error = 'Invalid Name. Please use letters only.';
-    } elseif (!$isContactValid) {
+    } elseif (!empty($contactNumber) && !$isContactValid) {
         $error = 'Invalid Contact Number. It must be 11 digits and start with 09.';
     } elseif (!$isEmailValid) {
         $error = 'Invalid Email format.';
-    } elseif ($password !== $confirmPassword) {
-        $error = 'Passwords do not match.';
     } else {
-        // Check if email already exists
-        $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
-        $stmt->execute(['email' => $email]);
-        if ($stmt->fetch()) {
-            $error = 'Email is already registered. Please log in.';
-        } else {
-            try {
-                $pdo->beginTransaction();
+        try {
+            $pdo->beginTransaction();
 
-                 // Generate patient number
-                require_once basePath('app/Helpers/patient_helper.php');
-                $patientNumber = generatePatientNumber($pdo, $branchId);
+            $stmt = $pdo->prepare("
+                SELECT id FROM patients 
+                WHERE LOWER(patient_number) = LOWER(?) 
+                  AND LOWER(TRIM(first_name)) = LOWER(TRIM(?))
+                  AND LOWER(TRIM(last_name)) = LOWER(TRIM(?))
+                  AND birthdate = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate]);
+            $patient = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                // Insert into patients table
-                $stmt = $pdo->prepare("INSERT INTO patients (patient_number, first_name, last_name, birthdate, sex, contact_number, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$patientNumber, $firstName, $lastName, $birthdate, $sex, $contactNumber, $branchId]);
-                $patientId = $pdo->lastInsertId();
-
-                // Generate verification token
-                $verificationToken = bin2hex(random_bytes(32));
-
-                // Insert into users table
-                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status, patient_id, is_email_verified, verification_token) VALUES (?, ?, 'patient', 'Pending', ?, 0, ?)");
-                $stmt->execute([$email, $hashedPassword, $patientId, $verificationToken]);
-
-                // Notify Branch Admin
-                $notifTitle = "New Patient Registration";
-                $notifMsg = "Patient " . $firstName . " " . $lastName . " has registered a new account.";
-                $notifStmt = $pdo->prepare("INSERT INTO notifications (role, branch_id, title, message, link) VALUES ('branch_admin', ?, ?, ?, '/" . PROJECT_DIR . "/patients')");
-                $notifStmt->execute([$branchId, $notifTitle, $notifMsg]);
-
-                // Send Verification Email
-                require_once basePath('app/Helpers/mailer_helper.php');
-                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-                $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
+            if (!$patient) {
+                $error = 'We could not find a matching patient record. Please check your Patient ID and details.';
+            } else {
+                $patientId = $patient['id'];
                 
-                $emailBody = "
-                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                        <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
-                        <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
-                        <p style='color: #4b5563; font-size: 16px;'>Thank you for registering. Please click the button below to verify your email address. This is required before you can log in to your account.</p>
-                        <div style='text-align: center; margin: 30px 0;'>
-                            <a href='{$verifyLink}' style='display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;'>Verify Email Address</a>
-                        </div>
-                        <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, you can copy and paste this link into your browser:<br><a href='{$verifyLink}' style='color: #2563eb;'>{$verifyLink}</a></p>
-                        <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
-                        <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
-                    </div>
-                ";
-                sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
+                $stmtUser = $pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
+                $stmtUser->execute([$patientId]);
+                if ($stmtUser->fetch()) {
+                    $error = 'This patient record is already linked to an active account. Please log in.';
+                } else {
+                    $updateStmt = $pdo->prepare("UPDATE patients SET sex = ?, contact_number = ?, home_address = ?, branch_id = ? WHERE id = ?");
+                    $updateStmt->execute([$sex, $contactNumber, $homeAddress, $branchId, $patientId]);
 
-                $pdo->commit();
-                $success = 'Registration successful! Please check your email to verify your account.';
-            } catch (Exception $e) {
-                $pdo->rollBack();
-                $error = 'An error occurred during registration: ' . $e->getMessage();
+                    $pdo->prepare("DELETE FROM account_verifications WHERE patient_id = ?")->execute([$patientId]);
+
+                    $verificationToken = bin2hex(random_bytes(32));
+                    $insertStmt = $pdo->prepare("
+                        INSERT INTO account_verifications (token, patient_id, email, expires_at) 
+                        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
+                    ");
+                    $insertStmt->execute([$verificationToken, $patientId, $email]);
+
+                                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                    $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
+
+                    $emailBody = "
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
+                            <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
+                            <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
+                            <p style='color: #4b5563; font-size: 16px;'>Thank you for registering. Please click the button below to verify your email address. You will be able to create your password and access your records afterwards.</p>
+                            <div style='text-align: center; margin: 30px 0;'>
+                                <a href='{$verifyLink}' style='display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;'>Verify Email Address</a>
+                            </div>
+                            <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, copy and paste this link into your browser:<br><a href='{$verifyLink}' style='color: #2563eb;'>{$verifyLink}</a></p>
+                        </div>
+                    ";
+                    sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
+
+                    $pdo->commit();
+                    
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    $auditLogModel->addLog(
+                        null,
+                        'Patient Registration',
+                        'Patient Portal',
+                        'Patient',
+                        $patientId,
+                        "Patient initiated account registration",
+                        $branchId
+                    );
+                    
+                    $success = 'We found your record! Please check your email for the verification link to create your password.';
+                }
             }
+            if (!empty($error) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $error = 'An error occurred: ' . $e->getMessage();
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -154,10 +165,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Patient Registration - CitiLife System</title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/alerts.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/security.js?v=<?= time() ?>"></script>
+    
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
+        /* Global override for Vanilla JS Datepicker to make selected date RED */
+        html body .datepicker-cell.selected,
+        html body .datepicker-cell.selected:hover,
+        html body .datepicker-cell.selected.focused,
+        html body .datepicker-picker .datepicker-cell.selected,
+        html body .datepicker-picker .datepicker-cell.selected:hover,
+        html body .datepicker-picker .datepicker-cell.selected.focused {
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            border-color: #dc2626 !important;
+        }
+
+        /* Remove the default TEAL background from 'today' and make it clean */
+        html body .datepicker-cell.today:not(.selected),
+        html body .datepicker-picker .datepicker-cell.today:not(.selected) {
+            background-color: #f3f4f6 !important; /* light grey instead of teal */
+            color: #111827 !important;
+            font-weight: 600 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        html body .datepicker-cell.today.focused:not(.selected),
+        html body .datepicker-picker .datepicker-cell.today.focused:not(.selected) {
+            background-color: #e5e7eb !important;
+        }
         .step {
             display: none;
             animation: fadeIn 0.3s ease-in-out;
@@ -285,6 +327,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="hidden" name="form_type" value="desktop">
 
                     <div class="grid grid-cols-2 gap-y-6 gap-x-4">
+                        
+                    <!-- Patient ID -->
+                    <div class="col-span-2">
+                        <label for="d_patient_number" class="block text-sm font-semibold text-gray-700 mb-1">Patient ID *</label>
+                        <input id="d_patient_number" name="patient_number" type="text" required
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            placeholder="e.g. PAT-GAP-2026-001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
+                        <p class="text-xs text-gray-500 mt-1">Found on your clinic receipt or given by staff.</p>
+                    </div>
+
                         <!-- First Name -->
                         <div>
                             <label for="d_first_name" class="block text-sm font-semibold text-gray-700 mb-1">First Name
@@ -305,20 +357,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <!-- Birthdate -->
                         <div>
-                            <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate *</label>
-                            <input id="d_birthdate" name="birthdate" type="date" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                value="<?= htmlspecialchars($birthdate ?? '') ?>">
+                            <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate
+                                *</label>
+                            <div class="relative">
+                                <input id="d_birthdate" name="birthdate" type="text" required readonly placeholder="Select birthdate"
+                                    class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    value="<?= htmlspecialchars($birthdate ?? '') ?>">
+                                <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            </div>
                         </div>
 
                         <!-- Sex -->
-                        <div>
+                        <div class="relative">
                             <label for="d_sex" class="block text-sm font-semibold text-gray-700 mb-1">Sex *</label>
                             <select id="d_sex" name="sex" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
+                                class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                                 <option value="Male" <?= (($sex ?? '') === 'Male') ? 'selected' : '' ?>>Male</option>
                                 <option value="Female" <?= (($sex ?? '') === 'Female') ? 'selected' : '' ?>>Female</option>
                             </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 top-6 flex items-center px-3 text-gray-500">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Home Address -->
+                        <div class="col-span-2">
+                            <label for="d_home_address" class="block text-sm font-semibold text-gray-700 mb-1">Home
+                                Address</label>
+                            <input id="d_home_address" name="home_address" type="text"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="123 Main St, Brgy, City" value="<?= htmlspecialchars($homeAddress ?? '') ?>">
                         </div>
 
                         <!-- Contact Number -->
@@ -328,22 +402,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input id="d_contact_number" name="contact_number" type="text" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="Ex: 09123456789" value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                pattern="09[0-9]{9}" maxlength="11" minlength="11" title="Contact number must be 11 digits and start with 09"
+                                pattern="09[0-9]{9}" maxlength="11" minlength="11"
+                                title="Contact number must be 11 digits and start with 09"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
 
                         <!-- Branch -->
-                        <div>
+                        <div class="relative">
                             <label for="d_branch_id" class="block text-sm font-semibold text-gray-700 mb-1">Preferred
                                 Validating Branch *</label>
                             <select id="d_branch_id" name="branch_id" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
+                                class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                                 <option value="" disabled <?= empty($branchId) ? 'selected' : '' ?> hidden>Select Branch
                                 </option>
                                 <?php foreach ($branches as $branch): ?>
                                     <option value="<?= $branch['id'] ?>" <?= (($branchId ?? '') == $branch['id']) ? 'selected' : '' ?>><?= htmlspecialchars($branch['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 top-6 flex items-center px-3 text-gray-500">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
 
@@ -359,117 +443,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 placeholder="you@example.com" value="<?= htmlspecialchars($email ?? '') ?>">
                         </div>
 
-                        <!-- Password -->
-                        <div>
-                            <label for="d_password" class="block text-sm font-semibold text-gray-700 mb-1">Password
-                                *</label>
-                            <div class="relative">
-                                <input id="d_password" name="password" type="password" required autocomplete="new-password"
-                                    class="pr-10 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <button type="button" onclick="togglePassword('d_password', this)" tabindex="-1"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- DESKTOP CHECKER -->
-                            <div class="mt-2 text-left bg-gray-50 rounded-lg p-3 border border-gray-100 hidden"
-                                id="d_pw_checker">
-                                <div class="flex justify-between items-center mb-1.5">
-                                    <span class="text-xs font-semibold text-gray-500">Password Strength:</span>
-                                    <span class="text-xs font-bold pw-label text-red-500">Weak</span>
-                                </div>
-                                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-3">
-                                    <div class="h-full bg-red-500 transition-all duration-300 pw-bar" style="width: 0%">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2 text-xs font-medium text-gray-600">
-                                    <div class="flex items-center gap-1.5 pw-req-length text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>8+ characters</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 pw-req-upper text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Uppercase letter</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 pw-req-number text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>At least one number</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 pw-req-special text-red-600">
-                                        <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>Special Character</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-
-                        <!-- Confirm Password -->
-                        <div>
-                            <label for="d_confirm_password" class="block text-sm font-semibold text-gray-700 mb-1">Confirm
-                                Password *</label>
-                            <div class="relative">
-                                <input id="d_confirm_password" name="confirm_password" type="password" required
-                                    autocomplete="new-password"
-                                    class="pr-10 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <button type="button" onclick="togglePassword('d_confirm_password', this)" tabindex="-1"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <p id="d_match_indicator" class="mt-1.5 text-xs font-semibold hidden"></p>
-                        </div>
-                    </div>
 
                     <div class="pt-4">
                         <button type="submit"
                             class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                            Create Account
+                            Verify Identity
                         </button>
                     </div>
 
@@ -477,7 +456,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <p class="text-sm text-gray-600">
                             Already registered? <a href="patient-login"
                                 class="font-bold text-red-600 hover:text-red-500 hover:underline">Log in to Patient
-                                Portal</a>
+                            </a>
                         </p>
                     </div>
                 </form>
@@ -527,6 +506,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight mt-2">What's your name?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter the name</p>
 
+                            
+                            <div class="relative mb-4 mt-2">
+                                <input type="text" id="m_patient_number" name="patient_number" required
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-3 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                    placeholder=" " value="<?= htmlspecialchars($patientNumber ?? '') ?>" />
+                                <label for="m_patient_number"
+                                    class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Patient ID (e.g. PAT-GAP-2026-001)</label>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-3 mb-6">
                                 <div class="relative">
                                     <input type="text" id="m_first_name" name="first_name" required
@@ -555,9 +543,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
                             <div class="relative mb-6">
-                                <input type="date" id="m_birthdate" name="birthdate" required
-                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                <input type="text" id="m_birthdate" name="birthdate" required readonly
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
                                     placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
+                                <i data-lucide="calendar" class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Birthdate</label>
                             </div>
@@ -588,8 +577,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 4: Mobile Number -->
+                        <!-- Step 4: Home Address -->
                         <div class="step" id="step4">
+                            <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">What's your home address?</h2>
+                            <p class="text-[15px] text-gray-800 mb-6">Enter your complete home address.</p>
+
+                            <div class="relative mb-6">
+                                <input type="text" id="m_home_address" name="home_address"
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                    placeholder=" " value="<?= htmlspecialchars($homeAddress ?? '') ?>" />
+                                <label for="m_home_address"
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Home
+                                    Address</label>
+                            </div>
+                            <button type="button" onclick="nextStep(4)"
+                                class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
+                        </div>
+
+                        <!-- Step 5: Mobile Number -->
+                        <div class="step" id="step5">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">What's your mobile number?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter the mobile number where you can be contacted. No
                                 one will see this on your profile.</p>
@@ -598,44 +604,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" id="m_contact_number" name="contact_number" required
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
                                     placeholder=" " value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                    pattern="09[0-9]{9}" maxlength="11" minlength="11" title="Contact number must be 11 digits and start with 09"
+                                    pattern="09[0-9]{9}" maxlength="11" minlength="11"
+                                    title="Contact number must be 11 digits and start with 09"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                                 <label for="m_contact_number"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Mobile
                                     number</label>
                             </div>
-                            <button type="button" onclick="nextStep(4)"
+                            <button type="button" onclick="nextStep(5)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 5: Validating Clinic -->
-                        <div class="step" id="step5">
+                        <!-- Step 6: Validating Clinic -->
+                        <div class="step" id="step6">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Where's your preferred clinic?
                             </h2>
                             <p class="text-[15px] text-gray-800 mb-6">Select the branch nearest to you for account
                                 validation.</p>
 
-                            <div class="relative mb-6">
-                                <select id="m_branch_id" name="branch_id" required
-                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all">
-                                    <option value="" disabled <?= empty($branchId) ? 'selected' : '' ?> hidden></option>
-                                    <?php foreach ($branches as $branch): ?>
-                                        <option value="<?= $branch['id'] ?>" <?= (($branchId ?? '') == $branch['id']) ? 'selected' : '' ?>><?= htmlspecialchars($branch['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <label for="m_branch_id"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Validating
+                            <div class="relative mb-6" id="m_branch_dropdown_container">
+                                <!-- Hidden input for actual value -->
+                                <input type="hidden" id="m_branch_id" name="branch_id"
+                                    value="<?= htmlspecialchars($branchId ?? '') ?>">
+
+                                <!-- Readonly input for display and validation -->
+                                <?php
+                                $selectedBranchName = '';
+                                if (!empty($branchId)) {
+                                    foreach ($branches as $b) {
+                                        if ($b['id'] == $branchId)
+                                            $selectedBranchName = $b['name'];
+                                    }
+                                }
+                                ?>
+                                <input type="text" id="m_branch_display" readonly
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all cursor-pointer caret-transparent"
+                                    placeholder=" " value="<?= htmlspecialchars($selectedBranchName) ?>" />
+
+                                <label for="m_branch_display"
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all cursor-pointer">Validating
                                     Branch</label>
+
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">
+                                    <svg id="m_branch_icon" class="h-5 w-5 transition-transform duration-200"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+
+                                <!-- Dropdown options list -->
+                                <div id="m_branch_options"
+                                    class="absolute z-50 mt-2 w-full rounded-xl bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 opacity-0 invisible transition-all duration-200 transform origin-top scale-95 overflow-hidden">
+                                    <ul class="max-h-60 overflow-auto py-2 text-[15px] text-gray-700">
+                                        <?php foreach ($branches as $branch): ?>
+                                            <li class="cursor-pointer select-none py-2.5 px-4 hover:bg-red-50 hover:text-red-700 font-medium transition-colors flex items-center justify-between group"
+                                                data-value="<?= $branch['id'] ?>">
+                                                <?= htmlspecialchars($branch['name']) ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
                             </div>
-                            <button type="button" onclick="nextStep(5)"
+                            <button type="button" onclick="nextStep(6)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
                         </div>
 
-                        <!-- Step 6: Account Details -->
-                        <div class="step" id="step6">
+                        <!-- Step 7: Account Details -->
+                        <div class="step" id="step7">
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Set up your account</h2>
-                            <p class="text-[15px] text-gray-800 mb-6">Create a password to securely log in to your portal.
-                            </p>
+                            
 
                             <div class="space-y-4 mb-6">
                                 <div class="relative">
@@ -646,110 +686,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Email
                                         Address</label>
                                 </div>
-                                <div class="relative">
-                                    <input type="password" id="m_password" name="password" required
-                                        autocomplete="new-password"
-                                        class="peer pr-12 block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
-                                        placeholder=" " />
-                                    <label for="m_password"
-                                        class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Password</label>
-                                    <button type="button" onclick="togglePassword('m_password', this)" tabindex="-1"
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <!-- MOBILE CHECKER -->
-                                <div class="text-left bg-gray-50 rounded-lg p-3 border border-gray-100 hidden relative -mt-3"
-                                    id="m_pw_checker">
-                                    <div class="flex justify-between items-center mb-1.5">
-                                        <span class="text-xs font-semibold text-gray-500">Password Strength:</span>
-                                        <span class="text-xs font-bold pw-label text-red-500">Weak</span>
-                                    </div>
-                                    <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden mb-3">
-                                        <div class="h-full bg-red-500 transition-all duration-300 pw-bar" style="width: 0%">
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[13px] font-medium text-gray-600">
-                                        <div class="flex items-center gap-1.5 pw-req-length text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>8+ characters</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 pw-req-upper text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>Uppercase letter</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 pw-req-number text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>At least one number</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 pw-req-special text-red-600">
-                                            <svg class="w-3.5 h-3.5 icon-x shrink-0" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <svg class="w-3.5 h-3.5 icon-check shrink-0 hidden" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>Special Character</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="relative">
-                                    <input type="password" id="m_confirm_password" name="confirm_password" required
-                                        autocomplete="new-password"
-                                        class="peer pr-12 block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
-                                        placeholder=" " />
-                                    <label for="m_confirm_password"
-                                        class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Confirm
-                                        Password</label>
-                                    <button type="button" onclick="togglePassword('m_confirm_password', this)" tabindex="-1"
-                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p id="m_match_indicator" class="text-xs font-semibold px-4 hidden"></p>
-                            </div>
+                                
                             <button type="submit"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition shadow-md">Sign
                                 Up</button>
@@ -767,8 +704,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+
+            const datepickerOptions = {
+                autohide: true,
+                format: 'yyyy-mm-dd',
+                todayHighlight: true
+            };
+            
+            if (document.getElementById('d_birthdate')) {
+                new Datepicker(document.getElementById('d_birthdate'), datepickerOptions);
+            }
+            if (document.getElementById('m_birthdate')) {
+                new Datepicker(document.getElementById('m_birthdate'), datepickerOptions);
+            }
+        });
+
         let currentStep = 1;
-        const totalSteps = 6;
+        const totalSteps = 7;
 
         function showStep(step) {
             document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
@@ -818,12 +774,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (step === 6) {
-                const pw = document.getElementById('m_password').value;
-                const cpw = document.getElementById('m_confirm_password').value;
-                if (pw !== cpw) {
-                    toast("Passwords do not match.", "error");
+                const branchHidden = document.getElementById('m_branch_id');
+                if (branchHidden && !branchHidden.value) {
+                    toast("Please select your preferred clinic.", "error");
                     isValid = false;
                 }
+            }
+
+            if (step === 7) {
+                // Email is validated natively by checkValidity() loop above
             }
 
             return isValid;
@@ -838,7 +797,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (currentStep < totalSteps) {
                         nextStep(currentStep);
                     } else {
-                        if (validateStep(6)) {
+                        if (validateStep(7)) {
                             this.submit();
                         }
                     }
@@ -854,118 +813,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         <?php endif; ?>
 
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const isPassword = input.getAttribute('type') === 'password';
-            input.setAttribute('type', isPassword ? 'text' : 'password');
-            btn.innerHTML = isPassword ?
-                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>' :
-                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>';
-        }
+        
+            // Custom Dropdown Init for Mobile Branch
+            const branchDisplay = document.getElementById('m_branch_display');
+            const branchHidden = document.getElementById('m_branch_id');
+            const branchOptions = document.getElementById('m_branch_options');
+            const branchIcon = document.getElementById('m_branch_icon');
+            const container = document.getElementById('m_branch_dropdown_container');
 
-        // Initialize password strengths
-        function initPwChecker(inputId, checkerId) {
-            const input = document.getElementById(inputId);
-            const checker = document.getElementById(checkerId);
-            if (!input || !checker) return;
-
-            const reqs = [
-                { class: '.pw-req-length', regex: /.{8,}/ },
-                { class: '.pw-req-upper', regex: /[A-Z]/ },
-                { class: '.pw-req-number', regex: /[0-9]/ },
-                { class: '.pw-req-special', regex: /[^A-Za-z0-9]/ }
-            ];
-
-            input.addEventListener('focus', function () {
-                checker.classList.remove('hidden');
-            });
-
-            input.addEventListener('input', function (e) {
-                const val = e.target.value;
-                let passed = 0;
-
-                reqs.forEach(req => {
-                    const el = checker.querySelector(req.class);
-                    const iconX = el.querySelector('.icon-x');
-                    const iconCheck = el.querySelector('.icon-check');
-                    if (req.regex.test(val)) {
-                        passed++;
-                        el.classList.remove('text-red-600');
-                        el.classList.add('text-green-600');
-                        iconX.classList.add('hidden');
-                        iconCheck.classList.remove('hidden');
+            if (branchDisplay && branchOptions) {
+                function toggleDropdown() {
+                    const isClosed = branchOptions.classList.contains('invisible');
+                    if (isClosed) {
+                        branchOptions.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                        branchOptions.classList.add('opacity-100', 'scale-100');
+                        branchIcon.classList.add('rotate-180');
                     } else {
-                        el.classList.remove('text-green-600');
-                        el.classList.add('text-red-600');
-                        iconX.classList.remove('hidden');
-                        iconCheck.classList.add('hidden');
+                        closeDropdown();
                     }
+                }
+
+                function closeDropdown() {
+                    branchOptions.classList.add('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                    branchOptions.classList.remove('opacity-100', 'scale-100');
+                    branchIcon.classList.remove('rotate-180');
+                }
+
+                branchDisplay.addEventListener('click', toggleDropdown);
+
+                const items = branchOptions.querySelectorAll('li');
+                items.forEach(item => {
+                    item.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        branchHidden.value = this.getAttribute('data-value');
+                        branchDisplay.value = this.textContent.trim();
+                        closeDropdown();
+                        // Trigger input event for validation/styling updates
+                        branchDisplay.dispatchEvent(new Event('input'));
+                    });
                 });
 
-                const bar = checker.querySelector('.pw-bar');
-                const label = checker.querySelector('.pw-label');
-                const percent = (passed / reqs.length) * 100;
-
-                bar.style.width = percent + '%';
-                bar.className = 'h-full transition-all duration-300 pw-bar ';
-                label.className = 'text-xs font-bold pw-label ';
-
-                if (val.length === 0) {
-                    label.textContent = '';
-                    bar.style.backgroundColor = 'transparent';
-                } else if (passed <= 1) {
-                    bar.style.backgroundColor = '#ef4444'; // red-500
-                    label.style.color = '#ef4444';
-                    label.textContent = 'Weak';
-                } else if (passed <= 3) {
-                    bar.style.backgroundColor = '#eab308'; // yellow-500
-                    label.style.color = '#eab308';
-                    label.textContent = 'Medium';
-                } else {
-                    bar.style.backgroundColor = '#22c55e'; // green-500
-                    label.style.color = '#22c55e';
-                    label.textContent = 'Strong';
-                }
-            });
-        }
-
-        // Initialize password match checker
-        function initMatchChecker(pwdId, confirmId, indicatorId) {
-            const pwd = document.getElementById(pwdId);
-            const confirmPwd = document.getElementById(confirmId);
-            const indicator = document.getElementById(indicatorId);
-
-            if (!pwd || !confirmPwd || !indicator) return;
-
-            function checkMatch() {
-                const val1 = pwd.value;
-                const val2 = confirmPwd.value;
-
-                if (val2.length === 0) {
-                    indicator.classList.add('hidden');
-                    return;
-                }
-
-                indicator.classList.remove('hidden');
-                if (val1 === val2) {
-                    indicator.textContent = 'Passwords match';
-                    indicator.style.color = '#22c55e'; // green-500
-                } else {
-                    indicator.textContent = 'Passwords do not match';
-                    indicator.style.color = '#ef4444'; // red-500
-                }
+                document.addEventListener('click', function (e) {
+                    if (!container.contains(e.target)) {
+                        closeDropdown();
+                    }
+                });
             }
-
-            pwd.addEventListener('input', checkMatch);
-            confirmPwd.addEventListener('input', checkMatch);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            initPwChecker('d_password', 'd_pw_checker');
-            initPwChecker('m_password', 'm_pw_checker');
-            initMatchChecker('d_password', 'd_confirm_password', 'd_match_indicator');
-            initMatchChecker('m_password', 'm_confirm_password', 'm_match_indicator');
-        });
     </script>
 </body>
 
