@@ -73,7 +73,7 @@
             <option <?= $defaultPriorityFilter === 'Urgent' ? 'selected' : '' ?>>Urgent</option>
             <option <?= $defaultPriorityFilter === 'STAT' ? 'selected' : '' ?>>STAT</option>
         </select>
-        <?php $defaultDateFilter = $_GET['filterDate'] ?? 'Today'; ?>
+        <?php $defaultDateFilter = $_GET['filterDate'] ?? (isset($_GET['highlight']) ? 'All' : 'Today'); ?>
         <select id="filter-date"
             class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option value="All" <?= $defaultDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>

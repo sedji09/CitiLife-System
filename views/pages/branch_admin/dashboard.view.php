@@ -315,7 +315,7 @@
         </div>
       </div>
       <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
-      <p class="text-[10px] text-gray-400 mt-1">Registered in branch</p>
+      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?></p>
     </div>
 
     <!-- X-ray Cases Today Card -->
@@ -328,7 +328,7 @@
         </div>
       </div>
       <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
-      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : 'Selected filter' ?>
+      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?>
       </p>
     </div>
 

@@ -125,7 +125,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </div>
         <div class="flex items-center gap-2">
             <select id="filterSelect" onchange="handleFilterChange()"
-                class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 shadow-sm">
+                class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 shadow-sm">
                 <option value="today" <?= $filter === 'today' ? 'selected' : '' ?>>Today</option>
                 <option value="weekly" <?= $filter === 'weekly' ? 'selected' : '' ?>>This Week</option>
                 <option value="monthly" <?= $filter === 'monthly' ? 'selected' : '' ?>>Monthly</option>
@@ -136,7 +136,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <div id="monthPickerWrapper" class="<?= $filter === 'monthly' ? '' : 'hidden' ?> relative">
                 <!-- Trigger Button -->
                 <button type="button" id="monthPickerTrigger" onclick="toggleMonthPicker()"
-                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] justify-between">
+                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[140px] justify-between">
                     <span id="monthPickerLabel"
                         class="whitespace-nowrap"><?= date('F Y', strtotime($selectedMonth . '-01')) ?></span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none"
@@ -152,10 +152,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     <!-- Year Navigation -->
                     <div class="flex items-center justify-between mb-3 px-1">
                         <button type="button" onclick="changePickerYear(-1)"
-                            class="text-gray-500 hover:text-blue-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
+                            class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">«</button>
                         <span id="pickerYearLabel" class="font-semibold text-gray-800 text-sm"></span>
                         <button type="button" onclick="changePickerYear(1)"
-                            class="text-gray-500 hover:text-blue-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
+                            class="text-gray-500 hover:text-red-600 font-bold text-lg w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100">»</button>
                     </div>
                     <!-- Month Grid -->
                     <div id="monthGrid" class="grid grid-cols-4 gap-1"></div>
@@ -170,7 +170,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <div id="yearPickerWrapper" class="<?= $filter === 'yearly' ? '' : 'hidden' ?> relative">
                 <!-- Trigger Button -->
                 <button type="button" id="yearPickerTrigger" onclick="toggleYearPicker()"
-                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px] justify-between">
+                    class="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2.5 shadow-sm hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[100px] justify-between">
                     <span id="yearPickerLabel" class="whitespace-nowrap"><?= htmlspecialchars($selectedYear) ?></span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
@@ -209,7 +209,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         btn.textContent = name;
                         btn.className = 'text-sm rounded-lg py-1.5 text-center transition-colors ' +
                             (isSelected
-                                ? 'bg-blue-600 text-white font-semibold'
+                                ? 'bg-red-600 text-white font-semibold'
                                 : 'text-gray-700 hover:bg-gray-100');
                         btn.onclick = () => selectMonth(m);
                         grid.appendChild(btn);
@@ -256,7 +256,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         btn.textContent = y;
                         btn.className = 'text-sm rounded-lg py-2 px-3 text-center transition-colors w-full ' +
                             (isSelected
-                                ? 'bg-blue-600 text-white font-semibold'
+                                ? 'bg-red-600 text-white font-semibold'
                                 : 'text-gray-700 hover:bg-gray-100');
                         btn.onclick = () => selectYear(y);
                         grid.appendChild(btn);

@@ -289,7 +289,7 @@ class CaseModel
         ];
 
         $cDataBefore = $this->getCaseById($caseId);
-        $wasAlreadySubmitted = ($cDataBefore && in_array($cDataBefore['status'], ['Report Ready', 'Completed']));
+        $wasAlreadySubmitted = ($cDataBefore && !empty($cDataBefore['date_completed']));
 
         if ($this->saveFinding($caseId, $radiologistId, $saveData)) {
             $cData = $this->getCaseById($caseId);
@@ -300,8 +300,8 @@ class CaseModel
                 if ($wasAlreadySubmitted) {
                     // Notify RadTech about findings change
                     $notificationModel->add(
-                        "Report Updated",
-                        "Radiologist has updated the report findings for Case {$cData['case_number']} ({$branchLabel}).",
+                        "Edited Report Ready",
+                        "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). This report has been edited.",
                         "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
                         null,
                         'radtech',
@@ -933,6 +933,7 @@ class CaseModel
                 clinical_information = ?,
                 status = 'Pending', 
                 image_status = 'Uploaded',
+                radtech_submitted_at = NOW(),
                 radtech_id = ?";
         $params = [
             $data['exam_type'],
@@ -1235,6 +1236,10 @@ class CaseModel
         // Ensure date_completed column exists
         if (!$this->hasColumn('cases', 'date_completed')) {
             $this->pdo->exec("ALTER TABLE cases ADD COLUMN date_completed DATETIME DEFAULT NULL");
+        }
+        // Ensure radtech_submitted_at column exists
+        if (!$this->hasColumn('cases', 'radtech_submitted_at')) {
+            $this->pdo->exec("ALTER TABLE cases ADD COLUMN radtech_submitted_at DATETIME DEFAULT NULL");
         }
         // Ensure image_path is TEXT (not VARCHAR) so many-image JSON is never truncated
         $stmt2 = $this->pdo->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'image_path'");

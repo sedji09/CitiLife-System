@@ -71,7 +71,8 @@
                 <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
                   :src="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment"
                   class="rounded-xl max-w-full cursor-pointer shadow-sm border border-black/5 hover:opacity-90 transition-opacity"
-                  style="max-height: 180px; object-fit: contain;" @click="openLightbox(chat, msg)">
+                  style="max-height: 180px; object-fit: contain;" @click="openLightbox(chat, msg)"
+                  @load="scrollToBottom(chat)">
                 <a v-else-if="msg.attachment" :href="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment" target="_blank"
                   class="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-xl text-sm hover:bg-gray-300 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -275,43 +276,6 @@
 
   </template>
 
-  <!-- ── New Message Modal ── -->
-  <div v-if="newMessageModalOpen && role !== 'patient'"
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
-      <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-        <div class="font-bold text-gray-800">New message</div>
-        <button @click="newMessageModalOpen = false" class="text-gray-400 hover:text-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      <div class="p-3 border-b flex items-center gap-2">
-        <span class="text-sm font-semibold text-gray-600">To:</span>
-        <input type="text" v-model="staffSearchQuery" @input="searchStaff" placeholder="Search staff by name or email"
-          class="flex-1 focus:outline-none text-sm bg-transparent">
-      </div>
-      <div class="flex-1 overflow-y-auto max-h-80 custom-scrollbar p-2">
-        <template v-if="isSearchingStaff">
-          <div class="text-center py-4 text-sm text-gray-500">Searching...</div>
-        </template>
-        <template v-else-if="staffSearchResults.length > 0">
-          <div v-for="staff in staffSearchResults" :key="staff.id" @click="startNewChat(staff)"
-            class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer rounded-lg transition">
-            <div
-              class="h-10 w-10 rounded-full bg-red-100 text-red-700 font-semibold text-sm flex items-center justify-center shrink-0 overflow-hidden">
-              <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover">
-              <span v-else>{{ staff.initials }}</span>
-            </div>
-            <div>
-              <div class="text-sm font-bold text-gray-800">{{ staff.name }}</div>
-              <div class="text-xs text-gray-500">{{ staff.role }}</div>
-            </div>
-          </div>
-        </template>
-        <div v-else class="text-center py-4 text-sm text-gray-400">No staff found.</div>
-      </div>
-    </div>
-  </div>
 
   <!-- ── Image Lightbox Gallery ── -->
   <div v-if="lightboxOpen && lightboxImages.length > 0"

@@ -10,7 +10,7 @@ return [
     ["label" => "Patient Registration", "icon" => "user-plus", "href" => "/patient-registration", "perm_key" => "patient_reg"],
     ["label" => "Patient Queue (Today)", "icon" => "clipboard-list", "href" => "/patient-lists", "perm_key" => "worklist"],
     ["label" => "X-ray Records", "icon" => "folder-open", "href" => "/xray-patient-records", "perm_key" => "patient_history"],
-    ["label" => "Record Request", "icon" => "send", "href" => "/record-request", "perm_key" => "record_requests"],
+    ["label" => "Record Request", "icon" => "send", "href" => "/record-request", "perm_key" => "submit_record_request"],
   ],
 
   "radiologist" => [
@@ -66,6 +66,7 @@ return [
     "patient_history" => ["label" => "Global Patient Records", "icon" => "folder-open", "href" => "/patient-records", "perm_key" => "patient_history"],
     "patient_reg"     => ["label" => "Patient Registration", "icon" => "user-plus", "href" => "/patient-registration", "perm_key" => "patient_reg"],
     "approvals"       => ["label" => "Registration Approvals", "icon" => "check-circle", "href" => "/patient-approvals", "perm_key" => "approvals"],
+    "submit_record_request" => ["label" => "Submit Record Request", "icon" => "send", "href" => "/record-request", "perm_key" => "submit_record_request"],
     "record_requests" => ["label" => "Record Requests", "icon" => "folder-sync", "href" => "/record-requests", "perm_key" => "record_requests"],
     "audit_logs"      => ["label" => "Audit Logs", "icon" => "file-search", "href" => "/audit-logs", "perm_key" => "audit_logs"],
     "global_reports"  => ["label" => "Statistical Reports", "icon" => "bar-chart-3", "href" => "/reports", "perm_key" => "global_reports"],

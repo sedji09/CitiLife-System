@@ -74,36 +74,43 @@ try {
 $role     = $_SESSION['role'];
 $branchId = $_SESSION['branch_id'] ?? null;
 
-// Handle POST request to mark notifications as read
+// Handle POST request to mark/delete notifications
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    if (isset($input['action']) && $input['action'] === 'mark_read') {
-        $notifId = $input['notification_id'] ?? null;
-        
-        // Base sql
-        $sql = "UPDATE notifications SET is_read = 1 WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))";
-        $params = [$userId, $role, $branchId];
+    $action = $input['action'] ?? null;
+    $notifId = $input['notification_id'] ?? null;
 
-        if ($notifId) {
-            $sql .= " AND id = ?";
-            $params[] = $notifId;
+    if ($action === 'mark_read' || $action === 'mark_unread' || $action === 'delete') {
+        if ($action === 'delete') {
+            $sql = "DELETE FROM notifications WHERE id = ? AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))";
+            $params = [$notifId, $userId, $role, $branchId];
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+        } else {
+            $isReadVal = ($action === 'mark_read') ? 1 : 0;
+            $sql = "UPDATE notifications SET is_read = ? WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))";
+            $params = [$isReadVal, $userId, $role, $branchId];
+            
+            if ($notifId) {
+                $sql .= " AND id = ?";
+                $params[] = $notifId;
+            }
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
         }
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-
+        
         echo json_encode(['success' => true]);
         exit;
     }
 }
 
-// Fetch unread notifications
+// Fetch all notifications (read and unread)
 $stmt = $pdo->prepare("
     SELECT * FROM notifications 
-    WHERE is_read = 0 
-      AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
+    WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
     ORDER BY created_at DESC, id DESC 
-    LIMIT 20
+    LIMIT 50
 ");
 $stmt->execute([$userId, $role, $branchId]);
 $notifications = $stmt->fetchAll();
@@ -139,7 +146,8 @@ foreach ($notifications as $n) {
         'title'   => $n['title'],
         'timeAgo' => timeAgo($n['created_at']),
         'message' => $n['message'],
-        'link'    => $n['link'] ? $n['link'] : '#'
+        'link'    => $n['link'] ? $n['link'] : '#',
+        'is_read' => $n['is_read']
     ];
 }
 

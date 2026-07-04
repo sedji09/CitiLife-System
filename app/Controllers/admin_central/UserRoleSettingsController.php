@@ -46,6 +46,7 @@ $permissions = [
     'Operational' => [
         'patient_reg'       => ['label' => 'Patient Registration', 'desc' => 'Register new patients into the system.'],
         'approvals'         => ['label' => 'Registration Approvals', 'desc' => 'Approve or Reject new patient accounts.'],
+        'submit_record_request' => ['label' => 'Submit Record Requests', 'desc' => 'Request old hard-copy patient records.'],
         'record_requests'   => ['label' => 'Handle Record Requests', 'desc' => 'Manage requests for old hard-copy records.'],
     ],
     'Utility' => [

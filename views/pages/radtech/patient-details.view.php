@@ -337,10 +337,26 @@ if (isset($caseNotFound) && $caseNotFound) {
                     </div>
 
                     <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const availableOptions = document.querySelectorAll('#rad-options li.cursor-pointer');
+                            if (availableOptions.length === 1) {
+                                availableOptions[0].click();
+                                // Disable dropdown button to make it look like a static selection
+                                const btn = document.querySelector('#custom-radiologist-select button');
+                                if (btn) {
+                                    btn.removeAttribute('onclick');
+                                    btn.classList.add('bg-gray-50', 'cursor-default');
+                                    btn.classList.remove('bg-white');
+                                    const chevron = btn.querySelector('.lucide-chevron-down');
+                                    if (chevron) chevron.style.display = 'none';
+                                }
+                            }
+                        });
+
                         document.addEventListener('click', function (event) {
                             const selectWrap = document.getElementById('custom-radiologist-select');
                             const options = document.getElementById('rad-options');
-                            if (selectWrap && !selectWrap.contains(event.target)) {
+                            if (selectWrap && options && !selectWrap.contains(event.target)) {
                                 options.classList.add('hidden');
                             }
                         });

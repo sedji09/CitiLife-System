@@ -135,5 +135,75 @@
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+
+        <!-- Pagination Footer -->
+        <?php if (!empty($feedbacks)): ?>
+            <?php
+            $start = $offset + 1;
+            $end = min($offset + $limit, $totalFeedbacks);
+            ?>
+            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4 mt-4 rounded-xl border">
+                <div class="text-xs text-gray-500">
+                    Showing <span class="font-semibold text-gray-800"><?= $start ?></span> to <span class="font-semibold text-gray-800"><?= $end ?></span> of <span class="font-semibold text-gray-800"><?= $totalFeedbacks ?></span> feedbacks
+                </div>
+                <div class="flex items-center flex-wrap gap-1.5">
+                    <?php
+                    $page_num = (int) ($page_num ?? 1);
+                    $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) {
+                        $queryData = [];
+                        $queryData['p'] = $targetPage;
+                        $query = http_build_query($queryData);
+                        $url = '/' . PROJECT_DIR . '/feedback?' . $query;
+
+                        if ($isActive) {
+                            return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';
+                        }
+                        if ($disabled) {
+                            return '<span class="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed shadow-sm opacity-60">' . $label . '</span>';
+                        }
+                        return '<a href="' . htmlspecialchars($url) . '" class="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition shadow-sm">' . $label . '</a>';
+                    };
+
+                    $renderEllipsis = function () {
+                        return '<span class="px-2 py-1 text-xs text-gray-400 font-semibold select-none">...</span>';
+                    };
+
+                    echo $renderPageBtn('&laquo; First', 1, $page_num <= 1);
+                    echo $renderPageBtn('&lsaquo; Back', $page_num - 1, $page_num <= 1);
+
+                    if ($totalPages <= 7) {
+                        for ($i = 1; $i <= $totalPages; $i++) {
+                            echo $renderPageBtn($i, $i, false, $i == $page_num);
+                        }
+                    } else {
+                        if ($page_num <= 4) {
+                            for ($i = 1; $i <= 5; $i++) {
+                                echo $renderPageBtn($i, $i, false, $i == $page_num);
+                            }
+                            echo $renderEllipsis();
+                            echo $renderPageBtn($totalPages, $totalPages, false, $totalPages == $page_num);
+                        } elseif ($page_num >= $totalPages - 3) {
+                            echo $renderPageBtn(1, 1, false, 1 == $page_num);
+                            echo $renderEllipsis();
+                            for ($i = $totalPages - 4; $i <= $totalPages; $i++) {
+                                echo $renderPageBtn($i, $i, false, $i == $page_num);
+                            }
+                        } else {
+                            echo $renderPageBtn(1, 1, false, 1 == $page_num);
+                            echo $renderEllipsis();
+                            echo $renderPageBtn($page_num - 1, $page_num - 1, false, false);
+                            echo $renderPageBtn($page_num, $page_num, false, true);
+                            echo $renderPageBtn($page_num + 1, $page_num + 1, false, false);
+                            echo $renderEllipsis();
+                            echo $renderPageBtn($totalPages, $totalPages, false, false);
+                        }
+                    }
+
+                    echo $renderPageBtn('Next &rsaquo;', $page_num + 1, $page_num >= $totalPages);
+                    echo $renderPageBtn('Last &raquo;', $totalPages, $page_num >= $totalPages);
+                    ?>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 </div>

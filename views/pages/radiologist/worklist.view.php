@@ -196,7 +196,8 @@ sort($priorities);
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="text-sm text-gray-500">
-                                        <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
+                                        <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
+                                        <?= date('M d, Y h:i A', strtotime($submitDate)) ?>
                                     </div>
                                 </td>
                                 <td class="py-3 px-3">

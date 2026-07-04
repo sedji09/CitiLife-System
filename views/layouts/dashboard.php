@@ -59,6 +59,7 @@ $userBirthdate = '';
 $userSex = 'Male';
 $userContactNumber = '';
 $userHomeAddress = '';
+$userPatientNumber = '';
 
 if ($isPatient) {
   $patientModel = new \PatientModel($pdo);
@@ -70,6 +71,7 @@ if ($isPatient) {
     $userSex = $patientData['sex'] ?? 'Male';
     $userContactNumber = $patientData['contact_number'] ?? '';
     $userHomeAddress = $patientData['home_address'] ?? '';
+    $userPatientNumber = $patientData['patient_number'] ?? '';
   }
 }
 

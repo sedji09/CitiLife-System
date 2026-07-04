@@ -408,7 +408,7 @@ $statusBadge = [
                 <!-- Case Info Bar -->
                 <div class="bg-red-50 border-b border-red-100 px-6 py-3 flex items-center gap-2 text-sm text-red-800">
                     <i data-lucide="folder-open" class="w-4 h-4 text-red-600"></i>
-                    <span class="font-medium">Feedback for Case: <span class="font-bold text-red-700" id="feedback-case-number"></span> (<span id="feedback-exam-type"></span>)</span>
+                    <span class="font-medium">Feedback for Case: <span class="font-bold text-red-700" id="feedback-case-number"></span></span>
                 </div>
 
                 <!-- Form -->
@@ -438,13 +438,13 @@ $statusBadge = [
                             <textarea name="comments" id="feedback-comments" rows="3" class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition outline-none" placeholder="Tell us more about your experience..."></textarea>
                         </div>
 
-                        <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" onclick="closeFeedbackModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                            <button type="button" onclick="closeFeedbackModal()" class="w-full sm:w-auto px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition text-center">
                                 Cancel
                             </button>
-                            <button type="button" id="feedback-submit-btn" onclick="submitFeedbackForm()" class="px-6 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition shadow-sm active:scale-[0.98] flex items-center gap-2">
+                            <button type="button" id="feedback-submit-btn" onclick="submitFeedbackForm()" class="w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
                                 <i data-lucide="send" class="w-4 h-4"></i>
-                                Submit Feedback
+                                <span class="whitespace-nowrap">Submit Feedback</span>
                             </button>
                         </div>
                     </form>
@@ -522,6 +522,11 @@ $statusBadge = [
                 const content = document.getElementById('feedback-modal-content');
                 if (!modal || !content) return;
                 
+                // Append modal to body to prevent z-index stacking issues
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+                
                 // Reset form
                 const form = document.getElementById('feedback-form');
                 if (form) form.reset();
@@ -531,7 +536,6 @@ $statusBadge = [
                 
                 // Set text
                 document.getElementById('feedback-case-number').textContent = caseNumber;
-                document.getElementById('feedback-exam-type').textContent = examType;
                 
                 // Show modal
                 modal.classList.remove('hidden');

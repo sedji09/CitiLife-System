@@ -90,8 +90,8 @@
             <table class="w-full text-sm border-separate border-spacing-0">
                 <thead class="sticky top-0 z-10">
                     <tr class="bg-gray-50 text-gray-600 border-b border-gray-200">
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Case No.</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Patient Name
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Case No.</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Patient Name
                         </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Type</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Date</th>
@@ -115,8 +115,8 @@
                                 data-name="<?= htmlspecialchars($req['patient_name']) ?>"
                                 data-branch="<?= htmlspecialchars($req['request_branch']) ?>"
                                 data-date="<?= htmlspecialchars($req['created_at']) ?>">
-                                <td class="px-6 py-4 font-medium"><?= htmlspecialchars($req['patient_no']) ?></td>
-                                <td class="px-6 py-4 font-medium"><?= htmlspecialchars($req['patient_name']) ?></td>
+                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_no']) ?></td>
+                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_name']) ?></td>
                                 <td class="px-6 py-4">
                                     <?php
                                     $exams = array_filter(array_map('trim', explode(',', $req['exam_type'])));
@@ -133,12 +133,22 @@
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-gray-500 text-xs">
-                                    <?= !empty($req['exam_date']) ? date('M d, Y h:i A', strtotime($req['exam_date'])) : '—' ?>
+                                <td class="px-6 py-4 text-gray-500 text-xs whitespace-nowrap">
+                                    <?php if (!empty($req['exam_date'])): ?>
+                                        <div class="flex flex-col">
+                                            <span><?= date('M d, Y', strtotime($req['exam_date'])) ?></span>
+                                            <span class="opacity-70"><?= date('h:i A', strtotime($req['exam_date'])) ?></span>
+                                        </div>
+                                    <?php else: ?>
+                                        —
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($req['request_branch']) ?></td>
-                                <td class="px-6 py-4 text-gray-500 text-xs">
-                                    <?= date('M d, Y h:i A', strtotime($req['created_at'])) ?>
+                                <td class="px-6 py-4 text-gray-500 text-xs whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span><?= date('M d, Y', strtotime($req['created_at'])) ?></span>
+                                        <span class="opacity-70"><?= date('h:i A', strtotime($req['created_at'])) ?></span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <?php

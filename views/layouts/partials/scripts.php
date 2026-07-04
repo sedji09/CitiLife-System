@@ -48,6 +48,12 @@
         mobileProfileMenuOpen: false,
         profileMenuOpen: false,
         notificationMenuOpen: false,
+        globalNotificationOptionsOpen: false,
+        activeNotificationDropdown: null,
+        showUndoToast: false,
+        pendingDeleteId: null,
+        pendingDeleteItem: null,
+        undoTimeout: null,
         notificationCount: 0,
         notifications: [],
         menuItems: window.__APP__.menuItems,
@@ -107,7 +113,7 @@
         recentSearches: [],
         unreadMessageCount: 0,
         conversations: [],
-        newMessageModalOpen: false,
+        newMessageViewOpen: false,
         staffSearchQuery: '',
         staffSearchResults: [],
         isSearchingStaff: false,
@@ -267,19 +273,36 @@
 
       // Close profile menu and notifications when clicking outside
       document.addEventListener("mousedown", (e) => {
-        if (this.$refs.profileMenuRef && !this.$refs.profileMenuRef.contains(e.target)) {
-          this.profileMenuOpen = false;
+        const isNotifButton = e.target.closest('[aria-label="Notifications"]') || e.target.closest('button[onclick*="toggleNotificationMenu"]');
+        const isChatButton = e.target.closest('[aria-label="Messages"]') || e.target.closest('button[onclick*="toggleChatMenu"]');
+
+        if (this.profileMenuOpen && this.$refs.profileMenuRef && !this.$refs.profileMenuRef.contains(e.target)) {
+          if (!isChatButton && !isNotifButton) this.profileMenuOpen = false;
         }
-        if (this.$refs.mobileProfileMenuRef && !this.$refs.mobileProfileMenuRef.contains(e.target)) {
-          this.mobileProfileMenuOpen = false;
+        if (this.mobileProfileMenuOpen && this.$refs.mobileProfileMenuRef && !this.$refs.mobileProfileMenuRef.contains(e.target)) {
+          if (!isChatButton && !isNotifButton) this.mobileProfileMenuOpen = false;
         }
         if (this.notificationMenuOpen) {
           const inDesktopNotif = this.$refs.notificationMenuRef && this.$refs.notificationMenuRef.contains(e.target);
           const inMobileNotif = this.$refs.mobileNotificationMenuRef && this.$refs.mobileNotificationMenuRef.contains(e.target);
-          const isNotifButton = e.target.closest('[aria-label="Notifications"]') || e.target.closest('button[onclick*="toggleNotificationMenu"]');
 
-          if (!inDesktopNotif && !inMobileNotif && !isNotifButton) {
+          if (!inDesktopNotif && !inMobileNotif && !isNotifButton && !isChatButton) {
             this.notificationMenuOpen = false;
+            this.globalNotificationOptionsOpen = false;
+          }
+        }
+        if (this.chatMenuOpen) {
+          const inDesktopChat = this.$refs.chatMenuRef && this.$refs.chatMenuRef.contains(e.target);
+          
+          if (!inDesktopChat && !isChatButton && !isNotifButton) {
+            this.chatMenuOpen = false;
+          }
+        }
+        if (this.globalNotificationOptionsOpen) {
+          const inGlobalBtn = e.target.closest('.global-notif-btn');
+          const inGlobalDropdown = e.target.closest('.global-notif-dropdown');
+          if (!inGlobalBtn && !inGlobalDropdown) {
+            this.globalNotificationOptionsOpen = false;
           }
         }
         if (this.themeDropdownOpen && this.$refs.themeDropdownRef && !this.$refs.themeDropdownRef.contains(e.target)) {
@@ -338,6 +361,9 @@
       toggleChatMenu() {
         this.chatMenuOpen = !this.chatMenuOpen;
         if (this.chatMenuOpen) {
+          this.notificationMenuOpen = false;
+          this.profileMenuOpen = false;
+          this.mobileProfileMenuOpen = false;
           this.pollMessages();
         }
       },
@@ -471,8 +497,7 @@
         });
       },
       openNewMessageModal() {
-        this.chatMenuOpen = false;
-        this.newMessageModalOpen = true;
+        this.newMessageViewOpen = true;
         this.staffSearchQuery = '';
         this.staffSearchResults = [];
         this.searchStaff();
@@ -494,7 +519,8 @@
           });
       },
       startNewChat(staff) {
-        this.newMessageModalOpen = false;
+        this.newMessageViewOpen = false;
+        this.chatMenuOpen = false;
         this.openChatWindow({
           id: staff.id,
           name: staff.name,
@@ -703,6 +729,14 @@
           localStorage.setItem('citilife_active_chats', JSON.stringify(toSave));
         } catch (e) { console.warn('Could not save chats:', e); }
       },
+      scrollToBottom(chat) {
+        this.$nextTick(() => {
+          const body = this.$refs['chatBody_' + chat.id];
+          if (body && body[0]) {
+            body[0].scrollTop = body[0].scrollHeight;
+          }
+        });
+      },
       sendMessage(chat) {
         const hasAttachments = chat.selectedAttachments && chat.selectedAttachments.length > 0;
         if ((!chat.newMessage.trim() && !hasAttachments) || chat.sending) return;
@@ -834,7 +868,7 @@
                 format: 'yyyy-mm-dd',
                 todayHighlight: true
               });
-              
+
               if (!birthdateInput._hasDatepickerListener) {
                 birthdateInput.addEventListener('changeDate', (e) => {
                   this.editBirthdate = birthdateInput.value;
@@ -1179,9 +1213,20 @@
       },
       toggleNotificationMenu() {
         this.notificationMenuOpen = !this.notificationMenuOpen;
+        if (this.notificationMenuOpen) {
+          this.chatMenuOpen = false;
+          this.profileMenuOpen = false;
+          this.mobileProfileMenuOpen = false;
+        } else {
+          this.globalNotificationOptionsOpen = false;
+        }
       },
       closeNotificationMenu() {
         this.notificationMenuOpen = false;
+        this.globalNotificationOptionsOpen = false;
+      },
+      toggleGlobalNotificationOptions() {
+        this.globalNotificationOptionsOpen = !this.globalNotificationOptionsOpen;
       },
       fetchNotifications(isInitial = false) {
         fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php')
@@ -1189,12 +1234,16 @@
           .then(data => {
             if (!data.error) {
               const oldIds = this.notifications.map(n => String(n.id));
+              if (this.pendingDeleteId) {
+                data.notifications = data.notifications.filter(n => String(n.id) !== String(this.pendingDeleteId));
+              }
+
               this.notificationCount = data.unread_count;
               this.notifications = data.notifications;
 
               // Play sound and display toast alerts for new unread notifications
               if (!isInitial && data.notifications.length > 0) {
-                const newNotifs = data.notifications.filter(n => !oldIds.includes(String(n.id)));
+                const newNotifs = data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
                 if (newNotifs.length > 0) {
                   if (this.notifSound) {
                     this.playNotificationSound();
@@ -1305,12 +1354,91 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_read' })
         }).then(() => {
-          this.notificationCount = 0;
-          this.notifications = [];
-          this.notificationMenuOpen = false;
+          this.fetchNotifications();
         });
       },
+      toggleNotificationOptions(id) {
+        if (this.activeNotificationDropdown === id) {
+          this.activeNotificationDropdown = null;
+        } else {
+          this.activeNotificationDropdown = id;
+        }
+      },
+      markAsUnread(id) {
+        this.activeNotificationDropdown = null;
+        fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'mark_unread', notification_id: id })
+        }).then(() => {
+          this.fetchNotifications();
+        });
+      },
+      deleteNotification(id) {
+        this.activeNotificationDropdown = null;
+
+        const index = this.notifications.findIndex(n => n.id === id);
+        if (index > -1) {
+          const item = this.notifications[index];
+          this.notifications.splice(index, 1);
+
+          if (this.undoTimeout) {
+            clearTimeout(this.undoTimeout);
+            if (this.pendingDeleteId) {
+              fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId }),
+                keepalive: true
+              });
+            }
+          }
+
+          this.pendingDeleteId = id;
+          this.pendingDeleteItem = item;
+          this.showUndoToast = true;
+          nextTick(() => this.renderIcons());
+
+          this.undoTimeout = setTimeout(() => {
+            this.showUndoToast = false;
+            if (this.pendingDeleteId === id) {
+              fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', notification_id: id })
+              });
+              this.pendingDeleteId = null;
+              this.pendingDeleteItem = null;
+            }
+          }, 5000);
+        }
+      },
+      undoDelete() {
+        if (this.pendingDeleteItem) {
+          this.showUndoToast = false;
+          clearTimeout(this.undoTimeout);
+          this.fetchNotifications();
+          this.pendingDeleteId = null;
+          this.pendingDeleteItem = null;
+        }
+      },
+      closeUndoToast() {
+        this.showUndoToast = false;
+        if (this.undoTimeout) {
+          clearTimeout(this.undoTimeout);
+          if (this.pendingDeleteId) {
+            fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId })
+            });
+            this.pendingDeleteId = null;
+            this.pendingDeleteItem = null;
+          }
+        }
+      },
       markAsRead(id, link) {
+        this.activeNotificationDropdown = null;
         if (link && link !== '#') {
           // Navigate immediately to avoid perceived delay ("hindi agad napupunta")
           fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {

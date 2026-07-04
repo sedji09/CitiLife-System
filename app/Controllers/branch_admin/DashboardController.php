@@ -45,10 +45,11 @@ $pendingRequestsCount = $recordRequestModel->countPendingRequestsForBranch($bran
 // 3. New Dashboard Metrics (for Branch Admin)
 $casesFilteredCount = $caseModel->getDashboardStats($branchId, $dateCondition)['total'];
 
-// Total Patients of Branch
-$branchTotalPatients = $pdo->prepare("SELECT COUNT(*) FROM patients WHERE branch_id = ?");
-$branchTotalPatients->execute([$branchId]);
-$branchTotalPatients = $branchTotalPatients->fetchColumn();
+// Total Unique Patients with cases in the filtered period
+$branchTotalPatientsQuery = "SELECT COUNT(DISTINCT patient_id) FROM cases WHERE branch_id = ? AND $dateCondition";
+$branchTotalPatientsStmt = $pdo->prepare($branchTotalPatientsQuery);
+$branchTotalPatientsStmt->execute([$branchId]);
+$branchTotalPatients = $branchTotalPatientsStmt->fetchColumn();
 
 // 4. Fetch Recent Activity (Sync with date filters)
 $recentCases = $caseModel->getRecentCases($branchId, $dateCondition, 8);

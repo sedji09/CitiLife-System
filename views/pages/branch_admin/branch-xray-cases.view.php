@@ -424,7 +424,30 @@
 
         function applyFilters() {
             currentPage = 1;
+            
+            // Save state to sessionStorage
+            sessionStorage.setItem('CitiLife_branchXray_search_<?= $currentTab ?>', searchInput.value);
+            sessionStorage.setItem('CitiLife_branchXray_sort_<?= $currentTab ?>', sortDate.value);
+            if (filterDate) sessionStorage.setItem('CitiLife_branchXray_date_<?= $currentTab ?>', filterDate.value);
+            if (filterPriority) sessionStorage.setItem('CitiLife_branchXray_priority_<?= $currentTab ?>', filterPriority.value);
+
             renderPage();
+        }
+
+        // Restore state IF NOT SET via URL
+        const savedSearch = sessionStorage.getItem('CitiLife_branchXray_search_<?= $currentTab ?>');
+        const savedSort = sessionStorage.getItem('CitiLife_branchXray_sort_<?= $currentTab ?>');
+        const savedDate = sessionStorage.getItem('CitiLife_branchXray_date_<?= $currentTab ?>');
+        const savedPriority = sessionStorage.getItem('CitiLife_branchXray_priority_<?= $currentTab ?>');
+
+        if (savedSearch) searchInput.value = savedSearch;
+        if (savedSort) sortDate.value = savedSort;
+        if (filterPriority && savedPriority) filterPriority.value = savedPriority;
+        
+        // For filterDate, only restore if there's no ?date= in URL to respect dashboard links
+        const urlParams = new URLSearchParams(window.location.search);
+        if (filterDate && savedDate && !urlParams.has('date')) {
+            filterDate.value = savedDate;
         }
 
         // Event Listeners
@@ -439,6 +462,15 @@
 
         // Initial Render
         renderPage();
+
+        // Handle browser Back/Forward cache and delayed form restores
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                renderPage();
+            } else {
+                setTimeout(renderPage, 100);
+            }
+        });
 
         // Refresh Icons
         if (window.lucide) {
