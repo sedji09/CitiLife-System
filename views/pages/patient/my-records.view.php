@@ -814,8 +814,7 @@ $statusBadge = [
                         <select name="dispute_category" id="dispute-category" required onchange="toggleDisputeFields()" class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
                             <option value="">-- Select Category --</option>
                             <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
-                            <option value="exam_details_error">2. Wrong Body Part / Exam Details (Incorrect body part label)</option>
-                            <option value="findings_error">3. Discrepancy in Findings (Medical interpretation error)</option>
+                            <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist Re-examination)</option>
                         </select>
                     </div>
 

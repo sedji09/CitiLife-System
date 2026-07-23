@@ -50,6 +50,14 @@ class PatientDetailsController
                 $result = $caseModel->processRadTechSubmission($caseId, $submitData, $notificationModel);
 
                 if ($result['success']) {
+                    // Check if case was under dispute, update dispute status to Escalated to Radiologist
+                    require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+                    $disputeMdl = new \ResultDisputeModel($pdo);
+                    $actDispute = $disputeMdl->getActiveDisputeByCase($caseId);
+                    if ($actDispute) {
+                        $disputeMdl->escalateToRadiologist($actDispute['id'], 'RadTech updated images and exam details based on patient error report.');
+                    }
+
                     $_SESSION['flash_success'] = $result['message'];
                     header("Location: /" . PROJECT_DIR . "/index.php?page=patient-details&id=" . $caseId);
                     exit;
@@ -87,8 +95,14 @@ class PatientDetailsController
             $radiologistsList = $stmtRad->fetchAll();
 
             // 4. Page Logic (Read-only check)
+            // If case has an active dispute, allow editing/re-uploading
+            require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+            $disputeMdl = new \ResultDisputeModel($pdo);
+            $activeDispute = $disputeMdl->getActiveDisputeByCase($caseId);
+
             $isReadOnly = in_array($caseDetails['status'], ['Pending', 'Under Reading', 'Report Ready', 'Completed'])
-                && $caseDetails['image_status'] === 'Uploaded';
+                && $caseDetails['image_status'] === 'Uploaded'
+                && !$activeDispute;
 
             $savedTemplate = $caseDetails['report_template'] ?? '';
         }

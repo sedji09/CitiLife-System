@@ -1,6 +1,9 @@
 <?php
 require 'config/database.php';
 
-$stmt = $pdo->prepare("UPDATE notifications SET link = CONCAT('index.php?role=radtech&page=xray-patient-records&dispute_id=', SUBSTRING_INDEX(link, '=', -1)) WHERE link LIKE '%xray-patient-records%'");
-$stmt->execute();
-echo "Updated notification links!";
+$stmt = $pdo->query("SELECT id, status, dispute_category, HEX(status) FROM result_disputes ORDER BY id DESC LIMIT 5");
+echo "<pre>";
+print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
+echo "</pre>";
+
+

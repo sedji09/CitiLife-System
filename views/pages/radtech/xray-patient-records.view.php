@@ -186,13 +186,13 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) { return in_ar
                     <?php foreach ($disputes as $d): ?>
                         <?php
                         $catLabels = [
-                            'demographic_error' => 'Wrong Patient Info',
-                            'exam_details_error' => 'Wrong Body Part / Exam Details',
-                            'findings_error' => 'Discrepancy in Findings (Medical)',
+                            'demographic_error' => '1. Wrong Patient Info',
+                            'exam_details_error' => '2. Wrong Body Part / Exam Details',
+                            'findings_error' => '2. Wrong Body Part / Findings Discrepancy',
                             'other' => 'Other Error'
                         ];
                         $catName = $catLabels[$d['dispute_category']] ?? ucfirst($d['dispute_category']);
-                        $isMedicalError = ($d['dispute_category'] === 'findings_error');
+                        $isMedicalError = in_array($d['dispute_category'], ['findings_error', 'exam_details_error']);
 
                         $badgeClasses = [
                             'Pending RadTech Review' => 'bg-amber-50 text-amber-700 border-amber-300',
@@ -228,32 +228,39 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) { return in_ar
                             <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
                                 <?= date('M j, Y h:i A', strtotime($d['created_at'])) ?>
                             </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap">
-                                <?php if ($d['status'] === 'Pending RadTech Review'): ?>
-                                    <?php if ($isMedicalError): ?>
-                                        <button type="button" onclick="openEscalateModal(<?= $d['id'] ?>, '<?= htmlspecialchars($d['case_number']) ?>')"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition">
-                                            <i data-lucide="send" class="w-3.5 h-3.5"></i> Escalate to Radiologist
+                             <td class="px-4 py-3.5 whitespace-nowrap min-w-[200px]">
+                                <?php 
+                                $currStatus = trim($d['status'] ?? '');
+                                $catType = trim($d['dispute_category'] ?? '');
+                                $isMedError = ($catType === 'findings_error' || $catType === 'exam_details_error' || strpos($catType, 'findings') !== false || strpos($catType, 'exam') !== false);
+
+                                if ($currStatus === 'Pending RadTech Review'): 
+                                ?>
+                                    <?php if ($isMedError): ?>
+                                        <button type="button" onclick="confirmReupload(<?= $d['case_id'] ?>)"
+                                           style="background-color: #dc2626 !important; color: #ffffff !important; opacity: 1 !important; display: inline-flex !important;"
+                                           class="items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow transition-all active:scale-95 hover:bg-red-700">
+                                            <i data-lucide="upload" class="w-4 h-4"></i> Re-upload Image & Correct Case
                                         </button>
-                                     <?php else: ?>
+                                    <?php else: ?>
                                         <button type="button" onclick="openResolveModal(<?= $d['id'] ?>, '<?= htmlspecialchars($d['case_number']) ?>', 'Fix Clerical Error', <?= htmlspecialchars(json_encode($d['description']), ENT_QUOTES, 'UTF-8') ?>)"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold shadow-sm transition">
-                                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Fix & Resolve
+                                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold shadow transition-all active:scale-95">
+                                            <i data-lucide="check-circle" class="w-4 h-4"></i> Fix & Resolve
                                         </button>
                                     <?php endif; ?>
-                                <?php elseif ($d['status'] === 'Escalated to Radiologist'): ?>
+                                <?php elseif ($currStatus === 'Escalated to Radiologist'): ?>
                                     <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg">
                                         <i data-lucide="clock" class="w-3.5 h-3.5"></i> Waiting for Radiologist Amendment
                                     </span>
-                                <?php elseif ($d['status'] === 'Pending RadTech Verification'): ?>
+                                <?php elseif ($currStatus === 'Pending RadTech Verification'): ?>
                                     <button type="button" onclick="openResolveModal(<?= $d['id'] ?>, '<?= htmlspecialchars($d['case_number']) ?>', 'Final Approve & Release Amended Report', <?= htmlspecialchars(json_encode($d['description']), ENT_QUOTES, 'UTF-8') ?>)"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold shadow-sm transition">
-                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Final Verify & Release
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold shadow transition-all active:scale-95">
+                                        <i data-lucide="check-circle-2" class="w-4 h-4"></i> Final Verify & Release
                                     </button>
                                 <?php else: ?>
                                     <span class="text-xs text-gray-400 italic">No action needed</span>
                                 <?php endif; ?>
-                            </td>
+                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -366,6 +373,28 @@ function openResolveModal(id, caseNo, titleText, descriptionText) {
 }
 function closeResolveModal() {
     document.getElementById('resolve-modal').classList.add('hidden');
+}
+
+function confirmReupload(caseId) {
+    Swal.fire({
+        title: 'Re-upload Image & Correct Case?',
+        text: 'Makakapag-upload ka ng bagong X-ray image at mababago ang exam details para sa kasong ito.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, proceed',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-xl font-bold px-4 py-2',
+            cancelButton: 'rounded-xl font-semibold px-4 py-2'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-details&id=' + caseId;
+        }
+    });
 }
 
 function submitEscalation(e) {
