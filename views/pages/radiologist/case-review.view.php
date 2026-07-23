@@ -14,6 +14,10 @@ if (isset($caseNotFound) && $caseNotFound) {
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 
 <?php
+require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
+$disputeMdl = new \ResultDisputeModel($pdo);
+$activeDispute = $disputeMdl->getActiveDisputeByCase($caseDetails['id']);
+
 $backPage = $_GET['back_to'] ?? 'worklist';
 $backId   = $_GET['back_id'] ?? '';
 $backUrl  = "?role=radiologist&page=" . urlencode($backPage);
@@ -21,6 +25,31 @@ if ($backId) {
     $backUrl .= "&id=" . urlencode($backId);
 }
 ?>
+
+<?php if ($activeDispute): ?>
+<div class="mb-5 rounded-2xl bg-amber-50 border-2 border-amber-300 p-5 shadow-sm space-y-3">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-amber-900 font-bold text-base">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i>
+            <span>Patient Error Report / Dispute Active (Escalated by RadTech)</span>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900">
+            <?= htmlspecialchars($activeDispute['status']) ?>
+        </span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="bg-white p-3 rounded-xl border border-amber-200">
+            <span class="font-bold text-amber-900 block mb-1">Patient Statement:</span>
+            <p class="text-gray-700 italic">"<?= htmlspecialchars($activeDispute['description']) ?>"</p>
+        </div>
+        <div class="bg-purple-50 p-3 rounded-xl border border-purple-200">
+            <span class="font-bold text-purple-900 block mb-1">RadTech Internal Notes:</span>
+            <p class="text-purple-900 font-medium"><?= htmlspecialchars($activeDispute['radtech_notes'] ?: 'No internal notes provided.') ?></p>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Title row -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
     <div class="flex items-center gap-4">

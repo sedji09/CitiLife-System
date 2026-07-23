@@ -115,3 +115,7 @@ $router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');
 $router->post('/app/api/request_password_reset.php', 'App/Api/request_password_reset.php');
 $router->post('/app/api/cancel_case.php', 'App/Api/cancel_case.php');
 $router->post('/app/config/update_patient.php', 'config/update_patient.php');
+$router->get('/app/api/disputes.php', 'App/Api/disputes.php');
+$router->post('/app/api/disputes.php', 'App/Api/disputes.php');
+$router->get('/App/Api/disputes.php', 'App/Api/disputes.php');
+$router->post('/App/Api/disputes.php', 'App/Api/disputes.php');

@@ -298,11 +298,17 @@ class CaseModel
                 $branchLabel = str_replace(' Branch', '', $cData['branch_name']);
 
                 if ($wasAlreadySubmitted) {
+                    // Check if dispute ticket exists for this case to link directly to disputes tab
+                    require_once __DIR__ . '/ResultDisputeModel.php';
+                    $disputeMdl = new ResultDisputeModel($this->pdo);
+                    $dispData = $disputeMdl->getActiveDisputeByCase($caseId);
+                    $disputeIdParam = $dispData ? "&dispute_id=" . $dispData['id'] : "";
+
                     // Notify RadTech about findings change
                     $notificationModel->add(
                         "Edited Report Ready",
                         "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). This report has been edited.",
-                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
+                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records{$disputeIdParam}&highlight=" . urlencode($cData['case_number']),
                         null,
                         'radtech',
                         $cData['branch_id']

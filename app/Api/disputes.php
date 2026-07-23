@@ -1,0 +1,261 @@
+<?php
+/**
+ * disputes.php
+ * API endpoint for Patient & Clinic Result Dispute Operations (Strict 5-Step Workflow)
+ */
+
+header('Content-Type: application/json');
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../Models/ResultDisputeModel.php';
+require_once __DIR__ . '/../Models/CaseModel.php';
+require_once __DIR__ . '/../Models/PatientModel.php';
+require_once __DIR__ . '/../Models/AuditLogModel.php';
+
+$disputeModel = new ResultDisputeModel($pdo);
+$auditLog = new AuditLogModel($pdo);
+
+$action = $_REQUEST['action'] ?? '';
+
+try {
+    if ($action === 'submit_dispute') {
+        // Step 2: Patient Submission -> Status: "Pending RadTech Review", Assigned: "radtech"
+        $userId = $_SESSION['user_id'] ?? null;
+        $patientId = $_SESSION['patient_id'] ?? null;
+
+        if (!$userId || !$patientId) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized patient session.']);
+            exit;
+        }
+
+        $caseId = intval($_POST['case_id'] ?? 0);
+        $category = trim($_POST['dispute_category'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+
+        if (!$caseId || !$category || !$description) {
+            echo json_encode(['success' => false, 'message' => 'Kumpletuhin ang rason at detalye ng report.']);
+            exit;
+        }
+
+        // Verify case belongs to patient
+        $stmt = $pdo->prepare("SELECT id, branch_id, case_number FROM cases WHERE id = ? AND patient_id = ?");
+        $stmt->execute([$caseId, $patientId]);
+        $case = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$case) {
+            echo json_encode(['success' => false, 'message' => 'Hindi nahanap ang resulta ng rekurso.']);
+            exit;
+        }
+
+        // Check if existing pending dispute
+        $activeDispute = $disputeModel->getActiveDisputeByCase($caseId);
+        if ($activeDispute) {
+            echo json_encode(['success' => false, 'message' => 'Mayroon nang umiiral na report sa resultang ito na kasalukuyang tinitingnan.']);
+            exit;
+        }
+
+        $disputeId = $disputeModel->createDispute($caseId, $patientId, $case['branch_id'], $category, $description);
+
+        // Notify RadTech ONLY
+        $notifStmt = $pdo->prepare("
+            INSERT INTO notifications (role, branch_id, title, message, link, created_at)
+            VALUES ('radtech', ?, ?, ?, ?, NOW())
+        ");
+        $notifTitle = "New Error Report (" . $case['case_number'] . ")";
+        $notifMsg = "A new patient error report requires RadTech review.";
+        $notifLink = "index.php?role=radtech&page=xray-patient-records&dispute_id=" . $disputeId;
+        $notifStmt->execute([$case['branch_id'], $notifTitle, $notifMsg, $notifLink]);
+
+        $auditLog->addLog($userId, 'Dispute Submitted', 'Patient Portal', 'Case', $caseId, "Submitted result dispute (ID: {$disputeId}, Category: {$category})", $case['branch_id']);
+
+        echo json_encode(['success' => true, 'message' => 'Your error report has been submitted to the clinic. It will be reviewed shortly.']);
+        exit;
+
+    } elseif ($action === 'escalate_to_radiologist') {
+        // Step 3: RadTech Escalates Medical Findings Error to Radiologist
+        $userId = $_SESSION['user_id'] ?? null;
+        $role = $_SESSION['role'] ?? '';
+
+        if (!in_array($role, ['radtech', 'branch_admin', 'admin_central'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized action.']);
+            exit;
+        }
+
+        $disputeId = intval($_POST['dispute_id'] ?? 0);
+        $radtechNotes = trim($_POST['radtech_notes'] ?? '');
+
+        if (!$disputeId || !$radtechNotes) {
+            echo json_encode(['success' => false, 'message' => 'Please provide internal notes before escalating to the Radiologist.']);
+            exit;
+        }
+
+        $disputeModel->escalateToRadiologist($disputeId, $radtechNotes);
+
+        // Fetch case info to send notification to Radiologist
+        $stmt = $pdo->prepare("SELECT rd.case_id, c.case_number, c.branch_id FROM result_disputes rd JOIN cases c ON rd.case_id = c.id WHERE rd.id = ?");
+        $stmt->execute([$disputeId]);
+        $disData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($disData) {
+            $pdo->prepare("
+                INSERT INTO notifications (role, branch_id, title, message, link, created_at)
+                VALUES ('radiologist', ?, ?, ?, ?, NOW())
+            ")->execute([
+                $disData['branch_id'],
+                "Dispute Escalated: " . $disData['case_number'],
+                "RadTech escalated an error report for Radiologist review. Notes: " . $radtechNotes,
+                "index.php?role=radiologist&page=worklist&status=disputes"
+            ]);
+        }
+
+        $auditLog->addLog($userId, 'Dispute Escalated', 'Clinic Management', 'Dispute', $disputeId, "Escalated dispute to Radiologist. Notes: {$radtechNotes}");
+
+        echo json_encode(['success' => true, 'message' => 'Dispute ticket successfully escalated to the Radiologist.']);
+        exit;
+
+    } elseif ($action === 'resolve_dispute') {
+        // RadTech resolves clerical/technical error directly (Step 3 / Step 5)
+        $userId = $_SESSION['user_id'] ?? null;
+        $role = $_SESSION['role'] ?? '';
+
+        if (!in_array($role, ['radtech', 'branch_admin', 'admin_central'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized action.']);
+            exit;
+        }
+
+        $disputeId = intval($_POST['dispute_id'] ?? 0);
+
+        if (!$disputeId) {
+            echo json_encode(['success' => false, 'message' => 'Invalid Dispute ID.']);
+            exit;
+        }
+
+        // Fetch dispute & case patient data
+        $stmtDisp = $pdo->prepare("SELECT rd.*, c.patient_id FROM result_disputes rd JOIN cases c ON rd.case_id = c.id WHERE rd.id = ?");
+        $stmtDisp->execute([$disputeId]);
+        $disputeInfo = $stmtDisp->fetch(PDO::FETCH_ASSOC);
+
+        $notes = 'Clerical/demographic error corrected by RadTech.';
+
+        if ($disputeInfo && $disputeInfo['dispute_category'] === 'demographic_error' && !empty($disputeInfo['description'])) {
+            // Automatically parse and update patient details in database
+            $desc = $disputeInfo['description'];
+            $patientId = $disputeInfo['patient_id'];
+
+            $updateFields = [];
+            $updateParams = [];
+
+            // Match First Name
+            if (preg_match('/First Name:\s*([^,\n]+)/i', $desc, $m)) {
+                $updateFields[] = "first_name = ?";
+                $updateParams[] = trim($m[1]);
+            }
+            // Match Last Name
+            if (preg_match('/Last Name:\s*([^,\n]+)/i', $desc, $m)) {
+                $updateFields[] = "last_name = ?";
+                $updateParams[] = trim($m[1]);
+            }
+            // Match Sex
+            if (preg_match('/Sex:\s*([^,\n]+)/i', $desc, $m)) {
+                $updateFields[] = "sex = ?";
+                $updateParams[] = trim($m[1]);
+            }
+            // Match Age -> Update birthdate based on age
+            if (preg_match('/Age:\s*(\d+)/i', $desc, $m)) {
+                $age = intval($m[1]);
+                if ($age > 0) {
+                    $birthYear = date('Y') - $age;
+                    $birthdate = "{$birthYear}-01-01";
+                    $updateFields[] = "birthdate = ?";
+                    $updateParams[] = $birthdate;
+                }
+            }
+
+            if (!empty($updateFields)) {
+                $updateParams[] = $patientId;
+                $sqlP = "UPDATE patients SET " . implode(', ', $updateFields) . " WHERE id = ?";
+                $stmtP = $pdo->prepare($sqlP);
+                $stmtP->execute($updateParams);
+                $notes = "Patient details updated: " . $desc;
+            }
+        }
+
+        $disputeModel->updateDisputeStatus($disputeId, 'Resolved', 'radtech', $notes, $userId);
+
+        // Mark case as Released again
+        if ($disputeInfo && !empty($disputeInfo['case_id'])) {
+            $pdo->prepare("UPDATE cases SET status = 'Released', released = 1, is_amended = 1, amendment_notes = COALESCE(amendment_notes, ?) WHERE id = ?")
+                ->execute([$notes, $disputeInfo['case_id']]);
+        }
+
+        $auditLog->addLog($userId, 'Dispute Resolved', 'Clinic Management', 'Dispute', $disputeId, "Resolved dispute. Notes: {$notes}");
+
+        echo json_encode(['success' => true, 'message' => 'Dispute ticket resolved and patient info updated successfully.']);
+        exit;
+
+    } elseif ($action === 'amend_report') {
+        // Step 4: Radiologist Issues Amended Report -> Ticket becomes "Pending RadTech Final Verification"
+        $userId = $_SESSION['user_id'] ?? null;
+        $role = $_SESSION['role'] ?? '';
+
+        if (!in_array($role, ['radiologist', 'admin_central'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized action.']);
+            exit;
+        }
+
+        $caseId = intval($_POST['case_id'] ?? 0);
+        $disputeId = intval($_POST['dispute_id'] ?? 0);
+        $findings = trim($_POST['findings'] ?? '');
+        $impression = trim($_POST['impression'] ?? '');
+        $amendmentNotes = trim($_POST['amendment_notes'] ?? '');
+
+        if (!$caseId || !$findings || !$impression) {
+            echo json_encode(['success' => false, 'message' => 'Kumpletuhin ang findings, impression, at dahilan ng amendment.']);
+            exit;
+        }
+
+        // Update Case to Report Ready and set as amended
+        $stmt = $pdo->prepare("
+            UPDATE cases 
+            SET findings = ?, impression = ?, is_amended = 1, amendment_notes = ?, status = 'Report Ready', released = 0
+            WHERE id = ?
+        ");
+        $stmt->execute([$findings, $impression, $amendmentNotes, $caseId]);
+
+        // Route ticket back to RadTech for final verification (Step 5)
+        if ($disputeId) {
+            $disputeModel->updateDisputeStatus($disputeId, 'Pending RadTech Verification', 'radtech', "Amended report issued by radiologist: " . $amendmentNotes, $userId);
+
+            // Fetch case info to send notification to RadTech
+            $stmtDisData = $pdo->prepare("SELECT c.case_number, c.branch_id FROM cases c WHERE c.id = ?");
+            $stmtDisData->execute([$caseId]);
+            $cData = $stmtDisData->fetch(PDO::FETCH_ASSOC);
+
+            if ($cData) {
+                $pdo->prepare("
+                    INSERT INTO notifications (role, branch_id, title, message, link, created_at)
+                    VALUES ('radtech', ?, ?, ?, ?, NOW())
+                ")->execute([
+                    $cData['branch_id'],
+                    "Amended Report Issued (" . $cData['case_number'] . ")",
+                    "Radiologist issued an amended report. Verification required.",
+                    "index.php?role=radtech&page=xray-patient-records&dispute_id=" . $disputeId
+                ]);
+            }
+        }
+
+        $auditLog->addLog($userId, 'Report Amended', 'Radiology Reporting', 'Case', $caseId, "Amended findings & impression for case {$caseId}. Notes: {$amendmentNotes}");
+
+        echo json_encode(['success' => true, 'message' => 'Matagumpay na nai-save ang Amended Report! Ang ticket ay naipasa na kay RadTech para sa final approval at release.']);
+        exit;
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid action requested.']);
+        exit;
+    }
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    exit;
+}

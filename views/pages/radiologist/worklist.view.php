@@ -5,6 +5,11 @@ require_once __DIR__ . '/../../../config/database.php';
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
 
+require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
+$disputeModel = new \ResultDisputeModel($pdo);
+$radDisputes = $disputeModel->getDisputesForClinic(null, 'radiologist');
+$pendingRadDisputeCount = count(array_filter($radDisputes, function($d) { return $d['status'] === 'Escalated to Radiologist'; }));
+
 // Fetch all branches
 $branchesList = $branchModel->getAllBranches();
 
@@ -71,6 +76,25 @@ sort($priorities);
         <h2 id="worklist-title" class="text-2xl font-semibold text-gray-900"><?= htmlspecialchars($wlTitle) ?></h2>
         <p id="worklist-subtitle" class="text-sm text-gray-500 mt-1"><?= htmlspecialchars($wlSubtitle) ?></p>
     </div>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="mt-4 px-4 border-b border-gray-200">
+    <nav class="flex space-x-6">
+        <button type="button" id="tab-rad-worklist-btn" onclick="switchRadTab('worklist')"
+                class="pb-3 px-1 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
+            <i data-lucide="microscope" class="w-4 h-4"></i> Pending Worklist
+        </button>
+        <button type="button" id="tab-rad-disputes-btn" onclick="switchRadTab('disputes')"
+                class="pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Escalated Error Reports / Disputes
+            <?php if ($pendingRadDisputeCount > 0): ?>
+                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
+                    <?= $pendingRadDisputeCount ?>
+                </span>
+            <?php endif; ?>
+        </button>
+    </nav>
 </div>
 
 <!-- Controls: Search, Filter, Sort -->
@@ -260,9 +284,10 @@ sort($priorities);
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination footer -->
-        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+        <div
+            class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
             <!-- Record count -->
             <span id="worklist-record-count" class="text-xs text-gray-500 font-medium"></span>
 
@@ -271,6 +296,63 @@ sort($priorities);
                 <!-- Dynamic page buttons will be inserted here -->
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ESCALATED ERROR REPORTS / DISPUTES TABLE CARD (Hidden by default) -->
+<div id="rad-disputes-table-card" class="hidden rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mx-4">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
+                    <th class="text-left font-semibold px-4 py-3">Case / Patient</th>
+                    <th class="text-left font-semibold px-4 py-3">Branch</th>
+                    <th class="text-left font-semibold px-4 py-3">Patient Statement</th>
+                    <th class="text-left font-semibold px-4 py-3">RadTech Internal Notes</th>
+                    <th class="text-left font-semibold px-4 py-3">Date Escalated</th>
+                    <th class="text-left font-semibold px-4 py-3">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                <?php if (count($radDisputes) === 0): ?>
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-500">
+                            No escalated error reports or disputes assigned to Radiologist.
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($radDisputes as $d): ?>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <div class="font-mono text-xs font-semibold text-red-600"><?= htmlspecialchars($d['case_number']) ?></div>
+                                <div class="font-bold text-gray-900"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
+                                <div class="text-xs text-gray-500"><?= htmlspecialchars($d['exam_type']) ?></div>
+                            </td>
+                            <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-600 font-medium">
+                                <?= htmlspecialchars($d['branch_name'] ?? 'Main') ?>
+                            </td>
+                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-xs truncate" title="<?= htmlspecialchars($d['description']) ?>">
+                                "<?= htmlspecialchars($d['description']) ?>"
+                            </td>
+                            <td class="px-4 py-3.5 text-xs text-purple-800 bg-purple-50 rounded-lg p-2 max-w-xs" title="<?= htmlspecialchars($d['radtech_notes'] ?? '') ?>">
+                                <span class="font-bold">RadTech Notes:</span> <?= htmlspecialchars($d['radtech_notes'] ?: 'No notes attached.') ?>
+                            </td>
+                            <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                                <?= date('M j, Y h:i A', strtotime($d['created_at'])) ?>
+                            </td>
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $d['case_id'] ?>&branch_id=<?= $d['branch_id'] ?>"
+                                   style="background-color: #7e22ce !important; color: #ffffff !important;"
+                                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:bg-purple-800 transition-all active:scale-95">
+                                    <i data-lucide="edit-3" class="w-4 h-4 text-white" style="color: #ffffff !important;"></i>
+                                    <span style="color: #ffffff !important;">Review & Issue Amended Report</span>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -395,7 +477,7 @@ sort($priorities);
 
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
             const endIdx = startIdx + ROWS_PER_PAGE;
-            
+
             const visibleSet = new Set(filteredRows.slice(startIdx, endIdx));
 
             filteredRows.forEach(row => {
@@ -449,13 +531,13 @@ sort($priorities);
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.innerHTML = label;
-                
+
                 if (isActive) {
                     btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
                 } else {
                     btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
                 }
-                
+
                 if (disabled) {
                     btn.disabled = true;
                 } else {
@@ -511,11 +593,11 @@ sort($priorities);
                     // Middle: 1, ..., C-1, C, C+1, ..., T
                     container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
-                    
+
                     container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
                     container.appendChild(createButton(currentPage, currentPage, false, true));
                     container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
-                    
+
                     container.appendChild(createEllipsis());
                     container.appendChild(createButton(totalPages, totalPages, false, false));
                 }
@@ -546,8 +628,34 @@ sort($priorities);
         if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
         if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
 
-        // Initial sort
-        updateTable();
+        // Tab Switching for Radiologist (Worklist vs Escalated Disputes)
+        window.switchRadTab = function(tab) {
+            const workCard = document.getElementById('worklist-table-card');
+            const dispCard = document.getElementById('rad-disputes-table-card');
+            const filterCtrls = document.querySelector('.mt-6.flex.flex-col.gap-4');
+            const workBtn = document.getElementById('tab-rad-worklist-btn');
+            const dispBtn = document.getElementById('tab-rad-disputes-btn');
+
+            if (tab === 'worklist') {
+                if (workCard) workCard.classList.remove('hidden');
+                if (dispCard) dispCard.classList.add('hidden');
+                if (filterCtrls) filterCtrls.classList.remove('hidden');
+
+                if (workBtn) workBtn.className = "pb-3 px-1 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
+                if (dispBtn) dispBtn.className = "pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
+            } else {
+                if (workCard) workCard.classList.add('hidden');
+                if (dispCard) dispCard.classList.remove('hidden');
+                if (filterCtrls) filterCtrls.classList.add('hidden');
+
+                if (dispBtn) dispBtn.className = "pb-3 px-1 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
+                if (workBtn) workBtn.className = "pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+            }
+        };
+
+        if (paramsList.get('status') === 'disputes') {
+            window.switchRadTab('disputes');
+        }
 
         // ensure lucide icons are created if not already
         if (typeof lucide !== 'undefined') {

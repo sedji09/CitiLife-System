@@ -29,10 +29,6 @@ $isSubmitted = false;
 // 1. Pre-fetch case details so branch_id is available for audit logging
 $caseDetails = $caseModel->getCaseById($caseId);
 
-if ($caseDetails && $caseDetails['radiologist_id'] != $radiologistId) {
-    $caseDetails = false;
-}
-
 // 2. Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
     try {
@@ -44,8 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
         $result = $caseModel->submitRadiologistReport($caseId, $radiologistId, $submitData, $notificationModel);
 
         if ($result['success']) {
-            $successMsg = $result['message'] . " Radtech can now print and release the result.";
+            $successMsg = "Amended Report successfully submitted. The dispute ticket status is now 'Pending RadTech Verification' for final approval.";
             $isSubmitted = true;
+
+            // Step 4 of Dispute Workflow: Update active dispute status to Pending RadTech Verification
+            require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+            $disputeMdl = new \ResultDisputeModel($pdo);
+            $disputeMdl->updateDisputeStatusForCase($caseId, 'Pending RadTech Verification', 'radtech');
 
             // Build a meaningful audit log entry
             $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
 
             $auditLogModel->addLog(
                 $radiologistId,
-                'Submitted Findings Report',
+                'Submitted Amended Findings Report',
                 'Findings & Reports',
                 'Case',
                 $caseId,

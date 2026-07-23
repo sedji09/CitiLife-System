@@ -108,11 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch all notifications (read and unread)
 $stmt = $pdo->prepare("
     SELECT * FROM notifications 
-    WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
+    WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))
     ORDER BY created_at DESC, id DESC 
     LIMIT 50
 ");
-$stmt->execute([$userId, $role, $branchId]);
+$stmt->execute([$userId, $role, $role, $branchId]);
 $notifications = $stmt->fetchAll();
 
 // Auto-repair: fix any old notifications with HTML-encoded & in links
@@ -122,9 +122,9 @@ $pdo->exec("UPDATE notifications SET link = REPLACE(link, '&amp;', '&') WHERE li
 $stmtCount = $pdo->prepare("
     SELECT COUNT(*) FROM notifications 
     WHERE is_read = 0 
-      AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))
+      AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))
 ");
-$stmtCount->execute([$userId, $role, $branchId]);
+$stmtCount->execute([$userId, $role, $role, $branchId]);
 $unreadCount = $stmtCount->fetchColumn();
 
 // Format timeago
