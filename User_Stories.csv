@@ -1,0 +1,39 @@
+User ID,Role,I want to,So that
+PAT-01,Patient,Register an account,I can access the radiology reporting system.
+PAT-02,Patient,Request an X-ray examination,I can undergo the required diagnostic procedure.
+PAT-03,Patient,Track my examination status,I can monitor the progress of my examination from request to result release.
+PAT-04,Patient,Access my diagnostic results,I can view and download my completed radiology report online.
+PAT-05,Patient,View my medical history,I can review my previous examinations and reports.
+PAT-06,Patient,Receive notifications about my examination,"I stay informed about updates, examination progress, and report availability."
+PAT-07,Patient,Submit feedback,I can share my experience with the diagnostic center.
+PAT-08,Patient,Update my profile,My personal information remains accurate and up to date.
+PAT-09,Patient,Recover my account/password,I can regain access if I forget my login credentials.
+RADT-01,RadTech,View today's patient queue,I know which patients are scheduled for X-ray examinations.
+RADT-02,RadTech,Register walk-in patients,I can accommodate patients who did not request an exam online.
+RADT-03,RadTech,Upload X-ray images for a case,The radiologist can review the images and create a report.
+RADT-04,RadTech,Request patient records from another branch,I can view past records of a patient who previously visited a different branch.
+RADT-05,RadTech,Receive notifications for approved record requests,I know when I can access the requested patient records.
+RADT-06,RadTech,Receive notifications when a report is ready,I know when the radiologist has finished reading the X-ray.
+RADT-07,RadTech,Release completed X-ray reports,The patient can access their results online.
+RADT-08,RadTech,View patient history,I can see previous exams to ensure proper procedures are followed.
+RADO-01,Radiologist,View a list of pending cases,I know which X-rays I need to read and analyze.
+RADO-02,Radiologist,View X-ray images and clinical information,I have the necessary context to make an accurate diagnosis.
+RADO-03,Radiologist,Submit findings and impressions,I can provide the official medical report for the examination.
+RADO-04,Radiologist,Unlock a submitted report,I can make corrections or add missing information to the report.
+RADO-05,Radiologist,View the patient's medical history,I can compare current images with past results for better diagnosis.
+B-ADM-01,Branch Admin,View the branch dashboard,I can see the daily statistics and overall performance of my branch.
+B-ADM-02,Branch Admin,Manage patient records for my branch,I can oversee all cases and ensure they are processed efficiently.
+B-ADM-03,Branch Admin,Approve or deny cross-branch record requests,I can control access to my branch's patient data securely.
+B-ADM-04,Branch Admin,View patient feedback,I can address concerns and improve the quality of service at my branch.
+B-ADM-05,Branch Admin,View branch audit logs,I can track actions performed by staff within my branch for accountability.
+C-ADM-01,Central Admin,View the system-wide dashboard,I can monitor the performance and statistics of all branches combined.
+C-ADM-02,Central Admin,Manage system users (Add/Edit/Deactivate),I can control who has access to the system and their details.
+C-ADM-03,Central Admin,Manage user roles and permissions,I can ensure users only have access to modules relevant to their job.
+C-ADM-04,Central Admin,Manage branches,I can add new branches or update information for existing ones.
+C-ADM-05,Central Admin,View all patient records across branches,I have full visibility of the system's data for administrative purposes.
+C-ADM-06,Central Admin,Receive notifications for critical feedback,I can immediately address urgent concerns that might affect the company's reputation.
+C-ADM-07,Central Admin,View system-wide audit logs,I can monitor activities across all branches for security and compliance.
+IT-ADM-01,IT Admin,View the IT dashboard,I can monitor system health and storage statistics.
+IT-ADM-02,IT Admin,Manage security settings,"I can configure login lockouts, OTP attempts, and session timeouts to protect the system."
+IT-ADM-03,IT Admin,Perform database backups,I can ensure data is preserved in case of a system failure.
+IT-ADM-04,IT Admin,View all system audit logs,I can investigate security breaches or track unauthorized access attempts.

@@ -54,8 +54,13 @@
         pendingDeleteId: null,
         pendingDeleteItem: null,
         undoTimeout: null,
+        undoInterval: null,
+        undoTimerCount: 5,
+        undoRingOffset: 0,
         notificationCount: 0,
         notifications: [],
+        touchStartX: 0,
+        touchStartY: 0,
         menuItems: window.__APP__.menuItems,
         currentPath: window.__APP__.currentPath,
         basePath: window.__APP__.basePath,
@@ -1364,6 +1369,24 @@
           this.activeNotificationDropdown = id;
         }
       },
+      handleTouchStart(e, id) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          this.touchStartX = e.changedTouches[0].screenX;
+          this.touchStartY = e.changedTouches[0].screenY;
+        }
+      },
+      handleTouchEnd(e, id) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          let endX = e.changedTouches[0].screenX;
+          let endY = e.changedTouches[0].screenY;
+          let diffX = this.touchStartX - endX;
+          let diffY = Math.abs(this.touchStartY - endY);
+          
+          if (diffX > 40 && diffY < 30) {
+            this.activeNotificationDropdown = id;
+          }
+        }
+      },
       markAsUnread(id) {
         this.activeNotificationDropdown = null;
         fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
@@ -1397,10 +1420,25 @@
           this.pendingDeleteId = id;
           this.pendingDeleteItem = item;
           this.showUndoToast = true;
-          nextTick(() => this.renderIcons());
+          this.undoTimerCount = 5;
+          this.undoRingOffset = 0;
+          nextTick(() => {
+            this.renderIcons();
+            setTimeout(() => {
+                this.undoRingOffset = 62.83;
+            }, 50);
+          });
+
+          if (this.undoInterval) clearInterval(this.undoInterval);
+          this.undoInterval = setInterval(() => {
+            if (this.undoTimerCount > 1) {
+              this.undoTimerCount--;
+            }
+          }, 1000);
 
           this.undoTimeout = setTimeout(() => {
             this.showUndoToast = false;
+            clearInterval(this.undoInterval);
             if (this.pendingDeleteId === id) {
               fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
                 method: 'POST',
@@ -1416,7 +1454,9 @@
       undoDelete() {
         if (this.pendingDeleteItem) {
           this.showUndoToast = false;
+          this.undoRingOffset = 0;
           clearTimeout(this.undoTimeout);
+          clearInterval(this.undoInterval);
           this.fetchNotifications();
           this.pendingDeleteId = null;
           this.pendingDeleteItem = null;
@@ -1424,8 +1464,10 @@
       },
       closeUndoToast() {
         this.showUndoToast = false;
+        this.undoRingOffset = 0;
         if (this.undoTimeout) {
           clearTimeout(this.undoTimeout);
+          clearInterval(this.undoInterval);
           if (this.pendingDeleteId) {
             fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
               method: 'POST',
@@ -1760,3 +1802,7 @@
     }, 4000);
   });
 </script>
+
+<?php
+echo '<script src="/' . PROJECT_DIR . '/views/pages/patient/my-records.js?v=' . time() . '"></script>';
+?>

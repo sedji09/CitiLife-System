@@ -21,7 +21,7 @@
         </span>
       </button>
       <!-- Mobile backdrop for notifications -->
-      <div v-if="notificationMenuOpen" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[150] md:hidden"
+      <div v-if="notificationMenuOpen" class="fixed inset-0 z-[150] md:hidden"
         @click="notificationMenuOpen = false"></div>
 
       <!-- Dropdown reuses the same notificationMenuOpen state -->
@@ -43,18 +43,35 @@
             No new notifications
           </div>
           <div v-for="notif in notifications" :key="notif.id" @click="markAsRead(notif.id, notif.link)"
-            class="px-4 py-3 hover:bg-red-50 active:bg-red-100 cursor-pointer transition-colors group border-b border-gray-50 last:border-0">
+            class="relative px-4 py-3 hover:bg-red-50 active:bg-red-100 cursor-pointer transition-colors group border-b border-gray-50 last:border-0">
             <div class="flex items-start gap-3">
               <div
                 class="h-8 w-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover:bg-red-200">
                 <i data-lucide="bell" class="w-4 h-4"></i>
               </div>
-              <div class="flex-1 min-w-0">
+              <div class="flex-1 min-w-0 pr-6">
                 <p class="text-xs font-bold text-gray-900 group-hover:text-red-700 truncate">{{ notif.title }}</p>
                 <p class="text-xs text-gray-600 mt-0.5 leading-snug line-clamp-2">{{ notif.message }}</p>
                 <p class="text-[10px] text-gray-400 mt-1 font-medium uppercase tracking-wider">{{ notif.timeAgo }}
                 </p>
               </div>
+            </div>
+
+            <!-- 3 Dots Menu Button (Always visible on mobile) -->
+            <button @click.stop="toggleNotificationOptions(notif.id)" 
+                    class="absolute top-3 right-3 flex items-center justify-center w-8 h-8 rounded-full bg-transparent hover:bg-gray-200 text-gray-500 transition z-10">
+              <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Dropdown -->
+            <div v-show="activeNotificationDropdown === notif.id" 
+                 class="absolute w-max bg-white border border-gray-200 rounded-xl shadow-lg z-[100] py-1.5 px-1.5 overflow-hidden"
+                 style="display: none; right: 16px; top: 36px;"
+                 @click.stop>
+              <button @click.stop="deleteNotification(notif.id)" class="w-full text-left px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100 flex items-center gap-3 rounded-lg transition whitespace-nowrap">
+                <div class="bg-gray-100 p-1.5 rounded-full text-gray-700 shrink-0"><i data-lucide="x" class="w-4 h-4"></i></div>
+                Delete this notification
+              </button>
             </div>
           </div>
         </div>

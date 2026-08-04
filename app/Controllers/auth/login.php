@@ -299,14 +299,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <div class="pt-1 sm:pt-2">
                     <button type="submit" <?= $is_locked ? 'disabled' : '' ?>
                         class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white <?= $is_locked ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700' ?> focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                        Sign In as Staff
+                        Log in
                     </button>
                 </div>
 
             </form>
         </div>
         <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">
-            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife X-ray System. All rights reserved.</p>
+            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.
+            </p>
         </div>
     </div>
     <script>

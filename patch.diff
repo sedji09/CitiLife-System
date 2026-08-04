@@ -1,0 +1,4 @@
+diff --git a/views/pages/patient/my-records.view.php b/views/pages/patient/my-records.view.php
+warning: in the working copy of 'views/pages/patient/my-records.view.php', LF will be replaced by CRLF the next time Git touches it
+-                    inputsContainer.classList.add('hidden
+-                } else {

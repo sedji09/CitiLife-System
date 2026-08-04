@@ -1,31 +1,98 @@
-
 (function () {
-    // Prevent duplicate initialization if script is somehow re-run
     if (window.__RECORDS_INIT_DONE__) return;
     window.__RECORDS_INIT_DONE__ = true;
 
     const ROWS_PER_PAGE = 10;
-    let currentPage = parseInt(sessionStorage.getItem('CitiLife_myRecords_page')) || 1;
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    function getFilteredRows() {
-        const searchInput = document.getElementById('record-search-input');
-        const branchSelect = document.getElementById('record-branch-filter');
-        const sortSelect = document.getElementById('record-sort-date');
+    // State per tab
+    const state = {
+        completed: { page: 1 },
+        rejected: { page: 1 },
+        disputes: { page: 1 }
+    };
+
+    // Default tab
+    let currentTab = 'completed';
+
+    // Global exposed function for tab switching
+    window.switchPatientTab = function (tabId) {
+        currentTab = tabId;
+
+        // Hide all contents
+        ['completed', 'rejected', 'disputes'].forEach(t => {
+            const el = document.getElementById(`tab-${t}-content`);
+            if (el) el.classList.add('hidden');
+
+            // Reset tab button styling
+            const btn = document.getElementById(`tab-patient-${t}-btn`);
+            if (btn) {
+                btn.classList.remove('border-red-600', 'text-red-600', 'font-bold');
+                btn.classList.add('border-transparent', 'text-gray-500', 'font-semibold', 'hover:text-gray-700');
+            }
+        });
+
+        // Show active content
+        const activeEl = document.getElementById(`tab-${tabId}-content`);
+        if (activeEl) activeEl.classList.remove('hidden');
+
+        // Style active button
+        const activeBtn = document.getElementById(`tab-patient-${tabId}-btn`);
+        if (activeBtn) {
+            activeBtn.classList.remove('border-transparent', 'text-gray-500', 'font-semibold', 'hover:text-gray-700');
+            activeBtn.classList.add('border-red-600', 'text-red-600', 'font-bold');
+        }
+
+        // Re-render the active tab
+        renderTab(tabId);
+    };
+
+    function getFilteredItems(tabId) {
+        let containerId = '';
+        let searchId = '';
+        let filterId = '';
+        let sortId = '';
+
+        if (tabId === 'completed') {
+            containerId = 'completed-cards-container';
+            searchId = 'completed-search-input';
+            filterId = 'completed-branch-filter';
+            sortId = 'completed-sort-date';
+        } else if (tabId === 'rejected') {
+            containerId = 'rejected-cards-container';
+            searchId = 'rejected-search-input';
+        } else if (tabId === 'disputes') {
+            containerId = 'disputes-cards-container';
+        }
+
+        const container = document.getElementById(containerId);
+        if (!container) return [];
+
+        const searchInput = document.getElementById(searchId);
+        const branchSelect = document.getElementById(filterId);
+        const sortSelect = document.getElementById(sortId);
 
         const search = (searchInput?.value || '').toLowerCase().trim();
         const branch = (branchSelect?.value || 'all branches').toLowerCase().trim();
         const sort = sortSelect?.value || 'Newest Case';
 
-        const tableBody = document.querySelector('#desktop-table-body');
-        const cardContainer = document.querySelector('#mobile-cards-container');
-        
-        if (!tableBody && !cardContainer) return { desktop: [], mobile: [] };
+        // Select items in container based on tab
+        const items = Array.from(container.querySelectorAll(
+            tabId === 'completed' ? '.completed-card' :
+                tabId === 'rejected' ? '.rejected-card' : '.dispute-card'
+        ));
 
-        let desktopRows = tableBody ? Array.from(tableBody.querySelectorAll('tr.record-row')) : [];
-        let mobileCards = cardContainer ? Array.from(cardContainer.querySelectorAll('.record-card')) : [];
+        // Sorting (only implemented for completed and rejected via data-date if present)
+        items.sort((a, b) => {
+            const dateA = new Date((a.dataset.date || '').replace(' ', 'T')).getTime();
+            const dateB = new Date((b.dataset.date || '').replace(' ', 'T')).getTime();
+            if (isNaN(dateA) || isNaN(dateB)) return 0;
+            return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
+        });
 
-        function filterItem(item) {
+        // We must re-append to re-order the DOM
+        items.forEach(item => container.appendChild(item));
+
+        return items.filter(item => {
             const id = (item.dataset.id || '').toLowerCase();
             const exam = (item.dataset.exam || '').toLowerCase();
             const itemBranch = (item.dataset.branch || '').toLowerCase().trim();
@@ -35,65 +102,36 @@
             const matchBranch = isAllBranch || itemBranch === branch;
 
             return matchSearch && matchBranch;
-        }
-
-        // Sort items by date
-        function sortByDate(a, b) {
-            // Robust parsing: "2024-04-12 13:46:19" -> "2024-04-12T13:46:19"
-            const dateA = new Date((a.dataset.date || '').replace(' ', 'T')).getTime();
-            const dateB = new Date((b.dataset.date || '').replace(' ', 'T')).getTime();
-            
-            if (isNaN(dateA) || isNaN(dateB)) return 0;
-            return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
-        }
-
-        if (tableBody) {
-            desktopRows.sort(sortByDate);
-            desktopRows.forEach(row => tableBody.appendChild(row));
-        }
-        if (cardContainer) {
-            mobileCards.sort(sortByDate);
-            mobileCards.forEach(card => cardContainer.appendChild(card));
-        }
-
-        const filteredDesktop = desktopRows.filter(filterItem);
-        const filteredMobile = mobileCards.filter(filterItem);
-
-        return { desktop: filteredDesktop, mobile: filteredMobile };
+        });
     }
 
-    function renderPage() {
-        const tableBody = document.querySelector('#desktop-table-body');
-        const cardContainer = document.querySelector('#mobile-cards-container');
-        
-        const { desktop: filteredDesktop, mobile: filteredMobile } = getFilteredRows();
-        
-        const totalItems = Math.max(filteredDesktop.length, filteredMobile.length);
+    function renderTab(tabId) {
+        const items = getFilteredItems(tabId);
+        const totalItems = items.length;
         const totalPages = Math.max(1, Math.ceil(totalItems / ROWS_PER_PAGE));
 
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-        
-        // Save to sessionStorage so it persists when returning from another page
-        sessionStorage.setItem('CitiLife_myRecords_page', currentPage);
+        if (state[tabId].page > totalPages) state[tabId].page = totalPages;
+        if (state[tabId].page < 1) state[tabId].page = 1;
 
-        const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+        const startIdx = (state[tabId].page - 1) * ROWS_PER_PAGE;
         const endIdx = startIdx + ROWS_PER_PAGE;
+        const visibleItems = new Set(items.slice(startIdx, endIdx));
 
-        const visibleDesktop = new Set(filteredDesktop.slice(startIdx, endIdx));
-        const visibleMobile = new Set(filteredMobile.slice(startIdx, endIdx));
+        const container = document.getElementById(`${tabId}-cards-container`);
+        if (container) {
+            const allItems = Array.from(container.querySelectorAll(`.${tabId === 'disputes' ? 'dispute' : tabId}-card`));
+            allItems.forEach(item => {
+                item.style.display = visibleItems.has(item) ? '' : 'none';
+            });
 
-        if (tableBody) {
-            const allRows = Array.from(tableBody.querySelectorAll('tr.record-row'));
-            allRows.forEach(row => row.style.display = visibleDesktop.has(row) ? '' : 'none');
-            
-            let emptyMsg = document.getElementById('desktop-empty-msg');
-            if (filteredDesktop.length === 0 && allRows.length > 0) {
+            let emptyMsg = document.getElementById(`${tabId}-empty-msg`);
+            if (totalItems === 0 && allItems.length > 0) {
                 if (!emptyMsg) {
-                    emptyMsg = document.createElement('tr');
-                    emptyMsg.id = 'desktop-empty-msg';
-                    emptyMsg.innerHTML = `<td colspan="6" class="text-center py-10 text-gray-500">No records match your filters.</td>`;
-                    tableBody.appendChild(emptyMsg);
+                    emptyMsg = document.createElement('div');
+                    emptyMsg.id = `${tabId}-empty-msg`;
+                    emptyMsg.className = 'text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-200';
+                    emptyMsg.innerHTML = `No records match your filters.`;
+                    container.appendChild(emptyMsg);
                 } else {
                     emptyMsg.style.display = '';
                 }
@@ -102,160 +140,502 @@
             }
         }
 
-        if (cardContainer) {
-            const allCards = Array.from(cardContainer.querySelectorAll('.record-card'));
-            allCards.forEach(card => card.style.display = visibleMobile.has(card) ? '' : 'none');
-            
-            let emptyMobileMsg = document.getElementById('mobile-empty-msg');
-            if (filteredMobile.length === 0 && allCards.length > 0) {
-                if (!emptyMobileMsg) {
-                    emptyMobileMsg = document.createElement('div');
-                    emptyMobileMsg.id = 'mobile-empty-msg';
-                    emptyMobileMsg.className = 'text-center py-10 text-gray-500';
-                    emptyMobileMsg.innerHTML = `No records match your filters.`;
-                    cardContainer.appendChild(emptyMobileMsg);
-                } else {
-                    emptyMobileMsg.style.display = '';
-                }
-            } else if (emptyMobileMsg) {
-                emptyMobileMsg.style.display = 'none';
-            }
+        updatePaginationUI(tabId, totalItems, totalPages);
+    }
+
+    function updatePaginationUI(tabId, totalItems, totalPages) {
+        const prevBtn = document.getElementById(`${tabId}-prev-btn`);
+        const nextBtn = document.getElementById(`${tabId}-next-btn`);
+        const pageInfo = document.getElementById(`${tabId}-page-info`);
+        const countInfo = document.getElementById(`${tabId}-count-info`);
+
+        if (!pageInfo) return; // If pagination not present for this tab
+
+        const startDisplay = totalItems === 0 ? 0 : (state[tabId].page - 1) * ROWS_PER_PAGE + 1;
+        const endDisplay = Math.min(state[tabId].page * ROWS_PER_PAGE, totalItems);
+
+        pageInfo.textContent = `Page ${state[tabId].page} of ${totalPages}`;
+        if (countInfo) {
+            countInfo.textContent = totalItems === 0
+                ? 'No records'
+                : `Showing ${startDisplay}–${endDisplay} of ${totalItems} records`;
         }
 
-        updatePaginationUI(totalItems, totalPages);
+        if (prevBtn) prevBtn.disabled = state[tabId].page <= 1;
+        if (nextBtn) nextBtn.disabled = state[tabId].page >= totalPages;
     }
 
-    function updatePaginationUI(totalItems, totalPages) {
-        const prevBtns = document.querySelectorAll('#record-prev-btn, #record-prev-btn-mob');
-        const nextBtns = document.querySelectorAll('#record-next-btn, #record-next-btn-mob');
-        const pageInfos = document.querySelectorAll('#record-page-info, #record-page-info-mob');
-        const countInfos = document.querySelectorAll('#record-count-info, #record-count-info-mob');
-
-        const startDisplay = totalItems === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
-        const endDisplay = Math.min(currentPage * ROWS_PER_PAGE, totalItems);
-
-        pageInfos.forEach(el => el.textContent = `Page ${currentPage} of ${totalPages}`);
-        countInfos.forEach(el => el.textContent = totalItems === 0 
-            ? 'No records' 
-            : `Showing ${startDisplay}–${endDisplay} of ${totalItems} records`);
-
-        prevBtns.forEach(btn => {
-            btn.disabled = currentPage <= 1;
-        });
-        nextBtns.forEach(btn => {
-            btn.disabled = currentPage >= totalPages;
-        });
-    }
-
-    function applyFilters() {
-        currentPage = 1;
-        renderPage();
-    }
-
-    // ── Interaction ───────────────────────────────────────────────────────────
+    // Event Listeners
     document.addEventListener('input', (e) => {
-        if (e.target.id === 'record-search-input') applyFilters();
+        if (['completed-search-input', 'rejected-search-input'].includes(e.target.id)) {
+            state[currentTab].page = 1;
+            renderTab(currentTab);
+        }
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target.id === 'record-branch-filter' || e.target.id === 'record-sort-date') applyFilters();
+        if (['completed-branch-filter', 'completed-sort-date'].includes(e.target.id)) {
+            state[currentTab].page = 1;
+            renderTab(currentTab);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const match = btn.id.match(/^(completed|rejected|disputes)-(prev|next)-btn$/);
+        if (match) {
+            const tabId = match[1];
+            const action = match[2];
+            const items = getFilteredItems(tabId);
+            const totalPages = Math.ceil(items.length / ROWS_PER_PAGE);
+
+            if (action === 'prev' && state[tabId].page > 1) {
+                state[tabId].page--;
+                renderTab(tabId);
+            } else if (action === 'next' && state[tabId].page < totalPages) {
+                state[tabId].page++;
+                renderTab(tabId);
+            }
+        }
     });
 
     function init() {
-        // Shared pagination event handling
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
+        renderTab('completed');
+        renderTab('rejected');
+        renderTab('disputes');
+        // By default switch to completed
+        window.switchPatientTab('completed');
 
-            if (btn.id === 'record-prev-btn' || btn.id === 'record-prev-btn-mob') {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderPage();
-                }
-            } else if (btn.id === 'record-next-btn' || btn.id === 'record-next-btn-mob') {
-                const { desktop } = getFilteredRows();
-                const totalPages = Math.ceil(desktop.length / ROWS_PER_PAGE);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderPage();
+        // Highlighting for case params
+        handleHighlight();
+    }
+
+    function handleHighlight() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightId = urlParams.get('highlight_case');
+        if (!highlightId) return;
+
+        // Determine which tab has the case
+        let foundTab = null;
+        let foundItem = null;
+        ['completed', 'rejected', 'disputes'].forEach(tabId => {
+            if (foundTab) return;
+            const container = document.getElementById(`${tabId}-cards-container`);
+            if (container) {
+                const item = Array.from(container.querySelectorAll(`.${tabId === 'disputes' ? 'dispute' : tabId}-card`))
+                    .find(c => c.dataset.caseId === highlightId || c.dataset.id === highlightId);
+                if (item) {
+                    foundTab = tabId;
+                    foundItem = item;
                 }
             }
         });
 
-        renderPage();
-        
-        // Handle URL highlighting
-        function handleHighlight() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const highlightId = urlParams.get('highlight_case');
-            if (!highlightId) return;
+        if (foundTab && foundItem) {
+            window.switchPatientTab(foundTab);
 
-            const { desktop } = getFilteredRows();
-            const index = desktop.findIndex(row => row.dataset.caseId === highlightId);
+            const items = getFilteredItems(foundTab);
+            const index = items.indexOf(foundItem);
 
             if (index !== -1) {
-                currentPage = Math.floor(index / ROWS_PER_PAGE) + 1;
-                renderPage();
+                state[foundTab].page = Math.floor(index / ROWS_PER_PAGE) + 1;
+                renderTab(foundTab);
 
                 setTimeout(() => {
-                    const targetRow = document.querySelector(`tr[data-case-id="${highlightId}"]`);
-                    const targetCard = document.querySelector(`div.record-card[data-case-id="${highlightId}"]`);
-                    
-                    const flashEffect = (el, isMobile) => {
-                        if (!el || el.style.display === 'none') return;
-                        
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        
-                        if (isMobile) {
-                            el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
-                        }
+                    const el = document.querySelector(`.${foundTab === 'disputes' ? 'dispute' : foundTab}-card[data-case-id="${highlightId}"]`) ||
+                        document.querySelector(`.${foundTab === 'disputes' ? 'dispute' : foundTab}-card[data-id="${highlightId}"]`);
 
-                        // Staff-like flashing effect
-                        el.style.transition = 'background-color 0.4s ease';
+                    if (el && el.style.display !== 'none') {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
                         el.style.backgroundColor = '#fef08a';
                         setTimeout(() => {
                             el.style.backgroundColor = '#fde047';
                             setTimeout(() => {
                                 el.style.backgroundColor = '#fef08a';
                                 setTimeout(() => {
-                                    el.style.backgroundColor = '#fde047';
-                                    setTimeout(() => {
-                                        el.style.transition = 'background-color 1.5s ease';
-                                        el.style.backgroundColor = '';
-                                        if (isMobile) {
-                                            el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative');
-                                        }
-                                    }, 300);
+                                    el.style.backgroundColor = '';
+                                    el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative');
                                 }, 300);
                             }, 300);
                         }, 200);
-                    };
+                    }
 
-                    flashEffect(targetRow, false);
-                    flashEffect(targetCard, true);
-                    
                     const newUrl = new URL(window.location);
                     newUrl.searchParams.delete('highlight_case');
                     window.history.replaceState({}, document.title, newUrl.toString());
                 }, 200);
             }
         }
-        
-        handleHighlight();
     }
 
-    // Handle initial load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Handle realtime:updated events from global layout (though the script is now outside)
-    document.addEventListener('realtime:updated', () => { 
-        renderPage(); 
+    document.addEventListener('realtime:updated', () => {
+        renderTab(currentTab);
     });
 
-
-
 })();
+
+window.showExpiredAlert = function (e, contacts = []) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    const contactBtn = document.getElementById('expired-alert-contact-btn');
+    if (contacts && contacts.length > 0) {
+        contactBtn.setAttribute('onclick', `window.showContactOptions(${JSON.stringify(contacts)}); document.getElementById('expired-alert-modal').classList.remove('show'); return false;`);
+        contactBtn.href = "#";
+        contactBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> Contact Clinic';
+        contactBtn.style.display = 'inline-flex';
+    } else {
+        contactBtn.style.display = 'none';
+    }
+    document.getElementById('expired-alert-modal').classList.add('show');
+};
+
+window.showContactOptions = function (numbers) {
+    if (!numbers || numbers.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'No Contact Info',
+            text: 'There is no contact information available for this clinic at the moment.',
+            confirmButtonColor: '#dc2626',
+            customClass: { popup: 'rounded-2xl' }
+        });
+        return;
+    }
+
+    let html = '<div class="flex flex-col gap-3 mt-2">';
+    numbers.forEach(num => {
+        html += `<a href="tel:${num}" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-gray-700 font-bold transition shadow-sm" style="text-decoration:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> 
+                ${num}
+            </a>`;
+    });
+    html += '</div>';
+
+    Swal.fire({
+        title: 'Contact Clinic',
+        html: html,
+        showConfirmButton: false,
+        showCloseButton: true,
+        didOpen: () => {
+            const closeBtn = Swal.getCloseButton();
+            if (closeBtn) closeBtn.blur();
+        },
+        customClass: {
+            popup: 'rounded-2xl',
+            title: 'text-xl font-bold text-gray-800',
+            closeButton: '!outline-none !ring-0 !border-0 !shadow-none !text-gray-500 hover:!text-gray-800'
+        }
+    });
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('expired')) {
+        window.showExpiredAlert();
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.delete('expired');
+        window.history.replaceState({}, document.title, newUrl.toString());
+    }
+});
+
+// ── Feedback Modal Logic ──────────────────────────────────────────────────
+window.openFeedbackModal = function (caseId, caseNumber, examType) {
+    const modal = document.getElementById('feedback-modal');
+    const content = document.getElementById('feedback-modal-content');
+    if (!modal || !content) return;
+
+    const form = document.getElementById('feedback-form');
+    if (form) form.reset();
+    document.getElementById('feedback-case-id').value = caseId;
+    document.getElementById('feedback-rating-input').value = "";
+    updateFeedbackStars(0);
+
+    document.getElementById('feedback-case-number').textContent = caseNumber;
+
+    modal.classList.remove('hidden');
+    void modal.offsetWidth;
+    modal.classList.remove('opacity-0');
+    content.classList.remove('scale-95');
+};
+
+window.closeFeedbackModal = function () {
+    const modal = document.getElementById('feedback-modal');
+    const content = document.getElementById('feedback-modal-content');
+    if (!modal || !content) return;
+
+    modal.classList.add('opacity-0');
+    content.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+};
+
+const feedbackTexts = {
+    1: "Poor", 2: "Fair", 3: "Good", 4: "Very Good", 5: "Excellent"
+};
+
+window.updateFeedbackStars = function (value) {
+    const stars = document.querySelectorAll('.feedback-star-btn');
+    const ratingText = document.getElementById('feedback-rating-text');
+
+    stars.forEach(star => {
+        const rating = parseInt(star.getAttribute('data-rating'));
+        if (rating <= value) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-400');
+        } else {
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-gray-300');
+        }
+    });
+    if (ratingText) {
+        ratingText.textContent = value == 0 ? "Select a rating" : feedbackTexts[value];
+    }
+};
+
+document.addEventListener('click', function (e) {
+    const starBtn = e.target.closest('.feedback-star-btn');
+    if (starBtn) {
+        const value = starBtn.getAttribute('data-rating');
+        document.getElementById('feedback-rating-input').value = value;
+        updateFeedbackStars(value);
+    }
+});
+
+window.submitFeedbackForm = function () {
+    const feedbackForm = document.getElementById('feedback-form');
+    if (!feedbackForm) return;
+
+    const submitBtn = document.getElementById('feedback-submit-btn');
+    const rating = document.getElementById('feedback-rating-input').value;
+
+    if (!rating) {
+        Swal.fire({ icon: 'error', title: 'Oops...', text: 'Please provide a star rating to let us know how we did!' });
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Submitting...';
+    if (window.lucide) lucide.createIcons();
+
+    const formData = new FormData(feedbackForm);
+
+    fetch('/CitiLife-System/app/api/submit_feedback.php', {
+        method: 'POST',
+        body: formData
+    })
+        .then(res => res.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Feedback';
+            if (window.lucide) lucide.createIcons();
+
+            if (data.success) {
+                closeFeedbackModal();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thank you!',
+                    text: 'Your feedback has been submitted successfully.',
+                    confirmButtonColor: '#dc2626',
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        title: 'text-xl font-bold text-gray-800'
+                    }
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Failed to submit feedback' });
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Feedback';
+            if (window.lucide) lucide.createIcons();
+            console.error(err);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'A network error occurred. Please try again.' });
+        });
+};
+
+// ── Dispute / Report Error Logic ──────────────────────────────────────────────────
+window.toggleDisputeFields = function () {
+    const category = document.getElementById('dispute-category').value;
+    const demoContainer = document.getElementById('demographic-options-container');
+    const descContainer = document.getElementById('general-description-container');
+    const descTextarea = document.getElementById('dispute-description');
+
+    if (category === 'demographic_error') {
+        demoContainer.classList.remove('hidden');
+        descContainer.classList.add('hidden');
+        descTextarea.removeAttribute('required');
+    } else if (category === 'exam_details_error' || category === 'findings_error') {
+        demoContainer.classList.add('hidden');
+        descContainer.classList.remove('hidden');
+        descTextarea.setAttribute('required', 'required');
+        ['chk-first-name', 'chk-last-name', 'chk-age', 'chk-sex'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.checked = false;
+        });
+        toggleCorrectionInputs();
+    } else {
+        demoContainer.classList.add('hidden');
+        descContainer.classList.add('hidden');
+        descTextarea.removeAttribute('required');
+    }
+};
+
+window.toggleCorrectionInputs = function () {
+    const map = [
+        { chk: 'chk-first-name', field: 'field-first-name', input: 'input-first-name' },
+        { chk: 'chk-last-name', field: 'field-last-name', input: 'input-last-name' },
+        { chk: 'chk-age', field: 'field-age', input: 'input-age' },
+        { chk: 'chk-sex', field: 'field-sex', input: 'input-sex' },
+    ];
+
+    let anyChecked = false;
+    const inputsContainer = document.getElementById('correction-inputs-container');
+
+    map.forEach(item => {
+        const isChecked = document.getElementById(item.chk)?.checked;
+        const fieldEl = document.getElementById(item.field);
+        const inputEl = document.getElementById(item.input);
+
+        if (isChecked) {
+            anyChecked = true;
+            if (fieldEl) fieldEl.classList.remove('hidden');
+        } else {
+            if (fieldEl) fieldEl.classList.add('hidden');
+            if (inputEl) inputEl.value = '';
+        }
+    });
+
+    if (anyChecked) {
+        inputsContainer.classList.remove('hidden');
+    } else {
+        inputsContainer.classList.add('hidden');
+    }
+};
+
+window.openDisputeModal = function (caseId, caseNumber, examType) {
+    const modal = document.getElementById('dispute-modal');
+    const content = document.getElementById('dispute-modal-content');
+    if (!modal) { alert("dispute-modal NOT FOUND!"); return; }
+    if (!content) { alert("dispute-modal-content NOT FOUND!"); return; }
+
+    document.getElementById('dispute-case-id').value = caseId;
+    document.getElementById('dispute-case-number').textContent = caseNumber;
+    document.getElementById('dispute-exam-type').textContent = examType;
+    document.getElementById('dispute-category').value = '';
+    const descTextarea = document.getElementById('dispute-description');
+    if (descTextarea) descTextarea.value = '';
+
+    ['chk-first-name', 'chk-last-name', 'chk-age', 'chk-sex'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = false;
+    });
+    toggleDisputeFields();
+
+    modal.classList.remove('hidden');
+    void modal.offsetWidth;
+    modal.classList.remove('opacity-0');
+    content.classList.remove('scale-95');
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.closeDisputeModal = function () {
+    const modal = document.getElementById('dispute-modal');
+    const content = document.getElementById('dispute-modal-content');
+    if (!modal || !content) return;
+
+    modal.classList.add('opacity-0');
+    content.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+};
+
+window.submitDisputeForm = function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('dispute-submit-btn');
+    const form = document.getElementById('dispute-form');
+    const category = document.getElementById('dispute-category').value;
+    const formData = new FormData(form);
+
+    if (category === 'demographic_error') {
+        const items = [];
+        if (document.getElementById('chk-first-name')?.checked) {
+            const val = document.getElementById('input-first-name').value.trim();
+            if (val) items.push(`First Name: ${val}`);
+        }
+        if (document.getElementById('chk-last-name')?.checked) {
+            const val = document.getElementById('input-last-name').value.trim();
+            if (val) items.push(`Last Name: ${val}`);
+        }
+        if (document.getElementById('chk-age')?.checked) {
+            const val = document.getElementById('input-age').value.trim();
+            if (val) items.push(`Age: ${val}`);
+        }
+        if (document.getElementById('chk-sex')?.checked) {
+            const val = document.getElementById('input-sex').value;
+            if (val) items.push(`Sex: ${val}`);
+        }
+
+        if (items.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incomplete Details',
+                text: 'Pumili ng checkbox at ilagay ang tamang detalye na papabago.',
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+        formData.set('description', items.join("\\n"));
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = 'Submitting...';
+
+    fetch('/CitiLife-System/app/api/disputes.php', {
+        method: 'POST',
+        body: formData
+    })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Error Report';
+            if (window.lucide) lucide.createIcons();
+
+            if (data.success) {
+                closeDisputeModal();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Report Submitted!',
+                    text: data.message,
+                    confirmButtonColor: '#dc2626',
+                    customClass: { popup: 'rounded-2xl' }
+                }).then(() => {
+                    window.location.href = '/CitiLife-System/my-records?tab=disputes';
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Error Report';
+            console.error(err);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection error.' });
+        });
+};
+

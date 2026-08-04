@@ -93,12 +93,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     // Generate OTP
                     $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
-                    
+
                     $updateStmt = $pdo->prepare("UPDATE users SET otp_code = ?, token_expires_at = ? WHERE id = ?");
                     $updateStmt->execute([$otpCode, $expiresAt, $user['id']]);
-                    
+
                     // Send email
-                                        $firstName = $user['first_name'] ?? 'Patient';
+                    $firstName = $user['first_name'] ?? 'Patient';
                     $emailBody = "
                         <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
                             <h2 style='color: #1f2937;'>CitiLife System - Login Verification</h2>
@@ -274,7 +274,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <?php endif; ?>
             <?php endif; ?>
 
-            <form id="patientLoginForm" name="patientLoginForm" method="POST" action="/<?= PROJECT_DIR ?>/patient-login" autocomplete="on" class="space-y-4 sm:space-y-6">
+            <form id="patientLoginForm" name="patientLoginForm" method="POST" action="/<?= PROJECT_DIR ?>/patient-login"
+                autocomplete="on" class="space-y-4 sm:space-y-6">
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
                     <div class="relative">
@@ -315,7 +316,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 </div>
 
                 <div class="flex items-center justify-end">
-                    <a href="forgot-password" class="text-sm font-medium text-red-600 hover:text-red-500 hover:underline">
+                    <a href="forgot-password"
+                        class="text-sm font-medium text-red-600 hover:text-red-500 hover:underline">
                         Forgot your password?
                     </a>
                 </div>
@@ -323,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <div class="pt-1 sm:pt-2">
                     <button type="submit" <?= $is_locked ? 'disabled' : '' ?>
                         class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white <?= $is_locked ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700' ?> focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                        Sign In as Patient
+                        Log in
                     </button>
                 </div>
 
@@ -336,7 +338,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             </form>
         </div>
         <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">
-            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife X-ray System.</p>
+            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.
+            </p>
         </div>
     </div>
     <script>
