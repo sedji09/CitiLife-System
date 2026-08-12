@@ -9,9 +9,16 @@ if (isset($caseNotFound) && $caseNotFound) {
 }
 ?>
 
+<?php
+$backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
+if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
+    $backLink .= "&tab=disputes";
+}
+?>
+
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
+    <a href="<?= $backLink ?>"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>

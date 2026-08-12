@@ -62,6 +62,14 @@ if (isset($_GET['action'])) {
                     }
                 }
 
+                // Check if case has an active dispute and mark as Resolved
+                require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+                $disputeMdl = new \ResultDisputeModel($pdo);
+                $activeDispute = $disputeMdl->getActiveDisputeByCase($id);
+                if ($activeDispute) {
+                    $disputeMdl->updateDisputeStatus($activeDispute['id'], 'Resolved', 'branch_admin', 'Amended report released by Branch Admin.', $currentUserId);
+                }
+
                 $caseModel->releaseResult($id);
                 $_SESSION['flash_success'] = "Result released. Case moved to X-ray Patient Records.";
 
@@ -69,6 +77,60 @@ if (isset($_GET['action'])) {
                 $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
                 $details = "Patient: $patientName, Case: {$caseData['case_number']}";
                 $auditLogModel->addLog($currentUserId, "Released X-ray report", 'Patient Records', 'Case', $id, $details, $branchId);
+
+                $patientUserId = $caseModel->getPatientUserId($id);
+                if ($patientUserId) {
+                    $notificationModel = new \NotificationModel($pdo);
+                    $notifTitle = $activeDispute ? "Error Report Resolved" : "Report Released";
+                    $notifMsg = $activeDispute 
+                        ? "Your error report for Case {$caseData['case_number']} has been resolved and your updated report released." 
+                        : "Your X-ray report for Case {$caseData['case_number']} has been released. You can now download it.";
+
+                    $notificationModel->add(
+                        $notifTitle,
+                        $notifMsg,
+                        "/" . PROJECT_DIR . "/my-records?highlight_case={$id}",
+                        $patientUserId
+                    );
+
+                    // Send Email Notification
+                    $patientUser = $userModel->getUserById($patientUserId);
+                    if ($patientUser && !empty($patientUser['email'])) {
+                        require_once __DIR__ . '/../../Helpers/mailer_helper.php';
+                        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                        $loginUrl = "http://{$host}/" . PROJECT_DIR . "/patient-login.php";
+
+                        if ($activeDispute) {
+                            $subject = "Error Report Resolved - CitiLife Diagnostic Center";
+                            $body = "
+                                <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
+                                    <h2 style='color: #16a34a; margin-top: 0;'>Error Report Resolved</h2>
+                                    <p>Dear <strong>{$patientName}</strong>,</p>
+                                    <p>We have successfully reviewed and resolved your error report for Case <strong>{$caseData['case_number']}</strong>.</p>
+                                    <p>Your updated X-ray report is now released and ready for viewing in your patient portal.</p>
+                                    <div style='margin: 25px 0;'>
+                                        <a href='{$loginUrl}' style='display: inline-block; padding: 12px 20px; background-color: #16a34a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;'>Log in to View Updated Report</a>
+                                    </div>
+                                    <br>
+                                    <p>Thank you for choosing CitiLife Diagnostic Center.</p>
+                                </div>
+                            ";
+                        } else {
+                            $subject = "Your X-ray Report is Ready - CitiLife System";
+                            $body = "
+                                <div style='font-family: Arial, sans-serif; color: #333;'>
+                                    <h2>Hello {$patientName},</h2>
+                                    <p>Good news! Your X-ray report for Case <strong>{$caseData['case_number']}</strong> has been released and is now ready for viewing or downloading.</p>
+                                    <p>You can access it by logging into your patient portal:</p>
+                                    <p><a href='{$loginUrl}' style='display: inline-block; padding: 10px 15px; background-color: #ff0000d3; color: #fff; text-decoration: none; border-radius: 5px;'>Log in to Patient Portal</a></p>
+                                    <br>
+                                    <p>Thank you for choosing CitiLife.</p>
+                                </div>
+                            ";
+                        }
+                        sendEmail($patientUser['email'], $patientName, $subject, $body);
+                    }
+                }
 
                 echo json_encode(['success' => true]);
             } else {

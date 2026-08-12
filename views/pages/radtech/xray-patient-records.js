@@ -1,23 +1,28 @@
-
 (function () {
     const ROWS_PER_PAGE = 8;
-    let currentPage = parseInt(sessionStorage.getItem('CitiLife_radtechXray_page')) || 1;
+    let currentPages = {
+        completed: parseInt(sessionStorage.getItem('CitiLife_radtechXray_page_completed')) || 1,
+        disputes: parseInt(sessionStorage.getItem('CitiLife_radtechXray_page_disputes')) || 1
+    };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    function getFilteredRows() {
+    function getFilteredRows(type) {
         const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
         const sort   = document.getElementById('sort-date')?.value    || 'Sort by:';
 
-        const tbody = document.getElementById('table-body');
+        const tbodyId = type === 'completed' ? 'table-body' : 'disputes-table-body';
+        const rowClass = type === 'completed' ? 'tr.record-row' : 'tr.dispute-row';
+        const tbody = document.getElementById(tbodyId);
+        
         if (!tbody) return [];
 
-        let rows = Array.from(tbody.querySelectorAll('tr.record-row'));
+        let rows = Array.from(tbody.querySelectorAll(rowClass));
 
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
             rows.sort((a, b) => {
-                const dateA = new Date(a.dataset.date).getTime();
-                const dateB = new Date(b.dataset.date).getTime();
+                const dateA = new Date(a.dataset.date || 0).getTime();
+                const dateB = new Date(b.dataset.date || 0).getTime();
                 return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
             });
             rows.forEach(row => tbody.appendChild(row));
@@ -35,21 +40,23 @@
         });
     }
 
-    function renderPage() {
-        const tbody = document.getElementById('table-body');
+    function renderPage(type) {
+        const tbodyId = type === 'completed' ? 'table-body' : 'disputes-table-body';
+        const rowClass = type === 'completed' ? 'tr.record-row' : 'tr.dispute-row';
+        const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
 
-        const allRows      = Array.from(tbody.querySelectorAll('tr.record-row'));
-        const filteredRows = getFilteredRows();
+        const allRows      = Array.from(tbody.querySelectorAll(rowClass));
+        const filteredRows = getFilteredRows(type);
         const totalPages   = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
 
         // Clamp current page
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1)          currentPage = 1;
+        if (currentPages[type] > totalPages) currentPages[type] = totalPages;
+        if (currentPages[type] < 1)          currentPages[type] = 1;
 
-        sessionStorage.setItem('CitiLife_radtechXray_page', currentPage);
+        sessionStorage.setItem(`CitiLife_radtechXray_page_${type}`, currentPages[type]);
 
-        const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+        const startIdx = (currentPages[type] - 1) * ROWS_PER_PAGE;
         const endIdx   = startIdx + ROWS_PER_PAGE;
 
         // Build a Set for quick lookup of which rows are visible on this page
@@ -60,11 +67,12 @@
         });
 
         // Empty-state row
-        let emptyMsg = document.getElementById('empty-msg-row');
+        let emptyMsgId = type === 'completed' ? 'empty-msg-row' : 'empty-msg-row-disputes';
+        let emptyMsg = document.getElementById(emptyMsgId);
         if (filteredRows.length === 0 && allRows.length > 0) {
             if (!emptyMsg) {
                 emptyMsg = document.createElement('tr');
-                emptyMsg.id = 'empty-msg-row';
+                emptyMsg.id = emptyMsgId;
                 emptyMsg.innerHTML = `<td colspan="6" class="text-center py-8 text-gray-500">No records match your filters.</td>`;
                 tbody.appendChild(emptyMsg);
             } else {
@@ -75,15 +83,18 @@
         }
 
         // Update pagination UI
-        updatePaginationUI(filteredRows.length, totalPages);
+        updatePaginationUI(type, filteredRows.length, totalPages);
     }
 
-    function updatePaginationUI(totalFiltered, totalPages) {
-        const recordCountInfo = document.getElementById('xray-record-count');
-        const container = document.getElementById('xray-pagination-controls');
+    function updatePaginationUI(type, totalFiltered, totalPages) {
+        const countId = type === 'completed' ? 'xray-record-count' : 'disputes-record-count';
+        const containerId = type === 'completed' ? 'xray-pagination-controls' : 'disputes-pagination-controls';
+        
+        const recordCountInfo = document.getElementById(countId);
+        const container = document.getElementById(containerId);
 
-        const startIdx = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
-        const endIdx   = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
+        const startIdx = totalFiltered === 0 ? 0 : (currentPages[type] - 1) * ROWS_PER_PAGE + 1;
+        const endIdx   = Math.min(currentPages[type] * ROWS_PER_PAGE, totalFiltered);
 
         if (recordCountInfo) {
             recordCountInfo.innerHTML = totalFiltered === 0
@@ -110,9 +121,10 @@
                 btn.disabled = true;
             } else {
                 btn.onclick = () => {
-                    currentPage = page;
-                    renderPage();
-                    const card = document.getElementById('xray-records-table-card');
+                    currentPages[type] = page;
+                    renderPage(type);
+                    const cardId = type === 'completed' ? 'xray-records-table-card' : 'disputes-table-card';
+                    const card = document.getElementById(cardId);
                     if (card) {
                         card.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
@@ -129,42 +141,39 @@
             return span;
         }
 
+        const curr = currentPages[type];
+
         // First Button
-        container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+        container.appendChild(createButton('&laquo; First', 1, curr <= 1));
 
         // Back Button
-        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+        container.appendChild(createButton('&lsaquo; Back', curr - 1, curr <= 1));
 
         // Page numbers
         if (totalPages <= 7) {
-            // Show all pages
             for (let i = 1; i <= totalPages; i++) {
-                container.appendChild(createButton(i, i, false, i == currentPage));
+                container.appendChild(createButton(i, i, false, i == curr));
             }
         } else {
-            // We have many pages
-            if (currentPage <= 4) {
-                // Near start: 1, 2, 3, 4, 5, ..., T
+            if (curr <= 4) {
                 for (let i = 1; i <= 5; i++) {
-                    container.appendChild(createButton(i, i, false, i == currentPage));
+                    container.appendChild(createButton(i, i, false, i == curr));
                 }
                 container.appendChild(createEllipsis());
-                container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
-            } else if (currentPage >= totalPages - 3) {
-                // Near end: 1, ..., T-4, T-3, T-2, T-1, T
-                container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                container.appendChild(createButton(totalPages, totalPages, false, totalPages == curr));
+            } else if (curr >= totalPages - 3) {
+                container.appendChild(createButton(1, 1, false, 1 == curr));
                 container.appendChild(createEllipsis());
                 for (let i = totalPages - 4; i <= totalPages; i++) {
-                    container.appendChild(createButton(i, i, false, i == currentPage));
+                    container.appendChild(createButton(i, i, false, i == curr));
                 }
             } else {
-                // Middle: 1, ..., C-1, C, C+1, ..., T
-                container.appendChild(createButton(1, 1, false, 1 == currentPage));
+                container.appendChild(createButton(1, 1, false, 1 == curr));
                 container.appendChild(createEllipsis());
                 
-                container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
-                container.appendChild(createButton(currentPage, currentPage, false, true));
-                container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                container.appendChild(createButton(curr - 1, curr - 1, false, false));
+                container.appendChild(createButton(curr, curr, false, true));
+                container.appendChild(createButton(curr + 1, curr + 1, false, false));
                 
                 container.appendChild(createEllipsis());
                 container.appendChild(createButton(totalPages, totalPages, false, false));
@@ -172,15 +181,17 @@
         }
 
         // Next Button
-        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+        container.appendChild(createButton('Next &rsaquo;', curr + 1, curr >= totalPages));
 
         // Last Button
-        container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
+        container.appendChild(createButton('Last &raquo;', totalPages, curr >= totalPages));
     }
 
     function applyFilters() {
-        currentPage = 1;   // reset to first page whenever filter changes
-        renderPage();
+        currentPages.completed = 1;
+        currentPages.disputes = 1;
+        renderPage('completed');
+        renderPage('disputes');
     }
 
     // ── Event listeners ───────────────────────────────────────────────────────
@@ -194,7 +205,8 @@
 
     // ── Re-apply pagination after realtime polling replaces tbody innerHTML ───
     document.addEventListener('realtime:updated', () => {
-        renderPage();
+        renderPage('completed');
+        renderPage('disputes');
     });
 
     // ── Init (DOM is already ready when this script loads) ────────────────────
@@ -204,7 +216,8 @@
         if (sortSelect && sortSelect.value === 'Sort by:') {
             sortSelect.value = 'Newest Case';
         }
-        renderPage();
+        renderPage('completed');
+        renderPage('disputes');
     }
 
     // Run immediately if DOM is ready, otherwise wait

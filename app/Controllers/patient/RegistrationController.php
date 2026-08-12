@@ -24,7 +24,7 @@ class RegistrationController
         $error = '';
 
         $currentHour = (int) date('G');
-        $isClinicOpen = ($currentHour >= 8 && $currentHour < 21);
+        $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
 
         // 1. Fetch data
         $branches = $branchModel->getAllBranches();
@@ -44,10 +44,13 @@ class RegistrationController
         $closedMessage = $dbSettings['closed_message'] ?? 'The system is temporarily closed.';
 
         // Helper to check if a branch is closed
-        $isBranchClosed = function($branchId) use ($systemStatus, $closedBranchesArr) {
-            if ($systemStatus !== 'closed') return false;
-            if (in_array('all', $closedBranchesArr)) return true;
-            if (in_array((string)$branchId, $closedBranchesArr)) return true;
+        $isBranchClosed = function ($branchId) use ($systemStatus, $closedBranchesArr) {
+            if ($systemStatus !== 'closed')
+                return false;
+            if (in_array('all', $closedBranchesArr))
+                return true;
+            if (in_array((string) $branchId, $closedBranchesArr))
+                return true;
             return false;
         };
 
@@ -84,7 +87,6 @@ class RegistrationController
                         } else {
                             $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
                             if (isset($result['case_id'])) {
-                                $_SESSION['active_status_case_id'] = $result['case_id'];
                                 $auditLogModel->addLog(
                                     $userId,
                                     'Submitted X-Ray Request',
@@ -119,7 +121,6 @@ class RegistrationController
                         } else {
                             $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
                             if (isset($result['case_id'])) {
-                                $_SESSION['active_status_case_id'] = $result['case_id'];
                                 $auditLogModel->addLog(
                                     $userId,
                                     'Submitted X-Ray Request',

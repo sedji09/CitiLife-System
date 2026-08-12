@@ -65,12 +65,17 @@
 
             <!-- Dropdown -->
             <div v-show="activeNotificationDropdown === notif.id" 
-                 class="absolute w-max bg-white border border-gray-200 rounded-xl shadow-lg z-[100] py-1.5 px-1.5 overflow-hidden"
+                 class="absolute w-max bg-white border border-gray-200 rounded-lg shadow-lg z-[100] py-1 overflow-hidden"
                  style="display: none; right: 16px; top: 36px;"
                  @click.stop>
-              <button @click.stop="deleteNotification(notif.id)" class="w-full text-left px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100 flex items-center gap-3 rounded-lg transition whitespace-nowrap">
-                <div class="bg-gray-100 p-1.5 rounded-full text-gray-700 shrink-0"><i data-lucide="x" class="w-4 h-4"></i></div>
-                Delete this notification
+              <button v-if="notif.is_read == 0" @click.stop="markAsRead(notif.id, null)" class="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="check" class="w-4 h-4"></i> Mark as read
+              </button>
+              <button v-else @click.stop="markAsUnread(notif.id)" class="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="check" class="w-4 h-4"></i> Mark as unread
+              </button>
+              <button @click.stop="deleteNotification(notif.id)" class="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-100 mt-1 pt-1 flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete this notification
               </button>
             </div>
           </div>

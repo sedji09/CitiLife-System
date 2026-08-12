@@ -56,6 +56,17 @@ class PatientDetailsController
                     $actDispute = $disputeMdl->getActiveDisputeByCase($caseId);
                     if ($actDispute) {
                         $disputeMdl->escalateToRadiologist($actDispute['id'], 'RadTech updated images and exam details based on patient error report.');
+                        
+                        $caseDetailsForNotif = $caseModel->getCaseById($caseId);
+                        if ($caseDetailsForNotif) {
+                            $notificationModel->add(
+                                "Patient Error Report Escalated",
+                                "RadTech has provided new images and details for Case {$caseDetailsForNotif['case_number']} based on a patient error report. Ready for amendment.",
+                                "/" . PROJECT_DIR . "/index.php?role=radiologist&page=worklist&tab=disputes",
+                                $caseDetailsForNotif['radiologist_id'] ?? null,
+                                'radiologist'
+                            );
+                        }
                     }
 
                     $_SESSION['flash_success'] = $result['message'];
@@ -102,7 +113,7 @@ class PatientDetailsController
 
             $isReadOnly = in_array($caseDetails['status'], ['Pending', 'Under Reading', 'Report Ready', 'Completed'])
                 && $caseDetails['image_status'] === 'Uploaded'
-                && !$activeDispute;
+                && (!$activeDispute || $activeDispute['status'] !== 'Pending RadTech Review');
 
             $savedTemplate = $caseDetails['report_template'] ?? '';
         }

@@ -37,11 +37,12 @@ if ($patientRow && isset($patientRow['patient_number'])) {
         $isRejected = (isset($c['approval_status']) && $c['approval_status'] === 'Rejected') || (isset($c['status']) && $c['status'] === 'Rejected');
         if ($isRejected) {
             $rejectedCases[] = $c;
-        } elseif (in_array($c['status'], ['Completed', 'Released', 'Report Ready'])) {
+        } elseif (in_array($c['status'], ['Completed', 'Released'])) {
             $completedCases[] = $c;
         }
     }
     $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
+    $disputedCaseIds = array_column($patientDisputes, 'case_id');
 
     $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name, 
                                      b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
@@ -174,6 +175,14 @@ $statusBadge = [
                     </div>
                 </div>
 
+                <!-- Info Banner -->
+                <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-start gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                    <p class="text-xs sm:text-sm text-blue-800">
+                        <strong>Note:</strong> You can only report errors for your X-ray records within <strong>30 days</strong> from the examination date. The "Report an Error" option is automatically disabled for older records.
+                    </p>
+                </div>
+
                 <!-- Completed Cards Container -->
                 <div id="completed-cards-container" class="space-y-4">
                     <?php foreach ($completedCases as $c): ?>
@@ -228,17 +237,26 @@ $statusBadge = [
 
                             <!-- Card Footer -->
                             <div
-                                class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-3">
-                                <button type="button"
-                                    onclick="openDisputeModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
-                                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                                    Report an Issue
-                                </button>
+                                class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
+                                <?php
+                                $isExpired30Days = strtotime($c['created_at']) < strtotime('-30 days');
+                                if (!in_array($c['id'], $disputedCaseIds) && !$isExpired30Days):
+                                ?>
+                                    <button type="button"
+                                        onclick="openDisputeModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
+                                        class="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                        Report an Error
+                                    </button>
+                                <?php elseif (in_array($c['id'], $disputedCaseIds)): ?>
+                                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 border border-orange-200 rounded-lg text-xs sm:text-sm font-medium text-orange-600 bg-orange-50 flex items-center gap-1.5">
+                                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Error Reported
+                                    </span>
+                                <?php endif; ?>
 
                                 <?php if (!in_array($c['id'], $feedbackCaseIds)): ?>
                                     <button type="button"
                                         onclick="openFeedbackModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
-                                        class="px-4 py-2 border border-yellow-500 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-yellow-500 hover:text-white transition-colors">
+                                        class="px-3 sm:px-4 py-1.5 sm:py-2 border border-yellow-500 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-yellow-500 hover:text-white transition-colors">
                                         Rate
                                     </button>
                                 <?php endif; ?>
@@ -250,7 +268,7 @@ $statusBadge = [
                                 ?>
                                 <a href="/<?= PROJECT_DIR ?>/case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
                                     <?= $onClickAttr ?>
-                                    class="px-4 py-2 border border-green-600 rounded-lg text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors">
+                                    class="px-3 sm:px-4 py-1.5 sm:py-2 border border-green-600 rounded-lg text-xs sm:text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors">
                                     View Status
                                 </a>
                             </div>
@@ -308,7 +326,7 @@ $statusBadge = [
                         $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
                         ?>
                         <div class="rejected-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                            data-id="<?= htmlspecialchars($c['case_number']) ?>"
+                            data-id="<?= htmlspecialchars($c['case_number']) ?>" data-case-id="<?= $c['id'] ?>"
                             data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>">
 
                             <div class="px-4 py-3 bg-red-50 border-b border-red-100 flex justify-between items-center">
@@ -345,17 +363,12 @@ $statusBadge = [
                             </div>
 
                             <div
-                                class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-3">
+                                class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
                                 <button type="button"
                                     onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
-                                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                    class="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                                     Contact Clinic
                                 </button>
-
-                                <a href="/<?= PROJECT_DIR ?>/case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
-                                    class="px-4 py-2 border border-green-600 rounded-lg text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors">
-                                    View Status
-                                </a>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -410,10 +423,11 @@ $statusBadge = [
                             'demographic_error' => 'Wrong Patient Info',
                             'exam_details_error' => 'Wrong Body Part / Exam',
                             'findings_error' => 'Discrepancy in Findings',
+                            'both_error' => 'Wrong Patient Info & Findings Discrepancy',
                             'other' => 'Other Error'
                         ];
                         ?>
-                        <div
+                        <div id="dispute-card-<?= $disp['id'] ?>" data-id="<?= $disp['id'] ?>"
                             class="dispute-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
                                 <div class="flex items-center gap-2">
@@ -425,7 +439,12 @@ $statusBadge = [
                                 </div>
                                 <span
                                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold <?= $bCls ?>">
-                                    <?= htmlspecialchars($disp['status']) ?>
+                                    <?php
+                                    $dispStatus = $disp['status'];
+                                    if ($dispStatus === 'Escalated to Radiologist')
+                                        $dispStatus = 'Radiologist Review';
+                                    ?>
+                                    <?= htmlspecialchars($dispStatus) ?>
                                 </span>
                             </div>
 
@@ -440,9 +459,8 @@ $statusBadge = [
                                         <?= htmlspecialchars($catMap[$disp['dispute_category']] ?? ucfirst($disp['dispute_category'])) ?>
                                     </h4>
                                     <div class="text-sm text-gray-700 mb-3">
-                                        <span class="text-gray-500 font-medium mr-1">Details of Correction:</span>
-                                        <span
-                                            class="font-medium text-gray-800"><?= htmlspecialchars($disp['description']) ?></span>
+                                        <span class="text-gray-500 font-medium mr-1 block mb-1">Details of Correction:</span>
+                                        <div class="font-medium text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100"><?= nl2br(htmlspecialchars(trim($disp['description']))) ?></div>
                                     </div>
                                     <div class="flex flex-col sm:flex-row gap-1 sm:gap-4 text-xs text-gray-500">
                                         <span class="flex items-center gap-1.5">
@@ -603,11 +621,11 @@ $statusBadge = [
     </script>
 
     <div id="dispute-modal"
-        class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200 z-[10000]"
+        class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200 z-[10000] flex flex-col max-h-full"
             id="dispute-modal-content">
             <!-- Modal Header -->
-            <div class="px-6 py-5 border-b border-gray-100 bg-red-50/50 flex items-center justify-between">
+            <div class="px-6 py-5 border-b border-gray-100 bg-red-50/50 flex flex-shrink-0 items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-red-100 text-red-600 rounded-xl">
                         <i data-lucide="alert-triangle" class="w-5 h-5"></i>
@@ -626,100 +644,88 @@ $statusBadge = [
 
             <!-- Case Info Bar -->
             <div
-                class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex items-center justify-between text-xs text-gray-700">
+                class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex flex-shrink-0 items-center justify-between text-xs text-gray-700">
                 <div>Case #: <span class="font-bold font-mono text-red-600" id="dispute-case-number"></span></div>
                 <div class="font-medium text-gray-500" id="dispute-exam-type"></div>
             </div>
 
             <!-- Form -->
-            <form id="dispute-form" onsubmit="submitDisputeForm(event)" class="p-6 space-y-4">
-                <input type="hidden" name="case_id" id="dispute-case-id">
-                <input type="hidden" name="action" value="submit_dispute">
+            <form id="dispute-form" onsubmit="submitDisputeForm(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <!-- Scrollable Body -->
+                <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    <input type="hidden" name="case_id" id="dispute-case-id">
+                    <input type="hidden" name="action" value="submit_dispute">
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? *</label>
-                    <select name="dispute_category" id="dispute-category" required onchange="toggleDisputeFields()"
-                        class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
-                        <option value="" disabled selected>-- Select Category --</option>
-                        <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
-                        <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist
-                            Re-examination)</option>
-                    </select>
-                </div>
-
-                <!-- Dynamic Patient Info Correction Options -->
-                <div id="demographic-options-container"
-                    class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
-                    <label class="block text-xs font-bold text-gray-700">Select what needs correction: *</label>
-
-                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                        <label
-                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-first-name" class="rounded text-red-600 focus:ring-red-500"
-                                onchange="toggleCorrectionInputs()">
-                            <span class="font-medium">First Name</span>
-                        </label>
-                        <label
-                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-last-name" class="rounded text-red-600 focus:ring-red-500"
-                                onchange="toggleCorrectionInputs()">
-                            <span class="font-medium">Last Name</span>
-                        </label>
-                        <label
-                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-age" class="rounded text-red-600 focus:ring-red-500"
-                                onchange="toggleCorrectionInputs()">
-                            <span class="font-medium">Age</span>
-                        </label>
-                        <label
-                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-sex" class="rounded text-red-600 focus:ring-red-500"
-                                onchange="toggleCorrectionInputs()">
-                            <span class="font-medium">Sex / Gender</span>
-                        </label>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span class="text-red-500">*</span></label>
+                        <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
+                            class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                            <option value="" disabled selected>-- Select Category --</option>
+                            <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
+                            <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist
+                                Re-examination)</option>
+                            <option value="both_error">3. Both (Wrong Patient Info & Image Discrepancy)</option>
+                        </select>
                     </div>
 
-                    <!-- Dynamic Input Fields -->
-                    <div id="correction-inputs-container" class="space-y-2 py-3 border-t border-gray-200 hidden">
-                        <div id="field-first-name" class="hidden">
-                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct First
-                                Name:</label>
-                            <input type="text" id="input-first-name" placeholder="Enter correct First Name"
-                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none">
+                    <!-- Dynamic Patient Info Correction Options -->
+                    <div id="demographic-options-container"
+                        class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                        <label class="block text-xs font-bold text-gray-700">Select what needs correction: <span class="text-red-500">*</span></label>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                            <label
+                                class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                                <input type="checkbox" id="chk-first-name" class="rounded text-red-600 focus:ring-red-500"
+                                    onchange="toggleCorrectionInputs()">
+                                <span class="font-medium">First Name</span>
+                            </label>
+                            <label
+                                class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                                <input type="checkbox" id="chk-last-name" class="rounded text-red-600 focus:ring-red-500"
+                                    onchange="toggleCorrectionInputs()">
+                                <span class="font-medium">Last Name</span>
+                            </label>
+                            <label
+                                class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                                <input type="checkbox" id="chk-age" class="rounded text-red-600 focus:ring-red-500"
+                                    onchange="toggleCorrectionInputs()">
+                                <span class="font-medium">Age</span>
+                            </label>
+                            <label
+                                class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                                <input type="checkbox" id="chk-sex" class="rounded text-red-600 focus:ring-red-500"
+                                    onchange="toggleCorrectionInputs()">
+                                <span class="font-medium">Sex / Gender</span>
+                            </label>
                         </div>
-                        <div id="field-last-name" class="hidden">
-                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct Last Name:</label>
-                            <input type="text" id="input-last-name" placeholder="Enter correct Last Name"
-                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none">
+
+                        <!-- Info Alert in place of manual inputs -->
+                        <div id="correction-inputs-container" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                            <div class="flex items-start gap-2 text-blue-800">
+                                <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                                <div class="text-xs">
+                                    <p class="font-medium mb-1">Update your Profile Settings first!</p>
+                                    <p class="text-blue-700/80 mb-2">Please make sure your correct information is updated in your Account Settings. Submitting this report will notify the clinic to re-generate your result using your latest profile details.</p>
+                                    <a href="#" onclick="openPatientSettings(event); closeDisputeModal();" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition">
+                                        Go to Settings <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <div id="field-age" class="hidden">
-                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct Age:</label>
-                            <input type="number" id="input-age" placeholder="Enter correct Age"
-                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none">
-                        </div>
-                        <div id="field-sex" class="hidden">
-                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct Sex /
-                                Gender:</label>
-                            <select id="input-sex"
-                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none bg-white">
-                                <option value="" disabled selected>-- Select Correct Sex --</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                        </div>
+                    </div>
+
+                    <!-- Description Textarea Container -->
+                    <div id="general-description-container" class="hidden">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Provide details of the correction needed <span class="text-red-500">*</span></label>
+                        <textarea name="description" id="dispute-description" rows="3"
+                            class="w-full rounded-xl border border-gray-300 p-3 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
+                            placeholder="Example: 'My right arm was examined instead of left...', or explain discrepancy in findings"></textarea>
                     </div>
                 </div>
 
-                <!-- Description Textarea Container (For non-demographic errors or additional notes) -->
-                <div id="general-description-container" class="hidden">
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Provide details of the correction needed
-                        *</label>
-                    <textarea name="description" id="dispute-description" rows="3"
-                        class="w-full rounded-xl border border-gray-300 p-3 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
-                        placeholder="Example: 'My right arm was examined instead of left...', or explain discrepancy in findings"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-2">
+                <!-- Fixed Footer -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-shrink-0 justify-end gap-2">
                     <button type="button" onclick="closeDisputeModal()"
                         class="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition">
                         Cancel
@@ -728,166 +734,20 @@ $statusBadge = [
                         class="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow transition flex items-center gap-1.5">
                         <i data-lucide="send" class="w-4 h-4"></i> Submit Error Report
                     </button>
-                    <div id="dispute-modal"
-                        class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0">
-                        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200 z-[10000]"
-                            id="dispute-modal-content">
-                            <!-- Modal Header -->
-                            <div
-                                class="px-6 py-5 border-b border-gray-100 bg-red-50/50 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="p-2.5 bg-red-100 text-red-600 rounded-xl">
-                                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <h2 class="font-bold text-gray-900 text-base">Report an Error / Dispute Result
-                                        </h2>
-                                        <p class="text-xs text-gray-500">Notice an issue with your report or info?
-                                            Report it to the
-                                            clinic.</p>
-                                    </div>
-                                </div>
-                                <button type="button" onclick="closeDisputeModal()"
-                                    class="text-gray-400 hover:text-gray-600 transition p-2 rounded-lg hover:bg-gray-100">
-                                    <i data-lucide="x" class="w-5 h-5"></i>
-                                </button>
-                            </div>
-
-                            <!-- Case Info Bar -->
-                            <div
-                                class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex items-center justify-between text-xs text-gray-700">
-                                <div>Case #: <span class="font-bold font-mono text-red-600"
-                                        id="dispute-case-number"></span></div>
-                                <div class="font-medium text-gray-500" id="dispute-exam-type"></div>
-                            </div>
-
-                            <!-- Form -->
-                            <form id="dispute-form" onsubmit="submitDisputeForm(event)" class="p-6 space-y-4">
-                                <input type="hidden" name="case_id" id="dispute-case-id">
-                                <input type="hidden" name="action" value="submit_dispute">
-
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is
-                                        this? *</label>
-                                    <select name="dispute_category" id="dispute-category" required
-                                        onchange="toggleDisputeFields()"
-                                        class="w-full rounded-xl border border-gray-300 pl-5 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
-                                        <option value="" disabled selected>-- Select Category --</option>
-                                        <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or
-                                            Sex)</option>
-                                        <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires
-                                            Radiologist
-                                            Re-examination)</option>
-                                    </select>
-                                </div>
-
-                                <!-- Dynamic Patient Info Correction Options -->
-                                <div id="demographic-options-container"
-                                    class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
-                                    <label class="block text-xs font-bold text-gray-700">Select what needs correction:
-                                        *</label>
-
-                                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                                        <label
-                                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                                            <input type="checkbox" id="chk-first-name"
-                                                class="rounded text-red-600 focus:ring-red-500"
-                                                onchange="toggleCorrectionInputs()">
-                                            <span class="font-medium">First Name</span>
-                                        </label>
-                                        <label
-                                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                                            <input type="checkbox" id="chk-last-name"
-                                                class="rounded text-red-600 focus:ring-red-500"
-                                                onchange="toggleCorrectionInputs()">
-                                            <span class="font-medium">Last Name</span>
-                                        </label>
-                                        <label
-                                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                                            <input type="checkbox" id="chk-age"
-                                                class="rounded text-red-600 focus:ring-red-500"
-                                                onchange="toggleCorrectionInputs()">
-                                            <span class="font-medium">Age</span>
-                                        </label>
-                                        <label
-                                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                                            <input type="checkbox" id="chk-sex"
-                                                class="rounded text-red-600 focus:ring-red-500"
-                                                onchange="toggleCorrectionInputs()">
-                                            <span class="font-medium">Sex / Gender</span>
-                                        </label>
-                                    </div>
-
-                                    <!-- Dynamic Input Fields -->
-                                    <div id="correction-inputs-container"
-                                        class="space-y-2 py-3 border-t border-gray-200 hidden">
-                                        <div id="field-first-name" class="hidden">
-                                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct
-                                                First
-                                                Name:</label>
-                                            <input type="text" id="input-first-name"
-                                                placeholder="Enter correct First Name"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none">
-                                        </div>
-                                        <div id="field-last-name" class="hidden">
-                                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct
-                                                Last Name:</label>
-                                            <input type="text" id="input-last-name"
-                                                placeholder="Enter correct Last Name"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none">
-                                        </div>
-                                        <div id="field-age" class="hidden">
-                                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct
-                                                Age:</label>
-                                            <input type="number" id="input-age" placeholder="Enter correct Age"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none">
-                                        </div>
-                                        <div id="field-sex" class="hidden">
-                                            <label class="block text-[11px] font-semibold text-gray-600 mb-1">Correct
-                                                Sex /
-                                                Gender:</label>
-                                            <select id="input-sex"
-                                                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none bg-white">
-                                                <option value="" disabled selected>-- Select Correct Sex --</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Description Textarea Container (For non-demographic errors or additional notes) -->
-                                <div id="general-description-container" class="hidden">
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">Provide details of the
-                                        correction needed
-                                        *</label>
-                                    <textarea name="description" id="dispute-description" rows="3"
-                                        class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
-                                        placeholder="Example: 'My right arm was examined instead of left...', or explain discrepancy in findings"></textarea>
-                                </div>
-
-                                <div class="flex justify-end gap-2 pt-2">
-                                    <button type="button" onclick="closeDisputeModal()"
-                                        class="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" id="dispute-submit-btn"
-                                        class="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow transition flex items-center gap-1.5">
-                                        <i data-lucide="send" class="w-4 h-4"></i> Submit Error Report
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                        <script>
-                            // Move modals to body to prevent stacking context constraints from the dashboard layout
-                            document.addEventListener('DOMContentLoaded', () => {
-                                const modals = ['dispute-modal', 'feedback-modal', 'expired-alert-modal'];
-                                modals.forEach(id => {
-                                    const el = document.getElementById(id);
-                                    if (el) {
-                                        document.body.appendChild(el);
-                                    }
-                                });
-                            });
-                        </script>
-                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Move modals to body to prevent stacking context constraints from the dashboard layout
+        document.addEventListener('DOMContentLoaded', () => {
+            const modals = ['dispute-modal', 'feedback-modal', 'expired-alert-modal'];
+            modals.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    document.body.appendChild(el);
+                }
+            });
+        });
+    </script>
+</div>

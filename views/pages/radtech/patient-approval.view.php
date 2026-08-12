@@ -56,8 +56,17 @@ if (isset($_GET['error']) && $_GET['error'] == 1)
     $errorMsg = "Failed to update patient information.";
 
 // 2. Data Fetching (Backend Logic)
+require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
+
 $branchId = $_SESSION['branch_id'] ?? 1;
 $pendingPatients = $caseModel->getPendingCases($branchId);
+
+$disputeModel = new \ResultDisputeModel($pdo);
+$disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
+$pendingDisputeCount = count(array_filter($disputes, function($d) { 
+    return in_array($d['status'], ['Pending RadTech Review', 'Pending RadTech Verification']); 
+}));
 ?>
 
 <!-- Vanilla JS Datepicker -->
@@ -115,8 +124,17 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
             Patient Queue
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
-            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-500 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Pending Approval
+        </a>
+        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&tab=disputes"
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
+            Patient Error Reports
+            <?php if ($pendingDisputeCount > 0): ?>
+                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                    <?= $pendingDisputeCount ?>
+                </span>
+            <?php endif; ?>
         </a>
     </nav>
 </div>
@@ -130,6 +148,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
             <option value="All">All Status</option>
             <option value="Pending Approval">Pending Approval</option>
             <option value="Rejected">Rejected</option>
+            <option value="Cancelled">Cancelled</option>
         </select>
         <select id="sort-date"
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
@@ -140,7 +159,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
 </div>
 
 <div class="rounded-xl border border-gray-300 bg-card stat-card-shadow mt-4 overflow-hidden">
-    <div class="overflow-x-auto overflow-y-auto max-h-[400px]">
+    <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="sticky top-0 z-10">
                 <tr class="border-b border-gray-300 bg-gray-100 text-gray-500">
@@ -161,13 +180,18 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($pendingPatients as $patient): ?>
-                        <tr class="border-b hover:bg-gray-50 transition-colors record-row"
+                    <?php 
+                    $apprIndex = 0;
+                    foreach ($pendingPatients as $patient): 
+                        $initialDisplay = ($apprIndex >= 8) ? 'style="display: none;"' : '';
+                    ?>
+                        <tr class="border-b hover:bg-gray-50 transition-colors record-row" <?= $initialDisplay ?>
                             data-id="<?= htmlspecialchars($patient['request_number']) ?>"
                             data-name="<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>"
                             data-priority="<?= htmlspecialchars($patient['priority']) ?>"
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($patient['created_at']) ?>">
+                            <?php $apprIndex++; ?>
                             <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
@@ -185,6 +209,11 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                                         class="inline-flex items-center rounded-full border border-red-400 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
                                         Rejected
                                     </span>
+                                <?php elseif ($patient['status'] === 'Cancelled'): ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-gray-400 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                                        Cancelled
+                                    </span>
                                 <?php else: ?>
                                     <span
                                         class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
@@ -194,7 +223,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <?php if ($patient['status'] !== 'Rejected'): ?>
+                                    <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
                                             onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
                                             class="text-sm font-medium text-green-600 hover:text-green-700 transition"
@@ -203,7 +232,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                                                 class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
                                         </a>
                                     <?php endif; ?>
-                                    <?php if ($patient['status'] === 'Rejected'): ?>
+                                    <?php if (in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <button
                                             onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
                                             class="text-sm font-medium text-gray-600 hover:text-gray-700 transition" title="View">
@@ -218,7 +247,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                                                 class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
                                         </button>
                                     <?php endif; ?>
-                                    <?php if ($patient['status'] !== 'Rejected'): ?>
+                                    <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
                                             onclick="confirmAction('Confirm Rejection', 'Would you like to confirm rejecting this patient registration?', this.href, 'Yes, Proceed', false, event)"
                                             class="text-sm font-medium text-red-600 hover:text-red-700 transition" title="Reject">
@@ -233,6 +262,15 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="approval-pagination-container" style="display: none;">
+        <span id="approval-record-count" class="text-xs text-gray-500 font-medium">
+            Showing <span id="approval-start">0</span> to <span id="approval-end">0</span> of <span id="approval-total" class="font-semibold text-gray-800">0</span> records
+        </span>
+        <div class="flex items-center flex-wrap gap-1.5" id="approval-pagination-controls">
+        </div>
     </div>
 </div>
 
@@ -368,7 +406,7 @@ $pendingPatients = $caseModel->getPendingCases($branchId);
                 // Info banner
                 const banner = document.createElement('div');
                 banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
-                banner.style.cssText = 'margin-top:1rem;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                banner.style.cssText = 'margin-left:auto;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
                 const header = document.querySelector('h2');
                 if (header && header.parentElement) {
                     header.parentElement.insertAdjacentElement('afterend', banner);

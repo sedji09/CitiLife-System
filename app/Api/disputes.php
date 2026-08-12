@@ -66,7 +66,7 @@ try {
         ");
         $notifTitle = "New Error Report (" . $case['case_number'] . ")";
         $notifMsg = "A new patient error report requires RadTech review.";
-        $notifLink = "index.php?role=radtech&page=xray-patient-records&dispute_id=" . $disputeId;
+        $notifLink = "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId;
         $notifStmt->execute([$case['branch_id'], $notifTitle, $notifMsg, $notifLink]);
 
         $auditLog->addLog($userId, 'Dispute Submitted', 'Patient Portal', 'Case', $caseId, "Submitted result dispute (ID: {$disputeId}, Category: {$category})", $case['branch_id']);
@@ -107,7 +107,7 @@ try {
                 $disData['branch_id'],
                 "Dispute Escalated: " . $disData['case_number'],
                 "RadTech escalated an error report for Radiologist review. Notes: " . $radtechNotes,
-                "index.php?role=radiologist&page=worklist&status=disputes"
+                "index.php?role=radiologist&page=worklist&tab=disputes&highlight_dispute_case=" . $disData['case_number']
             ]);
         }
 
@@ -134,7 +134,14 @@ try {
         }
 
         // Fetch dispute & case patient data
-        $stmtDisp = $pdo->prepare("SELECT rd.*, c.patient_id FROM result_disputes rd JOIN cases c ON rd.case_id = c.id WHERE rd.id = ?");
+        $stmtDisp = $pdo->prepare("
+            SELECT rd.*, c.patient_id, c.case_number, p.email, p.first_name, u.id AS patient_user_id 
+            FROM result_disputes rd 
+            JOIN cases c ON rd.case_id = c.id 
+            JOIN patients p ON c.patient_id = p.id
+            LEFT JOIN users u ON p.id = u.patient_id AND u.role = 'patient'
+            WHERE rd.id = ?
+        ");
         $stmtDisp->execute([$disputeId]);
         $disputeInfo = $stmtDisp->fetch(PDO::FETCH_ASSOC);
 
@@ -190,6 +197,39 @@ try {
             $pdo->prepare("UPDATE cases SET status = 'Released', released = 1, is_amended = 1, amendment_notes = COALESCE(amendment_notes, ?) WHERE id = ?")
                 ->execute([$notes, $disputeInfo['case_id']]);
         }
+        
+        // Notify the Patient (In-App)
+        if ($disputeInfo && !empty($disputeInfo['patient_user_id'])) {
+            $notifTitle = "Error Report Resolved";
+            $notifMsg = "Your error report for Case " . $disputeInfo['case_number'] . " has been successfully resolved.";
+            $notifLink = "index.php?role=patient&page=my-records&tab=disputes&highlight_dispute_id=" . $disputeId;
+            $pdo->prepare("INSERT INTO notifications (user_id, role, title, message, link, created_at) VALUES (?, 'patient', ?, ?, ?, NOW())")
+                ->execute([$disputeInfo['patient_user_id'], $notifTitle, $notifMsg, $notifLink]);
+        }
+
+        // Email the Patient
+        if ($disputeInfo && !empty($disputeInfo['email'])) {
+            require_once __DIR__ . '/../../app/Helpers/mailer_helper.php';
+            $patientName = htmlspecialchars($disputeInfo['first_name']);
+            $caseNum = htmlspecialchars($disputeInfo['case_number']);
+            $loginUrl = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/" . PROJECT_DIR . "/patient-login.php";
+
+            $emailSubject = "Error Report Resolved - CitiLife Diagnostic Center";
+            $emailBody = "
+                <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
+                    <h2 style='color: #16a34a; margin-top: 0;'>Error Report Resolved</h2>
+                    <p>Dear <strong>{$patientName}</strong>,</p>
+                    <p>We have successfully reviewed and resolved your error report for Case <strong>{$caseNum}</strong>.</p>
+                    <p>Your updated records and X-ray report are now available in your CitiLife patient portal.</p>
+                    <div style='margin: 25px 0;'>
+                        <a href='{$loginUrl}' style='display: inline-block; padding: 12px 20px; background-color: #16a34a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;'>Log in to View Updated Records</a>
+                    </div>
+                    <br>
+                    <p>Thank you for choosing CitiLife Diagnostic Center.</p>
+                </div>
+            ";
+            sendEmail($disputeInfo['email'], $disputeInfo['first_name'], $emailSubject, $emailBody);
+        }
 
         $auditLog->addLog($userId, 'Dispute Resolved', 'Clinic Management', 'Dispute', $disputeId, "Resolved dispute. Notes: {$notes}");
 
@@ -242,7 +282,7 @@ try {
                     $cData['branch_id'],
                     "Amended Report Issued (" . $cData['case_number'] . ")",
                     "Radiologist issued an amended report. Verification required.",
-                    "index.php?role=radtech&page=xray-patient-records&dispute_id=" . $disputeId
+                    "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId
                 ]);
             }
         }

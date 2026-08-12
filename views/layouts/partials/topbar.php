@@ -290,19 +290,24 @@
                   
                   <!-- 3 Dots Menu Button -->
                   <button @click.stop="toggleNotificationOptions(item.id)" 
-                          class="absolute inset-0 m-auto flex items-center justify-center w-8 h-8 rounded-full bg-transparent hover:bg-gray-200 text-gray-500 transition z-10">
+                          class="absolute inset-0 m-auto opacity-0 group-hover:opacity-100 flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 transition shadow-sm z-10">
                     <i data-lucide="more-horizontal" class="w-5 h-5"></i>
                   </button>
                 </div>
                 
                 <!-- Dropdown -->
                 <div v-show="activeNotificationDropdown === item.id" 
-                     class="absolute w-max bg-white border border-gray-200 rounded-xl shadow-lg z-[100] py-1.5 px-1.5 overflow-hidden"
+                     class="absolute w-max bg-white border border-gray-200 rounded-lg shadow-lg z-[100] py-1 overflow-hidden"
                      style="display: none; right: 32px; top: 36px;"
                      @click.stop>
-                  <button @click.stop="deleteNotification(item.id)" class="w-full text-left px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100 flex items-center gap-3 rounded-lg transition whitespace-nowrap">
-                    <div class="bg-gray-100 p-1.5 rounded-full text-gray-700 shrink-0"><i data-lucide="x" class="w-4 h-4"></i></div>
-                    Delete this notification
+                  <button v-if="item.is_read == 0" @click.stop="markAsRead(item.id, null)" class="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="check" class="w-4 h-4"></i> Mark as read
+                  </button>
+                  <button v-else @click.stop="markAsUnread(item.id)" class="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="check" class="w-4 h-4"></i> Mark as unread
+                  </button>
+                  <button @click.stop="deleteNotification(item.id)" class="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-100 mt-1 pt-1 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Delete this notification
                   </button>
                 </div>
               </div>

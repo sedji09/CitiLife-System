@@ -312,8 +312,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                 </div>
               <?php endif; ?>
               <div class="min-w-0">
-                <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name']) ?>">
-                  <?= htmlspecialchars($rad['radiologist_name']) ?>
+                <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>">
+                  <?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>
                 </p>
                 <p class="text-xs text-gray-500 truncate">Radiologist</p>
               </div>
@@ -372,17 +372,17 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                 </td>
                 <td class="py-3 px-6">
                   <?php
-                  $exams = array_filter(array_map('trim', explode(',', $case['exam_type'])));
+                  $exams = array_filter(array_map('trim', explode(',', $case['exam_type'] ?? '')));
                   $firstExam = reset($exams);
                   $extraCount = count($exams) - 1;
                   ?>
                   <div class="flex items-center gap-1.5">
                     <span class="text-gray-700 font-medium truncate max-w-[100px]"
-                      title="<?= htmlspecialchars($case['exam_type']) ?>"><?= htmlspecialchars($firstExam) ?></span>
+                      title="<?= htmlspecialchars($case['exam_type'] ?? '') ?>"><?= htmlspecialchars($firstExam ?: 'None') ?></span>
                     <?php if ($extraCount > 0): ?>
                       <span
                         class="inline-flex items-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-xs font-semibold text-gray-600 cursor-default"
-                        title="<?= htmlspecialchars($case['exam_type']) ?>">+<?= $extraCount ?></span>
+                        title="<?= htmlspecialchars($case['exam_type'] ?? '') ?>">+<?= $extraCount ?></span>
                     <?php endif; ?>
                   </div>
                 </td>
@@ -403,7 +403,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                   ?>
                   <span style="<?= $pStyleStr ?>"
                     class="priority-badge inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold">
-                    <?= htmlspecialchars($case['priority']) ?>
+                    <?= htmlspecialchars($case['priority'] ?? 'Routine') ?>
                   </span>
                 </td>
                 <td class="py-3 px-6">

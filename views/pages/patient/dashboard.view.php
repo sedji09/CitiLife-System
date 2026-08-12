@@ -122,6 +122,74 @@ $statusDescriptions = [
     'Completed' => 'Your X-ray examination has been completed and the report has been released.',
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
 ];
+
+// --- QUEUE MANAGEMENT LOGIC ---
+$showQueueBoard = false;
+$patientQueueNumber = '--';
+$peopleAhead = 0;
+$statAhead = 0;
+
+if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type'] === 'Case') {
+    // Show queue board ONLY if the case is active AND has been submitted to the Radiologist (Uploaded)
+    if (in_array($latestCase['status'], ['Pending', 'Under Reading']) && (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded')) {
+        $showQueueBoard = true;
+        
+        $branchId = $latestCase['branch_id'];
+        $caseDate = date('Y-m-d', strtotime($latestCase['created_at']));
+        
+        // 1. Patient's Queue Number for the day (Global across all branches)
+        $stmtNum = $pdo->prepare("SELECT COUNT(*) + 1 FROM cases WHERE DATE(created_at) = ? AND id < ?");
+        $stmtNum->execute([$caseDate, $latestCase['id']]);
+        $patientQueueNumber = str_pad($stmtNum->fetchColumn(), 2, '0', STR_PAD_LEFT);
+        
+        // 2. People Ahead Logic (from the same day, Global across all branches)
+        $stmtQueue = $pdo->prepare("
+            SELECT id, priority, status
+            FROM cases
+            WHERE image_status = 'Uploaded'
+            AND status IN ('Under Reading', 'Pending')
+            AND DATE(created_at) = ?
+            ORDER BY 
+                CASE WHEN status = 'Under Reading' THEN 1 ELSE 2 END,
+                CASE WHEN priority = 'STAT' THEN 1 ELSE 2 END, 
+                created_at ASC 
+        ");
+        $stmtQueue->execute([$caseDate]);
+        $queueList = $stmtQueue->fetchAll();
+
+        foreach ($queueList as $qCase) {
+            if ($qCase['id'] == $latestCase['id']) {
+                break;
+            }
+            $peopleAhead++;
+            if ($qCase['priority'] === 'STAT') {
+                $statAhead++;
+            }
+        }
+    }
+
+    // --- ESTIMATED REPORTING TIME LOGIC ---
+    $caseStatus = $latestCase['status'];
+    $caseImageStatus = $latestCase['image_status'] ?? '';
+    
+    if (in_array($caseStatus, ['Report Ready', 'Completed', 'Released'])) {
+        $estimatedTimeDisplay = 'Completed';
+    } elseif ($caseImageStatus === 'Uploaded' && in_array($caseStatus, ['Pending', 'Under Reading'])) {
+        // Calculate estimated time range: 20 mins per person ahead, 1 hour window
+        $baseMins = $peopleAhead * 20; 
+        $startMins = max(0, $baseMins);
+        $endMins = $startMins + 60; 
+        
+        $startTime = date('g:i A', strtotime("+$startMins minutes"));
+        $endTime = date('g:i A', strtotime("+$endMins minutes"));
+        
+        $estimatedTimeDisplay = "$startTime &ndash; $endTime";
+    } else {
+        // Not yet submitted to radiologist
+        $estimatedTimeDisplay = '&mdash;';
+    }
+}
+// --- END QUEUE MANAGEMENT LOGIC ---
 ?>
 
 <style>
@@ -138,21 +206,49 @@ $statusDescriptions = [
     body.theme-dark .status-summary-box strong {
         color: #fff !important;
     }
+
+    /* ===== QUEUE BOARD ANIMATIONS (keyframes can't be inlined) ===== */
+    .qb-live-dot {
+        animation: qbLivePulse 1.5s ease-in-out infinite;
+    }
+    @keyframes qbLivePulse {
+        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+        50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); }
+    }
+    .qb-serving-num {
+        animation: qbServingGlow 2s ease-in-out infinite;
+    }
+    @keyframes qbServingGlow {
+        0%, 100% { text-shadow: 0 0 24px rgba(239, 68, 68, 0.3); }
+        50% { text-shadow: 0 0 32px rgba(239, 68, 68, 0.5); }
+    }
+    .qb-stat-banner {
+        animation: qbStatFlash 2s ease-in-out infinite;
+    }
+    @keyframes qbStatFlash {
+        0%, 100% { border-color: rgba(239, 68, 68, 0.25); }
+        50% { border-color: rgba(239, 68, 68, 0.5); }
+    }
+    .qb-stat-dot {
+        animation: qbLivePulse 1s ease-in-out infinite;
+    }
 </style>
 
-<div class="space-y-5 pb-8 max-w-3xl mx-auto">
+<div class="pb-8 max-w-3xl mx-auto realtime-update" id="patient-dashboard-main-container">
 
-    <!-- Welcome banner -->
-    <div>
-        <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
-            <?= htmlspecialchars($displayName) ?>
-        </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Here's an overview of your X-ray examination status.</p>
+    <!-- Welcome banner & Queue System -->
+    <div class="mb-5" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
+                <?= htmlspecialchars($displayName) ?>
+            </h1>
+            <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Here's an overview of your X-ray examination status.</p>
+        </div>
     </div>
 
     <?php if ($patientRow): ?>
         <!-- Patient Profile Card -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-5">
+        <div class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm p-5">
             <div class="flex items-center gap-4 mb-4">
                 <?php if (!empty($displayInfo['avatar'])): ?>
                     <img src="<?= htmlspecialchars($displayInfo['avatar']) ?>" alt="Profile"
@@ -201,12 +297,12 @@ $statusDescriptions = [
 
         <!-- Request New X-ray Button -->
         <a href="/<?= PROJECT_DIR ?>/registration"
-            class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3.5 px-4 transition shadow-sm">
+            class="mb-5 flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3.5 px-4 transition shadow-sm">
             <i data-lucide="plus-circle" class="w-5 h-5"></i> New X-ray Request
         </a>
     <?php else: ?>
         <!-- No patient linked – show registration CTA -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
+        <div class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
             <div class="mx-auto h-16 w-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
                 <i data-lucide="user-plus" class="w-8 h-8 text-red-600"></i>
             </div>
@@ -220,10 +316,50 @@ $statusDescriptions = [
         </div>
     <?php endif; ?>
 
+    <?php if ($showQueueBoard): ?>
+        <div class="mb-5 w-full" id="patient-dashboard-queue-board"
+             style="background: #ffffff; border-radius: 12px; padding: 12px 16px; color: #1e293b; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);">
+            
+            <div style="display: flex; align-items: stretch; gap: 0;">
+                <!-- Your Queue # -->
+                <div style="flex: 1; text-align: center; padding: 4px 10px 4px 2px; display: flex; flex-direction: column;">
+                    <div style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">Your Queue #</div>
+                    <div style="font-size: 24px; font-weight: 800; line-height: 1; color: #1e293b; font-variant-numeric: tabular-nums;"><?= $patientQueueNumber ?></div>
+                </div>
+
+                <!-- Divider -->
+                <div style="width: 1px; align-self: center; height: 32px; background: linear-gradient(180deg, transparent, #e2e8f0, transparent); flex-shrink: 0;"></div>
+
+                <!-- People Ahead -->
+                <div style="flex: 1; text-align: center; padding: 4px 2px 4px 10px; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">PEOPLE AHEAD OF YOU</div>
+                    <div style="font-size: 24px; font-weight: 800; line-height: 1; color: #dc2626; font-variant-numeric: tabular-nums;"><?= str_pad($peopleAhead, 2, '0', STR_PAD_LEFT) ?></div>
+                    <?php if($statAhead > 0): ?>
+                        <div style="margin-top: 4px;"><span style="font-size: 7px; font-weight: 700; letter-spacing: 0.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Includes <?= $statAhead ?> STAT Case(s)</span></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Estimated Reporting Time -->
+            <?php if (!empty($estimatedTimeDisplay)): ?>
+                <!-- Horizontal Divider -->
+                <div style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);"></div>
+                
+                <div class="text-center" id="patient-dashboard-estimated-time">
+                    <div style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">Estimated Reporting Time</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #dc2626;"><?= $estimatedTimeDisplay ?></div>
+                    <?php if ($estimatedTimeDisplay !== 'Completed' && $estimatedTimeDisplay !== '&mdash;'): ?>
+                        <div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 2px;">Based on current Radiologist queue</div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <?php if ($latestCase): ?>
         <!-- Latest X-ray Status -->
         <div id="patient-dashboard-latest-status"
-            class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden realtime-update">
+            class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 class="font-bold text-gray-900">Latest X-ray Status</h2>
                 <span class="text-xs font-mono text-gray-500"><?= htmlspecialchars($latestCase['case_number']) ?></span>
@@ -297,9 +433,17 @@ $statusDescriptions = [
             <!-- View Full Status button -->
             <div class="px-5 pb-5">
                 <?php
-                $statusLink = in_array($latestCase['status'], ['Completed', 'Released', 'Rejected']) ? 'case-status' : 'xray-status';
+                if ($latestCase['status'] === 'Rejected') {
+                    $statusLink = 'my-records?tab=rejected';
+                } elseif ($latestCase['status'] === 'Cancelled') {
+                    $statusLink = 'xray-status?tab=cancelled';
+                } elseif (in_array($latestCase['status'], ['Completed', 'Released'])) {
+                    $statusLink = 'case-status?case_id=' . $latestCase['id'];
+                } else {
+                    $statusLink = 'xray-status';
+                }
                 ?>
-                <a href="/<?= PROJECT_DIR ?>/<?= $statusLink ?>?case_id=<?= $latestCase['id'] ?>"
+                <a href="/<?= PROJECT_DIR ?>/<?= $statusLink ?>"
                     class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-4 transition shadow-sm">
                     View Full Status <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </a>

@@ -53,9 +53,9 @@ try {
     $branchId = $requestDetails['branch_id'] ?? null;
     $caseNumber = $requestDetails['request_number'] ?? 'Unknown';
 
-    // Delete the request
-    $stmtDel = $pdo->prepare("DELETE FROM requests WHERE id = ?");
-    $stmtDel->execute([$caseId]);
+    // Soft Delete: Update status to 'Cancelled'
+    $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Cancelled' WHERE id = ?");
+    $stmtUpdate->execute([$caseId]);
 
     require_once __DIR__ . '/../Models/AuditLogModel.php';
     $auditLogModel = new \AuditLogModel($pdo);

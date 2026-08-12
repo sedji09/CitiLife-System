@@ -1482,6 +1482,20 @@
       markAsRead(id, link) {
         this.activeNotificationDropdown = null;
         if (link && link !== '#') {
+          // Check if notification is unread to append is_new flag
+          const notif = this.notifications.find(n => n.id === id);
+          if (notif && notif.is_read == 0) {
+            try {
+              const basePath = '<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' + '/' : '/';
+              const url = new URL(link, window.location.origin + basePath);
+              url.searchParams.set('is_new', '1');
+              link = url.toString();
+            } catch (e) {
+              // fallback if URL parsing fails
+              link += (link.includes('?') ? '&' : '?') + 'is_new=1';
+            }
+          }
+
           // Navigate immediately to avoid perceived delay ("hindi agad napupunta")
           fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
             method: 'POST',
@@ -1502,7 +1516,7 @@
       },
       isActive(href) {
         try {
-          const currentUrl = new window.URL(window.location.href);
+          const currentUrl = new window.URL(window.__APP__.currentPath, window.location.origin);
           // Extract current page: prefer ?page= query param, fallback to last path segment
           const _currentPageParam = currentUrl.searchParams.get('page');
           let _currentPathSeg = currentUrl.pathname.replace(/\/$/, '').split('/').pop();
@@ -1595,8 +1609,14 @@
   app.config.errorHandler = function (err, vm, info) {
     alert("Vue Error: " + err.toString() + " | info: " + info);
   };
-  app.mount("#app");
-
+  const vm = app.mount("#app");
+  window.vm = vm;
+  window.openPatientSettings = function(e) {
+    if (e) e.preventDefault();
+    if (window.vm && window.vm.openSettings) {
+        window.vm.openSettings('profile');
+    }
+  };
   // Real-time date and time for topbar
   function updateTopbarDateTime() {
     const now = new window.Date();
@@ -1630,7 +1650,13 @@
           document.querySelectorAll('.realtime-update').forEach(el => {
             if (el.id) {
               const newEl = doc.getElementById(el.id);
-              if (newEl) el.innerHTML = newEl.innerHTML;
+              if (newEl) {
+                // Allow local scripts to modify newEl before it gets injected (e.g., hiding rows to prevent flicker)
+                document.dispatchEvent(new window.CustomEvent('realtime:beforeUpdate', { 
+                    detail: { newEl: newEl, el: el } 
+                }));
+                el.innerHTML = newEl.innerHTML;
+              }
             }
           });
           // Re-initialize any lucide icons in the replaced content

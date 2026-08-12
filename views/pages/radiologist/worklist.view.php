@@ -80,19 +80,14 @@ sort($priorities);
 
 <!-- Navigation Tabs -->
 <div class="mt-4 px-4 border-b border-gray-200">
-    <nav class="flex space-x-6">
+    <nav class="flex gap-4">
         <button type="button" id="tab-rad-worklist-btn" onclick="switchRadTab('worklist')"
-                class="pb-3 px-1 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
-            <i data-lucide="microscope" class="w-4 h-4"></i> Pending Worklist
+                class="pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
+            Pending Worklist
         </button>
         <button type="button" id="tab-rad-disputes-btn" onclick="switchRadTab('disputes')"
-                class="pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative">
-            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Escalated Error Reports / Disputes
-            <?php if ($pendingRadDisputeCount > 0): ?>
-                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
-                    <?= $pendingRadDisputeCount ?>
-                </span>
-            <?php endif; ?>
+                class="pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative">
+            Escalated Error Reports / Disputes
         </button>
     </nav>
 </div>
@@ -307,8 +302,7 @@ sort($priorities);
                 <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
                     <th class="text-left font-semibold px-4 py-3">Case / Patient</th>
                     <th class="text-left font-semibold px-4 py-3">Branch</th>
-                    <th class="text-left font-semibold px-4 py-3">Patient Statement</th>
-                    <th class="text-left font-semibold px-4 py-3">RadTech Internal Notes</th>
+                    <th class="text-left font-semibold px-4 py-3">Details / Statement</th>
                     <th class="text-left font-semibold px-4 py-3">Date Escalated</th>
                     <th class="text-left font-semibold px-4 py-3">Action</th>
                 </tr>
@@ -322,7 +316,9 @@ sort($priorities);
                     </tr>
                 <?php else: ?>
                     <?php foreach ($radDisputes as $d): ?>
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors dispute-row" 
+                            data-id="<?= htmlspecialchars($d['case_number']) ?>"
+                            data-search="<?= htmlspecialchars(strtolower($d['case_number'] . ' ' . $d['first_name'] . ' ' . $d['last_name'] . ' ' . ($d['branch_name'] ?? 'Main') . ' ' . $d['exam_type'])) ?>">
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <div class="font-mono text-xs font-semibold text-red-600"><?= htmlspecialchars($d['case_number']) ?></div>
                                 <div class="font-bold text-gray-900"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
@@ -331,21 +327,28 @@ sort($priorities);
                             <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-600 font-medium">
                                 <?= htmlspecialchars($d['branch_name'] ?? 'Main') ?>
                             </td>
-                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-xs truncate" title="<?= htmlspecialchars($d['description']) ?>">
-                                "<?= htmlspecialchars($d['description']) ?>"
-                            </td>
-                            <td class="px-4 py-3.5 text-xs text-purple-800 bg-purple-50 rounded-lg p-2 max-w-xs" title="<?= htmlspecialchars($d['radtech_notes'] ?? '') ?>">
-                                <span class="font-bold">RadTech Notes:</span> <?= htmlspecialchars($d['radtech_notes'] ?: 'No notes attached.') ?>
+                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-[200px] lg:max-w-[240px] whitespace-normal break-words">
+                                <?php
+                                    $notesText = $d['radtech_notes'] ? htmlspecialchars($d['radtech_notes']) : 'No internal notes provided.';
+                                    $isLong = strlen($notesText) > 60;
+                                ?>
+                                <div class="font-medium text-red-600">
+                                    <div class="line-clamp-2">"<?= $notesText ?>"</div>
+                                </div>
+                                <?php if ($isLong): ?>
+                                    <button type="button" class="text-[10px] text-blue-600 font-bold hover:underline focus:outline-none mt-1.5 flex items-center gap-1" 
+                                            onclick="showFullStatement(<?= htmlspecialchars(json_encode($d['radtech_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)">
+                                        <i data-lucide="eye" class="w-3 h-3"></i> View full text
+                                    </button>
+                                <?php endif; ?>
                             </td>
                             <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
                                 <?= date('M j, Y h:i A', strtotime($d['created_at'])) ?>
                             </td>
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $d['case_id'] ?>&branch_id=<?= $d['branch_id'] ?>"
-                                   style="background-color: #7e22ce !important; color: #ffffff !important;"
-                                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:bg-purple-800 transition-all active:scale-95">
-                                    <i data-lucide="edit-3" class="w-4 h-4 text-white" style="color: #ffffff !important;"></i>
-                                    <span style="color: #ffffff !important;">Review & Issue Amended Report</span>
+                                   class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
+                                    <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Amend Report
                                 </a>
                             </td>
                         </tr>
@@ -357,10 +360,36 @@ sort($priorities);
 </div>
 
 <script>
+    function showFullStatement(notes) {
+        let htmlContent = `
+            <div class="text-left space-y-4">
+                <div>
+                    <h4 class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">RadTech Internal Notes</h4>
+                    <div class="p-4 bg-red-50 rounded-xl border border-red-100 text-red-800 text-sm">
+                        ${notes || 'No internal notes provided.'}
+                    </div>
+                </div>
+            </div>`;
+
+        Swal.fire({
+            title: 'Report Details',
+            html: htmlContent,
+            icon: 'info',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: 'Close',
+            customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-xl font-bold px-6 py-2'
+            }
+        }).then(() => {
+            lucide.createIcons();
+        });
+    }
+
     // Highlight row handling
     document.addEventListener('DOMContentLoaded', () => {
         const params = new window.URLSearchParams(window.location.search);
-        const highlightId = params.get('highlight');
+        const highlightId = params.get('highlight') || params.get('highlight_case');
         if (highlightId) {
             setTimeout(() => {
                 const rows = document.querySelectorAll('tr.record-row');
@@ -641,21 +670,98 @@ sort($priorities);
                 if (dispCard) dispCard.classList.add('hidden');
                 if (filterCtrls) filterCtrls.classList.remove('hidden');
 
-                if (workBtn) workBtn.className = "pb-3 px-1 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
-                if (dispBtn) dispBtn.className = "pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
+                if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
+                if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
             } else {
                 if (workCard) workCard.classList.add('hidden');
                 if (dispCard) dispCard.classList.remove('hidden');
                 if (filterCtrls) filterCtrls.classList.add('hidden');
 
-                if (dispBtn) dispBtn.className = "pb-3 px-1 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
-                if (workBtn) workBtn.className = "pb-3 px-1 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+                if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
+                if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
             }
         };
 
-        if (paramsList.get('status') === 'disputes') {
+        if (paramsList.get('status') === 'disputes' || paramsList.get('tab') === 'disputes') {
             window.switchRadTab('disputes');
         }
+
+        function handleHighlight() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Handle Disputes Tab
+            const disputeCase = urlParams.get('highlight_dispute_case');
+            if (disputeCase) {
+                if (typeof switchRadTab === 'function') switchRadTab('disputes');
+                const dispRows = document.querySelectorAll('.dispute-row');
+                const row = Array.from(dispRows).find(r => r.dataset.id === disputeCase);
+                if (row) {
+                    setTimeout(() => {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const isNew = urlParams.get('is_new') === '1';
+                        if (isNew) {
+                            setTimeout(() => {
+                                row.classList.add('transition-all', 'duration-300');
+                                row.style.backgroundColor = '#fef08a';
+                                setTimeout(() => {
+                                    row.style.backgroundColor = '#fde047';
+                                    setTimeout(() => {
+                                        row.style.backgroundColor = '#fef08a';
+                                        setTimeout(() => {
+                                            row.style.backgroundColor = '';
+                                        }, 400);
+                                    }, 400);
+                                }, 400);
+                            }, 600);
+                        }
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.delete('highlight_dispute_case');
+                        newUrl.searchParams.delete('is_new');
+                        window.history.replaceState({}, document.title, newUrl.toString());
+                    }, 200);
+                }
+            }
+
+            // Handle Main Worklist
+            const highlightCase = urlParams.get('highlight_case');
+            if (highlightCase) {
+                if (typeof switchRadTab === 'function') switchRadTab('worklist');
+                const mainRows = document.querySelectorAll('.record-row');
+                const row = Array.from(mainRows).find(r => r.dataset.id === highlightCase);
+                if (row) {
+                    const index = Array.from(mainRows).indexOf(row);
+                    currentPage = Math.floor(index / ROWS_PER_PAGE) + 1;
+                    updateTable();
+
+                    setTimeout(() => {
+                        row.style.display = '';
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const isNew = urlParams.get('is_new') === '1';
+                        if (isNew) {
+                            setTimeout(() => {
+                                row.classList.add('transition-all', 'duration-300');
+                                row.style.backgroundColor = '#fef08a';
+                                setTimeout(() => {
+                                    row.style.backgroundColor = '#fde047';
+                                    setTimeout(() => {
+                                        row.style.backgroundColor = '#fef08a';
+                                        setTimeout(() => {
+                                            row.style.backgroundColor = '';
+                                        }, 400);
+                                    }, 400);
+                                }, 400);
+                            }, 600);
+                        }
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.delete('highlight_case');
+                        newUrl.searchParams.delete('is_new');
+                        window.history.replaceState({}, document.title, newUrl.toString());
+                    }, 200);
+                }
+            }
+        }
+
+        handleHighlight();
 
         // ensure lucide icons are created if not already
         if (typeof lucide !== 'undefined') {

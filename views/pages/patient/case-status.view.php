@@ -133,6 +133,19 @@ $statusDescriptions = [
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to My Records
             </a>
         </div>
+    <?php elseif (($caseRow['status'] ?? '') === 'Rejected' || ($caseRow['approval_status'] ?? '') === 'Rejected'): ?>
+        <!-- Rejected: show clean message and redirect to My Records -->
+        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-6 sm:p-10 text-center">
+            <div class="mx-auto h-16 w-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                <i data-lucide="x-octagon" class="w-8 h-8 text-red-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Request Rejected</h3>
+            <p class="text-sm text-gray-500 mb-5">This request has been rejected. You can view it under the <strong>Rejected</strong> tab in My Records.</p>
+            <a href="/<?= PROJECT_DIR ?>/my-records?tab=rejected"
+                class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Go to My Records
+            </a>
+        </div>
     <?php else: ?>
         <?php
         $radtechName = $caseModel->getRadTechName($caseRow['radtech_id'] ?? null);

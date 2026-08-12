@@ -139,13 +139,23 @@ class ResultDisputeModel {
     /**
      * Update active dispute status for a case
      */
-    public function updateDisputeStatusForCase($caseId, $status, $assignedRole = null) {
+    public function updateDisputeStatusForCase($caseId, $status, $assignedRole = null, $oldFindings = null, $oldImpression = null) {
         $sql = "UPDATE result_disputes SET status = ?";
         $params = [$status];
 
         if ($assignedRole !== null) {
             $sql .= ", assigned_role = ?";
             $params[] = $assignedRole;
+        }
+
+        if ($oldFindings !== null) {
+            $sql .= ", old_findings = ?";
+            $params[] = $oldFindings;
+        }
+        
+        if ($oldImpression !== null) {
+            $sql .= ", old_impression = ?";
+            $params[] = $oldImpression;
         }
 
         $sql .= " WHERE case_id = ? AND status != 'Resolved'";

@@ -188,6 +188,8 @@ function applyFilters() {
         rows.forEach(row => tbody.appendChild(row));
     }
 
+    let matchedRows = [];
+
     // Filter
     rows.forEach(row => {
         const name = (row.dataset.name || '').toLowerCase();
@@ -199,12 +201,30 @@ function applyFilters() {
         const matchStatus = filterStatus === 'All' || status === filterStatus;
 
         if (matchSearch && matchStatus) {
-            row.style.display = '';
-            visibleCount++;
+            matchedRows.push(row);
         } else {
             row.style.display = 'none';
         }
     });
+
+    visibleCount = matchedRows.length;
+    
+    // Pagination Logic
+    const itemsPerPage = 8;
+    let totalPages = Math.ceil(visibleCount / itemsPerPage);
+    if (window.currentApprovalPage === undefined) window.currentApprovalPage = 1;
+    if (window.currentApprovalPage > totalPages && totalPages > 0) window.currentApprovalPage = totalPages;
+    if (totalPages === 0) window.currentApprovalPage = 1;
+
+    const start = (window.currentApprovalPage - 1) * itemsPerPage;
+    const end = Math.min(start + itemsPerPage, visibleCount);
+
+    matchedRows.forEach((row, idx) => {
+        row.style.display = (idx >= start && idx < end) ? '' : 'none';
+    });
+
+    // Render Pagination Controls
+    renderPaginationControls(totalPages, visibleCount, start, end);
 
     let emptyMsg = document.getElementById('empty-msg-row');
     if (visibleCount === 0 && rows.length > 0) {
@@ -221,6 +241,86 @@ function applyFilters() {
     }
 }
 
+function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
+    const container = document.getElementById('approval-pagination-container');
+    const controls = document.getElementById('approval-pagination-controls');
+    const startSpan = document.getElementById('approval-start');
+    const endSpan = document.getElementById('approval-end');
+    const totalSpan = document.getElementById('approval-total');
+    
+    if (!container || !controls) return;
+    
+    if (totalRecords <= 8) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'flex';
+    controls.innerHTML = '';
+    
+    startSpan.innerText = totalRecords > 0 ? startIdx + 1 : 0;
+    endSpan.innerText = endIdx;
+    totalSpan.innerText = totalRecords;
+    
+    function createButton(label, page, disabled, isActive = false) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.innerHTML = label;
+        
+        if (isActive) {
+            btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+        } else {
+            btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+        }
+        
+        if (disabled) {
+            btn.disabled = true;
+        } else {
+            btn.onclick = () => {
+                window.currentApprovalPage = page;
+                applyFilters();
+                // scroll to top of table
+                const tableContainer = document.querySelector('.max-h-\\[400px\\]');
+                if (tableContainer) tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+        }
+        return btn;
+    }
+    
+    function createEllipsis() {
+        const span = document.createElement('span');
+        span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+        span.innerHTML = "...";
+        return span;
+    }
+    
+    controls.appendChild(createButton('&lsaquo; Back', window.currentApprovalPage - 1, window.currentApprovalPage === 1));
+    
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) {
+            controls.appendChild(createButton(i, i, false, i === window.currentApprovalPage));
+        }
+    } else {
+        controls.appendChild(createButton(1, 1, false, 1 === window.currentApprovalPage));
+        if (window.currentApprovalPage > 3) controls.appendChild(createEllipsis());
+        
+        let startPage = Math.max(2, window.currentApprovalPage - 1);
+        let endPage = Math.min(totalPages - 1, window.currentApprovalPage + 1);
+        
+        if (window.currentApprovalPage === 1) endPage = 3;
+        if (window.currentApprovalPage === totalPages) startPage = totalPages - 2;
+        
+        for (let i = startPage; i <= endPage; i++) {
+            controls.appendChild(createButton(i, i, false, i === window.currentApprovalPage));
+        }
+        
+        if (window.currentApprovalPage < totalPages - 2) controls.appendChild(createEllipsis());
+        controls.appendChild(createButton(totalPages, totalPages, false, totalPages === window.currentApprovalPage));
+    }
+    
+    controls.appendChild(createButton('Next &rsaquo;', window.currentApprovalPage + 1, window.currentApprovalPage === totalPages));
+}
+
 // Initial sorting on load and re-applying filters after real-time updates
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -232,3 +332,4 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('realtime:updated', () => {
     applyFilters();
 });
+

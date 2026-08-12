@@ -40,13 +40,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
         $result = $caseModel->submitRadiologistReport($caseId, $radiologistId, $submitData, $notificationModel);
 
         if ($result['success']) {
-            $successMsg = "Amended Report successfully submitted. The dispute ticket status is now 'Pending RadTech Verification' for final approval.";
             $isSubmitted = true;
 
-            // Step 4 of Dispute Workflow: Update active dispute status to Pending RadTech Verification
             require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
             $disputeMdl = new \ResultDisputeModel($pdo);
-            $disputeMdl->updateDisputeStatusForCase($caseId, 'Pending RadTech Verification', 'radtech');
+            
+            // Check if this case actually has an active dispute being resolved
+            $activeDispute = $disputeMdl->getActiveDisputeByCase($caseId);
+            
+            if ($activeDispute && $activeDispute['status'] === 'Escalated to Radiologist') {
+                $successMsg = "Amended Report successfully submitted. The dispute ticket status is now 'Pending RadTech Verification' for final approval.";
+                
+                // Step 4 of Dispute Workflow: Update active dispute status to Pending RadTech Verification
+                $oldFindings = $caseDetails['findings'] ?? '';
+                $oldImpression = $caseDetails['impression'] ?? '';
+                $disputeMdl->updateDisputeStatusForCase($caseId, 'Pending RadTech Verification', 'radtech', $oldFindings, $oldImpression);
+            } else {
+                $successMsg = "Report successfully submitted.";
+            }
 
             // Build a meaningful audit log entry
             $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
@@ -102,8 +113,8 @@ if (!$caseDetails) {
 } else {
     $caseNotFound = false;
 
-    // 3. Patient History
-    $patientHistory = $caseModel->getPatientHistory($caseDetails['patient_number'], $caseId);
+    // 3. Patient History (Completed/Report Ready only)
+    $patientHistory = $caseModel->getPatientHistory($caseDetails['patient_number'], $caseId, null, 0, true);
 
     // 4. Update status to 'Under Reading' if Pending
     if ($caseDetails['status'] === 'Pending') {

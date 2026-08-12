@@ -146,7 +146,7 @@ try {
   <?php require __DIR__ . '/partials/head_assets.php'; ?>
 </head>
 
-<body class="bg-stone-100 text-gray-900">
+<body class="bg-stone-100 text-gray-900 overflow-x-hidden">
 
   <?php require __DIR__ . '/partials/skeleton_loader.php'; ?>
 
@@ -162,7 +162,7 @@ try {
     <?php endif; ?>
 
     <!-- MAIN CONTENT -->
-    <div class="flex-1 flex flex-col transition-all duration-200"
+    <div class="flex-1 flex flex-col min-w-0 transition-all duration-200"
       :style="isMobile ? { marginLeft: '0', paddingTop: '56px' } : { marginLeft: isOpen ? '275px' : '80px' }">
       <?php require __DIR__ . '/partials/topbar.php'; ?>
 

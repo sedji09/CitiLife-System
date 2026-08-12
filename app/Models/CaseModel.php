@@ -308,7 +308,7 @@ class CaseModel
                     $notificationModel->add(
                         "Edited Report Ready",
                         "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). This report has been edited.",
-                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records{$disputeIdParam}&highlight=" . urlencode($cData['case_number']),
+                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes{$disputeIdParam}&highlight=" . urlencode($cData['case_number']),
                         null,
                         'radtech',
                         $cData['branch_id']
@@ -553,7 +553,7 @@ class CaseModel
                 NULL as image_status
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
-            WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Rejected')
+            WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Rejected', 'Cancelled')
 
             UNION ALL
 
@@ -590,7 +590,7 @@ class CaseModel
     /**
      * Get patient's case history across all branches.
      */
-    public function getPatientHistory($patientNumber, $excludeCaseId = null, $limit = null, $offset = 0)
+    public function getPatientHistory($patientNumber, $excludeCaseId = null, $limit = null, $offset = 0, $completedOnly = false)
     {
         $sql = "SELECT c.*, b.name as branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, 
                        COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name
@@ -604,6 +604,10 @@ class CaseModel
         if ($excludeCaseId) {
             $sql .= " AND c.id != ?";
             $params[] = $excludeCaseId;
+        }
+
+        if ($completedOnly) {
+            $sql .= " AND c.status IN ('Report Ready', 'Completed', 'Released')";
         }
 
         $sql .= " ORDER BY c.created_at DESC";
@@ -918,9 +922,13 @@ class CaseModel
         $sql = "SELECT r.*, r.id as request_id, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                 FROM requests r 
                 JOIN patients p ON r.patient_id = p.id 
-                WHERE r.status IN ('Pending Approval', 'Rejected') AND r.branch_id = ?
+                WHERE r.status IN ('Pending Approval', 'Rejected', 'Cancelled') AND r.branch_id = ?
                 ORDER BY 
-                  CASE WHEN r.status = 'Pending Approval' THEN 1 ELSE 2 END,
+                  CASE 
+                    WHEN r.status = 'Pending Approval' THEN 1 
+                    WHEN r.status = 'Rejected' THEN 2
+                    ELSE 3
+                  END,
                   r.created_at DESC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$branchId]);

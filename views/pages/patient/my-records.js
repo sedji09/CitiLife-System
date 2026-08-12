@@ -1,5 +1,11 @@
 (function () {
     if (window.__RECORDS_INIT_DONE__) return;
+    
+    // Prevent running on non-my-records pages
+    if (!document.getElementById('completed-cards-container') && !document.getElementById('rejected-cards-container')) {
+        return;
+    }
+    
     window.__RECORDS_INIT_DONE__ = true;
 
     const ROWS_PER_PAGE = 10;
@@ -11,12 +17,25 @@
         disputes: { page: 1 }
     };
 
-    // Default tab
-    let currentTab = 'completed';
+    // Default tab (Stealth Mode: capture ?tab and then clean URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentTab = urlParams.get('tab') || 'completed';
+
+    // Immediately clean the URL bar to hide the tab parameter
+    if (window.history && window.history.replaceState) {
+        const cleanUrl = new URL(window.location.href);
+        if (cleanUrl.searchParams.has('tab')) {
+            cleanUrl.searchParams.delete('tab');
+            window.history.replaceState(null, null, cleanUrl.toString());
+        }
+    }
 
     // Global exposed function for tab switching
     window.switchPatientTab = function (tabId) {
         currentTab = tabId;
+
+        // Removed persistence of tab to URL to maintain Stealth Mode
+        // (the URL will remain clean when switching tabs)
 
         // Hide all contents
         ['completed', 'rejected', 'disputes'].forEach(t => {
@@ -205,16 +224,35 @@
         renderTab('completed');
         renderTab('rejected');
         renderTab('disputes');
-        // By default switch to completed
-        window.switchPatientTab('completed');
+        // By default switch to currentTab from URL
+        window.switchPatientTab(currentTab);
 
         // Highlighting for case params
         handleHighlight();
+
+        // Real-time polling for disputes
+        setInterval(() => {
+            if (currentTab === 'disputes') {
+                fetch(window.location.href)
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newContainer = doc.getElementById('disputes-cards-container');
+                        const oldContainer = document.getElementById('disputes-cards-container');
+                        if (newContainer && oldContainer) {
+                            oldContainer.innerHTML = newContainer.innerHTML;
+                            if (window.lucide) lucide.createIcons({ root: oldContainer });
+                        }
+                    })
+                    .catch(err => console.error('Dispute polling error:', err));
+            }
+        }, 5000);
     }
 
     function handleHighlight() {
         const urlParams = new URLSearchParams(window.location.search);
-        const highlightId = urlParams.get('highlight_case');
+        const highlightId = urlParams.get('highlight_case') || urlParams.get('highlight_dispute_id');
         if (!highlightId) return;
 
         // Determine which tab has the case
@@ -249,22 +287,31 @@
 
                     if (el && el.style.display !== 'none') {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
-                        el.style.backgroundColor = '#fef08a';
-                        setTimeout(() => {
-                            el.style.backgroundColor = '#fde047';
+                        
+                        const isNew = urlParams.get('is_new') === '1';
+                        
+                        if (isNew) {
                             setTimeout(() => {
+                                el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
                                 el.style.backgroundColor = '#fef08a';
                                 setTimeout(() => {
-                                    el.style.backgroundColor = '';
-                                    el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative');
-                                }, 300);
-                            }, 300);
-                        }, 200);
+                                    el.style.backgroundColor = '#fde047';
+                                    setTimeout(() => {
+                                        el.style.backgroundColor = '#fef08a';
+                                        setTimeout(() => {
+                                            el.style.backgroundColor = '';
+                                            el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
+                                        }, 500);
+                                    }, 500);
+                                }, 400);
+                            }, 600);
+                        }
                     }
 
                     const newUrl = new URL(window.location);
                     newUrl.searchParams.delete('highlight_case');
+                    newUrl.searchParams.delete('highlight_dispute_id');
+                    newUrl.searchParams.delete('is_new');
                     window.history.replaceState({}, document.title, newUrl.toString());
                 }, 200);
             }
@@ -486,7 +533,12 @@ window.toggleDisputeFields = function () {
             const el = document.getElementById(id);
             if (el) el.checked = false;
         });
-        toggleCorrectionInputs();
+        const infoContainer = document.getElementById('correction-inputs-container');
+        if (infoContainer) infoContainer.classList.add('hidden');
+    } else if (category === 'both_error') {
+        demoContainer.classList.remove('hidden');
+        descContainer.classList.remove('hidden');
+        descTextarea.setAttribute('required', 'required');
     } else {
         demoContainer.classList.add('hidden');
         descContainer.classList.add('hidden');
@@ -495,34 +547,22 @@ window.toggleDisputeFields = function () {
 };
 
 window.toggleCorrectionInputs = function () {
-    const map = [
-        { chk: 'chk-first-name', field: 'field-first-name', input: 'input-first-name' },
-        { chk: 'chk-last-name', field: 'field-last-name', input: 'input-last-name' },
-        { chk: 'chk-age', field: 'field-age', input: 'input-age' },
-        { chk: 'chk-sex', field: 'field-sex', input: 'input-sex' },
-    ];
-
+    const ids = ['chk-first-name', 'chk-last-name', 'chk-age', 'chk-sex'];
     let anyChecked = false;
-    const inputsContainer = document.getElementById('correction-inputs-container');
 
-    map.forEach(item => {
-        const isChecked = document.getElementById(item.chk)?.checked;
-        const fieldEl = document.getElementById(item.field);
-        const inputEl = document.getElementById(item.input);
-
-        if (isChecked) {
+    ids.forEach(id => {
+        if (document.getElementById(id)?.checked) {
             anyChecked = true;
-            if (fieldEl) fieldEl.classList.remove('hidden');
-        } else {
-            if (fieldEl) fieldEl.classList.add('hidden');
-            if (inputEl) inputEl.value = '';
         }
     });
 
-    if (anyChecked) {
-        inputsContainer.classList.remove('hidden');
-    } else {
-        inputsContainer.classList.add('hidden');
+    const infoContainer = document.getElementById('correction-inputs-container');
+    if (infoContainer) {
+        if (anyChecked) {
+            infoContainer.classList.remove('hidden');
+        } else {
+            infoContainer.classList.add('hidden');
+        }
     }
 };
 
@@ -544,6 +584,10 @@ window.openDisputeModal = function (caseId, caseNumber, examType) {
         if (el) el.checked = false;
     });
     toggleDisputeFields();
+    
+    // Hide info alert on modal open
+    const infoContainer = document.getElementById('correction-inputs-container');
+    if (infoContainer) infoContainer.classList.add('hidden');
 
     modal.classList.remove('hidden');
     void modal.offsetWidth;
@@ -572,36 +616,65 @@ window.submitDisputeForm = function (e) {
     const category = document.getElementById('dispute-category').value;
     const formData = new FormData(form);
 
-    if (category === 'demographic_error') {
-        const items = [];
-        if (document.getElementById('chk-first-name')?.checked) {
-            const val = document.getElementById('input-first-name').value.trim();
-            if (val) items.push(`First Name: ${val}`);
-        }
-        if (document.getElementById('chk-last-name')?.checked) {
-            const val = document.getElementById('input-last-name').value.trim();
-            if (val) items.push(`Last Name: ${val}`);
-        }
-        if (document.getElementById('chk-age')?.checked) {
-            const val = document.getElementById('input-age').value.trim();
-            if (val) items.push(`Age: ${val}`);
-        }
-        if (document.getElementById('chk-sex')?.checked) {
-            const val = document.getElementById('input-sex').value;
-            if (val) items.push(`Sex: ${val}`);
-        }
+    if (!category) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required Field',
+            text: 'Please select what type of error this is.',
+            confirmButtonColor: '#dc2626'
+        });
+        return;
+    }
 
-        if (items.length === 0) {
+    let finalDescription = '';
+
+    if (category === 'findings_error' || category === 'both_error') {
+        const desc = document.getElementById('dispute-description').value.trim();
+        if (!desc && category === 'findings_error') {
             Swal.fire({
                 icon: 'warning',
-                title: 'Incomplete Details',
-                text: 'Pumili ng checkbox at ilagay ang tamang detalye na papabago.',
+                title: 'Required Field',
+                text: 'Please provide details of the correction needed.',
                 confirmButtonColor: '#dc2626'
             });
             return;
         }
-        formData.set('description', items.join("\\n"));
+        finalDescription += desc ? `Findings Note:\n  • ${desc}\n\n` : '';
     }
+
+    if (category === 'demographic_error' || category === 'both_error') {
+        const items = [];
+        if (document.getElementById('chk-first-name')?.checked) items.push(`First Name`);
+        if (document.getElementById('chk-last-name')?.checked) items.push(`Last Name`);
+        if (document.getElementById('chk-age')?.checked) items.push(`Age`);
+        if (document.getElementById('chk-sex')?.checked) items.push(`Sex`);
+
+        if (items.length === 0 && category === 'demographic_error') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incomplete Details',
+                text: 'Pumili ng checkbox na naglalaman ng maling detalye.',
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+        
+        if (items.length > 0) {
+            finalDescription += `Wrong Patient Info:\n  • ${items.join(', ')}\n`;
+        }
+    }
+
+    if (!finalDescription.trim()) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Incomplete Details',
+            text: 'Please provide details for the error.',
+            confirmButtonColor: '#dc2626'
+        });
+        return;
+    }
+    
+    formData.set('description', finalDescription.trim());
 
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
