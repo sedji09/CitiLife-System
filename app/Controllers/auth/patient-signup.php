@@ -263,12 +263,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* Desktop specific visibility */
         @media (min-width: 641px) {
-
             /* Hide mobile form on desktop */
             #mobileFormContainer {
                 display: none !important;
             }
         }
+
+        <?php if (isset($_GET['iframe'])): ?>
+        /* Iframe overrides for a seamless modal experience */
+        body {
+            background: transparent !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+        }
+        .glass-panel {
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            max-width: 100% !important;
+        }
+        <?php endif; ?>
     </style>
 </head>
 
@@ -761,7 +776,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 currentStep--;
                 showStep(currentStep);
             } else {
-                window.location.href = 'patient-login';
+                if (window.self !== window.top) {
+                    window.parent.postMessage('openLoginModal', '*');
+                    window.location.href = 'patient-login';
+                }
             }
         }
 
@@ -871,6 +889,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     closeDropdown();
                 }
             });
+        }
+
+        // Iframe Modal Communication
+        if (window.self !== window.top) {
+            document.querySelectorAll('a[href*="patient-login"]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.parent.postMessage('openLoginModal', '*');
+                });
+            });
+        }
+        if (window.self !== window.top) {
+            // We are in an iframe
+            
+            // Remove min-h-screen from mobile container so it can shrink to content
+            const mobileContainer = document.getElementById('mobileFormContainer');
+            if (mobileContainer) {
+                mobileContainer.classList.remove('min-h-screen');
+            }
+
+            // Function to send current height to parent
+            const sendHeight = () => {
+                const height = document.body.scrollHeight;
+                window.parent.postMessage({ type: 'resizeIframe', height: height }, '*');
+            };
+
+            // Send height on load and resize
+            window.addEventListener('load', sendHeight);
+            window.addEventListener('resize', sendHeight);
+
+            // Observe DOM changes (e.g., step transitions) to recalculate height
+            const observer = new MutationObserver(() => {
+                // slight delay to let transitions finish
+                setTimeout(sendHeight, 50); 
+            });
+            observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
+
+            // Handle the back button to close signup and open login modal
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) {
+                backBtn.onclick = function(e) {
+                    if (currentStep === 1) {
+                        e.preventDefault();
+                        window.parent.postMessage('openLoginModal', '*');
+                    } else {
+                        prevStep();
+                    }
+                };
+            }
         }
     </script>
 </body>

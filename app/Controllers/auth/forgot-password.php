@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mt-8 pt-6 border-t border-gray-100 text-center">
             <p class="text-sm text-gray-600">
                 Remembered your password? 
-                <a href="patient-login" class="font-bold text-red-600 hover:underline">Back to Login</a>
+                <a href="/<?= PROJECT_DIR ?>/?login=1" class="font-bold text-red-600 hover:underline">Back to Login</a>
             </p>
         </div>
     </div>

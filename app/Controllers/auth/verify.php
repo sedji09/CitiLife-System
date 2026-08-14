@@ -90,7 +90,7 @@ if (empty($token)) {
                 <p class="text-sm font-medium"><?= htmlspecialchars($message) ?></p>
             </div>
             <div class="text-center">
-                <a href="/<?= PROJECT_DIR ?>/patient-signup" class="text-blue-600 font-medium hover:underline">Return to Sign Up</a>
+                <a href="/<?= PROJECT_DIR ?>/?signup=1" class="text-blue-600 font-medium hover:underline">Return to Sign Up</a>
             </div>
         <?php else: ?>
 
@@ -108,8 +108,11 @@ if (empty($token)) {
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
                     <div class="relative">
                         <input type="password" id="password" name="password" required 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10 pr-10">
                         <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <button type="button" onclick="togglePasswordVisibility('password', this)" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -117,8 +120,11 @@ if (empty($token)) {
                     <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                     <div class="relative">
                         <input type="password" id="confirm_password" name="confirm_password" required 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10 pr-10">
                         <i class="fas fa-check-circle absolute left-3 top-3 text-gray-400"></i>
+                        <button type="button" onclick="togglePasswordVisibility('confirm_password', this)" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                     <p id="match_indicator" class="text-xs font-semibold mt-1 hidden"></p>
                 </div>
@@ -139,6 +145,20 @@ if (empty($token)) {
             </form>
 
             <script>
+                function togglePasswordVisibility(inputId, btn) {
+                    const input = document.getElementById(inputId);
+                    const icon = btn.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                }
+
                 const pwd = document.getElementById('password');
                 const confirmPwd = document.getElementById('confirm_password');
                 const indicator = document.getElementById('match_indicator');

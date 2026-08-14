@@ -5,10 +5,10 @@
  */
 
 // Root URL (Redirects to dashboard or login via middleware)
-$router->get('/', 'App\Controllers\PageController@dispatch', ['auth']);
-$router->post('/', 'App\Controllers\PageController@dispatch', ['auth']);
-$router->get('/index.php', 'App\Controllers\PageController@dispatch', ['auth']);
-$router->post('/index.php', 'App\Controllers\PageController@dispatch', ['auth']);
+$router->get('/', 'App\Controllers\LandingController@index', []);
+$router->post('/', 'App\Controllers\LandingController@index', []);
+$router->get('/index.php', 'App\Controllers\LandingController@index', []);
+$router->post('/index.php', 'App\Controllers\LandingController@index', []);
 
 // Authentication Routes (Guest Only)
 $router->get('/login', 'App\Controllers\AuthController@login', ['guest']);
