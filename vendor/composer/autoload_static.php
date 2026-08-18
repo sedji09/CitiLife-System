@@ -206,6 +206,7 @@ class ComposerStaticInitac2d307f4ed514763a8119f3523066bb
         'NotificationModel' => __DIR__ . '/../..' . '/app/Models/NotificationModel.php',
         'PatientModel' => __DIR__ . '/../..' . '/app/Models/PatientModel.php',
         'RecordRequestModel' => __DIR__ . '/../..' . '/app/Models/RecordRequestModel.php',
+        'ResultDisputeModel' => __DIR__ . '/../..' . '/app/Models/ResultDisputeModel.php',
         'Safe\\DateTime' => __DIR__ . '/..' . '/thecodingmachine/safe/lib/DateTime.php',
         'Safe\\DateTimeImmutable' => __DIR__ . '/..' . '/thecodingmachine/safe/lib/DateTimeImmutable.php',
         'Safe\\Exceptions\\ApacheException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ApacheException.php',
@@ -289,6 +290,7 @@ class ComposerStaticInitac2d307f4ed514763a8119f3523066bb
         'Safe\\Exceptions\\YazException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/YazException.php',
         'Safe\\Exceptions\\ZipException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ZipException.php',
         'Safe\\Exceptions\\ZlibException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ZlibException.php',
+        'ServiceModel' => __DIR__ . '/../..' . '/app/Models/ServiceModel.php',
         'UserModel' => __DIR__ . '/../..' . '/app/Models/UserModel.php',
     );
 

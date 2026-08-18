@@ -23,6 +23,7 @@ return [
     ["label" => "Dashboard", "icon" => "layout-dashboard", "href" => "/dashboard", "perm_key" => "dashboard"],
     ["label" => "Branches", "icon" => "building-2", "href" => "/branches", "perm_key" => "branch_mgmt"],
     ["label" => "Users", "icon" => "users", "href" => "/users", "perm_key" => "user_mgmt"],
+    ["label" => "Service Pricing", "icon" => "tag", "href" => "/service-pricing", "perm_key" => "system_security"],
     ["label" => "Patient Records", "icon" => "folder-open", "href" => "/patient-records", "perm_key" => "patient_history"],
     ["label" => "Patient Feedback", "icon" => "message-square", "href" => "/feedback", "perm_key" => "global_reports"],
     ["label" => "Reports", "icon" => "bar-chart-3", "href" => "/reports", "perm_key" => "global_reports"],
@@ -49,6 +50,7 @@ return [
 
   "patient" => [
     ["label" => "Dashboard", "icon" => "layout-dashboard", "href" => "/dashboard", "perm_key" => "dashboard"],
+    ["label" => "Services & Rates", "icon" => "tag", "href" => "/services-pricing", "perm_key" => "dashboard"],
     ["label" => "X-ray Status", "icon" => "activity", "href" => "/xray-status", "perm_key" => "xray_status"],
     ["label" => "My Records", "icon" => "folder-open", "href" => "/my-records", "perm_key" => "my_records"],
     ["label" => "Registration", "icon" => "user-plus", "href" => "/registration", "perm_key" => "patient_reg"],

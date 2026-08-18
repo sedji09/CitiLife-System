@@ -88,7 +88,9 @@ $dashboardPages = [
     'security-settings',
     'backup-maintenance',
     'print-report',
-    'feedback'
+    'feedback',
+    'service-pricing',
+    'services-pricing'
 ];
 
 foreach ($dashboardPages as $page) {

@@ -1,16 +1,21 @@
 <?php
-// Mock database of X-ray procedures. This can easily be replaced by a real database query later.
-$xrayRates = [
-    ['name' => 'Chest PA', 'category' => 'Chest', 'price' => 400],
-    ['name' => 'Chest AP', 'category' => 'Chest', 'price' => 450],
-    ['name' => 'Chest AP/LAT', 'category' => 'Chest', 'price' => 600],
-    ['name' => 'Apicolordotic View', 'category' => 'Chest', 'price' => 450],
-    ['name' => 'Abdomen (Pedia)', 'category' => 'Abdomen', 'price' => 500],
-    ['name' => 'Abdomen Upright', 'category' => 'Abdomen', 'price' => 600],
-    ['name' => 'Foot', 'category' => 'Lower Extremities', 'price' => 350],
-    ['name' => 'Elbow', 'category' => 'Upper Extremities', 'price' => 350],
-    ['name' => 'Cervical AP/LAT', 'category' => 'Spine', 'price' => 700],
-];
+require_once basePath('config/database.php');
+require_once basePath('app/Models/ServiceModel.php');
+
+global $pdo;
+
+$serviceModel = new ServiceModel($pdo);
+$activeServices = $serviceModel->getActiveServices();
+
+// Map active DB services into the $xrayRates array structure
+$xrayRates = [];
+foreach ($activeServices as $service) {
+    $xrayRates[] = [
+        'name'     => $service['exam_type'],
+        'category' => $service['category'],
+        'price'    => (float)$service['price']
+    ];
+}
 
 // Group rates by category for the carousel list groups
 $groupedRates = [];
@@ -225,7 +230,7 @@ $xrayCategories = array_keys($groupedRates);
                                 <?php foreach($rates as $rate): ?>
                                     <div class="list-group-item">
                                         <span class="exam-type"><?= htmlspecialchars($rate['name']) ?></span>
-                                        <strong class="exam-price">₱<?= number_format($rate['price']) ?></strong>
+                                        <strong class="exam-price">₱ <?= number_format($rate['price']) ?></strong>
                                     </div>
                                 <?php endforeach; ?>
                             </div>

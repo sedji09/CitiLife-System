@@ -65,6 +65,8 @@ class PageController
             'backup-maintenance',
             'print-report',
             'feedback',
+            'service-pricing',
+            'services-pricing',
         ];
 
         // Fallback for page parameter
@@ -88,7 +90,8 @@ class PageController
             'security-settings' => 'system_security',
             'user-role-settings' => 'system_security',
             'settings' => 'system_security',
-            'backup-maintenance' => 'backup_mgmt'
+            'backup-maintenance' => 'backup_mgmt',
+            'service-pricing' => 'system_security'
         ];
 
         if (isset($pagePermMap[$page])) {
@@ -101,6 +104,7 @@ class PageController
         $pageOwnerMap = [
             'branches' => 'admin_central',
             'users' => 'admin_central',
+            'service-pricing' => 'admin_central',
             'patient-records' => 'admin_central',
             'security-settings' => 'it_admin',
             'user-role-settings' => 'admin_central',
@@ -116,7 +120,8 @@ class PageController
             'record-requests' => 'branch_admin',
             'xray-status' => 'patient',
             'my-records' => 'patient',
-            'registration' => 'patient'
+            'registration' => 'patient',
+            'services-pricing' => 'patient'
         ];
 
         $resolvedRole = $pageOwnerMap[$page] ?? $role;

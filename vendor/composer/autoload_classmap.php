@@ -15,6 +15,7 @@ return array(
     'NotificationModel' => $baseDir . '/app/Models/NotificationModel.php',
     'PatientModel' => $baseDir . '/app/Models/PatientModel.php',
     'RecordRequestModel' => $baseDir . '/app/Models/RecordRequestModel.php',
+    'ResultDisputeModel' => $baseDir . '/app/Models/ResultDisputeModel.php',
     'Safe\\DateTime' => $vendorDir . '/thecodingmachine/safe/lib/DateTime.php',
     'Safe\\DateTimeImmutable' => $vendorDir . '/thecodingmachine/safe/lib/DateTimeImmutable.php',
     'Safe\\Exceptions\\ApacheException' => $vendorDir . '/thecodingmachine/safe/generated/Exceptions/ApacheException.php',
@@ -98,5 +99,6 @@ return array(
     'Safe\\Exceptions\\YazException' => $vendorDir . '/thecodingmachine/safe/generated/Exceptions/YazException.php',
     'Safe\\Exceptions\\ZipException' => $vendorDir . '/thecodingmachine/safe/generated/Exceptions/ZipException.php',
     'Safe\\Exceptions\\ZlibException' => $vendorDir . '/thecodingmachine/safe/generated/Exceptions/ZlibException.php',
+    'ServiceModel' => $baseDir . '/app/Models/ServiceModel.php',
     'UserModel' => $baseDir . '/app/Models/UserModel.php',
 );
