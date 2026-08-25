@@ -391,11 +391,18 @@ $xrayCategories = array_keys($groupedRates);
 
         // Carousel Logic
         let currentSlide = 0;
-        const track = document.getElementById('pricingTrack');
-        const dots = document.querySelectorAll('.indicator-dot');
-        const totalSlides = dots.length;
+
+        function getCarouselElements() {
+            return {
+                track: document.getElementById('pricingTrack'),
+                dots: document.querySelectorAll('.indicator-dot'),
+                totalSlides: document.querySelectorAll('.indicator-dot').length
+            };
+        }
 
         function updateCarousel() {
+            const { track, dots } = getCarouselElements();
+            if (!track) return;
             // Move track
             track.style.transform = `translateX(-${currentSlide * 100}%)`;
             
@@ -406,6 +413,8 @@ $xrayCategories = array_keys($groupedRates);
         }
 
         function moveCarousel(direction) {
+            const { totalSlides } = getCarouselElements();
+            if (totalSlides === 0) return;
             currentSlide += direction;
             if (currentSlide < 0) currentSlide = totalSlides - 1;
             if (currentSlide >= totalSlides) currentSlide = 0;
@@ -421,31 +430,74 @@ $xrayCategories = array_keys($groupedRates);
         let startX = 0;
         let isDragging = false;
         
-        track.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-            isDragging = true;
-        }, {passive: true});
+        const carouselContainer = document.querySelector('.pricing-carousel-container');
+        if (carouselContainer) {
+            carouselContainer.addEventListener('touchstart', (e) => {
+                // Ensure touch is within the track area if needed, but container is fine
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            }, {passive: true});
 
-        track.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-        }, {passive: true});
+            carouselContainer.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+            }, {passive: true});
 
-        track.addEventListener('touchend', (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            
-            const endX = e.changedTouches[0].clientX;
-            const diffX = startX - endX;
+            carouselContainer.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const endX = e.changedTouches[0].clientX;
+                const diffX = startX - endX;
 
-            // If swiped left (next)
-            if (diffX > 50) {
-                moveCarousel(1);
-            } 
-            // If swiped right (prev)
-            else if (diffX < -50) {
-                moveCarousel(-1);
+                // If swiped left (next)
+                if (diffX > 50) {
+                    moveCarousel(1);
+                } 
+                // If swiped right (prev)
+                else if (diffX < -50) {
+                    moveCarousel(-1);
+                }
+            });
+        }
+
+        // Real-time Pricing Polling
+        let isPricingPolling = false;
+        async function pollLandingPricing() {
+            if (isPricingPolling) return;
+            isPricingPolling = true;
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('ajax_polling', '1');
+                const response = await fetch(url.toString());
+                if (!response.ok) throw new Error('Network error');
+                const html = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const newTrack = doc.getElementById('pricingTrack');
+                const currentTrack = document.getElementById('pricingTrack');
+                
+                if (newTrack && currentTrack && newTrack.innerHTML !== currentTrack.innerHTML) {
+                    currentTrack.innerHTML = newTrack.innerHTML;
+                    
+                    const newInd = doc.getElementById('pricingIndicators');
+                    const currentInd = document.getElementById('pricingIndicators');
+                    if (newInd && currentInd && newInd.innerHTML !== currentInd.innerHTML) {
+                        currentInd.innerHTML = newInd.innerHTML;
+                        
+                        const { totalSlides } = getCarouselElements();
+                        if (currentSlide >= totalSlides) currentSlide = 0;
+                    }
+                    updateCarousel();
+                }
+            } catch (e) {
+                console.error('Polling error:', e);
+            } finally {
+                isPricingPolling = false;
             }
-        });
+        }
+        setInterval(pollLandingPricing, 5000);
     </script>
 
     <!-- ===== LOGIN MODAL ===== -->

@@ -162,4 +162,51 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) window.lucide.createIcons();
     });
+
+    // Real-time Pricing Updates
+    let isPricingPolling = false;
+    async function pollPricingUpdates() {
+        if (isPricingPolling) return;
+        isPricingPolling = true;
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('ajax_polling', '1');
+            const response = await fetch(url.toString());
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            const newGrid = doc.getElementById('servicesCategoryGrid');
+            const currentGrid = document.getElementById('servicesCategoryGrid');
+            
+            if (newGrid && currentGrid) {
+                if (newGrid.innerHTML !== currentGrid.innerHTML) {
+                    currentGrid.innerHTML = newGrid.innerHTML;
+                    
+                    filterPatientServices();
+                    
+                    if (window.lucide) {
+                        window.lucide.createIcons();
+                    }
+                }
+            }
+            
+            const newCat = doc.getElementById('patientCategoryFilter');
+            const currentCat = document.getElementById('patientCategoryFilter');
+            if (newCat && currentCat && newCat.innerHTML !== currentCat.innerHTML) {
+                const selected = currentCat.value;
+                currentCat.innerHTML = newCat.innerHTML;
+                currentCat.value = selected;
+            }
+        } catch (error) {
+            console.error('Failed to poll pricing updates:', error);
+        } finally {
+            isPricingPolling = false;
+        }
+    }
+
+    // Poll every 5 seconds
+    setInterval(pollPricingUpdates, 5000);
 </script>

@@ -27,39 +27,11 @@ if (isset($preSelectedExams)) {
 $placeholderText = $placeholderText ?? "Select Exam Type...";
 
 // Flat list of exams
-$allStandardExams = [
-    'CHEST PA',
-    'CHEST AP/L',
-    'CHEST PA/L',
-    'APICOLORDOTIC VIEW',
-    'CONED DOWN VIEW',
-    'HAND AP/O',
-    'ELBOW',
-    'FOREARM',
-    'HUMERUS',
-    'FOOT',
-    'SHOULDER',
-    'LEG',
-    'FEMUR (THIGH)',
-    'SKULL AP/LAT',
-    'CERVICAL AP/LAT',
-    'PELVIS',
-    'THORACIC CAGE',
-    'THORACIC SPINE',
-    'LUMBOSACRAL (L.S.V.)',
-    'THORACOLUMBAR',
-    'KNEE',
-    'MANDIBLE',
-    "NASAL BONE SOFT T.",
-    "NASAL BONE AP/LAT",
-    "PNS/WATERS/CALDWELL",
-    "ABDOMEN (PEDIA)",
-    "ABDOMEN UPRIGHT",
-    "SKULL 3PT LANDING",
-    'SCAPULAR Y',
-    'WATER\'S VIEW',
-    'TEMPOROMANDIBULAR JOINT'
-];
+global $pdo;
+require_once basePath('app/Models/ServiceModel.php');
+$serviceModel = new \ServiceModel($pdo);
+$activeServices = $serviceModel->getActiveServices();
+$allStandardExams = array_column($activeServices, 'exam_type');
 sort($allStandardExams);
 
 // Map legacy inputs
