@@ -39,6 +39,7 @@ class ReportReadyController
 
             // 2A. Release and Upload Photos via AJAX
             if ($_GET['action'] === 'release_and_upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (ob_get_length()) ob_clean();
                 header('Content-Type: application/json');
                 $id = (int) ($_POST['id'] ?? 0);
                 $images = json_decode($_POST['images'] ?? '[]', true);

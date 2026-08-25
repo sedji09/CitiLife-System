@@ -38,6 +38,7 @@ if (!empty($_SESSION['flash_success'])) {
 if (isset($_GET['action'])) {
 
     if ($_GET['action'] === 'release_and_upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (ob_get_length()) ob_clean();
         header('Content-Type: application/json');
         $id = (int) ($_POST['id'] ?? 0);
         $images = json_decode($_POST['images'] ?? '[]', true);
@@ -53,6 +54,16 @@ if (isset($_GET['action'])) {
                     $uploadDir = __DIR__ . '/../../../public/uploads/reports';
                     if (!is_dir($uploadDir))
                         mkdir($uploadDir, 0777, true);
+
+                    // Clean up any existing report pages for this case
+                    $existingPhotos = glob($uploadDir . '/' . $caseData['case_number'] . '_page_*.jpg');
+                    if ($existingPhotos) {
+                        foreach ($existingPhotos as $photo) {
+                            if (file_exists($photo)) {
+                                unlink($photo);
+                            }
+                        }
+                    }
 
                     foreach ($images as $index => $base64) {
                         list($type, $data) = explode(';', $base64);

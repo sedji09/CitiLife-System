@@ -576,12 +576,19 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     formData.append('id', caseId);
                     formData.append('images', JSON.stringify(base64Images));
 
-                    const response = await fetch(`${baseDir}/index.php?role=radtech&page=patient-lists&action=release_and_upload`, {
+                    const response = await fetch(`${baseDir}/patient-lists?action=release_and_upload`, {
                         method: 'POST',
                         body: formData
                     });
 
-                    const result = await response.json();
+                    const resText = await response.text();
+                    let result;
+                    try {
+                        result = JSON.parse(resText);
+                    } catch (jsonErr) {
+                        console.error("Server response was not valid JSON:", resText);
+                        throw new Error('Server returned invalid response format: ' + (resText ? resText.substring(0, 100) : 'Empty response'));
+                    }
 
                     if (result.success) {
                         // Success! Refresh page to show success flash message

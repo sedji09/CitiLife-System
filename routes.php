@@ -58,6 +58,8 @@ $dashboardPages = [
     'dashboard',
     'patient-registration',
     'patient-lists',
+    'report-ready',
+    'check-record-request',
     'patient-approval',
     'xray-patient-records',
     'record-request',

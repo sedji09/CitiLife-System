@@ -22,7 +22,8 @@ class LandingController
                 $url .= '?' . http_build_query($queryParams);
             }
             
-            header("Location: $url");
+            $statusCode = ($_SERVER['REQUEST_METHOD'] === 'POST') ? 307 : 302;
+            header("Location: $url", true, $statusCode);
             exit;
         }
 
