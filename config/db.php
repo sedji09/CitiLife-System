@@ -5,12 +5,26 @@
  * (host will serve as the database endpoint when not localhost).
  */
 
+$host = $_ENV['MYSQLHOST'] ?? $_SERVER['MYSQLHOST'] ?? getenv('MYSQLHOST') ?: 'localhost';
+$port = $_ENV['MYSQLPORT'] ?? $_SERVER['MYSQLPORT'] ?? getenv('MYSQLPORT') ?: '3306';
+$dbname = $_ENV['MYSQLDATABASE'] ?? $_SERVER['MYSQLDATABASE'] ?? getenv('MYSQLDATABASE') ?: 'citilife_db';
+$username = $_ENV['MYSQLUSER'] ?? $_SERVER['MYSQLUSER'] ?? getenv('MYSQLUSER') ?: 'root';
+$password = $_ENV['MYSQLPASSWORD'] ?? $_SERVER['MYSQLPASSWORD'] ?? getenv('MYSQLPASSWORD') ?: '';
+
+$mysqlUrl = $_ENV['MYSQL_URL'] ?? $_SERVER['MYSQL_URL'] ?? getenv('MYSQL_URL') ?: '';
+if ($mysqlUrl) {
+    $parsed = parse_url($mysqlUrl);
+    $host = $parsed['host'] ?? $host;
+    $port = $parsed['port'] ?? $port;
+    $dbname = isset($parsed['path']) ? ltrim($parsed['path'], '/') : $dbname;
+    $username = $parsed['user'] ?? $username;
+    $password = $parsed['pass'] ?? $password;
+}
+
 return [
-    'host'     => $_ENV['MYSQLHOST'] ?? $_SERVER['MYSQLHOST'] ?? 'localhost',
-    'port'     => $_ENV['MYSQLPORT'] ?? $_SERVER['MYSQLPORT'] ?? '3306',
-    'dbname'   => $_ENV['MYSQLDATABASE'] ?? $_SERVER['MYSQLDATABASE'] ?? 'citilife_db',
-    'username' => $_ENV['MYSQLUSER'] ?? $_SERVER['MYSQLUSER'] ?? 'root',
-    'password' => $_ENV['MYSQLPASSWORD'] ?? $_SERVER['MYSQLPASSWORD'] ?? '',
-    // 'provider' => 'AWS RDS',  // Cloud only
-    // 'region'   => 'ap-southeast-1',  // Cloud only
+    'host'     => $host,
+    'port'     => $port,
+    'dbname'   => $dbname,
+    'username' => $username,
+    'password' => $password,
 ];

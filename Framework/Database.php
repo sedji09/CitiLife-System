@@ -23,7 +23,12 @@ class Database
             // Sync with local time zone for logs
             $this->conn->exec("SET time_zone = '+08:00'");
         } catch (PDOException $e) {
-            throw new Exception("Database connection failed: {$e->getMessage()}");
+            $env_dump = json_encode([
+                'host' => $config['host'], 
+                'getenv_host' => getenv('MYSQLHOST'), 
+                'env_host' => $_ENV['MYSQLHOST'] ?? 'missing'
+            ]);
+            throw new Exception("Database connection failed: {$e->getMessage()}. Debug: {$env_dump}");
         }
     }
 
