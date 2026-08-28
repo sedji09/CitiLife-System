@@ -102,13 +102,13 @@ foreach ($dashboardPages as $page) {
 }
 
 // Legacy API Endpoints (mapped to app/api for absolute JS compatibility)
-$router->get('/app/api/case_activity.php', 'app/api/case_activity.php');
-$router->post('/app/api/case_activity.php', 'app/api/case_activity.php');
-$router->get('/app/api/notifications.php', 'app/api/notifications.php');
-$router->post('/app/api/notifications.php', 'app/api/notifications.php');
-$router->get('/app/api/active_users_count.php', 'app/api/active_users_count.php');
-$router->get('/app/api/search_branch_cases.php', 'app/api/search_branch_cases.php');
-$router->post('/app/api/search_branch_cases.php', 'app/api/search_branch_cases.php');
+$router->get('/app/api/case_activity.php', 'app/Api/case_activity.php');
+$router->post('/app/api/case_activity.php', 'app/Api/case_activity.php');
+$router->get('/app/api/notifications.php', 'app/Api/notifications.php');
+$router->post('/app/api/notifications.php', 'app/Api/notifications.php');
+$router->get('/app/api/active_users_count.php', 'app/Api/active_users_count.php');
+$router->get('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
+$router->post('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
 $router->get('/branch-dashboard', 'auth/branch-dashboard.php');
 $router->get('/patient-dashboard', 'auth/patient-dashboard.php');
 $router->get('/image', 'ImageController@serve');
@@ -120,7 +120,7 @@ $router->get('/test-env', function() {
     echo "GETENV: " . (getenv('BREVO_API_KEY') ?: 'NONE') . "<br>";
     echo "CONFIG: " . (!empty($config['brevo_api_key']) ? 'YES' : 'NO') . "<br>";
 });
-$router->get('/test-email', 'app/api/test_email.php');
+$router->get('/test-email', 'app/Api/test_email.php');
 
 $router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
 $router->get('/app/api/messages.php', 'app/Api/messages.php');
