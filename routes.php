@@ -101,26 +101,27 @@ foreach ($dashboardPages as $page) {
     $router->post('/' . $page, 'App\Controllers\PageController@dispatch', ['auth']);
 }
 
-// Legacy API Endpoints (mapped to App/Api for absolute JS compatibility)
-$router->get('/app/api/case_activity.php', 'App/Api/case_activity.php');
-$router->post('/app/api/case_activity.php', 'App/Api/case_activity.php');
-$router->get('/app/api/notifications.php', 'App/Api/notifications.php');
-$router->post('/app/api/notifications.php', 'App/Api/notifications.php');
-$router->get('/app/api/active_users_count.php', 'App/Api/active_users_count.php');
-$router->get('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
-$router->post('/app/api/search_branch_cases.php', 'App/Api/search_branch_cases.php');
+// Legacy API Endpoints (mapped to app/api for absolute JS compatibility)
+$router->get('/app/api/case_activity.php', 'app/api/case_activity.php');
+$router->post('/app/api/case_activity.php', 'app/api/case_activity.php');
+$router->get('/app/api/notifications.php', 'app/api/notifications.php');
+$router->post('/app/api/notifications.php', 'app/api/notifications.php');
+$router->get('/app/api/active_users_count.php', 'app/api/active_users_count.php');
+$router->get('/app/api/search_branch_cases.php', 'app/api/search_branch_cases.php');
+$router->post('/app/api/search_branch_cases.php', 'app/api/search_branch_cases.php');
 $router->get('/branch-dashboard', 'auth/branch-dashboard.php');
 $router->get('/patient-dashboard', 'auth/patient-dashboard.php');
 $router->get('/image', 'ImageController@serve');
+$router->get('/test-email', 'app/api/test_email.php');
 
 $router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
-$router->get('/app/api/messages.php', 'App/Api/messages.php');
-$router->post('/app/api/messages.php', 'App/Api/messages.php');
-$router->post('/app/api/update_profile.php', 'App/Api/update_profile.php');
-$router->post('/app/api/request_password_reset.php', 'App/Api/request_password_reset.php');
-$router->post('/app/api/cancel_case.php', 'App/Api/cancel_case.php');
-$router->post('/app/config/update_patient.php', 'config/update_patient.php');
-$router->get('/app/api/disputes.php', 'App/Api/disputes.php');
-$router->post('/app/api/disputes.php', 'App/Api/disputes.php');
-$router->get('/App/Api/disputes.php', 'App/Api/disputes.php');
-$router->post('/App/Api/disputes.php', 'App/Api/disputes.php');
+$router->get('/app/api/messages.php', 'app/api/messages.php');
+$router->post('/app/api/messages.php', 'app/api/messages.php');
+$router->post('/app/api/update_profile.php', 'app/api/update_profile.php');
+$router->post('/app/api/request_password_reset.php', 'app/api/request_password_reset.php');
+$router->post('/app/api/cancel_case.php', 'app/api/cancel_case.php');
+$router->post('/app/config/update_patient.php', 'app/config/update_patient.php');
+$router->get('/app/api/disputes.php', 'app/api/disputes.php');
+$router->post('/app/api/disputes.php', 'app/api/disputes.php');
+$router->get('/App/Api/disputes.php', 'app/api/disputes.php');
+$router->post('/App/Api/disputes.php', 'app/api/disputes.php');
