@@ -210,8 +210,8 @@
 <div id="editPatientModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
             <h3 class="text-lg font-bold text-gray-900">Edit Patient Information</h3>
             <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
