@@ -112,6 +112,14 @@ $router->post('/app/api/search_branch_cases.php', 'app/api/search_branch_cases.p
 $router->get('/branch-dashboard', 'auth/branch-dashboard.php');
 $router->get('/patient-dashboard', 'auth/patient-dashboard.php');
 $router->get('/image', 'ImageController@serve');
+$router->get('/test-env', function() {
+    $config_path = __DIR__ . '/config/smtp.php';
+    $config = require $config_path;
+    echo "SERVER: " . ($_SERVER['BREVO_API_KEY'] ?? 'NONE') . "<br>";
+    echo "ENV: " . ($_ENV['BREVO_API_KEY'] ?? 'NONE') . "<br>";
+    echo "GETENV: " . (getenv('BREVO_API_KEY') ?: 'NONE') . "<br>";
+    echo "CONFIG: " . (!empty($config['brevo_api_key']) ? 'YES' : 'NO') . "<br>";
+});
 $router->get('/test-email', 'app/api/test_email.php');
 
 $router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
@@ -120,6 +128,10 @@ $router->post('/app/api/messages.php', 'app/api/messages.php');
 $router->post('/app/api/update_profile.php', 'app/api/update_profile.php');
 $router->post('/app/api/request_password_reset.php', 'app/api/request_password_reset.php');
 $router->post('/app/api/cancel_case.php', 'app/api/cancel_case.php');
+$router->post('/app/api/submit_payment.php', 'app/api/submit_payment.php');
+$router->post('/app/api/submit_feedback.php', 'app/api/submit_feedback.php');
+$router->post('/app/api/send_email_change_otp.php', 'app/api/send_email_change_otp.php');
+$router->post('/app/api/verify_email_change_otp.php', 'app/api/verify_email_change_otp.php');
 $router->post('/app/config/update_patient.php', 'app/config/update_patient.php');
 $router->get('/app/api/disputes.php', 'app/api/disputes.php');
 $router->post('/app/api/disputes.php', 'app/api/disputes.php');
