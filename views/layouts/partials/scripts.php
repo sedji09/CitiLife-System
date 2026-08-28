@@ -255,7 +255,7 @@
                 attachmentPreviews: []
               });
               // Fetch messages for restored chat
-              fetch('/' + '<?= PROJECT_DIR ?>' + '/app/api/messages.php?action=fetch_chat&contact_id=' + meta.id)
+              fetch('/' + '<?= PROJECT_DIR ?>' + '/app/api/messages.php?action=fetch_chat&contact_id=' + meta.id, { credentials: 'same-origin' })
                 .then(r => r.json())
                 .then(data => {
                   const chat = this.activeChats.find(c => c.id == meta.id);
@@ -388,13 +388,13 @@
         if (this.role === 'patient') return;
 
         // Fetch unread count
-        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_unread_count')
+        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_unread_count', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => { if (data.success) this.unreadMessageCount = data.count; })
           .catch(err => console.error(err));
 
         // Fetch conversations (always, so badge count stays live)
-        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations')
+        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -435,7 +435,7 @@
         // Fetch active chats — only append NEW messages to avoid re-render stealing focus
         this.activeChats.forEach(chat => {
           const markReadParam = chat.minimized ? '0' : '1';
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam)
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               if (data.success) {
@@ -511,7 +511,7 @@
         this.isSearchingStaff = true;
         const currentQuery = this.staffSearchQuery;
         const cacheBuster = '&_t=' + new Date().getTime();
-        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster)
+        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (this.staffSearchQuery !== currentQuery) return;
@@ -572,7 +572,7 @@
         // Clear unread badge when user opens the chat
         if (!chat.minimized) {
           chat.unreadCount = 0;
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id).catch(() => { });
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
@@ -588,7 +588,7 @@
         if (existing) {
           existing.minimized = false;
           existing.unreadCount = 0; // Clear badge when user opens it
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id).catch(() => { });
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -603,7 +603,7 @@
             attachmentPreviews: []
           });
 
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + conv.id)
+          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               const chat = this.activeChats.find(c => c.id === conv.id);
@@ -685,7 +685,7 @@
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
             this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
-            fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + targetId).catch(() => { });
+            fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
@@ -1240,7 +1240,7 @@
         this.globalNotificationOptionsOpen = !this.globalNotificationOptionsOpen;
       },
       fetchNotifications(isInitial = false) {
-        fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php')
+        fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (!data.error) {
@@ -1682,7 +1682,7 @@
     const caseId = dot.getAttribute('data-case-id');
     if (!caseId) return;
 
-    fetch(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=status&case_id=${caseId}&_t=` + Date.now())
+    fetch(`/${window.__APP__.projectDir || '<?= PROJECT_DIR ?>'}/app/api/case_activity.php?action=status&case_id=${caseId}&_t=` + Date.now(), { credentials: 'same-origin' })
       .then(res => res.json())
       .then(data => {
         if (!data.success) return;
