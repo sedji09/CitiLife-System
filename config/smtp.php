@@ -6,6 +6,8 @@ return [
     'password' => 'vimk temr ldcc menb',
     'port' => 465,
     'encryption' => 'ssl',
-    'from_email' => 'citilifediagnosticcenter26@gmail.com',
-    'from_name' => 'CitiLife Diagnostic Center'
+    'from_email' => 'seigipascual09@gmail.com',
+    'from_name' => 'CitiLife Diagnostic Center',
+    'brevo_api_key' => getenv('BREVO_API_KEY') ?: '',
+
 ];
