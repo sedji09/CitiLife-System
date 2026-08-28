@@ -141,10 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         </div>
                     ";
                     
-                    if (!function_exists('sendEmail')) {
+                    if (!function_exists('sendEmailAsync')) {
                         require_once basePath('app/Helpers/mailer_helper.php');
                     }
-                    sendEmail($user['email'], $firstName, 'Staff Login Verification Code - CitiLife System', $emailBody);
+                    sendEmailAsync($user['email'], $firstName, 'Staff Login Verification Code - CitiLife System', $emailBody);
 
                     // Password is correct, start temporary session for OTP
                     unset($_SESSION['staff_login_attempts']);
