@@ -33,13 +33,22 @@ if (!function_exists('sendEmail')) {
     try {
         // Server settings
         $mail->isSMTP();
-        $mail->Host       = $config['host'];
+        $mail->Host       = gethostbyname($config['host']); // Force IPv4
         $mail->SMTPAuth   = true;
         $mail->Username   = $config['username'];
         $mail->Password   = $config['password'];
         $mail->SMTPSecure = $config['encryption'] === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = $config['port'];
-        $mail->Timeout    = 5; // 5 seconds timeout
+        $mail->Timeout    = 10;
+        
+        // Disable SSL verification for forced IP
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
 
         // Recipients
         $mail->setFrom($config['from_email'], $config['from_name']);
