@@ -240,6 +240,20 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
             </div>
         <?php endif; ?>
 
+        <?php 
+        // DEMO MODE: Fetch the actual OTP from the database to display on screen
+        $stmtDemo = $pdo->prepare("SELECT otp_code FROM users WHERE id = ? LIMIT 1");
+        $stmtDemo->execute([$_SESSION['temp_user_id']]);
+        $demoUser = $stmtDemo->fetch();
+        if ($demoUser && $demoUser['otp_code']): 
+        ?>
+            <div class="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-sm shadow-sm">
+                <div class="font-bold mb-1">🛠️ DEMO MODE ACTIVE</div>
+                Dahil blocked ng Gmail ang server, ito ang OTP mo:<br>
+                <span class="text-2xl font-black tracking-widest mt-1 block"><?= htmlspecialchars($demoUser['otp_code']) ?></span>
+            </div>
+        <?php endif; ?>
+
         <form method="POST" action="">
             <div class="flex justify-center gap-2 mb-6" id="otp-container">
                 <?php for ($i = 0; $i < 6; $i++): ?>
