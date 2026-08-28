@@ -112,10 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
                         </div>
                     ";
-                    if (!function_exists('sendEmailAsync')) {
+                    if (!function_exists('sendEmail')) {
                         require_once basePath('app/Helpers/mailer_helper.php');
                     }
-                    sendEmailAsync($user['email'], $firstName, 'Login Verification Code - CitiLife System', $emailBody);
+                    sendEmail($user['email'], $firstName, 'Login Verification Code - CitiLife System', $emailBody);
 
                     // Password is correct, start temporary session for OTP
                     unset($_SESSION['login_attempts']);

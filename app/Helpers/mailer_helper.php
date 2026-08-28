@@ -39,6 +39,7 @@ if (!function_exists('sendEmail')) {
         $mail->Password   = $config['password'];
         $mail->SMTPSecure = $config['encryption'] === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = $config['port'];
+        $mail->Timeout    = 5; // 5 seconds timeout
 
         // Recipients
         $mail->setFrom($config['from_email'], $config['from_name']);
