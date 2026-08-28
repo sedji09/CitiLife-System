@@ -60,7 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
                     </div>
                 ";
-                sendEmail($email, $firstName, 'Your New Login Code - CitiLife System', $emailBody);
+                if (!function_exists('sendEmailAsync')) {
+                    require_once basePath('app/Helpers/mailer_helper.php');
+                }
+                sendEmailAsync($email, $firstName, 'Your New Login Code - CitiLife System', $emailBody);
                 $success = "A new verification code has been sent to your email.";
                 if ($lockedUntil) $success .= " <br><b>Note:</b> You have reached the resend limit. Please wait 10 minutes for next try.";
                 
