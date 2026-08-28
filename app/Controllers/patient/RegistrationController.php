@@ -32,7 +32,8 @@ class RegistrationController
         }
 
         $currentHour = (int) date('G');
-        $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
+        $isClinicOpen = ($currentHour >= 8 && $currentHour < 21);
+        // $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
 
         // 1. Fetch data
         $branches = $branchModel->getAllBranches();
@@ -94,12 +95,12 @@ class RegistrationController
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {
 
-                            
+
                             $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
-                            
+
                             if (isset($result['case_id'])) {
                                 $requestId = $result['case_id']; // This is the request_id returned by registerRequest
-                                
+
 
 
                                 $auditLogModel->addLog(
@@ -135,12 +136,12 @@ class RegistrationController
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {
 
-                            
+
                             $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
-                            
+
                             if (isset($result['case_id'])) {
                                 $requestId = $result['case_id']; // This is the request_id returned by registerRequest
-                                
+
 
 
                                 $auditLogModel->addLog(

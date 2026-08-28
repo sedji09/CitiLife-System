@@ -4,10 +4,7 @@
  */
 ?>
 
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Payment Verifications</h1>
-    <p class="text-sm text-gray-500 mt-1">Review and verify GCash payments submitted by patients via the portal.</p>
-</div>
+
 
 <?php if ($successMsg): ?>
     <div class="mb-6 rounded-lg bg-green-50 p-4 border border-green-200 flex items-start gap-3">
@@ -23,38 +20,74 @@
     </div>
 <?php endif; ?>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <!-- Tabs -->
-    <div class="border-b border-gray-200 px-6 pt-4 flex gap-6">
-        <button onclick="switchTab('pending')" id="tab-pending" class="pb-3 text-sm font-semibold border-b-2 <?= $activeTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
-            Pending Verification (<?= count($pendingPayments) ?>)
-        </button>
-        <button onclick="switchTab('history')" id="tab-history" class="pb-3 text-sm font-semibold border-b-2 <?= $activeTab === 'history' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
-            History
-        </button>
+<!-- Header -->
+<div class="flex items-center justify-between">
+    <div>
+        <h2 class="text-xl font-semibold text-gray-900">Payment Verifications</h2>
+        <p class="text-sm text-gray-500 mt-1">Review and approve patient payments before proceeding to X-ray.</p>
     </div>
+</div>
+
+<!-- Tabs -->
+<div class="mt-6 border-b border-gray-200">
+    <nav class="flex gap-6">
+        <a href="javascript:void(0)" onclick="switchTab('pending')" id="tab-pending"
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $activeTab === 'pending' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300' ?>">
+            Pending Verification
+            <?php if (count($pendingPayments) > 0): ?>
+                <span class="inline-flex items-center justify-center bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                    <?= count($pendingPayments) ?>
+                </span>
+            <?php endif; ?>
+        </a>
+        <a href="javascript:void(0)" onclick="switchTab('history')" id="tab-history"
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $activeTab === 'history' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300' ?>">
+            History
+        </a>
+    </nav>
+</div>
+
+<!-- Content -->
+<div>
 
     <!-- Pending Tab -->
-    <div id="content-pending" class="p-0">
-        <?php if (empty($pendingPayments)): ?>
-            <div class="p-12 text-center text-gray-500">
-                <i data-lucide="check-circle" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
-                <p>No pending payments to verify.</p>
+    <div id="content-pending" class="<?= $activeTab === 'pending' ? '' : 'hidden' ?>">
+        
+        <!-- Search and Filters -->
+        <div class="mt-6 flex flex-col gap-4">
+            <div class="flex gap-4 items-center w-full">
+                <div class="relative w-full max-w-md">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                    <input type="text" id="pendingSearchInput" placeholder="Search Request # or Patient Name..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all">
+                </div>
+                
+                <select id="pendingSortSelect" class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white">
+                    <option value="new">Newest First</option>
+                    <option value="old">Oldest First</option>
+                </select>
             </div>
-        <?php else: ?>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
+        </div>
+        <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
+            <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
+                <table class="w-full text-left text-sm text-gray-600 relative">
+                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-4">Request / Patient</th>
                             <th class="px-6 py-4">Amount & Ref #</th>
                             <th class="px-6 py-4">Date Submitted</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
+                            <th class="px-6 py-4">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <?php foreach ($pendingPayments as $payment): ?>
-                            <tr class="hover:bg-gray-50 transition">
+                    <tbody class="divide-y divide-gray-100" id="pendingTableBody">
+                        <?php if (empty($pendingPayments)): ?>
+                            <tr>
+                                <td colspan="4" class="p-12 text-center text-gray-500">No records match your filters.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($pendingPayments as $payment): ?>
+                            <tr class="hover:bg-gray-50 transition pending-row"
+                                data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
+                                data-date="<?= strtotime($payment['created_at']) ?>">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
                                     <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
@@ -70,7 +103,7 @@
                                 <td class="px-6 py-4 text-gray-500">
                                     <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
                                 </td>
-                                <td class="px-6 py-4 text-right space-x-2">
+                                <td class="px-6 py-4 space-x-2">
                                     <?php if ($payment['payment_method'] === 'GCash'): ?>
                                         <button type="button" onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>')" class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200">
                                             <i data-lucide="image" class="w-4 h-4"></i> Receipt
@@ -92,37 +125,43 @@
                                     </form>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-        <?php endif; ?>
+
+            <!-- Pagination -->
+            <div class="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50" id="pending-pagination-container">
+                <span class="text-sm text-gray-600" id="pending-pagination-info">
+                    Showing page <span class="font-semibold text-gray-800">1</span> of <span class="font-semibold text-gray-800">1</span>
+                </span>
+                <div class="flex items-center flex-wrap gap-1.5" id="pending-pagination-controls">
+                    <!-- JS will render pagination here -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- History Tab -->
-    <div id="content-history" class="p-0 <?= $activeTab === 'history' ? '' : 'hidden' ?>">
+    <div id="content-history" class="<?= $activeTab === 'history' ? '' : 'hidden' ?>">
         
         <!-- Search and Filters -->
-        <div class="px-6 py-4 border-b border-gray-100 bg-white">
-            <form method="GET" action="" class="flex items-center gap-3 w-full max-w-md">
-                <input type="hidden" name="role" value="branch_admin">
-                <input type="hidden" name="page" value="payment-verifications">
-                
-                <div class="relative flex-1">
+        <div class="mt-6 flex flex-col gap-4">
+            <div class="flex gap-4 items-center w-full">
+                <div class="relative w-full max-w-md">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                    <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" placeholder="Search Request # or Patient Name..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <input type="text" id="historySearchInput" placeholder="Search Request # or Patient Name..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all">
                 </div>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Search</button>
-                <?php if (!empty($_GET['search'])): ?>
-                    <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=payment-verifications&tab=history" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">Clear</a>
-                <?php endif; ?>
-            </form>
-        </div>
-        <?php if (empty($paymentHistory)): ?>
-            <div class="p-12 text-center text-gray-500">
-                <p>No payment history found.</p>
+                
+                <select id="historySortSelect" class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white">
+                    <option value="new">Newest First</option>
+                    <option value="old">Oldest First</option>
+                </select>
             </div>
-        <?php else: ?>
+        </div>
+        
+        <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
@@ -133,9 +172,16 @@
                             <th class="px-6 py-4">Date Verified</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <?php foreach ($paymentHistory as $payment): ?>
-                            <tr class="hover:bg-gray-50 transition">
+                    <tbody class="divide-y divide-gray-100" id="historyTableBody">
+                        <?php if (empty($paymentHistory)): ?>
+                            <tr>
+                                <td colspan="4" class="p-12 text-center text-gray-500">No records match your filters.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($paymentHistory as $payment): ?>
+                            <tr class="hover:bg-gray-50 transition history-row" 
+                                data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
+                                data-date="<?= strtotime($payment['updated_at']) ?>">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
                                     <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
@@ -162,32 +208,22 @@
                                     <?= date('M d, Y h:i A', strtotime($payment['updated_at'])) ?>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <!-- Pagination -->
-            <?php if ($totalPages > 1): ?>
-                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50/50">
-                    <span class="text-sm text-gray-600">Showing page <?= $page ?> of <?= $totalPages ?></span>
-                    <div class="flex gap-1">
-                        <?php if ($page > 1): ?>
-                            <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=payment-verifications&page_num=<?= $page - 1 ?>&search=<?= urlencode($search) ?>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Previous</a>
-                        <?php else: ?>
-                            <button disabled class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Previous</button>
-                        <?php endif; ?>
-
-                        <?php if ($page < $totalPages): ?>
-                            <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=payment-verifications&page_num=<?= $page + 1 ?>&search=<?= urlencode($search) ?>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Next</a>
-                        <?php else: ?>
-                            <button disabled class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Next</button>
-                        <?php endif; ?>
-                    </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50" id="history-pagination-container">
+                <span class="text-sm text-gray-600" id="history-pagination-info">
+                    Showing page <span class="font-semibold text-gray-800">1</span> of <span class="font-semibold text-gray-800">1</span>
+                </span>
+                <div class="flex items-center flex-wrap gap-1.5" id="history-pagination-controls">
+                    <!-- JS will render pagination here -->
                 </div>
-            <?php endif; ?>
-
-        <?php endif; ?>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -241,11 +277,11 @@
         document.getElementById('content-pending').classList.add('hidden');
         document.getElementById('content-history').classList.add('hidden');
         
-        document.getElementById('tab-pending').className = 'pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700';
-        document.getElementById('tab-history').className = 'pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700';
+        document.getElementById('tab-pending').className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
+        document.getElementById('tab-history').className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
         
         document.getElementById('content-' + tabId).classList.remove('hidden');
-        document.getElementById('tab-' + tabId).className = 'pb-3 text-sm font-semibold border-b-2 border-blue-600 text-blue-600';
+        document.getElementById('tab-' + tabId).className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 text-red-600 border-b-2 border-red-600 active-tab';
         
         // Update URL slightly without reloading to remember tab
         const url = new URL(window.location);
@@ -258,6 +294,159 @@
         }
         window.history.replaceState({}, '', url);
     }
+
+    // ── Search, Sort & JS Pagination Logic ──
+    document.addEventListener('DOMContentLoaded', () => {
+        function initTable(prefix, rowClass) {
+            const searchInput = document.getElementById(prefix + 'SearchInput');
+            const sortSelect = document.getElementById(prefix + 'SortSelect');
+            const tableBody = document.getElementById(prefix + 'TableBody');
+            const paginationContainer = document.getElementById(prefix + '-pagination-container');
+            const paginationControls = document.getElementById(prefix + '-pagination-controls');
+            const paginationInfo = document.getElementById(prefix + '-pagination-info');
+
+            if (!tableBody) return;
+
+            let allRows = Array.from(tableBody.querySelectorAll('.' + rowClass));
+            let filteredRows = [];
+            let currentPage = 1;
+            const itemsPerPage = 5;
+
+            function updateTable() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const sortOrder = sortSelect ? sortSelect.value : 'new';
+
+                // Filter
+                filteredRows = allRows.filter(row => {
+                    const searchData = row.dataset.search || '';
+                    return searchData.includes(searchTerm);
+                });
+
+                // Sort
+                filteredRows.sort((a, b) => {
+                    const dateA = parseInt(a.dataset.date) || 0;
+                    const dateB = parseInt(b.dataset.date) || 0;
+                    return sortOrder === 'new' ? (dateB - dateA) : (dateA - dateB);
+                });
+
+                // Pagination Calculation
+                const totalPages = Math.max(1, Math.ceil(filteredRows.length / itemsPerPage));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                // Render Rows
+                tableBody.innerHTML = '';
+                
+                if (filteredRows.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="p-12 text-center text-gray-500">No records match your filters.</td></tr>';
+                    if (paginationContainer) paginationContainer.style.display = 'flex';
+                    if (paginationInfo) paginationInfo.innerHTML = 'No records';
+                    renderPagination(1);
+                    return;
+                }
+
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const currentRows = filteredRows.slice(startIndex, endIndex);
+
+                currentRows.forEach(row => {
+                    tableBody.appendChild(row);
+                });
+
+                // Update Pagination Info
+                if (paginationContainer) paginationContainer.style.display = 'flex';
+                if (paginationInfo) {
+                    paginationInfo.innerHTML = `Showing page <span class="font-semibold text-gray-800">${currentPage}</span> of <span class="font-semibold text-gray-800">${totalPages}</span>`;
+                }
+                
+                renderPagination(totalPages);
+            }
+
+            function renderPagination(totalPages) {
+                if (!paginationControls) return;
+                paginationControls.innerHTML = '';
+                
+                const createBtn = (label, pageNum, disabled = false, isActive = false) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.innerHTML = label;
+                    if (isActive) {
+                        btn.className = 'px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600';
+                    } else if (disabled) {
+                        btn.className = 'px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed shadow-sm opacity-60';
+                        btn.disabled = true;
+                    } else {
+                        btn.className = 'px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition shadow-sm';
+                        btn.onclick = () => {
+                            currentPage = pageNum;
+                            updateTable();
+                        };
+                    }
+                    return btn;
+                };
+
+                const createEllipsis = () => {
+                    const span = document.createElement('span');
+                    span.className = 'px-2 py-1 text-xs text-gray-400 font-semibold select-none';
+                    span.textContent = '...';
+                    return span;
+                };
+
+                // First and Prev
+                paginationControls.appendChild(createBtn('&laquo; First', 1, currentPage <= 1));
+                paginationControls.appendChild(createBtn('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+                // Numbers
+                if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) {
+                        paginationControls.appendChild(createBtn(i, i, false, i === currentPage));
+                    }
+                } else {
+                    if (currentPage <= 4) {
+                        for (let i = 1; i <= 5; i++) {
+                            paginationControls.appendChild(createBtn(i, i, false, i === currentPage));
+                        }
+                        paginationControls.appendChild(createEllipsis());
+                        paginationControls.appendChild(createBtn(totalPages, totalPages, false, false));
+                    } else if (currentPage >= totalPages - 3) {
+                        paginationControls.appendChild(createBtn(1, 1, false, false));
+                        paginationControls.appendChild(createEllipsis());
+                        for (let i = totalPages - 4; i <= totalPages; i++) {
+                            paginationControls.appendChild(createBtn(i, i, false, i === currentPage));
+                        }
+                    } else {
+                        paginationControls.appendChild(createBtn(1, 1, false, false));
+                        paginationControls.appendChild(createEllipsis());
+                        paginationControls.appendChild(createBtn(currentPage - 1, currentPage - 1, false, false));
+                        paginationControls.appendChild(createBtn(currentPage, currentPage, false, true));
+                        paginationControls.appendChild(createBtn(currentPage + 1, currentPage + 1, false, false));
+                        paginationControls.appendChild(createEllipsis());
+                        paginationControls.appendChild(createBtn(totalPages, totalPages, false, false));
+                    }
+                }
+
+                // Next and Last
+                paginationControls.appendChild(createBtn('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+                paginationControls.appendChild(createBtn('Last &raquo;', totalPages, currentPage >= totalPages));
+            }
+
+            if (searchInput) searchInput.addEventListener('input', () => {
+                currentPage = 1;
+                updateTable();
+            });
+            
+            if (sortSelect) sortSelect.addEventListener('change', () => {
+                currentPage = 1;
+                updateTable();
+            });
+
+            // Initial setup
+            updateTable();
+        }
+
+        initTable('history', 'history-row');
+        initTable('pending', 'pending-row');
+    });
 
     function viewReceipt(path, refNumber) {
         if (!path) {

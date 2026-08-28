@@ -34,6 +34,9 @@ class PaymentVerificationsController
             $paymentId = (int)($_POST['payment_id'] ?? 0);
             
             if ($paymentId > 0) {
+                require_once __DIR__ . '/../../Models/AuditLogModel.php';
+                $auditLogModel = new \AuditLogModel($pdo);
+
                 if ($_POST['action'] === 'verify') {
                     try {
                         $pdo->beginTransaction();
@@ -76,6 +79,9 @@ class PaymentVerificationsController
                             }
                         }
                         
+                        $details = "Verified payment ID: {$paymentId} for Request ID: " . ($reqId ?? 'Unknown');
+                        $auditLogModel->addLog($currentUserId, 'Verified Payment', 'Payment Verifications', 'Payment', $paymentId, $details, $branchId);
+                        
                         $pdo->commit();
                         $_SESSION['flash_success'] = "Payment verified successfully. RadTech can now approve the request.";
                     } catch (\Exception $e) {
@@ -100,6 +106,9 @@ class PaymentVerificationsController
                             $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = 'Payment Rejected' WHERE id = ?");
                             $stmtCase->execute([$reqId]);
                         }
+                        
+                        $details = "Rejected payment ID: {$paymentId} for Request ID: " . ($reqId ?? 'Unknown');
+                        $auditLogModel->addLog($currentUserId, 'Rejected Payment', 'Payment Verifications', 'Payment', $paymentId, $details, $branchId);
                         
                         $pdo->commit();
                         $_SESSION['flash_success'] = "Payment rejected.";
@@ -127,52 +136,20 @@ class PaymentVerificationsController
         $stmtPending->execute([$branchId]);
         $pendingPayments = $stmtPending->fetchAll();
         
-        // Search & Pagination for History Tab
-        $search = trim($_GET['search'] ?? '');
-        $page = isset($_GET['page_num']) ? (int)$_GET['page_num'] : 1;
-        if ($page < 1) $page = 1;
-        $limit = 10;
-        $offset = ($page - 1) * $limit;
-
-        $historyConditions = "r.branch_id = ? AND p.status != 'Pending Verification'";
-        $historyParams = [$branchId];
-
-        if ($search !== '') {
-            $historyConditions .= " AND (r.request_number LIKE ? OR pat.first_name LIKE ? OR pat.last_name LIKE ? OR CONCAT(pat.first_name, ' ', pat.last_name) LIKE ?)";
-            $searchWildcard = '%' . $search . '%';
-            $historyParams[] = $searchWildcard;
-            $historyParams[] = $searchWildcard;
-            $historyParams[] = $searchWildcard;
-            $historyParams[] = $searchWildcard;
-        }
-
-        // Fetch total count for pagination
-        $stmtCount = $pdo->prepare("
-            SELECT COUNT(*) 
-            FROM payments p
-            JOIN requests r ON p.request_id = r.id
-            JOIN patients pat ON r.patient_id = pat.id
-            WHERE $historyConditions
-        ");
-        $stmtCount->execute($historyParams);
-        $totalHistory = $stmtCount->fetchColumn();
-        $totalPages = ceil($totalHistory / $limit);
-
-        // Fetch verified/rejected payments (History)
+        // Fetch verified/rejected payments (History) - Fetch all for JS processing
         $stmtHistory = $pdo->prepare("
             SELECT p.*, r.request_number, r.exam_type, pat.first_name, pat.last_name
             FROM payments p
             JOIN requests r ON p.request_id = r.id
             JOIN patients pat ON r.patient_id = pat.id
-            WHERE $historyConditions
+            WHERE r.branch_id = ? AND p.status != 'Pending Verification'
             ORDER BY p.updated_at DESC
-            LIMIT $limit OFFSET $offset
         ");
-        $stmtHistory->execute($historyParams);
+        $stmtHistory->execute([$branchId]);
         $paymentHistory = $stmtHistory->fetchAll();
 
-        // Check if we are currently on the history tab (if search or page is active)
-        $activeTab = (isset($_GET['search']) || isset($_GET['page_num']) || (isset($_GET['tab']) && $_GET['tab'] === 'history')) ? 'history' : 'pending';
+        // Check if we are currently on the history tab (if tab is set to history)
+        $activeTab = (isset($_GET['tab']) && $_GET['tab'] === 'history') ? 'history' : 'pending';
 
         return get_defined_vars();
     }

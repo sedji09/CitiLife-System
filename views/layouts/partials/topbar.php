@@ -279,7 +279,7 @@
                 <div class="text-sm flex-1 min-w-0 pr-2">
                   <div class="font-bold transition-colors truncate" :class="item.is_read == 0 ? 'text-gray-900' : 'text-gray-700'">{{ item.title }}
                   </div>
-                  <div class="text-xs mt-0.5 leading-snug line-clamp-2" :class="item.is_read == 0 ? 'text-gray-800 font-medium' : 'text-gray-500'">{{ item.message }}</div>
+                  <div class="text-xs mt-0.5 leading-snug" :class="item.is_read == 0 ? 'text-gray-800 font-medium' : 'text-gray-500'">{{ item.message }}</div>
                   <div class="text-[10px] mt-1 font-bold uppercase tracking-widest" :class="item.is_read == 0 ? 'text-blue-600' : 'text-gray-400'">{{ item.timeAgo }}</div>
                 </div>
                 
