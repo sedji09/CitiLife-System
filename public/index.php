@@ -1,9 +1,6 @@
 <?php
 session_start();
 
-// Uncomment the next line temporarily to see ALL environment variables that Railway passes
-// echo '<pre>' . print_r(getenv(), true) . print_r($_SERVER, true) . '</pre>'; exit;
-
 require_once __DIR__ . '/../helpers.php';
 
 // Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
@@ -52,15 +49,27 @@ require_once basePath('routes.php');
 $uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
+ob_start();
+
 try {
     $router->route($uri, $method);
 } catch (\Throwable $e) {
     // I-log ang totoong error sa server para ma-check mo later kung bakit nag-error
     error_log($e->getMessage());
     
-    // TEMPORARY: Ipakita ang mismong error sa screen para malaman natin kung bakit nag-500
-    die("<h1>System Error</h1><p>" . $e->getMessage() . "</p><p>File: " . $e->getFile() . " on line " . $e->getLine() . "</p>");
-    
     // I-load ang 500 error view kapag may pumalyang code
-    // $router->error(500);
+    $router->error(500);
 }
+
+$output = ob_get_clean();
+
+// Kung tumatakbo sa Railway, ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
+if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
+    $output = str_replace(
+        ['/' . PROJECT_DIR . '/public/', '/' . PROJECT_DIR . '/'], 
+        ['/', '/'], 
+        $output
+    );
+}
+
+echo $output;

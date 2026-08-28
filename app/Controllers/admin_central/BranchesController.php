@@ -90,6 +90,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Failed to update branch status.";
         }
     }
+
+    if ($action === 'upload_qr') {
+        $id = $_POST['branch_id'] ?? null;
+        if ($id && isset($_FILES['qr_code']) && $_FILES['qr_code']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/../../../public/uploads/qrcodes/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $fileExt = strtolower(pathinfo($_FILES['qr_code']['name'], PATHINFO_EXTENSION));
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (in_array($fileExt, $allowedExts)) {
+                $newFilename = 'gcash_qr_branch_' . $id . '_' . time() . '.' . $fileExt;
+                $dest = $uploadDir . $newFilename;
+                if (move_uploaded_file($_FILES['qr_code']['tmp_name'], $dest)) {
+                    $proofPath = '/public/uploads/qrcodes/' . $newFilename;
+                    $stmt = $pdo->prepare("UPDATE branches SET gcash_qr_path = ? WHERE id = ?");
+                    if ($stmt->execute([$proofPath, $id])) {
+                        $success = "GCash QR Code uploaded successfully.";
+                        $auditLogModel->addLog($currentUserId, "Uploaded GCash QR", 'Branch Management', 'Branch', $id, "Uploaded new QR for branch $id", $id);
+                    } else {
+                        $error = "Failed to update database.";
+                    }
+                } else {
+                    $error = "Failed to move uploaded file.";
+                }
+            } else {
+                $error = "Invalid file type. Only JPG, PNG, GIF, WEBP are allowed.";
+            }
+        } else {
+            $error = "Please select a valid image file.";
+        }
+    }
+
+    if ($action === 'remove_qr') {
+        $id = $_POST['branch_id'] ?? null;
+        if ($id) {
+            $stmt = $pdo->prepare("UPDATE branches SET gcash_qr_path = NULL WHERE id = ?");
+            if ($stmt->execute([$id])) {
+                $success = "GCash QR Code removed successfully.";
+                $auditLogModel->addLog($currentUserId, "Removed GCash QR", 'Branch Management', 'Branch', $id, "Removed QR for branch $id", $id);
+            } else {
+                $error = "Failed to remove QR code from database.";
+            }
+        }
+    }
 }
 
 // Fetch all branches

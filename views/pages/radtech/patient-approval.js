@@ -62,6 +62,43 @@ function closeEditModal() {
     currentEditId = null;
 }
 
+function openAssignModal(id, requestedBodyPart) {
+    document.getElementById('assignModal').classList.remove('hidden');
+    document.getElementById('assignBodyPart').innerText = requestedBodyPart || 'Not specified';
+    const form = document.getElementById('assignForm');
+    form.action = window.__APP__.basePath + '/index.php?role=radtech&page=patient-approval&action=assign_exam&id=' + id;
+    
+    // reset select
+    const hiddenInput = form.querySelector('.exam-ms-hidden-input');
+    if (hiddenInput) {
+        hiddenInput.value = '';
+        const container = hiddenInput.closest('.exam-ms-component');
+        if (container && typeof renderChips === 'function') {
+            renderChips(container);
+        }
+    }
+    
+    document.getElementById('assign_exam_price').value = '0';
+}
+
+function closeAssignModal() {
+    document.getElementById('assignModal').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const assignSelect = document.getElementById('assign_exam_select');
+    const assignPriceInput = document.getElementById('assign_exam_price');
+    
+    if(assignSelect) {
+        assignSelect.addEventListener('change', function() {
+            const selectedOption = assignSelect.options[assignSelect.selectedIndex];
+            if (selectedOption && selectedOption.dataset.price) {
+                assignPriceInput.value = selectedOption.dataset.price;
+            }
+        });
+    }
+});
+
 function togglePhilHealthId() {
     const status = document.getElementById('modalPhilHealth').value;
     const idField = document.getElementById('philHealthIdField');
@@ -250,11 +287,6 @@ function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
     
     if (!container || !controls) return;
     
-    if (totalRecords <= 8) {
-        container.style.display = 'none';
-        return;
-    }
-    
     container.style.display = 'flex';
     controls.innerHTML = '';
     
@@ -296,7 +328,7 @@ function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
     
     controls.appendChild(createButton('&lsaquo; Back', window.currentApprovalPage - 1, window.currentApprovalPage === 1));
     
-    if (totalPages <= 7) {
+    if (totalPages <= 5) {
         for (let i = 1; i <= totalPages; i++) {
             controls.appendChild(createButton(i, i, false, i === window.currentApprovalPage));
         }
@@ -318,7 +350,7 @@ function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
         controls.appendChild(createButton(totalPages, totalPages, false, totalPages === window.currentApprovalPage));
     }
     
-    controls.appendChild(createButton('Next &rsaquo;', window.currentApprovalPage + 1, window.currentApprovalPage === totalPages));
+    controls.appendChild(createButton('Next &rsaquo;', window.currentApprovalPage + 1, window.currentApprovalPage >= totalPages));
 }
 
 // Initial sorting on load and re-applying filters after real-time updates

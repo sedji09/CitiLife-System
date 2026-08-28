@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="/<?= PROJECT_DIR ?>/index.php?role=patient&page=registration" class="space-y-4">
+            <form method="POST" action="/<?= PROJECT_DIR ?>/index.php?role=patient&page=registration" class="space-y-4" enctype="multipart/form-data">
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>
@@ -73,14 +73,32 @@
                     </select>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Body Part to Examine</label>
+                    <?php
+                    $availableOptions = [
+                        'Head', 'Face / Nose', 'Jaw', 'Neck', 'Chest', 
+                        'Abdomen / Stomach', 'Shoulder', 'Upper Arm', 'Elbow', 
+                        'Forearm', 'Hand / Wrist', 'Upper Back', 'Lower Back', 
+                        'Pelvis / Hip', 'Thigh', 'Knee', 'Lower Leg', 'Ankle', 'Foot'
+                    ];
+                    $examInputName = 'exam_type';
+                    $placeholderText = 'Select body parts...';
+                    include basePath('views/components/exam-selector.php');
+                    ?>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Note: The Radiologic Technologist will determine the exact examination type and corresponding fee upon reviewing your request. You will be able to make a payment afterward.
+                    </p>
+                </div>
+
                 <?php if ($isClinicOpen && (!in_array('all', $closedBranchesArr) || $systemStatus !== 'closed')): ?>
-                    <button type="submit"
-                        class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-5 transition shadow-sm">
+                    <button type="submit" id="submit_btn"
+                        class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-5 transition shadow-sm mt-4">
                         <i data-lucide="send" class="w-4 h-4"></i> Submit Request
                     </button>
                 <?php else: ?>
                     <button type="button" disabled
-                        class="flex items-center justify-center gap-2 w-full rounded-xl bg-gray-400 text-white font-bold text-sm py-3 px-5 transition shadow-sm cursor-not-allowed">
+                        class="flex items-center justify-center gap-2 w-full rounded-xl bg-gray-400 text-white font-bold text-sm py-3 px-5 transition shadow-sm cursor-not-allowed mt-4">
                         <i data-lucide="clock" class="w-4 h-4"></i> System Closed
                     </button>
                 <?php endif; ?>
@@ -89,5 +107,5 @@
 
 
     </div>
-
 </div>
+

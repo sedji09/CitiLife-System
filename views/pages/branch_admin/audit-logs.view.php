@@ -156,7 +156,7 @@
         </div>
         <div class="flex items-center gap-2">
             <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role'])): ?>
-                <a href="?role=branch_admin&page=audit-logs"
+                <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=audit-logs"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     Clear Filters

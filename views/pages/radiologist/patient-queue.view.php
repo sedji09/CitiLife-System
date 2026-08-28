@@ -21,7 +21,7 @@ sort($examTypes);
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2 mb-4">
-    <a href="?role=radiologist&page=worklist"
+    <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=worklist"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
@@ -183,6 +183,17 @@ sort($examTypes);
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination footer -->
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+        <!-- Record count -->
+        <span id="queue-record-count" class="text-xs text-gray-500 font-medium"></span>
+
+        <!-- Pagination Controls -->
+        <div class="flex items-center flex-wrap gap-1.5" id="queue-pagination-controls">
+            <!-- Dynamic page buttons will be inserted here -->
+        </div>
+    </div>
 </div>
 
 <script>
@@ -249,6 +260,9 @@ sort($examTypes);
         const tbody = document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
 
+        const ROWS_PER_PAGE = 8;
+        let currentPage = 1;
+
         function updateTable() {
             if (!searchInput || !filterExam || !sortDate) return;
 
@@ -262,22 +276,33 @@ sort($examTypes);
                 const dateB = parseInt(b.dataset.date);
                 return sortValue === 'desc' ? dateB - dateA : dateA - dateB;
             });
+            allRows.forEach(row => tbody.appendChild(row));
 
-            // Apply filtering and sorting to DOM
-            let visibleCount = 0;
+            // Apply filtering
+            let filteredRows = [];
             allRows.forEach(row => {
                 const matchesSearch = row.dataset.search.includes(searchTerm);
                 const matchesFilter = filterValue === '' || row.dataset.examType === filterValue;
 
                 if (matchesSearch && matchesFilter) {
-                    row.style.display = '';
-                    visibleCount++;
+                    filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
                 }
-
-                tbody.appendChild(row); // Reorders them in the DOM
             });
+
+            // Pagination calculation
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+            const endIdx = startIdx + ROWS_PER_PAGE;
+
+            filteredRows.forEach((row, idx) => {
+                row.style.display = (idx >= startIdx && idx < endIdx) ? '' : 'none';
+            });
+
+            updatePaginationUI(filteredRows.length, totalPages);
 
             // Handle "No records found" state
             let noRecordsRow = tbody.querySelector('.no-records');
@@ -287,7 +312,7 @@ sort($examTypes);
                 return; // No records to begin with
             }
 
-            if (visibleCount === 0 && allRows.length > 0) {
+            if (filteredRows.length === 0 && allRows.length > 0) {
                 if (!noRecordsRow) {
                     noRecordsRow = document.createElement('tr');
                     noRecordsRow.className = 'no-records';
@@ -302,9 +327,97 @@ sort($examTypes);
             }
         }
 
-        if (searchInput) searchInput.addEventListener('input', updateTable);
-        if (filterExam) filterExam.addEventListener('change', updateTable);
-        if (sortDate) sortDate.addEventListener('change', updateTable);
+        function updatePaginationUI(totalFiltered, totalPages) {
+            const recordCountInfo = document.getElementById('queue-record-count');
+            const container = document.getElementById('queue-pagination-controls');
+
+            const startIdx = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
+            const endIdx = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
+
+            if (recordCountInfo) {
+                recordCountInfo.innerHTML = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing <span class="font-semibold text-gray-800">${startIdx}</span> to <span class="font-semibold text-gray-800">${endIdx}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> record${totalFiltered !== 1 ? 's' : ''}`;
+            }
+
+            if (!container) return;
+            container.innerHTML = '';
+
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentPage = page;
+                        updateTable();
+                        const card = document.querySelector('.overflow-hidden.bg-white.shadow-sm');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+            container.appendChild(createButton('&lsaquo; Prev', currentPage - 1, currentPage <= 1));
+
+            if (totalPages <= 5) {
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+            } else {
+                if (currentPage <= 3) {
+                    for (let i = 1; i <= 4; i++) container.appendChild(createButton(i, i, false, i === currentPage));
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                } else if (currentPage > totalPages - 3) {
+                    container.appendChild(createButton(1, 1, false, false));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 3; i <= totalPages; i++) container.appendChild(createButton(i, i, false, i === currentPage));
+                } else {
+                    container.appendChild(createButton(1, 1, false, false));
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                    container.appendChild(createButton(currentPage, currentPage, false, true));
+                    container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+            container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
+        }
+
+        function onFilterSortChange() {
+            currentPage = 1;
+            updateTable();
+        }
+
+        if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
+        if (filterExam) filterExam.addEventListener('change', onFilterSortChange);
+        if (sortDate) sortDate.addEventListener('change', onFilterSortChange);
+
+        // Initial pagination
+        updateTable();
 
         // ensure lucide icons are created if not already
         if (typeof lucide !== 'undefined') {

@@ -9,10 +9,6 @@ if (isset($caseNotFound) && $caseNotFound) {
 }
 ?>
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!--  CASE REVIEW – Multi-Exam Radiologist Reporting Interface                 -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-
 <?php
 require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
 $disputeMdl = new \ResultDisputeModel($pdo);
@@ -20,7 +16,7 @@ $activeDispute = $disputeMdl->getActiveDisputeByCase($caseDetails['id']);
 
 $backPage = $_GET['back_to'] ?? 'worklist';
 $backId   = $_GET['back_id'] ?? '';
-$backUrl  = "?role=radiologist&page=" . urlencode($backPage);
+$backUrl  = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=" . urlencode($backPage);
 if ($backId) {
     $backUrl .= "&id=" . urlencode($backId);
 }

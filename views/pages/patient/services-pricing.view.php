@@ -10,45 +10,39 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Services & Pricing</h1>
-            <p class="text-xs sm:text-sm text-gray-500 mt-1">Browse our complete list of available X-Ray examinations and standardized rates.</p>
+            <p class="text-xs sm:text-sm text-gray-500 mt-1">Here is a list of our available X-ray examinations and
+                their corresponding prices.</p>
         </div>
-        <a href="/<?= PROJECT_DIR ?>/registration"
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-2.5 px-4 transition shadow-sm self-start sm:self-auto shrink-0">
-            <i data-lucide="plus-circle" class="w-4 h-4 shrink-0"></i>
-            Register New Request
-        </a>
     </div>
 
     <!-- Search & Category Filter Bar -->
-    <div class="flex flex-col sm:flex-row gap-3 items-center">
-        <div class="relative flex-1 w-full flex items-center">
-            <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 shrink-0 pointer-events-none"></i>
+    <div class="flex flex-col md:flex-row gap-2 sm:gap-3 md:items-center mb-6">
+        <div class="relative flex-1 w-full">
             <input type="text" id="patientServiceSearch" oninput="filterPatientServices()"
                 placeholder="Search procedure name (e.g. Chest PA, Skull, Foot)..."
-                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
+                class="w-full rounded-lg sm:rounded-xl border border-gray-200 bg-white pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center pointer-events-none">
+                <i data-lucide="search" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400"></i>
+            </div>
         </div>
-        <select id="patientCategoryFilter" onchange="filterPatientServices()"
-            class="w-full sm:w-48 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-            <option value="">All Categories</option>
-            <?php foreach ($categories as $cat): ?>
-                <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
-            <?php endforeach; ?>
-        </select>
     </div>
 
     <!-- Services Grid by Category -->
     <div id="servicesCategoryGrid" class="space-y-5">
         <?php if (empty($groupedServices)): ?>
-            <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-10 text-center flex flex-col items-center justify-center">
+            <div
+                class="rounded-2xl bg-white border border-gray-100 shadow-sm p-10 text-center flex flex-col items-center justify-center">
                 <i data-lucide="activity" class="w-10 h-10 text-gray-300 mx-auto mb-3 shrink-0"></i>
                 <h3 class="text-base font-bold text-gray-700">No Services Available</h3>
                 <p class="text-sm text-gray-500">Service rates are currently being updated. Please check back soon.</p>
             </div>
         <?php else: ?>
-            <div id="noSearchMatchMsg" class="hidden rounded-2xl bg-white border border-gray-100 shadow-sm p-10 text-center flex flex-col items-center justify-center">
+            <div id="noSearchMatchMsg"
+                class="hidden rounded-2xl bg-white border border-gray-100 shadow-sm p-10 text-center flex flex-col items-center justify-center">
                 <i data-lucide="search-x" class="w-10 h-10 text-gray-300 mx-auto mb-3 shrink-0"></i>
                 <h3 class="text-base font-bold text-gray-800 mb-1">No Matching Procedures Found</h3>
-                <p class="text-xs sm:text-sm text-gray-500">Try adjusting your search terms or selecting "All Categories".</p>
+                <p class="text-xs sm:text-sm text-gray-500">Try adjusting your search terms or selecting "All Categories".
+                </p>
             </div>
 
             <?php foreach ($groupedServices as $category => $services): ?>
@@ -57,16 +51,19 @@
                     <!-- Category Header -->
                     <div class="px-5 py-3.5 bg-gray-50/80 border-b border-gray-200 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-xl bg-red-100/90 flex items-center justify-center text-red-600 shrink-0">
-                                <svg class="w-4 h-4 text-red-600 block shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            <div
+                                class="w-8 h-8 rounded-xl bg-red-100/90 flex items-center justify-center text-red-600 shrink-0">
+                                <svg class="w-4 h-4 text-red-600 block shrink-0" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                                 </svg>
                             </div>
-                            <h2 class="font-bold text-gray-900 text-base tracking-tight leading-none"><?= htmlspecialchars($category) ?> X-Rays</h2>
+                            <h2 class="font-bold text-gray-900 text-base tracking-tight leading-none">
+                                <?= htmlspecialchars($category) ?> X-Rays
+                            </h2>
                         </div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 shrink-0">
-                            <?= count($services) ?> <?= count($services) === 1 ? 'Procedure' : 'Procedures' ?>
-                        </span>
+
                     </div>
 
                     <!-- Procedures List -->
@@ -84,8 +81,7 @@
                                     <span class="text-base font-bold text-gray-900 font-mono">
                                         ₱ <?= number_format($service['price'], 2) ?>
                                     </span>
-                                    <a href="/<?= PROJECT_DIR ?>/registration"
-                                        title="Request this exam"
+                                    <a href="/<?= PROJECT_DIR ?>/registration" title="Request this exam"
                                         class="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors inline-flex items-center justify-center shrink-0">
                                         <i data-lucide="chevron-right" class="w-4 h-4 shrink-0"></i>
                                     </a>
@@ -98,29 +94,20 @@
         <?php endif; ?>
     </div>
 
-    <!-- Quick Registration Footer CTA -->
-    <div class="rounded-2xl bg-white border border-gray-200 shadow-sm p-6 text-center">
-        <h3 class="text-base font-bold text-gray-900 mb-1">Ready to schedule your examination?</h3>
-        <p class="text-xs sm:text-sm text-gray-500 mb-4">Submit your registration online and choose your preferred branch location.</p>
-        <a href="/<?= PROJECT_DIR ?>/registration"
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-6 transition shadow-sm shrink-0">
-            <i data-lucide="plus-circle" class="w-4 h-4 shrink-0"></i>
-            Register New X-Ray Request
-        </a>
-    </div>
+
 </div>
 
 <script>
     function filterPatientServices() {
         const searchInput = document.getElementById('patientServiceSearch');
         const categoryFilter = document.getElementById('patientCategoryFilter');
-        
+
         const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
         const selectedCat = (categoryFilter ? categoryFilter.value : '').toLowerCase().trim();
 
         const blocks = document.querySelectorAll('.category-block');
         const noMatchMsg = document.getElementById('noSearchMatchMsg');
-        
+
         let totalVisibleItems = 0;
 
         blocks.forEach(block => {
@@ -173,26 +160,26 @@
             url.searchParams.set('ajax_polling', '1');
             const response = await fetch(url.toString());
             if (!response.ok) throw new Error('Network response was not ok');
-            
+
             const html = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            
+
             const newGrid = doc.getElementById('servicesCategoryGrid');
             const currentGrid = document.getElementById('servicesCategoryGrid');
-            
+
             if (newGrid && currentGrid) {
                 if (newGrid.innerHTML !== currentGrid.innerHTML) {
                     currentGrid.innerHTML = newGrid.innerHTML;
-                    
+
                     filterPatientServices();
-                    
+
                     if (window.lucide) {
                         window.lucide.createIcons();
                     }
                 }
             }
-            
+
             const newCat = doc.getElementById('patientCategoryFilter');
             const currentCat = document.getElementById('patientCategoryFilter');
             if (newCat && currentCat && newCat.innerHTML !== currentCat.innerHTML) {

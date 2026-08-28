@@ -58,3 +58,24 @@ if (!function_exists('sendEmail')) {
     }
 }
 }
+
+if (!function_exists('sendEmailAsync')) {
+    function sendEmailAsync($toEmail, $toName, $subject, $body, $altBody = '') {
+        $data = [
+            'toEmail' => $toEmail,
+            'toName' => $toName,
+            'subject' => $subject,
+            'body' => $body,
+            'altBody' => $altBody
+        ];
+        
+        $payload = base64_encode(json_encode($data));
+        $scriptPath = __DIR__ . '/background_mailer.php';
+        
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            pclose(popen("start /B php \"$scriptPath\" \"$payload\" 2>nul >nul", "r"));
+        } else {
+            exec("php \"$scriptPath\" \"$payload\" > /dev/null 2>&1 &");
+        }
+    }
+}

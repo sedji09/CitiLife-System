@@ -92,7 +92,8 @@ $dashboardPages = [
     'print-report',
     'feedback',
     'service-pricing',
-    'services-pricing'
+    'services-pricing',
+    'payment-verifications'
 ];
 
 foreach ($dashboardPages as $page) {

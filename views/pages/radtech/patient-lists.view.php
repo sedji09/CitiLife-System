@@ -110,7 +110,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
 
 <div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
-    <div class="overflow-x-auto overflow-y-auto max-h-[480px]">
+    <div class="overflow-x-auto">
         <table class="w-full text-sm ">
             <thead class="sticky top-0 z-10">
                 <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
@@ -323,6 +323,15 @@ $currentTab = $_GET['tab'] ?? 'completed';
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination Controls for Main Table -->
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="main-pagination-container" style="display: flex;">
+        <span id="main-record-count" class="text-xs text-gray-500 font-medium">
+            Showing <span id="main-start">0</span> to <span id="main-end">0</span> of <span id="main-total" class="font-semibold text-gray-800">0</span> records
+        </span>
+        <div class="flex items-center flex-wrap gap-1.5" id="main-pagination-controls">
+        </div>
+    </div>
 </div>
 
 <script>
@@ -338,13 +347,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
         }
     });
 
-    function applyFilters() {
+    function applyFilters(targetTbody = null) {
         const search = (document.getElementById('search-input')?.value || '').toLowerCase();
         const priority = document.getElementById('filter-priority')?.value || '<?= htmlspecialchars($defaultPriorityFilter) ?>';
         const dateFilter = document.getElementById('filter-date')?.value || '<?= htmlspecialchars($defaultDateFilter) ?>';
         const sort = document.getElementById('sort-date')?.value || 'Newest Case';
 
-        const tbody = document.getElementById('table-body');
+        const tbody = targetTbody || document.getElementById('table-body');
         if (!tbody) return;
 
         let rows = Array.from(tbody.querySelectorAll('tr.record-row'));
@@ -379,6 +388,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         }
 
         // Filter
+        let matchedRows = [];
         rows.forEach(row => {
             const name = (row.dataset.name || '').toLowerCase();
             const id = (row.dataset.id || '').toLowerCase();
@@ -395,10 +405,12 @@ $currentTab = $_GET['tab'] ?? 'completed';
             if (dateFilter === 'Backlog') matchDate = !isToday;
 
             if (matchSearch && matchPriority && matchDate) {
-                row.style.display = '';
+                matchedRows.push(row);
+                row.setAttribute('data-matched', 'true');
                 visibleCount++;
             } else {
                 row.style.display = 'none';
+                row.removeAttribute('data-matched');
             }
         });
 
@@ -415,6 +427,107 @@ $currentTab = $_GET['tab'] ?? 'completed';
         } else if (emptyMsg) {
             emptyMsg.style.display = 'none';
         }
+        
+        paginateMain(matchedRows, tbody);
+    }
+
+    // Main Pagination Logic
+    let currentMainPage = 1;
+    const mainItemsPerPage = 7;
+    
+    function paginateMain(matchedRows, targetTbody = null) {
+        const tbody = targetTbody || document.getElementById('table-body');
+        if (!tbody) return;
+
+        const totalRecords = matchedRows.length;
+        let totalPages = Math.ceil(totalRecords / mainItemsPerPage);
+        
+        if (currentMainPage > totalPages && totalPages > 0) currentMainPage = totalPages;
+        if (totalPages === 0) currentMainPage = 1;
+
+        const start = (currentMainPage - 1) * mainItemsPerPage;
+        const end = Math.min(start + mainItemsPerPage, totalRecords);
+
+        // Hide all matched rows first, then only show the ones in the current page
+        matchedRows.forEach((row, idx) => {
+            row.style.display = (idx >= start && idx < end) ? '' : 'none';
+        });
+
+        renderMainPaginationControls(totalPages, totalRecords, start, end);
+    }
+
+    function renderMainPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
+        const container = document.getElementById('main-pagination-container');
+        const controls = document.getElementById('main-pagination-controls');
+        const startSpan = document.getElementById('main-start');
+        const endSpan = document.getElementById('main-end');
+        const totalSpan = document.getElementById('main-total');
+        
+        if (!container || !controls) return;
+        
+        container.style.display = 'flex';
+        controls.innerHTML = '';
+        
+        startSpan.innerText = totalRecords > 0 ? startIdx + 1 : 0;
+        endSpan.innerText = endIdx;
+        totalSpan.innerText = totalRecords;
+        
+        function createButton(label, page, disabled, isActive = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = label;
+            
+            if (isActive) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+            }
+            
+            if (disabled) {
+                btn.disabled = true;
+                if (!isActive) btn.classList.add('opacity-40', 'cursor-not-allowed');
+            } else {
+                btn.onclick = () => {
+                    currentMainPage = page;
+                    // re-apply filters which will also paginate
+                    applyFilters();
+                };
+            }
+            return btn;
+        }
+        
+        controls.appendChild(createButton('&lsaquo; Prev', currentMainPage - 1, currentMainPage === 1));
+        
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+            span.innerHTML = "...";
+            return span;
+        }
+
+        if (totalPages <= 5) {
+            for (let i = 1; i <= totalPages; i++) {
+                controls.appendChild(createButton(i, i, false, i === currentMainPage));
+            }
+        } else {
+            controls.appendChild(createButton(1, 1, false, 1 === currentMainPage));
+            if (currentMainPage > 3) controls.appendChild(createEllipsis());
+            
+            let startPage = Math.max(2, currentMainPage - 1);
+            let endPage = Math.min(totalPages - 1, currentMainPage + 1);
+            
+            if (currentMainPage === 1) endPage = 3;
+            if (currentMainPage === totalPages) startPage = totalPages - 2;
+            
+            for (let i = startPage; i <= endPage; i++) {
+                controls.appendChild(createButton(i, i, false, i === currentMainPage));
+            }
+            
+            if (currentMainPage < totalPages - 2) controls.appendChild(createEllipsis());
+            controls.appendChild(createButton(totalPages, totalPages, false, totalPages === currentMainPage));
+        }
+        
+        controls.appendChild(createButton('Next &rsaquo;', currentMainPage + 1, currentMainPage >= totalPages));
     }
 
     // Initial sorting and highlight logic on load
@@ -431,12 +544,23 @@ $currentTab = $_GET['tab'] ?? 'completed';
             if (highlightId) {
                 const rows = document.querySelectorAll('#table-body tr.record-row');
                 let targetRow = null;
+                
+                // First pass to find the row
                 rows.forEach(row => {
                     if ((row.dataset.id || '').toLowerCase() === highlightId.toLowerCase()) {
                         targetRow = row;
                     }
                 });
+                
                 if (targetRow) {
+                    // Update currentMainPage based on matchedRows index
+                    const matchedRows = Array.from(rows).filter(r => r.hasAttribute('data-matched'));
+                    const targetIndex = matchedRows.indexOf(targetRow);
+                    if (targetIndex !== -1) {
+                        currentMainPage = Math.floor(targetIndex / mainItemsPerPage) + 1;
+                        paginateMain(matchedRows);
+                    }
+                    
                     const tableWrapper = targetRow.closest('.overflow-y-auto');
                     if (tableWrapper) {
                         const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
@@ -709,7 +833,139 @@ $currentTab = $_GET['tab'] ?? 'completed';
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination Controls for Disputes -->
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="disputes-pagination-container" style="display: flex;">
+        <span id="disputes-record-count" class="text-xs text-gray-500 font-medium">
+            Showing <span id="disputes-start">0</span> to <span id="disputes-end">0</span> of <span id="disputes-total" class="font-semibold text-gray-800">0</span> records
+        </span>
+        <div class="flex items-center flex-wrap gap-1.5" id="disputes-pagination-controls">
+        </div>
+    </div>
 </div>
+
+<script>
+    // Disputes Pagination Logic
+    let currentDisputesPage = 1;
+    const disputesItemsPerPage = 7;
+
+    function paginateDisputes(targetTbody = null) {
+        const tbody = targetTbody || document.getElementById('disputes-table-body');
+        if (!tbody) return;
+
+        let rows = Array.from(tbody.querySelectorAll('tr:not(#disputes-empty-msg-row)'));
+        
+        // Exclude the "No patient error reports found." row if it exists
+        if (rows.length === 1 && rows[0].querySelector('td[colspan="6"]')) {
+            return;
+        }
+
+        const totalRecords = rows.length;
+        let totalPages = Math.ceil(totalRecords / disputesItemsPerPage);
+        
+        if (currentDisputesPage > totalPages && totalPages > 0) currentDisputesPage = totalPages;
+        if (totalPages === 0) currentDisputesPage = 1;
+
+        const start = (currentDisputesPage - 1) * disputesItemsPerPage;
+        const end = Math.min(start + disputesItemsPerPage, totalRecords);
+
+        rows.forEach((row, idx) => {
+            row.style.display = (idx >= start && idx < end) ? '' : 'none';
+        });
+
+        renderDisputesPaginationControls(totalPages, totalRecords, start, end);
+    }
+
+    function renderDisputesPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
+        const container = document.getElementById('disputes-pagination-container');
+        const controls = document.getElementById('disputes-pagination-controls');
+        const startSpan = document.getElementById('disputes-start');
+        const endSpan = document.getElementById('disputes-end');
+        const totalSpan = document.getElementById('disputes-total');
+        
+        if (!container || !controls) return;
+        
+        container.style.display = 'flex';
+        controls.innerHTML = '';
+        
+        startSpan.innerText = totalRecords > 0 ? startIdx + 1 : 0;
+        endSpan.innerText = endIdx;
+        totalSpan.innerText = totalRecords;
+        
+        function createButton(label, page, disabled, isActive = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = label;
+            
+            if (isActive) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+            }
+            
+            if (disabled) {
+                btn.disabled = true;
+            } else {
+                btn.onclick = () => {
+                    currentDisputesPage = page;
+                    paginateDisputes();
+                    const tableContainer = document.querySelector('#disputes-table-card .overflow-x-auto');
+                    if (tableContainer) tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+            }
+            return btn;
+        }
+        
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+            span.innerHTML = "...";
+            return span;
+        }
+        
+        controls.appendChild(createButton('&lsaquo; Back', currentDisputesPage - 1, currentDisputesPage === 1));
+        
+        if (totalPages <= 5) {
+            for (let i = 1; i <= totalPages; i++) {
+                controls.appendChild(createButton(i, i, false, i === currentDisputesPage));
+            }
+        } else {
+            controls.appendChild(createButton(1, 1, false, 1 === currentDisputesPage));
+            if (currentDisputesPage > 3) controls.appendChild(createEllipsis());
+            
+            let startPage = Math.max(2, currentDisputesPage - 1);
+            let endPage = Math.min(totalPages - 1, currentDisputesPage + 1);
+            
+            if (currentDisputesPage === 1) endPage = 3;
+            if (currentDisputesPage === totalPages) startPage = totalPages - 2;
+            
+            for (let i = startPage; i <= endPage; i++) {
+                controls.appendChild(createButton(i, i, false, i === currentDisputesPage));
+            }
+            
+            if (currentDisputesPage < totalPages - 2) controls.appendChild(createEllipsis());
+            controls.appendChild(createButton(totalPages, totalPages, false, totalPages === currentDisputesPage));
+        }
+        
+        controls.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            paginateDisputes();
+        }, 100);
+    });
+
+    document.addEventListener('realtime:beforeUpdate', (e) => {
+        const newEl = e.detail.newEl;
+        if (newEl && newEl.id === 'disputes-table-body') {
+            paginateDisputes(newEl);
+        }
+        if (newEl && newEl.id === 'table-body') {
+            applyFilters(newEl);
+        }
+    });
+</script>
 
 <!-- ESCALATE TO RADIOLOGIST MODAL -->
 <div id="escalate-dispute-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/50 p-4">
@@ -928,6 +1184,7 @@ setInterval(() => {
                 const newTbody = doc.getElementById('disputes-table-body');
                 const oldTbody = document.getElementById('disputes-table-body');
                 if (newTbody && oldTbody) {
+                    paginateDisputes(newTbody);
                     oldTbody.innerHTML = newTbody.innerHTML;
                     if (window.lucide) lucide.createIcons();
                 }

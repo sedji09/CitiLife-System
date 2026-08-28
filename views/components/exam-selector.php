@@ -27,12 +27,16 @@ if (isset($preSelectedExams)) {
 $placeholderText = $placeholderText ?? "Select Exam Type...";
 
 // Flat list of exams
-global $pdo;
-require_once basePath('app/Models/ServiceModel.php');
-$serviceModel = new \ServiceModel($pdo);
-$activeServices = $serviceModel->getActiveServices();
-$allStandardExams = array_column($activeServices, 'exam_type');
-sort($allStandardExams);
+if (!isset($availableOptions)) {
+    global $pdo;
+    require_once basePath('app/Models/ServiceModel.php');
+    $serviceModel = new \ServiceModel($pdo);
+    $activeServices = $serviceModel->getActiveServices();
+    $allStandardExams = array_column($activeServices, 'exam_type');
+    sort($allStandardExams);
+} else {
+    $allStandardExams = $availableOptions;
+}
 
 // Map legacy inputs
 $legacyMapping = [
@@ -249,6 +253,7 @@ $uuid = uniqid('es_');
                     const container = removeBtn.closest('.exam-ms-component');
                     const val = removeBtn.getAttribute('data-value');
                     const hiddenInput = container.querySelector('.exam-ms-hidden-input');
+                    const searchInput = container.querySelector('.exam-ms-input');
 
                     let currentVals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(s => s) : [];
                     currentVals = currentVals.filter(v => v !== val);
@@ -261,6 +266,7 @@ $uuid = uniqid('es_');
                     }
 
                     renderChips(container);
+                    if (searchInput) searchInput.blur();
 
                     // Dispatch custom event for listeners (like Patient Details image limits)
                     container.dispatchEvent(new CustomEvent('exam-ms:change', {
@@ -279,6 +285,7 @@ $uuid = uniqid('es_');
                     const container = option.closest('.exam-ms-component');
                     const val = option.getAttribute('data-value');
                     const hiddenInput = container.querySelector('.exam-ms-hidden-input');
+                    const searchInput = container.querySelector('.exam-ms-input');
 
                     let currentVals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(s => s) : [];
                     if (!currentVals.includes(val)) {
@@ -293,7 +300,7 @@ $uuid = uniqid('es_');
                     }
 
                     renderChips(container);
-                    container.querySelector('.exam-ms-input').focus();
+                    if (searchInput) searchInput.blur();
 
                     // Dispatch custom event for listeners
                     container.dispatchEvent(new CustomEvent('exam-ms:change', {
@@ -306,19 +313,21 @@ $uuid = uniqid('es_');
                     return;
                 }
 
-                // Click inside the input box area -> open dropdown and focus input
+                // Click inside the input box area -> open dropdown
                 const msBox = e.target.closest('.exam-ms-box');
                 if (msBox) {
                     const container = msBox.closest('.exam-ms-component');
                     const dropdown = container.querySelector('.exam-ms-dropdown');
-                    const searchInput = container.querySelector('.exam-ms-input');
-
+                    
                     if (window.examMSOpenId && window.examMSOpenId !== container.id) {
                         closeAllDropdowns();
                     }
 
                     dropdown.classList.remove('hidden');
-                    searchInput.focus();
+                    
+                    // We DO NOT force focus on the searchInput here unless they clicked it directly.
+                    // This prevents the mobile keyboard from popping up when they just want to open the dropdown list.
+                    
                     window.examMSOpenId = container.id;
                     return;
                 }

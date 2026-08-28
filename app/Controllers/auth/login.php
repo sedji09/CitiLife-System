@@ -85,30 +85,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 } elseif ($user['role'] === 'patient') {
                     $error = "This portal is for Staff and Administrators only. Please use the Patient Portal.";
                 } else {
-                    // Password is correct, start session
+                    // Check if device is remembered (Skip OTP if valid token exists)
+                    $rememberToken = $_COOKIE['remember_device'] ?? null;
+                    if ($rememberToken) {
+                        $stmtDevice = $pdo->prepare("SELECT id FROM user_devices WHERE user_id = ? AND device_token = ? AND expires_at > NOW() LIMIT 1");
+                        $stmtDevice->execute([$user['id'], $rememberToken]);
+                        if ($stmtDevice->fetch()) {
+                            // Device remembered, skip OTP and start full session
+                            unset($_SESSION['staff_login_attempts']);
+                            clearStaffLoginLock($pdo, $user['id']);
+                            $_SESSION['user_id'] = $user['id'];
+                            $_SESSION['role'] = $user['role'];
+                            $_SESSION['email'] = $user['email'];
+                            $_SESSION['name'] = $user['name'] ?? '';
+                            $_SESSION['avatar'] = $user['avatar'] ?? null;
+                            $_SESSION['branch_id'] = $user['branch_id'];
+
+                            require_once basePath('app/Models/AuditLogModel.php');
+                            $auditLogModel = new \AuditLogModel($pdo);
+                            $auditLogModel->addLog(
+                                $user['id'],
+                                'Staff Login',
+                                'Authentication',
+                                'Session',
+                                $user['id'],
+                                "Successful login via remembered device",
+                                $user['branch_id']
+                            );
+
+                            header("Location: /" . PROJECT_DIR . "/dashboard");
+                            exit;
+                        }
+                    }
+
+                    // Generate OTP
+                    $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                    $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+                    $updateStmt = $pdo->prepare("UPDATE users SET otp_code = ?, token_expires_at = ? WHERE id = ?");
+                    $updateStmt->execute([$otpCode, $expiresAt, $user['id']]);
+
+                    // Send email
+                    $firstName = $user['name'] ?? 'Staff Member';
+                    $emailBody = "
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
+                            <h2 style='color: #1f2937;'>CitiLife System - Staff Login Verification</h2>
+                            <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
+                            <p style='color: #4b5563; font-size: 16px;'>Please use the following OTP to complete your login:</p>
+                            <div style='text-align: center; margin: 30px 0;'>
+                                <span style='display: inline-block; padding: 15px 30px; background-color: #f3f4f6; color: #1f2937; letter-spacing: 8px; border-radius: 8px; font-weight: bold; font-size: 32px;'>{$otpCode}</span>
+                            </div>
+                            <p style='color: #6b7280; font-size: 14px;'>This code will expire in 5 minutes.</p>
+                            <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
+                            <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
+                        </div>
+                    ";
+                    
+                    if (!function_exists('sendEmail')) {
+                        require_once basePath('app/Helpers/mailer_helper.php');
+                    }
+                    sendEmail($user['email'], $firstName, 'Staff Login Verification Code - CitiLife System', $emailBody);
+
+                    // Password is correct, start temporary session for OTP
                     unset($_SESSION['staff_login_attempts']);
                     clearStaffLoginLock($pdo, $user['id']);
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['role'] = $user['role'];
-                    $_SESSION['email'] = $user['email'];
-                    $_SESSION['name'] = $user['name'] ?? '';
-                    $_SESSION['avatar'] = $user['avatar'] ?? null;
-                    $_SESSION['branch_id'] = $user['branch_id'];
 
-                    require_once basePath('app/Models/AuditLogModel.php');
-                    $auditLogModel = new \AuditLogModel($pdo);
-                    $auditLogModel->addLog(
-                        $user['id'],
-                        'Staff Login',
-                        'Authentication',
-                        'Session',
-                        $user['id'],
-                        "Successful login",
-                        $user['branch_id']
-                    );
+                    $_SESSION['temp_user_id'] = $user['id'];
+                    $_SESSION['temp_role'] = $user['role'];
+                    $_SESSION['temp_email'] = $user['email'];
+                    $_SESSION['temp_branch_id'] = $user['branch_id'];
+                    $_SESSION['temp_name'] = $user['name'] ?? '';
+                    $_SESSION['temp_avatar'] = $user['avatar'] ?? null;
+                    $_SESSION['temp_portal'] = 'staff';
 
-                    // Redirect to dashboard
-                    header("Location: /" . PROJECT_DIR . "/dashboard");
+                    header("Location: /" . PROJECT_DIR . "/otp-login");
                     exit;
                 }
             } else {

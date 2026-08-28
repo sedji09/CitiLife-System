@@ -925,7 +925,7 @@ if (!$isMultiExam) {
                     style="width: 100%; text-align: center; margin-bottom: 20px; font-family: 'Raleway', sans-serif; position: relative; z-index: 1;">
                     <h2
                         style="font-size: 16pt; font-weight: bold; color: #111; letter-spacing: 1px; text-transform: uppercase;">
-                        X-Ray Plate Image <?= count($savedPaths) > 1 ? '(' . ($idx + 1) . ')' : '' ?></h2>
+                        X-RAY PLATE IMAGE <?= count($savedPaths) > 1 ? '(' . ($idx + 1) . ')' : '' ?></h2>
                     <p style="font-family: Arial, sans-serif; font-size: 10pt; color: #555; margin-top: 5px;">Case No:
                         <?= $caseNum ?> &nbsp;|&nbsp; Patient Name: <?= $fullName ?>
                     </p>

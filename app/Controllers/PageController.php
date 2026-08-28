@@ -69,6 +69,7 @@ class PageController
             'feedback',
             'service-pricing',
             'services-pricing',
+            'payment-verifications',
         ];
 
         // Fallback for page parameter
@@ -84,6 +85,7 @@ class PageController
             'branches' => 'branch_mgmt',
             'patient-registration' => 'patient_reg',
             'patient-approvals' => 'approvals',
+            'payment-verifications' => 'approvals',
             'record-request' => 'submit_record_request',
             'view-record-request' => 'submit_record_request',
             'record-requests' => 'record_requests',
@@ -125,7 +127,8 @@ class PageController
             'xray-status' => 'patient',
             'my-records' => 'patient',
             'registration' => 'patient',
-            'services-pricing' => 'patient'
+            'services-pricing' => 'patient',
+            'payment-verifications' => 'branch_admin'
         ];
 
         $resolvedRole = $pageOwnerMap[$page] ?? $role;

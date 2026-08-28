@@ -197,16 +197,8 @@ class ComposerStaticInitac2d307f4ed514763a8119f3523066bb
     );
 
     public static $classMap = array (
-        'AuditLogModel' => __DIR__ . '/../..' . '/app/Models/AuditLogModel.php',
-        'BranchModel' => __DIR__ . '/../..' . '/app/Models/BranchModel.php',
-        'CaseModel' => __DIR__ . '/../..' . '/app/Models/CaseModel.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Dompdf\\Cpdf' => __DIR__ . '/..' . '/dompdf/dompdf/lib/Cpdf.php',
-        'FeedbackModel' => __DIR__ . '/../..' . '/app/Models/FeedbackModel.php',
-        'NotificationModel' => __DIR__ . '/../..' . '/app/Models/NotificationModel.php',
-        'PatientModel' => __DIR__ . '/../..' . '/app/Models/PatientModel.php',
-        'RecordRequestModel' => __DIR__ . '/../..' . '/app/Models/RecordRequestModel.php',
-        'ResultDisputeModel' => __DIR__ . '/../..' . '/app/Models/ResultDisputeModel.php',
         'Safe\\DateTime' => __DIR__ . '/..' . '/thecodingmachine/safe/lib/DateTime.php',
         'Safe\\DateTimeImmutable' => __DIR__ . '/..' . '/thecodingmachine/safe/lib/DateTimeImmutable.php',
         'Safe\\Exceptions\\ApacheException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ApacheException.php',
@@ -290,8 +282,6 @@ class ComposerStaticInitac2d307f4ed514763a8119f3523066bb
         'Safe\\Exceptions\\YazException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/YazException.php',
         'Safe\\Exceptions\\ZipException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ZipException.php',
         'Safe\\Exceptions\\ZlibException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ZlibException.php',
-        'ServiceModel' => __DIR__ . '/../..' . '/app/Models/ServiceModel.php',
-        'UserModel' => __DIR__ . '/../..' . '/app/Models/UserModel.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

@@ -31,8 +31,7 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
 <?php if ($isReadOnly): ?>
     <div class="mt-5 rounded-lg bg-blue-50 border border-blue-300 p-4 flex items-center gap-3">
         <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0"></i>
-        <p class="text-sm text-blue-800 font-medium">This case has already been submitted to the radiologist. Showing saved
-            information in read-only mode.</p>
+        <p class="text-sm text-blue-800 font-medium">This case has already been submitted to the radiologist</p>
     </div>
 <?php endif; ?>
 

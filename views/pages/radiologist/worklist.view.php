@@ -357,6 +357,17 @@ sort($priorities);
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination footer for Disputes -->
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+        <!-- Record count -->
+        <span id="disputes-record-count" class="text-xs text-gray-500 font-medium"></span>
+
+        <!-- Pagination Controls -->
+        <div class="flex items-center flex-wrap gap-1.5" id="disputes-pagination-controls">
+            <!-- Dynamic page buttons will be inserted here -->
+        </div>
+    </div>
 </div>
 
 <script>
@@ -426,6 +437,10 @@ sort($priorities);
 
         const ROWS_PER_PAGE = 8;
         let currentPage = 1;
+        
+        let allDisputeRows = Array.from(document.querySelectorAll('tr.dispute-row'));
+        const DISPUTES_PER_PAGE = 8;
+        let currentDisputesPage = 1;
 
         function updateTable() {
             if (!searchInput || !filterBranch || !filterPriority || !sortOption) return;
@@ -639,6 +654,114 @@ sort($priorities);
             container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
+        function updateDisputesTable() {
+            if (!searchInput) return;
+
+            const searchTerm = searchInput.value.toLowerCase();
+
+            let filteredRows = [];
+            allDisputeRows.forEach(row => {
+                const matchesSearch = row.dataset.search.includes(searchTerm);
+                if (matchesSearch) {
+                    filteredRows.push(row);
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / DISPUTES_PER_PAGE));
+            if (currentDisputesPage > totalPages) currentDisputesPage = totalPages;
+
+            const startIdx = (currentDisputesPage - 1) * DISPUTES_PER_PAGE;
+            const endIdx = startIdx + DISPUTES_PER_PAGE;
+
+            filteredRows.forEach((row, idx) => {
+                row.style.display = (idx >= startIdx && idx < endIdx) ? '' : 'none';
+            });
+
+            updateDisputesPaginationUI(filteredRows.length, totalPages);
+        }
+
+        function updateDisputesPaginationUI(totalFiltered, totalPages) {
+            const recordCountInfo = document.getElementById('disputes-record-count');
+            const container = document.getElementById('disputes-pagination-controls');
+
+            const startIdx = totalFiltered === 0 ? 0 : (currentDisputesPage - 1) * DISPUTES_PER_PAGE + 1;
+            const endIdx = Math.min(currentDisputesPage * DISPUTES_PER_PAGE, totalFiltered);
+
+            if (recordCountInfo) {
+                recordCountInfo.innerHTML = totalFiltered === 0
+                    ? 'No records'
+                    : `Showing <span class="font-semibold text-gray-800">${startIdx}</span> to <span class="font-semibold text-gray-800">${endIdx}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> record${totalFiltered !== 1 ? 's' : ''}`;
+            }
+
+            if (!container) return;
+            container.innerHTML = '';
+
+            function createButton(label, page, disabled, isActive = false) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = label;
+
+                if (isActive) {
+                    btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+                }
+
+                if (disabled) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => {
+                        currentDisputesPage = page;
+                        updateDisputesTable();
+                        const card = document.getElementById('rad-disputes-table-card');
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    };
+                }
+                return btn;
+            }
+
+            function createEllipsis() {
+                const span = document.createElement('span');
+                span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+                span.innerText = '...';
+                return span;
+            }
+
+            container.appendChild(createButton('&laquo; First', 1, currentDisputesPage <= 1));
+            container.appendChild(createButton('&lsaquo; Prev', currentDisputesPage - 1, currentDisputesPage <= 1));
+
+            if (totalPages <= 5) {
+                for (let i = 1; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentDisputesPage));
+                }
+            } else {
+                if (currentDisputesPage <= 3) {
+                    for (let i = 1; i <= 4; i++) container.appendChild(createButton(i, i, false, i === currentDisputesPage));
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                } else if (currentDisputesPage > totalPages - 3) {
+                    container.appendChild(createButton(1, 1, false, false));
+                    container.appendChild(createEllipsis());
+                    for (let i = totalPages - 3; i <= totalPages; i++) container.appendChild(createButton(i, i, false, i === currentDisputesPage));
+                } else {
+                    container.appendChild(createButton(1, 1, false, false));
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(currentDisputesPage - 1, currentDisputesPage - 1, false, false));
+                    container.appendChild(createButton(currentDisputesPage, currentDisputesPage, false, true));
+                    container.appendChild(createButton(currentDisputesPage + 1, currentDisputesPage + 1, false, false));
+                    container.appendChild(createEllipsis());
+                    container.appendChild(createButton(totalPages, totalPages, false, false));
+                }
+            }
+
+            container.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
+            container.appendChild(createButton('Last &raquo;', totalPages, currentDisputesPage >= totalPages));
+        }
+
         const paramsList = new window.URLSearchParams(window.location.search);
         const urlBranch = paramsList.get('branch');
         const urlPriority = paramsList.get('priority');
@@ -649,7 +772,9 @@ sort($priorities);
         // Reset to page 1 on filter/sort change
         function onFilterSortChange() {
             currentPage = 1;
+            currentDisputesPage = 1;
             updateTable();
+            updateDisputesTable();
         }
 
         if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
@@ -760,6 +885,10 @@ sort($priorities);
                 }
             }
         }
+
+        // Initial pagination
+        updateTable();
+        updateDisputesTable();
 
         handleHighlight();
 

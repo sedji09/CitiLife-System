@@ -10,44 +10,7 @@ $branchId = $_SESSION['branch_id'] ?? 1;
 $successMsg = '';
 $errorMsg = '';
 
-// 1. Handle Actions (Backend Logic)
-if (isset($_GET['action']) && isset($_GET['id']) && !isset($_GET['ajax_polling'])) {
-    try {
-        $id = (int) $_GET['id'];
-        $action = $_GET['action'];
-        $result = $caseModel->processCaseApproval($id, $action, $notificationModel);
-
-        if ($result['success']) {
-            $successMsg = $result['message'];
-
-            // Log the action
-            $stmtReq = $pdo->prepare("SELECT r.request_number, p.first_name, p.last_name FROM requests r JOIN patients p ON r.patient_id = p.id WHERE r.id = ?");
-            $stmtReq->execute([$id]);
-            $reqData = $stmtReq->fetch();
-            $patientName = $reqData ? ($reqData['first_name'] . ' ' . $reqData['last_name']) : "Unknown";
-            $requestNum = $reqData ? $reqData['request_number'] : $id;
-
-            if ($action === 'approve') {
-                $logAction = "Approved patient registration";
-                $details = "Patient: $patientName, Request: $requestNum";
-                $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
-                
-                // Redirect straight to patient-details for immediate image upload
-                $_SESSION['flash_success'] = "Patient request approved. You can now upload diagnostic images.";
-                echo "<script>window.location.href = '/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . urlencode($result['case_id']) . "';</script>";
-                exit;
-            } else {
-                $logAction = "Rejected X-ray request";
-                $details = "Request Number: $requestNum";
-                $auditLogModel->addLog($currentUserId, $logAction, 'Patient Approvals', 'Request', $id, $details, $branchId);
-            }
-        } else {
-            $errorMsg = $result['message'];
-        }
-    } catch (Exception $e) {
-        $errorMsg = "Action failed: " . $e->getMessage();
-    }
-}
+// Actions are handled in PatientApprovalController
 
 // Handle update success/error messages
 if (isset($_GET['success']) && $_GET['success'] == 1)
@@ -67,6 +30,16 @@ $disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
 $pendingDisputeCount = count(array_filter($disputes, function($d) { 
     return in_array($d['status'], ['Pending RadTech Review', 'Pending RadTech Verification']); 
 }));
+
+require_once __DIR__ . '/../../../app/Models/ServiceModel.php';
+$serviceModel = new \ServiceModel($pdo);
+$allServices = $serviceModel->getAllServices();
+$groupedServices = [];
+foreach ($allServices as $service) {
+    if ($service['status'] === 'Active') {
+        $groupedServices[$service['category']][] = $service;
+    }
+}
 ?>
 
 <!-- Vanilla JS Datepicker -->
@@ -120,11 +93,11 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) {
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
-            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-lists' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Patient Queue
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
-            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?php echo ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700">
             Pending Approval
         </a>
         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&tab=disputes"
@@ -214,6 +187,16 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) {
                                         class="inline-flex items-center rounded-full border border-gray-400 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
                                         Cancelled
                                     </span>
+                                <?php elseif ($patient['status'] === 'Pending Payment'): ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-orange-400 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                                        Pending Payment
+                                    </span>
+                                <?php elseif ($patient['status'] === 'Payment Verified'): ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-green-400 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                        Payment Verified
+                                    </span>
                                 <?php else: ?>
                                     <span
                                         class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
@@ -223,15 +206,13 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) {
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
-                                        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
-                                            onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
-                                            class="text-sm font-medium text-green-600 hover:text-green-700 transition"
-                                            title="Approve">
-                                            <i data-lucide="circle-check-big"
-                                                class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
-                                        </a>
-                                    <?php endif; ?>
+                                        <?php if ($patient['status'] === 'Pending Approval'): ?>
+                                            <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>')"
+                                                class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
+                                                <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
+                                            </button>
+                                        <?php endif; ?>
+
                                     <?php if (in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <button
                                             onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
@@ -247,7 +228,22 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) {
                                                 class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
                                         </button>
                                     <?php endif; ?>
-                                    <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
+
+                                        <?php if ($patient['status'] === 'Payment Verified'): ?>
+                                            <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
+                                                onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
+                                                class="text-sm font-medium text-green-600 hover:text-green-700 transition"
+                                                title="Approve">
+                                                <i data-lucide="circle-check-big"
+                                                    class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <button disabled class="text-sm font-medium text-gray-400 cursor-not-allowed" title="Waiting for Payment Verification">
+                                                <i data-lucide="circle-check-big" class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        
+                                    <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled', 'Payment Verified'])): ?>
                                         <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
                                             onclick="confirmAction('Confirm Rejection', 'Would you like to confirm rejecting this patient registration?', this.href, 'Yes, Proceed', false, event)"
                                             class="text-sm font-medium text-red-600 hover:text-red-700 transition" title="Reject">
@@ -265,12 +261,39 @@ $pendingDisputeCount = count(array_filter($disputes, function($d) {
     </div>
     
     <!-- Pagination Controls -->
-    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="approval-pagination-container" style="display: none;">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="approval-pagination-container" style="display: flex;">
         <span id="approval-record-count" class="text-xs text-gray-500 font-medium">
             Showing <span id="approval-start">0</span> to <span id="approval-end">0</span> of <span id="approval-total" class="font-semibold text-gray-800">0</span> records
         </span>
         <div class="flex items-center flex-wrap gap-1.5" id="approval-pagination-controls">
         </div>
+    </div>
+</div>
+
+<!-- Assign Exam Modal -->
+<div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+    <div class="w-full max-w-md p-8 border shadow-xl rounded-2xl bg-white">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Assign Exact Examination</h3>
+        <p class="text-sm text-gray-500 mb-4">Patient requested for: <span id="assignBodyPart" class="font-bold text-gray-800"></span></p>
+        
+        <form method="POST" id="assignForm" action="">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Select Examination Type</label>
+                <?php 
+                $examInputName = 'exam_type';
+                $placeholderText = 'Select Exam Type...';
+                include basePath('views/components/exam-selector.php'); 
+                ?>
+                <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeAssignModal()"
+                    class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">Assign & Request Payment</button>
+            </div>
+        </form>
     </div>
 </div>
 

@@ -356,7 +356,7 @@ class CaseModel
                                     <p>Thank you for choosing CitiLife.</p>
                                 </div>
                             ";
-                            sendEmail($patientEmail, $patientName, $subject, $body);
+                            sendEmailAsync($patientEmail, $patientName, $subject, $body);
                         }
                     }
                 }
@@ -421,7 +421,7 @@ class CaseModel
     {
         $stmt = $this->pdo->prepare("
             SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number,
-                   b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3,
+                   b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, b.gcash_qr_path,
                    COALESCE(NULLIF(u.full_name_report, ''), NULLIF(u.name, ''), SUBSTRING_INDEX(u.email, '@', 1)) AS radtech_name, u.professional_title AS radtech_title, u.signature AS radtech_signature,
                    COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name, ur.professional_title AS radiologist_title, ur.signature AS radiologist_signature
             FROM cases c
@@ -487,8 +487,10 @@ class CaseModel
                 b.contact_number_1 AS branch_contact,
                 b.contact_number_2 AS branch_contact_2,
                 b.contact_number_3 AS branch_contact_3,
+                b.gcash_qr_path,
                 NULL as radtech_id,
-                NULL as image_status
+                NULL as image_status,
+                r.amount_due
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
             WHERE r.patient_id = ?
@@ -512,8 +514,10 @@ class CaseModel
                 b.contact_number_1 AS branch_contact,
                 b.contact_number_2 AS branch_contact_2,
                 b.contact_number_3 AS branch_contact_3,
+                b.gcash_qr_path,
                 c.radtech_id,
-                (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status
+                (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
+                0 as amount_due
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
@@ -549,11 +553,13 @@ class CaseModel
                 b.contact_number_1 AS branch_contact,
                 b.contact_number_2 AS branch_contact_2,
                 b.contact_number_3 AS branch_contact_3,
+                b.gcash_qr_path,
                 NULL as radtech_id,
-                NULL as image_status
+                NULL as image_status,
+                r.amount_due
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
-            WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Rejected', 'Cancelled')
+            WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified', 'Rejected', 'Cancelled')
 
             UNION ALL
 
@@ -574,8 +580,10 @@ class CaseModel
                 b.contact_number_1 AS branch_contact,
                 b.contact_number_2 AS branch_contact_2,
                 b.contact_number_3 AS branch_contact_3,
+                b.gcash_qr_path,
                 c.radtech_id,
-                (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status
+                (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
+                0 as amount_due
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ? AND c.status NOT IN ('Released', 'Completed')
@@ -922,12 +930,13 @@ class CaseModel
         $sql = "SELECT r.*, r.id as request_id, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                 FROM requests r 
                 JOIN patients p ON r.patient_id = p.id 
-                WHERE r.status IN ('Pending Approval', 'Rejected', 'Cancelled') AND r.branch_id = ?
+                WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verified', 'Rejected', 'Cancelled') AND r.branch_id = ?
                 ORDER BY 
                   CASE 
-                    WHEN r.status = 'Pending Approval' THEN 1 
-                    WHEN r.status = 'Rejected' THEN 2
-                    ELSE 3
+                    WHEN r.status IN ('Pending Approval', 'Payment Verified') THEN 1 
+                    WHEN r.status = 'Pending Payment' THEN 2
+                    WHEN r.status = 'Rejected' THEN 3
+                    ELSE 4
                   END,
                   r.created_at DESC";
         $stmt = $this->pdo->prepare($sql);

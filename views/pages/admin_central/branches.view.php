@@ -192,6 +192,13 @@
                                             </button>
 
                                             <button type="button"
+                                                onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
+                                                class="p-1.5 rounded-md border border-purple-100 bg-purple-50 text-purple-500 hover:bg-purple-100 transition shadow-sm"
+                                                title="Manage GCash QR">
+                                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                            </button>
+
+                                            <button type="button"
                                                 onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
                                                 class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
                                                 title="Delete Branch">
@@ -396,6 +403,58 @@
     </div>
 </div>
 
+<!-- UPLOAD QR MODAL -->
+<div id="uploadQRModal" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <h3 class="text-lg font-bold text-gray-900">Manage GCash QR</h3>
+            <button type="button" onclick="closeUploadQRModal()" class="text-gray-400 hover:text-gray-600 transition p-1">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <p class="text-sm font-semibold text-gray-700 mb-2">Branch: <span id="qr_branch_name" class="text-red-600 font-bold"></span></p>
+            
+            <!-- Current QR Display -->
+            <div id="currentQRContainer" class="hidden mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Current QR Code</p>
+                <img id="currentQRImage" src="" alt="GCash QR" class="w-32 h-32 mx-auto rounded-lg border shadow-sm mb-3 object-cover">
+                
+                <form action="" method="POST" onsubmit="return confirm('Are you sure you want to remove the QR code for this branch? Patients will no longer be able to pay via GCash.');">
+                    <input type="hidden" name="action" value="remove_qr">
+                    <input type="hidden" name="branch_id" id="remove_qr_branch_id">
+                    <button type="submit" class="inline-flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-700 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove QR Code
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Upload New QR Form -->
+            <form action="" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <input type="hidden" name="action" value="upload_qr">
+                <input type="hidden" name="branch_id" id="upload_qr_branch_id">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5" id="uploadLabel">Upload New QR Code</label>
+                    <input type="file" name="qr_code" accept="image/*" required
+                        class="w-full text-sm text-gray-500 border border-gray-200 rounded-lg file:mr-3 file:py-2.5 file:px-4 file:border-0 file:border-r file:border-gray-200 file:text-sm file:font-bold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 transition">
+                    <p class="text-xs text-gray-400 mt-2">Accepted formats: JPG, PNG, GIF, WEBP</p>
+                </div>
+                
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeUploadQRModal()" class="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-purple-600 text-sm font-bold text-white hover:bg-purple-700 shadow-sm shadow-purple-200 transition-all active:scale-95">
+                        Upload Image
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Modal Removed (Replaced by SweetAlert2) -->
 
 <script>
@@ -521,6 +580,34 @@
 
     function closeEditBranchModal() {
         document.getElementById('editBranchModal').classList.add('hidden');
+    }
+
+    function openUploadQRModal(id, name, currentQrPath) {
+        document.getElementById('upload_qr_branch_id').value = id;
+        document.getElementById('remove_qr_branch_id').value = id;
+        document.getElementById('qr_branch_name').textContent = name;
+        
+        const currentQRContainer = document.getElementById('currentQRContainer');
+        const currentQRImage = document.getElementById('currentQRImage');
+        const uploadLabel = document.getElementById('uploadLabel');
+        
+        if (currentQrPath && currentQrPath.trim() !== '') {
+            currentQRImage.src = '<?= "/" . PROJECT_DIR ?>' + currentQrPath;
+            currentQRContainer.classList.remove('hidden');
+            uploadLabel.textContent = "Replace QR Code";
+        } else {
+            currentQRContainer.classList.add('hidden');
+            currentQRImage.src = '';
+            uploadLabel.textContent = "Upload QR Code";
+        }
+        
+        document.getElementById('uploadQRModal').classList.remove('hidden');
+        applyModalTheme('uploadQRModal');
+        if (window.lucide) window.lucide.createIcons();
+    }
+    
+    function closeUploadQRModal() {
+        document.getElementById('uploadQRModal').classList.add('hidden');
     }
 
     async function confirmDelete(id, name) {

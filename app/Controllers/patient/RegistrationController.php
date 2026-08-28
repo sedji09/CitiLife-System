@@ -19,9 +19,17 @@ class RegistrationController
         $caseModel = new \CaseModel($pdo);
         $notificationModel = new \NotificationModel($pdo);
         require_once basePath('app/Models/AuditLogModel.php');
+        require_once basePath('app/Models/ServiceModel.php');
         $auditLogModel = new \AuditLogModel($pdo);
+        $serviceModel = new \ServiceModel($pdo);
         $userId = $_SESSION['user_id'] ?? null;
         $error = '';
+
+        $activeServices = $serviceModel->getActiveServices();
+        $groupedServices = [];
+        foreach ($activeServices as $service) {
+            $groupedServices[$service['category']][] = $service;
+        }
 
         $currentHour = (int) date('G');
         $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
@@ -85,8 +93,15 @@ class RegistrationController
                         } elseif ($isBranchClosed($regData['branch_id'])) {
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {
+
+                            
                             $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
+                            
                             if (isset($result['case_id'])) {
+                                $requestId = $result['case_id']; // This is the request_id returned by registerRequest
+                                
+
+
                                 $auditLogModel->addLog(
                                     $userId,
                                     'Submitted X-Ray Request',
@@ -108,7 +123,7 @@ class RegistrationController
                             'branch_id' => (int) ($_POST['branch_id'] ?? 0),
                             'philhealth_status' => $_POST['philhealth_status'] ?? 'Without PhilHealth Card',
                             'source' => 'portal',
-                            'exam_type' => 'To be determined',
+                            'exam_type' => trim($_POST['exam_type'] ?? 'To be determined'),
                             'priority' => 'Routine'
                         ];
 
@@ -119,8 +134,15 @@ class RegistrationController
                         } elseif ($isBranchClosed($regData['branch_id'])) {
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {
+
+                            
                             $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
+                            
                             if (isset($result['case_id'])) {
+                                $requestId = $result['case_id']; // This is the request_id returned by registerRequest
+                                
+
+
                                 $auditLogModel->addLog(
                                     $userId,
                                     'Submitted X-Ray Request',

@@ -64,26 +64,38 @@ if ($latestCase) {
         $currentStep = 0;
         $displayStatus = 'Rejected';
         $isRejected = true;
+    } elseif ($latestCase['status'] === 'Cancelled') {
+        $currentStep = 0;
+        $displayStatus = 'Cancelled';
+        $isRejected = true;
     } elseif ($recordType === 'Request' && $latestCase['status'] === 'Pending Approval') {
         $currentStep = 2;
         $displayStatus = 'Pending';
     } elseif ($recordType === 'Case' && $latestCase['status'] === 'Pending') {
-        // Case is created (which implies Approved) but no X-ray taken yet
         if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
-            $currentStep = 4;
+            $currentStep = 5;
             $displayStatus = 'X-ray Taken';
         } else {
-            $currentStep = 3;
+            $currentStep = 4;
             $displayStatus = 'Approved';
         }
+    } elseif ($latestCase['status'] === 'Pending Payment') {
+        $currentStep = 2;
+        $displayStatus = 'Pending Payment';
+    } elseif ($latestCase['status'] === 'Payment Verifying') {
+        $currentStep = 2;
+        $displayStatus = 'Payment Verifying';
+    } elseif ($latestCase['status'] === 'Payment Verified') {
+        $currentStep = 3;
+        $displayStatus = 'Payment Verified';
     } elseif ($latestCase['status'] === 'Under Reading') {
-        $currentStep = 4;
+        $currentStep = 5;
         $displayStatus = 'Under Reading';
     } elseif ($latestCase['status'] === 'Report Ready') {
-        $currentStep = 5;
+        $currentStep = 6;
         $displayStatus = 'Report Ready';
     } elseif (in_array($latestCase['status'], ['Released', 'Completed'])) {
-        $currentStep = 6;
+        $currentStep = 7;
         $displayStatus = $latestCase['status'];
     } else {
         $currentStep = 2;
@@ -93,16 +105,20 @@ if ($latestCase) {
 
 
 $steps = [
-    1 => 'Registered',
-    2 => 'Approved by RadTech',
-    3 => 'X-ray Taken',
-    4 => 'Under Reading',
-    5 => 'Ready for Release',
-    6 => 'Released',
+    1 => 'Registration',
+    2 => 'Payment',
+    3 => 'RadTech Verification',
+    4 => 'X-ray Examination',
+    5 => 'Radiologist Reading',
+    6 => 'Report Finalized',
+    7 => 'Released',
 ];
 
 $statusColors = [
     'Pending' => ['bg' => '#FFF7ED', 'border' => '#FED7AA', 'text' => '#C2410C', 'label' => 'Pending Review'],
+    'Pending Payment' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'Pending Payment'],
+    'Payment Verifying' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'Payment Verifying'],
+    'Payment Verified' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Payment Verified'],
     'Approved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Approved – Awaiting X-ray'],
     'X-ray Taken' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'X-ray Taken'],
     'Under Reading' => ['bg' => '#EFF6FF', 'border' => '#DBEAFE', 'text' => '#1D4ED8', 'label' => 'Under Reading by Radiologist'],
@@ -110,17 +126,22 @@ $statusColors = [
     'Released' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Released'], // Green
     'Completed' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Completed'], // Green
     'Rejected' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Rejected'],
+    'Cancelled' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Cancelled'],
 ];
 
 $statusDescriptions = [
-    'Pending' => 'Your X-ray request has been received and is pending approval from the RadTech team.',
-    'Approved' => 'Your request has been approved. Please proceed to the X-ray room for the examination.',
-    'X-ray Taken' => 'Your X-ray images have been captured and are being prepared for reading.',
-    'Under Reading' => 'Your X-ray is being reviewed. You will be notified once results are ready for release.',
-    'Report Ready' => 'Your X-ray report is ready. Please visit the branch to collect your results.',
-    'Released' => 'Your X-ray report has been released. You may now collect a copy at the branch.',
+    'Pending' => 'Your request is under review.',
+    'Pending Payment' => 'Please proceed to payment.',
+    'Payment Verifying' => 'Payment proof submitted. Awaiting verification.',
+    'Payment Verified' => 'Payment verified. Awaiting final approval.',
+    'Approved' => 'Request approved. Proceed to X-ray.',
+    'X-ray Taken' => 'Images captured.',
+    'Under Reading' => 'Under radiologist review.',
+    'Report Ready' => 'Report is ready.',
+    'Released' => 'Report released.',
     'Completed' => 'Your X-ray examination has been completed and the report has been released.',
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
+    'Cancelled' => 'Your request has been cancelled.',
 ];
 
 // --- QUEUE MANAGEMENT LOGIC ---
@@ -133,15 +154,15 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     // Show queue board ONLY if the case is active AND has been submitted to the Radiologist (Uploaded)
     if (in_array($latestCase['status'], ['Pending', 'Under Reading']) && (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded')) {
         $showQueueBoard = true;
-        
+
         $branchId = $latestCase['branch_id'];
         $caseDate = date('Y-m-d', strtotime($latestCase['created_at']));
-        
+
         // 1. Patient's Queue Number for the day (Global across all branches)
         $stmtNum = $pdo->prepare("SELECT COUNT(*) + 1 FROM cases WHERE DATE(created_at) = ? AND id < ?");
         $stmtNum->execute([$caseDate, $latestCase['id']]);
         $patientQueueNumber = str_pad($stmtNum->fetchColumn(), 2, '0', STR_PAD_LEFT);
-        
+
         // 2. People Ahead Logic (from the same day, Global across all branches)
         $stmtQueue = $pdo->prepare("
             SELECT id, priority, status
@@ -171,18 +192,18 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     // --- ESTIMATED REPORTING TIME LOGIC ---
     $caseStatus = $latestCase['status'];
     $caseImageStatus = $latestCase['image_status'] ?? '';
-    
+
     if (in_array($caseStatus, ['Report Ready', 'Completed', 'Released'])) {
         $estimatedTimeDisplay = 'Completed';
     } elseif ($caseImageStatus === 'Uploaded' && in_array($caseStatus, ['Pending', 'Under Reading'])) {
         // Calculate estimated time range: 20 mins per person ahead, 1 hour window
-        $baseMins = $peopleAhead * 20; 
+        $baseMins = $peopleAhead * 20;
         $startMins = max(0, $baseMins);
-        $endMins = $startMins + 60; 
-        
+        $endMins = $startMins + 60;
+
         $startTime = date('g:i A', strtotime("+$startMins minutes"));
         $endTime = date('g:i A', strtotime("+$endMins minutes"));
-        
+
         $estimatedTimeDisplay = "$startTime &ndash; $endTime";
     } else {
         // Not yet submitted to radiologist
@@ -211,24 +232,53 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     .qb-live-dot {
         animation: qbLivePulse 1.5s ease-in-out infinite;
     }
+
     @keyframes qbLivePulse {
-        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
-        50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); }
+
+        0%,
+        100% {
+            opacity: 1;
+            box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
+        }
+
+        50% {
+            opacity: 0.6;
+            box-shadow: 0 0 0 4px rgba(74, 222, 128, 0);
+        }
     }
+
     .qb-serving-num {
         animation: qbServingGlow 2s ease-in-out infinite;
     }
+
     @keyframes qbServingGlow {
-        0%, 100% { text-shadow: 0 0 24px rgba(239, 68, 68, 0.3); }
-        50% { text-shadow: 0 0 32px rgba(239, 68, 68, 0.5); }
+
+        0%,
+        100% {
+            text-shadow: 0 0 24px rgba(239, 68, 68, 0.3);
+        }
+
+        50% {
+            text-shadow: 0 0 32px rgba(239, 68, 68, 0.5);
+        }
     }
+
     .qb-stat-banner {
         animation: qbStatFlash 2s ease-in-out infinite;
     }
+
     @keyframes qbStatFlash {
-        0%, 100% { border-color: rgba(239, 68, 68, 0.25); }
-        50% { border-color: rgba(239, 68, 68, 0.5); }
+
+        0%,
+        100% {
+            border-color: rgba(239, 68, 68, 0.25);
+        }
+
+        50% {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
     }
+
     .qb-stat-dot {
         animation: qbLivePulse 1s ease-in-out infinite;
     }
@@ -237,7 +287,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 <div class="pb-8 max-w-3xl mx-auto realtime-update" id="patient-dashboard-main-container">
 
     <!-- Welcome banner & Queue System -->
-    <div class="mb-5" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+    <div class="mb-5"
+        style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
                 <?= htmlspecialchars($displayName) ?>
@@ -318,24 +369,37 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
     <?php if ($showQueueBoard): ?>
         <div class="mb-5 w-full" id="patient-dashboard-queue-board"
-             style="background: #ffffff; border-radius: 12px; padding: 12px 16px; color: #1e293b; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);">
-            
+            style="background: #ffffff; border-radius: 12px; padding: 12px 16px; color: #1e293b; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);">
+
             <div style="display: flex; align-items: stretch; gap: 0;">
                 <!-- Your Queue # -->
                 <div style="flex: 1; text-align: center; padding: 4px 10px 4px 2px; display: flex; flex-direction: column;">
-                    <div style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">Your Queue #</div>
-                    <div style="font-size: 24px; font-weight: 800; line-height: 1; color: #1e293b; font-variant-numeric: tabular-nums;"><?= $patientQueueNumber ?></div>
+                    <div
+                        style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">
+                        Your Queue #</div>
+                    <div
+                        style="font-size: 24px; font-weight: 800; line-height: 1; color: #1e293b; font-variant-numeric: tabular-nums;">
+                        <?= $patientQueueNumber ?></div>
                 </div>
 
                 <!-- Divider -->
-                <div style="width: 1px; align-self: center; height: 32px; background: linear-gradient(180deg, transparent, #e2e8f0, transparent); flex-shrink: 0;"></div>
+                <div
+                    style="width: 1px; align-self: center; height: 32px; background: linear-gradient(180deg, transparent, #e2e8f0, transparent); flex-shrink: 0;">
+                </div>
 
                 <!-- People Ahead -->
-                <div style="flex: 1; text-align: center; padding: 4px 2px 4px 10px; display: flex; flex-direction: column; justify-content: center;">
-                    <div style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">PEOPLE AHEAD OF YOU</div>
-                    <div style="font-size: 24px; font-weight: 800; line-height: 1; color: #dc2626; font-variant-numeric: tabular-nums;"><?= str_pad($peopleAhead, 2, '0', STR_PAD_LEFT) ?></div>
-                    <?php if($statAhead > 0): ?>
-                        <div style="margin-top: 4px;"><span style="font-size: 7px; font-weight: 700; letter-spacing: 0.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Includes <?= $statAhead ?> STAT Case(s)</span></div>
+                <div
+                    style="flex: 1; text-align: center; padding: 4px 2px 4px 10px; display: flex; flex-direction: column; justify-content: center;">
+                    <div
+                        style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">
+                        PEOPLE AHEAD OF YOU</div>
+                    <div
+                        style="font-size: 24px; font-weight: 800; line-height: 1; color: #dc2626; font-variant-numeric: tabular-nums;">
+                        <?= str_pad($peopleAhead, 2, '0', STR_PAD_LEFT) ?></div>
+                    <?php if ($statAhead > 0): ?>
+                        <div style="margin-top: 4px;"><span
+                                style="font-size: 7px; font-weight: 700; letter-spacing: 0.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Includes
+                                <?= $statAhead ?> STAT Case(s)</span></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -343,13 +407,16 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <!-- Estimated Reporting Time -->
             <?php if (!empty($estimatedTimeDisplay)): ?>
                 <!-- Horizontal Divider -->
-                <div style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);"></div>
-                
+                <div style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);">
+                </div>
+
                 <div class="text-center" id="patient-dashboard-estimated-time">
-                    <div style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">Estimated Reporting Time</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">Estimated Reporting Time
+                    </div>
                     <div style="font-size: 16px; font-weight: 800; color: #dc2626;"><?= $estimatedTimeDisplay ?></div>
                     <?php if ($estimatedTimeDisplay !== 'Completed' && $estimatedTimeDisplay !== '&mdash;'): ?>
-                        <div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 2px;">Based on current Radiologist queue</div>
+                        <div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 2px;">Based on current
+                            Radiologist queue</div>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -396,9 +463,9 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 <?php if ($done): ?>bg-green-500 border-green-500 text-white
                                 <?php elseif ($active): ?>bg-red-500 border-red-500 text-white ring-2 sm:ring-4 ring-red-100
                                 <?php else: ?>bg-white border-gray-200 text-gray-400<?php endif; ?>">
-                                        <?php if ($num === 4 && $latestCase['status'] === 'Under Reading'): ?>
+                                        <?php if ($num === 5 && $latestCase['status'] === 'Under Reading'): ?>
                                             <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>"
-                                                class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                                                class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                         <?php endif; ?>
                                         <?php if ($done): ?>
                                             <i data-lucide="check" class="w-3 h-3 sm:w-4 sm:h-4"></i>
@@ -452,3 +519,38 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     <?php endif; ?>
 
 </div>
+
+<script>
+    // Activity Status Poller (Radiologist Typing Indicator)
+    (function () {
+        function pollRadiologistActivity() {
+            const dot = document.getElementById('rad-activity-dot');
+            if (!dot) return;
+
+            const caseId = dot.getAttribute('data-case-id');
+            if (!caseId) return;
+
+            fetch(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=status&case_id=${caseId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const baseClass = "absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full z-20 transition-colors";
+                        if (data.state === 'active') {
+                            dot.className = baseClass + " bg-green-500 animate-ping";
+                            dot.innerHTML = `<span class="absolute inline-flex h-full w-full rounded-full bg-green-500"></span>`;
+                        } else if (data.state === 'idle') {
+                            dot.className = baseClass + " bg-gray-400";
+                            dot.innerHTML = '';
+                        } else {
+                            dot.className = baseClass + " bg-red-500";
+                            dot.innerHTML = '';
+                        }
+                    }
+                })
+                .catch(err => console.error('Activity polling error:', err));
+        }
+
+        setInterval(pollRadiologistActivity, 2500);
+        pollRadiologistActivity();
+    })();
+</script>

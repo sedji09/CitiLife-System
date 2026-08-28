@@ -1062,25 +1062,25 @@ if (!$isMultiExam) {
             }
             ?>
             <?php foreach ($images as $idx => $imgSrc): ?>
-                <div class="page">
+                <div class="page image-plate">
 
-                    <div style="width: 100%; text-align: center; margin-bottom: 25px; font-family: 'Raleway', sans-serif;">
+                    <div style="width: 100%; text-align: center; margin-bottom: 25px; font-family: 'Raleway', sans-serif; position: relative; z-index: 1;">
                         <h2
                             style="font-size: 16pt; font-weight: bold; color: #111; letter-spacing: 1px; text-transform: uppercase;">
-                            X-Ray Plate Image <?= count($images) > 1 ? '(' . ($idx + 1) . ')' : '' ?>
+                            X-RAY PLATE IMAGE <?= count($images) > 1 ? '(' . ($idx + 1) . ')' : '' ?>
                         </h2>
                         <p style="font-family: Arial, sans-serif; font-size: 10pt; color: #555; margin-top: 6px;">
                             Case No: <?= $caseNum ?> &nbsp;|&nbsp; Patient Name: <?= $fullName ?>
                         </p>
                     </div>
 
-                    <div class="image-viewport">
-                        <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($imgSrc) ?>"
-                            style="max-height: 220mm; width: auto; object-fit: contain;">
+                    <div style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ccc; background: #000; padding: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); position: relative; z-index: 1;">
+                        <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($imgSrc) ?>" alt="X-Ray Image"
+                            style="max-width: 100%; max-height: 220mm; object-fit: contain;">
                     </div>
 
-                    <div class="report-footer" style="margin-top: auto; padding-top: 15px; border-top: 1px solid #eee;">
-                        <span>CitiLife Diagnostic — <?= $branch ?> Branch</span>
+                    <div class="report-footer" style="margin-top: auto;">
+                        <span>CitiLife Diagnostic &mdash; <?= $branch ?> Branch</span>
                         <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
                     </div>
                 </div>
