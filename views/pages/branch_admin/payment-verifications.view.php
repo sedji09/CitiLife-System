@@ -26,10 +26,10 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
     <!-- Tabs -->
     <div class="border-b border-gray-200 px-6 pt-4 flex gap-6">
-        <button onclick="switchTab('pending')" id="tab-pending" class="pb-3 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">
+        <button onclick="switchTab('pending')" id="tab-pending" class="pb-3 text-sm font-semibold border-b-2 <?= $activeTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
             Pending Verification (<?= count($pendingPayments) ?>)
         </button>
-        <button onclick="switchTab('history')" id="tab-history" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        <button onclick="switchTab('history')" id="tab-history" class="pb-3 text-sm font-semibold border-b-2 <?= $activeTab === 'history' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700' ?>">
             History
         </button>
     </div>
@@ -100,7 +100,24 @@
     </div>
 
     <!-- History Tab -->
-    <div id="content-history" class="p-0 hidden">
+    <div id="content-history" class="p-0 <?= $activeTab === 'history' ? '' : 'hidden' ?>">
+        
+        <!-- Search and Filters -->
+        <div class="px-6 py-4 border-b border-gray-100 bg-white">
+            <form method="GET" action="" class="flex items-center gap-3 w-full max-w-md">
+                <input type="hidden" name="role" value="branch_admin">
+                <input type="hidden" name="page" value="payment-verifications">
+                
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                    <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" placeholder="Search Request # or Patient Name..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Search</button>
+                <?php if (!empty($_GET['search'])): ?>
+                    <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=payment-verifications&tab=history" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">Clear</a>
+                <?php endif; ?>
+            </form>
+        </div>
         <?php if (empty($paymentHistory)): ?>
             <div class="p-12 text-center text-gray-500">
                 <p>No payment history found.</p>
@@ -149,6 +166,27 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <?php if ($totalPages > 1): ?>
+                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50/50">
+                    <span class="text-sm text-gray-600">Showing page <?= $page ?> of <?= $totalPages ?></span>
+                    <div class="flex gap-1">
+                        <?php if ($page > 1): ?>
+                            <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=payment-verifications&page_num=<?= $page - 1 ?>&search=<?= urlencode($search) ?>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Previous</a>
+                        <?php else: ?>
+                            <button disabled class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Previous</button>
+                        <?php endif; ?>
+
+                        <?php if ($page < $totalPages): ?>
+                            <a href="/<?= PROJECT_DIR ?>/index.php?role=branch_admin&page=payment-verifications&page_num=<?= $page + 1 ?>&search=<?= urlencode($search) ?>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Next</a>
+                        <?php else: ?>
+                            <button disabled class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Next</button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
         <?php endif; ?>
     </div>
 </div>
@@ -208,6 +246,17 @@
         
         document.getElementById('content-' + tabId).classList.remove('hidden');
         document.getElementById('tab-' + tabId).className = 'pb-3 text-sm font-semibold border-b-2 border-blue-600 text-blue-600';
+        
+        // Update URL slightly without reloading to remember tab
+        const url = new URL(window.location);
+        if (tabId === 'history') {
+            url.searchParams.set('tab', 'history');
+        } else {
+            url.searchParams.delete('tab');
+            url.searchParams.delete('search');
+            url.searchParams.delete('page_num');
+        }
+        window.history.replaceState({}, '', url);
     }
 
     function viewReceipt(path, refNumber) {
