@@ -28,6 +28,40 @@ if (!function_exists('sendEmail')) {
     
     $config = require $config_path;
 
+    // Use Brevo API if configured
+    if (!empty($config['brevo_api_key'])) {
+        $data = [
+            'sender' => ['name' => $config['from_name'], 'email' => $config['from_email']],
+            'to' => [['email' => $toEmail, 'name' => $toName]],
+            'subject' => $subject,
+            'htmlContent' => $body,
+            'textContent' => $altBody ?: strip_tags($body)
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://api.brevo.com/v3/smtp/email');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        
+        $headers = [
+            'accept: application/json',
+            'api-key: ' . $config['brevo_api_key'],
+            'content-type: application/json'
+        ];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $result = curl_exec($ch);
+        curl_close($ch);
+        
+        $response = json_decode($result, true);
+        if (isset($response['messageId'])) {
+            return true;
+        } else {
+            error_log("Brevo API Error: " . $result);
+            return false;
+        }
+    }
+
     $mail = new PHPMailer(true);
 
     try {
