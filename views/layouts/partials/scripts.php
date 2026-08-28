@@ -761,7 +761,7 @@
           }
 
           return fetch('/<?= PROJECT_DIR ?>/app/api/messages.php', {
-            method: 'POST',
+            method: 'POST', credentials: 'same-origin',
             body: formData
           }).then(res => res.json());
         });
@@ -809,7 +809,8 @@
         formData.append('email', this.userEmail);
 
         fetch('/<?= PROJECT_DIR ?>/app/api/request_password_reset.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
+
           body: formData
         })
           .then(res => res.json())
@@ -922,7 +923,8 @@
         }
 
         fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
+
           body: formData
         })
           .then(res => res.json())
@@ -976,7 +978,8 @@
         formData.append('is_available', this.editIsAvailable ? 1 : 0);
 
         fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
+
           body: formData
         })
           .then(res => res.json())
@@ -1032,7 +1035,7 @@
       },
       requestEmailChange() {
         this.emailChangeState = 'sending';
-        fetch('/<?= PROJECT_DIR ?>/app/api/send_email_change_otp.php', { method: 'POST' })
+        fetch('/<?= PROJECT_DIR ?>/app/api/send_email_change_otp.php', { method: 'POST', credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -1052,7 +1055,8 @@
       verifyEmailChangeOtp() {
         if (!this.otpCode) return;
         fetch('/<?= PROJECT_DIR ?>/app/api/verify_email_change_otp.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
+
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ otp: this.otpCode })
         })
@@ -1101,7 +1105,8 @@
         }
 
         fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
+
           body: formData
         })
           .then(res => res.json())
@@ -1179,7 +1184,8 @@
         }
 
         fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
+
           body: formData
         })
           .then(res => res.json())
@@ -1355,7 +1361,7 @@
 
       markAllRead() {
         fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_read' })
         }).then(() => {
@@ -1390,7 +1396,7 @@
       markAsUnread(id) {
         this.activeNotificationDropdown = null;
         fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-          method: 'POST',
+          method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_unread', notification_id: id })
         }).then(() => {
@@ -1409,7 +1415,7 @@
             clearTimeout(this.undoTimeout);
             if (this.pendingDeleteId) {
               fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-                method: 'POST',
+                method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId }),
                 keepalive: true
@@ -1441,7 +1447,7 @@
             clearInterval(this.undoInterval);
             if (this.pendingDeleteId === id) {
               fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-                method: 'POST',
+                method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', notification_id: id })
               });
@@ -1470,7 +1476,7 @@
           clearInterval(this.undoInterval);
           if (this.pendingDeleteId) {
             fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-              method: 'POST',
+              method: 'POST', credentials: 'same-origin',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId })
             });
@@ -1498,7 +1504,7 @@
 
           // Navigate immediately to avoid perceived delay ("hindi agad napupunta")
           fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-            method: 'POST',
+            method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id }),
             keepalive: true
@@ -1506,7 +1512,7 @@
           window.location.href = link;
         } else {
           fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
-            method: 'POST',
+            method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id })
           }).then(() => {
