@@ -66,8 +66,8 @@ $output = ob_get_clean();
 // Kung tumatakbo sa Railway, ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
 if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
     $output = str_replace(
-        ['/' . PROJECT_DIR . '/public/', '/' . PROJECT_DIR . '/'], 
-        ['/', '/'], 
+        '/' . PROJECT_DIR . '/', 
+        '/', 
         $output
     );
 }
