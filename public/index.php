@@ -3,6 +3,10 @@ session_start();
 
 require_once __DIR__ . '/../helpers.php';
 
+if (file_exists(__DIR__ . '/../env.php')) {
+    require_once __DIR__ . '/../env.php';
+}
+
 // Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
 if (!defined('PROJECT_DIR')) {
     $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/CitiLife-System/public/index.php';
