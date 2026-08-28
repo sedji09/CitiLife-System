@@ -213,8 +213,12 @@ try {
             } catch(PDOException $e) {
                 echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
             }
+        } else {
+            // Action is empty or invalid. This usually happens if the uploaded file exceeds PHP's post_max_size.
+            echo json_encode(['success' => false, 'error' => 'Invalid request or uploaded image is too large (exceeds server limit). Please choose a smaller image file (under 2MB).']);
         }
     }
+
 } catch (\Throwable $th) {
     echo json_encode(['success' => false, 'error' => 'Server Error: ' . $th->getMessage() . ' in ' . $th->getFile() . ' on line ' . $th->getLine()]);
 }
