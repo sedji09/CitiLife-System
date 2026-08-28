@@ -929,8 +929,8 @@ $statusDescriptions = [
         const gcashOption = document.getElementById('gcashOptionWrapper');
         if (gcashQrPath && gcashQrPath.trim() !== '') {
             if (gcashOption) gcashOption.classList.remove('hidden');
-            document.getElementById('qrCodeImage').src = '<?= "/" . PROJECT_DIR ?>' + gcashQrPath;
-            document.getElementById('qrCodeDownload').href = '<?= "/" . PROJECT_DIR ?>' + gcashQrPath;
+            document.getElementById('qrCodeImage').src = '<?= "/" . PROJECT_DIR . "/" ?>' + (gcashQrPath.startsWith('/') ? gcashQrPath.substring(1) : gcashQrPath);
+            document.getElementById('qrCodeDownload').href = '<?= "/" . PROJECT_DIR . "/" ?>' + (gcashQrPath.startsWith('/') ? gcashQrPath.substring(1) : gcashQrPath);
         } else {
             if (gcashOption) gcashOption.classList.add('hidden');
             // Select cash by default if GCash is hidden

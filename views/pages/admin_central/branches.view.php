@@ -611,7 +611,7 @@
         const uploadLabel = document.getElementById('uploadLabel');
 
         if (currentQrPath && currentQrPath.trim() !== '') {
-            currentQRImage.src = '<?= "/" . PROJECT_DIR ?>' + currentQrPath;
+            currentQRImage.src = '<?= "/" . PROJECT_DIR . "/" ?>' + (currentQrPath.startsWith('/') ? currentQrPath.substring(1) : currentQrPath);
             currentQRContainer.classList.remove('hidden');
             uploadLabel.textContent = "Replace QR Code";
         } else {
