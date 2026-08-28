@@ -1,5 +1,9 @@
 <?php
 
+if (file_exists(__DIR__ . '/../env.php')) {
+    require_once __DIR__ . '/../env.php';
+}
+
 return [
     'host' => $_SERVER['SMTP_HOST'] ?? getenv('SMTP_HOST') ?: 'smtp.gmail.com',
     'username' => $_SERVER['SMTP_USERNAME'] ?? getenv('SMTP_USERNAME') ?: 'citilifediagnosticcenter26@gmail.com',
