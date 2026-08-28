@@ -51,8 +51,8 @@ if (!function_exists('sendEmail')) {
         ];
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $result = curl_exec($ch);
-        curl_close($ch);
         
+
         $response = json_decode($result, true);
         if (isset($response['messageId'])) {
             return true;
