@@ -160,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
                     // header("Location: /" . PROJECT_DIR . "/otp-login");
                     // exit;
-                }
                     // BYPASS OTP: I-set agad ang full session variables at pumunta sa dashboard
                     unset($_SESSION['staff_login_attempts']);
                     clearStaffLoginLock($pdo, $user['id']);
@@ -174,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
                     header("Location: /" . PROJECT_DIR . "/dashboard");
                     exit;
-
+                }
             } else {
                 $attempts['attempts']++;
                 if ($attempts['attempts'] >= 8) {
