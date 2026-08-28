@@ -8,5 +8,4 @@ return [
     'encryption' => 'ssl',
     'from_email' => 'seigipascual09@gmail.com',
     'from_name' => 'CitiLife Diagnostic Center',
-    'brevo_api_key' => $_SERVER['BREVO_API_KEY'] ?? $_ENV['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?: '',
 ];
