@@ -2,7 +2,8 @@
     "require": {
         "dompdf/dompdf": "^3.1",
         "phpoffice/phpspreadsheet": "^5.7",
-        "phpmailer/phpmailer": "^7.0"
+        "phpmailer/phpmailer": "^7.0",
+        "ext-gd": "*"
     },
     "autoload": {
         "psr-4": {
