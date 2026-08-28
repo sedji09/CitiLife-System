@@ -78,7 +78,11 @@ try {
                     $destPath = $uploadDir . $filename;
                     
                     if (@move_uploaded_file($tmpPath, $destPath)) {
-                        $avatarPath = '/' . PROJECT_DIR . '/public/uploads/avatars/' . $filename;
+                        if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
+                            $avatarPath = '/public/uploads/avatars/' . $filename;
+                        } else {
+                            $avatarPath = '/' . PROJECT_DIR . '/public/uploads/avatars/' . $filename;
+                        }
                     }
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Invalid image format.']);
@@ -179,7 +183,11 @@ try {
                     $destPath = $uploadDir . $filename;
                     
                     if (@move_uploaded_file($tmpPath, $destPath)) {
-                        $signaturePath = '/' . PROJECT_DIR . '/public/uploads/signatures/' . $filename;
+                        if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
+                            $signaturePath = '/public/uploads/signatures/' . $filename;
+                        } else {
+                            $signaturePath = '/' . PROJECT_DIR . '/public/uploads/signatures/' . $filename;
+                        }
                     }
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Invalid image format for signature.']);
