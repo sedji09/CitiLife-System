@@ -8,4 +8,5 @@ return [
     'encryption' => $_SERVER['SMTP_ENCRYPTION'] ?? getenv('SMTP_ENCRYPTION') ?: 'ssl',
     'from_email' => $_SERVER['SMTP_FROM_EMAIL'] ?? getenv('SMTP_FROM_EMAIL') ?: 'citilifediagnosticcenter26@gmail.com',
     'from_name' => $_SERVER['SMTP_FROM_NAME'] ?? getenv('SMTP_FROM_NAME') ?: 'CitiLife Diagnostic Center',
+    'brevo_api_key' => $_SERVER['BREVO_API_KEY'] ?? $_ENV['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?: '',
 ];
