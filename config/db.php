@@ -6,11 +6,11 @@
  */
 
 return [
-    'host'     => 'localhost',
-    'port'     => '3306',
-    'dbname'   => 'citilife_db',
-    'username' => 'root',
-    'password' => '',
+    'host'     => getenv('MYSQLHOST') ?: 'localhost',
+    'port'     => getenv('MYSQLPORT') ?: '3306',
+    'dbname'   => getenv('MYSQLDATABASE') ?: 'citilife_db',
+    'username' => getenv('MYSQLUSER') ?: 'root',
+    'password' => getenv('MYSQLPASSWORD') ?: '',
     // 'provider' => 'AWS RDS',  // Cloud only
     // 'region'   => 'ap-southeast-1',  // Cloud only
 ];
