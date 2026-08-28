@@ -283,12 +283,9 @@
                   <div class="text-[10px] mt-1 font-bold uppercase tracking-widest" :class="item.is_read == 0 ? 'text-blue-600' : 'text-gray-400'">{{ item.timeAgo }}</div>
                 </div>
                 
-                <!-- Right side container for dot and 3-dots -->
                 <div class="relative flex items-center justify-end shrink-0 w-8 h-8">
-                  <!-- Unread dot -->
                   <div v-if="item.is_read == 0" class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
                   
-                  <!-- 3 Dots Menu Button -->
                   <button @click.stop="toggleNotificationOptions(item.id)" 
                           class="absolute inset-0 m-auto opacity-0 group-hover:opacity-100 flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 transition shadow-sm z-10">
                     <i data-lucide="more-horizontal" class="w-5 h-5"></i>

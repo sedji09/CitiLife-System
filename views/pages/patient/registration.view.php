@@ -76,7 +76,8 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Body Part to Examine</label>
                     <?php
-                    $availableOptions = [
+                    // Retrieve dynamic categories from DB if available
+                    $availableOptions = !empty($groupedServices) ? array_keys($groupedServices) : [
                         'Head', 'Face / Nose', 'Jaw', 'Neck', 'Chest', 
                         'Abdomen / Stomach', 'Shoulder', 'Upper Arm', 'Elbow', 
                         'Forearm', 'Hand / Wrist', 'Upper Back', 'Lower Back', 

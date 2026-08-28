@@ -1016,6 +1016,22 @@
     html body .datepicker-picker .datepicker-cell.today.focused:not(.selected) {
         background-color: #e5e7eb !important;
     }
+
+    /* Fix UI/UX for Vanilla JS Datepicker */
+    html body .datepicker-dropdown {
+        z-index: 99999 !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    @media (max-width: 768px) {
+        html body .datepicker-dropdown {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            margin: 0 !important;
+        }
+    }
   </style>
 
   <!-- ===== THEME BOOTSTRAP: runs synchronously before first paint ===== -->

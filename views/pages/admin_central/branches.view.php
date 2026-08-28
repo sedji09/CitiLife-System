@@ -23,7 +23,8 @@
         $activeBranchesCount = 0;
         $totalBranchesCount = count($branches);
         foreach ($branches as $b) {
-            if ($b['status'] === 'Active') $activeBranchesCount++;
+            if ($b['status'] === 'Active')
+                $activeBranchesCount++;
         }
         ?>
         <!-- Summary Cards -->
@@ -87,7 +88,8 @@
         </div>
 
         <!-- Branches Table Card -->
-        <div id="branches-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="branches-table-card"
+            class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -214,10 +216,12 @@
             </div>
 
             <!-- Pagination Footer -->
-            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+            <div
+                class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
                 <div class="text-xs text-gray-500">
-                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex" class="font-semibold text-gray-800">0</span> of <span
-                        id="totalRecords" class="font-semibold text-gray-800">0</span> records
+                    Showing <span id="startIndex" class="font-semibold text-gray-800">0</span> to <span id="endIndex"
+                        class="font-semibold text-gray-800">0</span> of <span id="totalRecords"
+                        class="font-semibold text-gray-800">0</span> records
                 </div>
                 <div class="flex items-center flex-wrap gap-1.5" id="paginationControls">
                     <!-- Dynamic page buttons will be inserted here -->
@@ -404,49 +408,64 @@
 </div>
 
 <!-- UPLOAD QR MODAL -->
-<div id="uploadQRModal" class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+<div id="uploadQRModal"
+    class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 class="text-lg font-bold text-gray-900">Manage GCash QR</h3>
-            <button type="button" onclick="closeUploadQRModal()" class="text-gray-400 hover:text-gray-600 transition p-1">
+            <button type="button" onclick="closeUploadQRModal()"
+                class="text-gray-400 hover:text-gray-600 transition p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-        
+
         <div class="p-6">
-            <p class="text-sm font-semibold text-gray-700 mb-2">Branch: <span id="qr_branch_name" class="text-red-600 font-bold"></span></p>
-            
+            <p class="text-sm font-semibold text-gray-700 mb-2">Branch: <span id="qr_branch_name"
+                    class="text-red-600 font-bold"></span></p>
+
             <!-- Current QR Display -->
-            <div id="currentQRContainer" class="hidden mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center">
+            <div id="currentQRContainer"
+                class="hidden mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center">
                 <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Current QR Code</p>
-                <img id="currentQRImage" src="" alt="GCash QR" class="w-32 h-32 mx-auto rounded-lg border shadow-sm mb-3 object-cover">
-                
-                <form action="" method="POST" onsubmit="return confirm('Are you sure you want to remove the QR code for this branch? Patients will no longer be able to pay via GCash.');">
+                <img id="currentQRImage" src="" alt="GCash QR"
+                    class="w-32 h-32 mx-auto rounded-lg border shadow-sm mb-3 object-cover">
+
+                <form id="removeQRForm" action="" method="POST">
                     <input type="hidden" name="action" value="remove_qr">
                     <input type="hidden" name="branch_id" id="remove_qr_branch_id">
-                    <button type="submit" class="inline-flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-700 transition">
+                    <button type="button" onclick="confirmRemoveQR()"
+                        class="inline-flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-700 transition">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove QR Code
                     </button>
                 </form>
             </div>
-            
+
             <!-- Upload New QR Form -->
             <form action="" method="POST" enctype="multipart/form-data" class="space-y-4">
                 <input type="hidden" name="action" value="upload_qr">
                 <input type="hidden" name="branch_id" id="upload_qr_branch_id">
-                
+
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5" id="uploadLabel">Upload New QR Code</label>
-                    <input type="file" name="qr_code" accept="image/*" required
-                        class="w-full text-sm text-gray-500 border border-gray-200 rounded-lg file:mr-3 file:py-2.5 file:px-4 file:border-0 file:border-r file:border-gray-200 file:text-sm file:font-bold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 transition">
-                    <p class="text-xs text-gray-400 mt-2">Accepted formats: JPG, PNG, GIF, WEBP</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2" id="uploadLabel">Upload New QR Code</label>
+                    <div class="relative w-full border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 bg-gray-50 hover:bg-green-50/50 transition-colors group p-4 flex flex-col items-center justify-center cursor-pointer">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 group-hover:text-green-500 mb-2 transition-colors"></i>
+                        <p class="text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">Click to upload or drag and drop</p>
+                        <p class="text-xs text-gray-400 mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
+                        <input type="file" name="qr_code" accept="image/*" required
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onchange="updateFileName(this)">
+                    </div>
+                    <p id="selectedFileName" class="text-xs font-bold text-green-600 mt-2 hidden text-center"></p>
                 </div>
-                
+
                 <div class="pt-4 flex justify-end gap-3">
-                    <button type="button" onclick="closeUploadQRModal()" class="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                    <button type="button" onclick="closeUploadQRModal()"
+                        class="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-purple-600 text-sm font-bold text-white hover:bg-purple-700 shadow-sm shadow-purple-200 transition-all active:scale-95">
+                    <button type="submit"
+                        class="px-4 py-2 rounded-xl bg-green-600 text-sm font-bold text-white hover:bg-green-700 shadow-sm shadow-green-200 transition-all active:scale-95">
                         Upload Image
                     </button>
                 </div>
@@ -586,11 +605,11 @@
         document.getElementById('upload_qr_branch_id').value = id;
         document.getElementById('remove_qr_branch_id').value = id;
         document.getElementById('qr_branch_name').textContent = name;
-        
+
         const currentQRContainer = document.getElementById('currentQRContainer');
         const currentQRImage = document.getElementById('currentQRImage');
         const uploadLabel = document.getElementById('uploadLabel');
-        
+
         if (currentQrPath && currentQrPath.trim() !== '') {
             currentQRImage.src = '<?= "/" . PROJECT_DIR ?>' + currentQrPath;
             currentQRContainer.classList.remove('hidden');
@@ -600,14 +619,27 @@
             currentQRImage.src = '';
             uploadLabel.textContent = "Upload QR Code";
         }
-        
+
         document.getElementById('uploadQRModal').classList.remove('hidden');
         applyModalTheme('uploadQRModal');
         if (window.lucide) window.lucide.createIcons();
     }
-    
+
     function closeUploadQRModal() {
         document.getElementById('uploadQRModal').classList.add('hidden');
+    }
+
+    async function confirmRemoveQR() {
+        if (typeof confirmAlert === 'function') {
+            const result = await confirmAlert('Remove QR Code', 'Are you sure you want to remove the QR code for this branch? Patients will no longer be able to pay via GCash.', 'Yes, Remove');
+            if (result.isConfirmed) {
+                document.getElementById('removeQRForm').submit();
+            }
+        } else {
+            if (confirm('Are you sure you want to remove the QR code for this branch? Patients will no longer be able to pay via GCash.')) {
+                document.getElementById('removeQRForm').submit();
+            }
+        }
     }
 
     async function confirmDelete(id, name) {
@@ -621,16 +653,26 @@
             actionInput.type = 'hidden';
             actionInput.name = 'action';
             actionInput.value = 'delete';
+            form.appendChild(actionInput);
 
             const idInput = document.createElement('input');
             idInput.type = 'hidden';
             idInput.name = 'branch_id';
             idInput.value = id;
-
-            form.appendChild(actionInput);
             form.appendChild(idInput);
+
             document.body.appendChild(form);
             form.submit();
+        }
+    }
+
+    function updateFileName(input) {
+        const fileNameDisplay = document.getElementById('selectedFileName');
+        if (input.files && input.files.length > 0) {
+            fileNameDisplay.textContent = 'Selected file: ' + input.files[0].name;
+            fileNameDisplay.classList.remove('hidden');
+        } else {
+            fileNameDisplay.classList.add('hidden');
         }
     }
 
@@ -691,13 +733,13 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.innerHTML = label;
-            
+
             if (isActive) {
                 btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
             } else {
                 btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
             }
-            
+
             if (disabled) {
                 btn.disabled = true;
             } else {
@@ -753,11 +795,11 @@
                 // Middle: 1, ..., C-1, C, C+1, ..., T
                 container.appendChild(createButton(1, 1, false, 1 == currentPage));
                 container.appendChild(createEllipsis());
-                
+
                 container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
                 container.appendChild(createButton(currentPage, currentPage, false, true));
                 container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
-                
+
                 container.appendChild(createEllipsis());
                 container.appendChild(createButton(totalPages, totalPages, false, false));
             }
