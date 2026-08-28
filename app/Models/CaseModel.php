@@ -302,13 +302,22 @@ class CaseModel
                     require_once __DIR__ . '/ResultDisputeModel.php';
                     $disputeMdl = new ResultDisputeModel($this->pdo);
                     $dispData = $disputeMdl->getActiveDisputeByCase($caseId);
-                    $disputeIdParam = $dispData ? "&dispute_id=" . $dispData['id'] : "";
+                    
+                    if ($dispData) {
+                        $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $dispData['id'] . "&highlight=" . urlencode($cData['case_number']);
+                    } else {
+                        if (in_array($cData['status'], ['Released', 'Completed'])) {
+                            $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records&highlight=" . urlencode($cData['case_number']);
+                        } else {
+                            $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
+                        }
+                    }
 
                     // Notify RadTech about findings change
                     $notificationModel->add(
                         "Edited Report Ready",
                         "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). This report has been edited.",
-                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes{$disputeIdParam}&highlight=" . urlencode($cData['case_number']),
+                        $link,
                         null,
                         'radtech',
                         $cData['branch_id']

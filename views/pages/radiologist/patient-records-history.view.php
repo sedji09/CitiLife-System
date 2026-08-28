@@ -264,7 +264,11 @@ if ($backId) {
             <div class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer" id="img-canvas">
                 <?php if (!empty($imagePaths)): ?>
                     <?php foreach ($imagePaths as $idx => $iPath): ?>
-                    <img id="xray-main-image-<?= $idx ?>" src="<?= htmlspecialchars($iPath) ?>"
+                        <?php 
+                        $imgPath = str_starts_with($iPath, '/') ? '/' . PROJECT_DIR . $iPath : '/' . PROJECT_DIR . '/' . $iPath;
+                        $imgPath = str_replace('//', '/', $imgPath);
+                        ?>
+                    <img id="xray-main-image-<?= $idx ?>" src="<?= htmlspecialchars($imgPath) ?>"
                          data-img-index="<?= $idx ?>"
                          class="dicom-img max-w-full max-h-full object-contain transition-transform duration-100 ease-out origin-center absolute inset-0 m-auto <?= $idx > 0 ? 'hidden' : '' ?>"
                          alt="X-ray <?= $idx + 1 ?>">
@@ -291,9 +295,13 @@ if ($backId) {
                 <?php if (count($imagePaths) > 1): ?>
                     <div id="xray-thumb-strip" class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
                         <?php foreach ($imagePaths as $index => $path): ?>
+                            <?php 
+                            $imgPath = str_starts_with($path, '/') ? '/' . PROJECT_DIR . $path : '/' . PROJECT_DIR . '/' . $path;
+                            $imgPath = str_replace('//', '/', $imgPath);
+                            ?>
                             <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
-                                data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>">
-                                <img src="<?= htmlspecialchars($path) ?>" class="w-full h-full object-cover">
+                                data-index="<?= $index ?>" data-url="<?= htmlspecialchars($imgPath) ?>">
+                                <img src="<?= htmlspecialchars($imgPath) ?>" class="w-full h-full object-cover">
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -433,8 +441,6 @@ if ($backId) {
                     // Toggle Side Arrows visibility based on Fullscreen state
                     if (btnPrev) btnPrev.classList.toggle('hidden', !full);
                     if (btnNext) btnNext.classList.toggle('hidden', !full);
-                    
-                    updateIconState();
                 });
 
                 if (images.length > 0) showImage(0);
