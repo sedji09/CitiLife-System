@@ -11,9 +11,6 @@
             "App\\": "app/",
             "Framework\\": "Framework/"
         },
-        "classmap": [
-            "app/Models/"
-        ],
         "files": [
             "helpers.php",
             "app/Helpers/AuthHelper.php",

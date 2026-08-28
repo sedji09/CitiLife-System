@@ -14,6 +14,13 @@ if (!defined('PROJECT_DIR')) {
 // I-load muna ang Composer Autoloader
 require_once basePath('vendor/autoload.php');
 
+// Custom autoloader para sa Models (para hindi na kailangan ng Composer classmap)
+spl_autoload_register(function ($class_name) {
+    $file = basePath('app/Models/' . $class_name . '.php');
+    if (file_exists($file)) {
+        require_once $file;
+    }
+});
 // Load Database configuration
 $dbConfig = require basePath('config/db.php');
 
