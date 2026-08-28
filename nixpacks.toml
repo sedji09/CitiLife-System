@@ -1,0 +1,10 @@
+[phases.install]
+cmds = [
+    "mkdir -p app/Models",
+    "composer install --optimize-autoloader --no-scripts --no-interaction"
+]
+
+[phases.build]
+cmds = [
+    "composer dump-autoload --optimize"
+]
