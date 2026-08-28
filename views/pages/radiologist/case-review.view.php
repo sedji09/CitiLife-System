@@ -207,7 +207,11 @@ if ($activeDispute && $backPage === 'worklist') {
             <div class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer" id="img-canvas">
                 <?php if (!empty($imagePaths)): ?>
                     <?php foreach ($imagePaths as $idx => $path): ?>
-                        <img src="<?= htmlspecialchars($path) ?>" 
+                        <?php 
+                        $imgPath = str_starts_with($path, '/') ? '/' . PROJECT_DIR . $path : '/' . PROJECT_DIR . '/' . $path;
+                        $imgPath = str_replace('//', '/', $imgPath);
+                        ?>
+                        <img src="<?= htmlspecialchars($imgPath) ?>" 
                              class="dicom-img w-auto h-full max-w-full max-h-full object-contain transition-transform duration-200 select-none <?= $idx > 0 ? 'hidden' : '' ?>"
                              alt="X-ray Image <?= $idx + 1 ?>"
                              data-index="<?= $idx ?>">
@@ -234,9 +238,13 @@ if ($activeDispute && $backPage === 'worklist') {
                 <?php if (count($imagePaths) > 1): ?>
                     <div id="xray-thumb-strip" class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
                         <?php foreach ($imagePaths as $index => $path): ?>
+                            <?php 
+                            $imgPath = str_starts_with($path, '/') ? '/' . PROJECT_DIR . $path : '/' . PROJECT_DIR . '/' . $path;
+                            $imgPath = str_replace('//', '/', $imgPath);
+                            ?>
                             <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
-                                data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>">
-                                <img src="<?= htmlspecialchars($path) ?>" class="w-full h-full object-cover">
+                                data-index="<?= $index ?>" data-url="<?= htmlspecialchars($imgPath) ?>">
+                                <img src="<?= htmlspecialchars($imgPath) ?>" class="w-full h-full object-cover">
                             </div>
                         <?php endforeach; ?>
                     </div>

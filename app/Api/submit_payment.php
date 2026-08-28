@@ -97,6 +97,25 @@ try {
     
     $auditLogModel->addLog($userId, "Submitted Payment", 'X-ray Status', 'Payment', $pdo->lastInsertId(), "Submitted $paymentMethod payment for case #$caseId", $branchId);
     
+    // Add Notification for Branch Admin
+    require_once __DIR__ . '/../../app/Models/NotificationModel.php';
+    $notifModel = new \NotificationModel($pdo);
+    
+    $stmtReq = $pdo->prepare("SELECT request_number FROM requests WHERE id = ?");
+    $stmtReq->execute([$caseId]);
+    $reqNum = $stmtReq->fetchColumn();
+
+    if ($reqNum) {
+        $notifModel->add(
+            "New Payment Submitted",
+            "A new payment of ₱" . number_format($amount, 2) . " via $paymentMethod has been submitted for request $reqNum.",
+            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications",
+            null,
+            'branch_admin',
+            $branchId
+        );
+    }
+    
     $pdo->commit();
     
     // Return success
