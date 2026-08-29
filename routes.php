@@ -139,6 +139,14 @@ $router->get('/App/Api/disputes.php', 'app/Api/disputes.php');
 $router->post('/App/Api/disputes.php', 'app/Api/disputes.php');
 
 // Fallback route for Tailwind CSS on Railway where DocumentRoot is public
+$router->get('/debug-router', function() {
+    echo "URI: " . $_SERVER['REQUEST_URI'] . "<br>";
+    echo "PROJECT_DIR: " . PROJECT_DIR . "<br>";
+    echo "SCRIPT_NAME: " . $_SERVER['SCRIPT_NAME'] . "<br>";
+    echo "DOCUMENT_ROOT: " . $_SERVER['DOCUMENT_ROOT'] . "<br>";
+    exit;
+});
+
 $router->get('/tailwind/src/output.css', function() {
     $file = basePath('tailwind/src/output.css');
     if (file_exists($file)) {
