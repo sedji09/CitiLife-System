@@ -418,20 +418,14 @@ $statusDescriptions = [
                                         </div>
                                         <div>
                                             <p class="text-xs text-gray-500">Amount Due</p>
-                                            <?php if ((float)($caseRow['philhealth_discount'] ?? 0) > 0): ?>
-                                                <div class="flex items-center flex-wrap gap-2 text-sm mt-0.5">
-                                                    <span class="text-gray-400 line-through text-xs">₱<?= number_format($caseRow['original_price'] ?? $caseRow['amount_due'], 2) ?></span>
-                                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                                        <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
-                                                        -₱<?= number_format($caseRow['philhealth_discount'], 2) ?> PhilHealth
-                                                    </span>
-                                                    <span class="font-extrabold text-red-600 font-mono">₱<?= number_format($caseRow['amount_due'], 2) ?></span>
-                                                </div>
-                                            <?php else: ?>
-                                                <p class="text-sm font-bold text-gray-800 font-mono mt-0.5">
+                                            <div class="mt-0.5">
+                                                <span class="text-sm font-bold <?= (float)($caseRow['philhealth_discount'] ?? 0) > 0 ? 'text-red-600' : 'text-gray-800' ?> font-mono">
                                                     ₱<?= number_format($caseRow['amount_due'], 2) ?>
-                                                </p>
-                                            <?php endif; ?>
+                                                </span>
+                                                <?php if ((float)($caseRow['philhealth_discount'] ?? 0) > 0): ?>
+                                                    <p class="text-[10px] text-gray-400 mt-0.5">See full receipt upon payment</p>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 <?php endif; ?>
