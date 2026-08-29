@@ -67,8 +67,10 @@ try {
 
 $output = ob_get_clean();
 
-// Kung tumatakbo sa Railway, ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
-if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
+$isLocalhost = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1']) || strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false;
+
+// Kung tumatakbo sa production (tulad ng Railway), ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
+if (!$isLocalhost) {
     // Remove the XAMPP project folder from the path for Railway
     $output = str_replace('/' . PROJECT_DIR . '/', '/', $output);
 }
