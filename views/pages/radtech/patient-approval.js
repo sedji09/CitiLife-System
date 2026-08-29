@@ -62,16 +62,21 @@ function closeEditModal() {
     currentEditId = null;
 }
 
-function openAssignModal(id, requestedBodyPart) {
+function openAssignModal(id, requestedBodyPart, assignedExam = '') {
     document.getElementById('assignModal').classList.remove('hidden');
-    document.getElementById('assignBodyPart').innerText = requestedBodyPart || 'Not specified';
+    
+    // Make the requested body part more visible
+    const bodyPartEl = document.getElementById('assignBodyPart');
+    bodyPartEl.innerText = requestedBodyPart || 'Not specified';
+    bodyPartEl.className = 'font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-md inline-block text-base shadow-sm mt-1';
+    
     const form = document.getElementById('assignForm');
     form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
     
-    // reset select
+    // set or reset select
     const hiddenInput = form.querySelector('.exam-ms-hidden-input');
     if (hiddenInput) {
-        hiddenInput.value = '';
+        hiddenInput.value = assignedExam;
         const container = hiddenInput.closest('.exam-ms-component');
         if (container && typeof renderChips === 'function') {
             renderChips(container);

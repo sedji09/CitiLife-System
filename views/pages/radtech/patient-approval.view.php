@@ -207,7 +207,7 @@ foreach ($allServices as $service) {
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
                                     <?php if (in_array($patient['status'], ['Pending Approval', 'Pending Payment'])): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>')"
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>', '<?= ($patient['status'] === 'Pending Payment') ? htmlspecialchars($patient['exam_type']) : '' ?>')"
                                             class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
                                         </button>
@@ -272,9 +272,17 @@ foreach ($allServices as $service) {
 
 <!-- Assign Exam Modal -->
 <div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-    <div class="w-full max-w-md p-8 border shadow-xl rounded-2xl bg-white">
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Assign Exact Examination</h3>
-        <p class="text-sm text-gray-500 mb-4">Patient requested for: <span id="assignBodyPart" class="font-bold text-gray-800"></span></p>
+    <div class="w-full max-w-md p-8 border shadow-2xl rounded-2xl bg-white relative">
+        <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white p-2.5 rounded-full shadow-lg">
+            <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+        </div>
+        <div class="text-center mt-2 mb-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-1">Assign Exact Examination</h3>
+            <div class="text-sm text-gray-500 mt-2 flex flex-col items-center gap-1">
+                <span>Patient requested for:</span>
+                <span id="assignBodyPart" class="font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-md inline-block text-base shadow-sm"></span>
+            </div>
+        </div>
         
         <form method="POST" id="assignForm" action="" onsubmit="return confirm('Are you sure you want to assign this exact examination and request payment?');">
             <div>
