@@ -422,9 +422,6 @@ $statusDescriptions = [
                                                 <span class="text-sm font-bold <?= (float)($caseRow['philhealth_discount'] ?? 0) > 0 ? 'text-red-600' : 'text-gray-800' ?> font-mono">
                                                     ₱<?= number_format($caseRow['amount_due'], 2) ?>
                                                 </span>
-                                                <?php if ((float)($caseRow['philhealth_discount'] ?? 0) > 0): ?>
-                                                    <p class="text-[10px] text-gray-400 mt-0.5">See full receipt upon payment</p>
-                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -1030,20 +1027,26 @@ $statusDescriptions = [
         </div>
         
         <!-- Itemized Price Breakdown -->
-        <div class="mb-5 bg-stone-50 border border-stone-200/80 rounded-xl p-3.5 space-y-2">
-            <div class="flex items-center justify-between text-xs text-gray-600" id="originalPriceModalRow">
-                <span>Regular Procedure Fee:</span>
-                <span id="modalOriginalPriceDisplay" class="font-semibold text-gray-800 font-mono">₱0.00</span>
+        <div class="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+            <div class="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <i data-lucide="receipt" class="w-4 h-4 text-gray-500"></i>
+                <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Payment Breakdown</span>
             </div>
-            <div class="flex items-center justify-between text-xs text-emerald-700 font-semibold" id="philhealthDiscountModalRow">
-                <span class="flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i> PhilHealth Coverage Discount:
-                </span>
-                <span id="modalDiscountDisplay" class="font-bold font-mono">-₱0.00</span>
+            <div class="p-5 bg-white space-y-3">
+                <div class="flex items-center justify-between text-sm" id="originalPriceModalRow">
+                    <span class="text-gray-500">Regular Procedure Fee</span>
+                    <span id="modalOriginalPriceDisplay" class="font-semibold text-gray-800 font-mono tracking-tight">₱0.00</span>
+                </div>
+                <div class="flex items-center justify-between text-sm" id="philhealthDiscountModalRow">
+                    <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i> PhilHealth Discount
+                    </span>
+                    <span id="modalDiscountDisplay" class="font-bold text-emerald-600 font-mono tracking-tight">-₱0.00</span>
+                </div>
             </div>
-            <div class="pt-2 border-t border-stone-200 flex items-center justify-between">
-                <span class="text-sm font-bold text-gray-900">Total Amount to Pay:</span>
-                <span id="paymentAmountDisplay" class="text-lg font-extrabold text-red-600 font-mono">₱0.00</span>
+            <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
+                <span class="text-sm font-bold text-gray-900">Total Amount</span>
+                <span id="paymentAmountDisplay" class="text-2xl font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
             </div>
         </div>
         
