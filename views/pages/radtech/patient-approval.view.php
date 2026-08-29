@@ -284,7 +284,7 @@ foreach ($allServices as $service) {
             </div>
         </div>
         
-        <form method="POST" id="assignForm" action="" onsubmit="return confirm('Are you sure you want to assign this exact examination and request payment?');">
+        <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Select Examination Type</label>
                 <?php 
@@ -378,6 +378,32 @@ foreach ($allServices as $service) {
     src="/<?= PROJECT_DIR ?>/views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
+    // ── Exam Category Mapping for Validation ─────────────────────────────────
+    <?php
+    $examCategoryMap = [];
+    foreach ($examServices as $srv) {
+        $examCategoryMap[$srv['name']] = $srv['category'];
+    }
+    // Add legacy mappings manually based on known categories
+    $legacyCategories = [
+        'Chest PA' => 'Chest',
+        'Abdominal X-ray' => 'Abdomen',
+        'Extremity X-ray' => 'Upper Extremities', // Fallback
+        'Skull X-ray' => 'Skull', // Or Head
+        'Lumbar Spine' => 'Spine',
+        'Pelvis' => 'Pelvis',
+        'Neck' => 'Neck',
+        'Head' => 'Skull',
+        'Legs' => 'Lower Extremities'
+    ];
+    foreach ($legacyCategories as $legacy => $cat) {
+        if (!isset($examCategoryMap[$legacy])) {
+            $examCategoryMap[$legacy] = $cat;
+        }
+    }
+    ?>
+    window.examCategoryMap = <?= json_encode($examCategoryMap) ?>;
+
     // ── Vanilla JS Datepicker init ─────────────────────────────────────────────
     let modalDatePicker = null;
     document.addEventListener('DOMContentLoaded', () => {

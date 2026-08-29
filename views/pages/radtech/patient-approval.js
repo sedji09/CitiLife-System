@@ -86,6 +86,64 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '') {
     document.getElementById('assign_exam_price').value = '0';
 }
 
+function validateAssignForm(e) {
+    // Get requested exams
+    const requestedStr = document.getElementById('assignBodyPart').innerText || '';
+    if (requestedStr === 'Not specified') {
+        return confirm('Are you sure you want to assign this exact examination and request payment?');
+    }
+
+    const requestedExams = requestedStr.split(',').map(s => s.trim()).filter(s => s);
+    const requestedCategories = new Set();
+    let hasUnknownRequested = false;
+
+    // Determine requested categories
+    requestedExams.forEach(exam => {
+        const cat = window.examCategoryMap && window.examCategoryMap[exam];
+        if (cat) {
+            requestedCategories.add(cat.toLowerCase());
+        } else {
+            hasUnknownRequested = true;
+        }
+    });
+
+    // If we couldn't map ANY requested exam to a category, we fallback to allowing anything
+    if (requestedCategories.size === 0 && !hasUnknownRequested) {
+        return confirm('Are you sure you want to assign this exact examination and request payment?');
+    }
+
+    // Get assigned exams
+    const form = document.getElementById('assignForm');
+    const hiddenInput = form.querySelector('.exam-ms-hidden-input');
+    const assignedStr = hiddenInput ? hiddenInput.value : '';
+    const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(s => s);
+
+    if (assignedExams.length === 0) {
+        alert('Please select at least one exam type.');
+        return false;
+    }
+
+    // Validate assigned exams
+    let invalidExams = [];
+    assignedExams.forEach(exam => {
+        const cat = window.examCategoryMap && window.examCategoryMap[exam];
+        if (cat) {
+            // If requested categories exist, the assigned category MUST be in it
+            if (requestedCategories.size > 0 && !requestedCategories.has(cat.toLowerCase())) {
+                invalidExams.push(exam);
+            }
+        }
+    });
+
+    if (invalidExams.length > 0) {
+        const reqCats = Array.from(requestedCategories).map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ');
+        alert(`Restriction Error:\nYou cannot assign "${invalidExams.join(', ')}" because it does not match the patient's requested category (${reqCats}).\n\nPlease select exams only from the requested categories.`);
+        return false;
+    }
+
+    return confirm('Are you sure you want to assign this exact examination and request payment?');
+}
+
 function closeAssignModal() {
     document.getElementById('assignModal').classList.add('hidden');
 }

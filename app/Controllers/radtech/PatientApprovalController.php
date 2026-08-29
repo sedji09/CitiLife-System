@@ -177,7 +177,7 @@ class PatientApprovalController
         $patientsToApprove = $stmt->fetchAll();
 
         // Pass exam services to view
-        $stmtServices = $pdo->prepare("SELECT id, exam_type AS name, price FROM xray_services WHERE status = 'active'");
+        $stmtServices = $pdo->prepare("SELECT id, exam_type AS name, price, category FROM xray_services WHERE status = 'active'");
         $stmtServices->execute();
         $examServices = $stmtServices->fetchAll();
 
