@@ -78,6 +78,28 @@ class PatientApprovalController
                 
                 header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . urlencode($newCaseId));
                 exit;
+            } elseif ($_GET['action'] === 'reject' && isset($_GET['id'])) {
+                $requestId = (int)$_GET['id'];
+                $reason = $_POST['rejection_reason'] ?? '';
+
+                try {
+                    $pdo->beginTransaction();
+                    
+                    $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = ? WHERE id = ?");
+                    $stmtUpdate->execute([$reason, $requestId]);
+                    
+                    $auditLogModel->addLog($currentUserId, "Rejected Patient Request", 'Patient Approval', 'Request', $requestId, "Rejected request with reason: " . ($reason ?: "No reason provided"), $branchId);
+                    
+                    $pdo->commit();
+                    $_SESSION['flash_success'] = "Request rejected.";
+                } catch (\Exception $e) {
+                    $pdo->rollBack();
+                    $_SESSION['flash_error'] = "Rejection failed: " . $e->getMessage();
+                }
+                
+                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
+                header("Location: " . $redirectBase . "/patient-approval");
+                exit;
             }
         }
 
@@ -140,29 +162,6 @@ class PatientApprovalController
                 $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
                 header("Location: " . $redirectBase . "/patient-approval");
                 exit;
-            } elseif ($_GET['action'] === 'reject' && isset($_GET['id'])) {
-                $requestId = (int)$_GET['id'];
-                $reason = $_POST['rejection_reason'] ?? '';
-
-                try {
-                    $pdo->beginTransaction();
-                    
-                    $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = ? WHERE id = ?");
-                    $stmtUpdate->execute([$reason, $requestId]);
-                    
-                    $auditLogModel->addLog($currentUserId, "Rejected Patient Request", 'Patient Approval', 'Request', $requestId, "Rejected request with reason: $reason", $branchId);
-                    
-                    $pdo->commit();
-                    $_SESSION['flash_success'] = "Request rejected.";
-                } catch (\Exception $e) {
-                    $pdo->rollBack();
-                    $_SESSION['flash_error'] = "Rejection failed: " . $e->getMessage();
-                }
-                
-                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
-                header("Location: " . $redirectBase . "/patient-approval");
-                exit;
-            }
         }
 
         // Fetch patients pending approval, pending payment, or payment verified
