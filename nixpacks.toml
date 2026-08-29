@@ -6,5 +6,7 @@ cmds = [
 
 [phases.build]
 cmds = [
-    "composer dump-autoload --optimize"
+    "composer dump-autoload --optimize",
+    "mkdir -p public/tailwind/src",
+    "cp tailwind/src/output.css public/tailwind/src/output.css"
 ]

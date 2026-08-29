@@ -137,3 +137,16 @@ $router->get('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->post('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->get('/App/Api/disputes.php', 'app/Api/disputes.php');
 $router->post('/App/Api/disputes.php', 'app/Api/disputes.php');
+
+// Fallback route for Tailwind CSS on Railway where DocumentRoot is public
+$router->get('/tailwind/src/output.css', function() {
+    $file = basePath('tailwind/src/output.css');
+    if (file_exists($file)) {
+        header('Content-Type: text/css');
+        readfile($file);
+    } else {
+        header("HTTP/1.0 404 Not Found");
+        echo "CSS not found";
+    }
+});
+
