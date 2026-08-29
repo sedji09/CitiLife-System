@@ -1031,7 +1031,7 @@ $statusDescriptions = [
             </div>
             <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
                 <span class="text-sm font-bold text-gray-900">Total Amount</span>
-                <span id="paymentAmountDisplay" class="text-xl font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
+                <span id="paymentAmountDisplay" class="text-lg font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
             </div>
         </div>
         
