@@ -1,4 +1,5 @@
 <?php
+ob_start(); // Start output buffering to catch any warnings
 session_start();
 if (!defined('PROJECT_DIR')) {
     define('PROJECT_DIR', 'CitiLife-System');
@@ -8,14 +9,16 @@ require_once __DIR__ . '/../../app/Models/AuditLogModel.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+    $errors = ob_get_clean();
+    echo json_encode(['success' => false, 'message' => 'Method not allowed.', 'debug' => $errors]);
     exit;
 }
 
 $patientId = $_SESSION['patient_id'] ?? 0;
 $userId = $_SESSION['user_id'] ?? 0;
 if (!$patientId) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized.']);
+    $errors = ob_get_clean();
+    echo json_encode(['success' => false, 'message' => 'Unauthorized.', 'debug' => $errors]);
     exit;
 }
 
@@ -26,7 +29,8 @@ $referenceNumber = $_POST['reference_number'] ?? null;
 
 // Check if post_max_size was exceeded (empty POST but Content-Length > 0)
 if (empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && $_SERVER['CONTENT_LENGTH'] > 0) {
-    echo json_encode(['success' => false, 'message' => 'The uploaded file is too large. Please select a smaller image.']);
+    $errors = ob_get_clean();
+    echo json_encode(['success' => false, 'message' => 'The uploaded file is too large. Please select a smaller image.', 'debug' => $errors]);
     exit;
 }
 
@@ -38,7 +42,8 @@ $stmt->execute([$caseId, $patientId]);
 $request = $stmt->fetch();
 
 if (!$request) {
-    echo json_encode(['success' => false, 'message' => 'Invalid request or already paid.']);
+    $errors = ob_get_clean();
+    echo json_encode(['success' => false, 'message' => 'Invalid request or already paid.', 'debug' => $errors]);
     exit;
 }
 
@@ -49,17 +54,20 @@ $proofPath = null;
 
 if ($paymentMethod === 'GCash') {
     if (!isset($_FILES['payment_proof']) || $_FILES['payment_proof']['error'] === UPLOAD_ERR_NO_FILE) {
-        echo json_encode(['success' => false, 'message' => 'Please upload a proof of payment.']);
+        $errors = ob_get_clean();
+        echo json_encode(['success' => false, 'message' => 'Please upload a proof of payment.', 'debug' => $errors]);
         exit;
     }
     
     if ($_FILES['payment_proof']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['payment_proof']['error'] === UPLOAD_ERR_FORM_SIZE) {
-        echo json_encode(['success' => false, 'message' => 'The uploaded image is too large. Please select a smaller image (max 2MB).']);
+        $errors = ob_get_clean();
+        echo json_encode(['success' => false, 'message' => 'The uploaded image is too large. Please select a smaller image (max 2MB).', 'debug' => $errors]);
         exit;
     }
     
     if ($_FILES['payment_proof']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['success' => false, 'message' => 'An error occurred during file upload.']);
+        $errors = ob_get_clean();
+        echo json_encode(['success' => false, 'message' => 'An error occurred during file upload.', 'debug' => $errors]);
         exit;
     }
 
@@ -71,7 +79,8 @@ if ($paymentMethod === 'GCash') {
     $fileExt = strtolower(pathinfo($_FILES['payment_proof']['name'], PATHINFO_EXTENSION));
     $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     if (!in_array($fileExt, $allowedExts)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid file type. Please upload an image (JPG, PNG).']);
+        $errors = ob_get_clean();
+        echo json_encode(['success' => false, 'message' => 'Invalid file type. Please upload an image (JPG, PNG).', 'debug' => $errors]);
         exit;
     }
     
@@ -81,7 +90,8 @@ if ($paymentMethod === 'GCash') {
     if (move_uploaded_file($_FILES['payment_proof']['tmp_name'], $dest)) {
         $proofPath = '/public/uploads/receipts/' . $newFilename;
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to save the uploaded file.']);
+        $errors = ob_get_clean();
+        echo json_encode(['success' => false, 'message' => 'Failed to save the uploaded file.', 'debug' => $errors]);
         exit;
     }
 }
@@ -122,10 +132,12 @@ try {
     
     // Return success
     $_SESSION['active_status_case_id'] = $caseId;
-    echo json_encode(['success' => true, 'message' => 'Payment submitted successfully.']);
+    $errors = ob_get_clean();
+    echo json_encode(['success' => true, 'message' => 'Payment submitted successfully.', 'debug' => $errors]);
     exit;
 } catch (Exception $e) {
     $pdo->rollBack();
-    echo json_encode(['success' => false, 'message' => 'Error processing payment: ' . $e->getMessage()]);
+    $errors = ob_get_clean();
+    echo json_encode(['success' => false, 'message' => 'Error processing payment: ' . $e->getMessage(), 'debug' => $errors]);
     exit;
 }
