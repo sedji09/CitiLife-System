@@ -1054,12 +1054,12 @@ $statusDescriptions = [
             </div>
 
             <!-- Cash Notice Section -->
-            <div id="cashSection" class="hidden mb-4 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-black space-y-1.5">
-                <div class="flex items-center gap-2 font-bold text-black">
-                    <i data-lucide="info" class="w-4 h-4 text-amber-600"></i> Cash Payment Reminder
+            <div id="cashSection" class="hidden mb-5 p-5 rounded-xl bg-amber-50 border border-amber-200 text-black space-y-2 shadow-sm">
+                <div class="flex items-center gap-2 font-bold text-amber-900 text-base">
+                    <i data-lucide="info" class="w-5 h-5 text-amber-600"></i> Cash Payment Reminder
                 </div>
-                <p>Please pay the exact amount due at the clinic cashier / front desk before your X-ray exam.</p>
-                <p id="cashDiscountNotice" class="hidden text-[11px] text-red-600 font-medium"></p>
+                <p class="text-sm leading-relaxed text-gray-800">Please pay the exact amount due at the clinic cashier or front desk before your X-ray exam.</p>
+                <p id="cashDiscountNotice" class="hidden text-xs italic text-red-600 font-medium mt-2"></p>
             </div>
 
             <div id="gcashSection" class="hidden mb-6">
