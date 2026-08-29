@@ -111,6 +111,10 @@ function validateAssignForm(e) {
     const requestedStr = document.getElementById('assignBodyPart').getAttribute('data-raw') || '';
     if (requestedStr === 'Not specified') {
         window.confirmAction('Confirm Assignment', 'Are you sure you want to assign this exact examination and request payment?', function() {
+            closeAssignModal();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ title: 'Processing...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            }
             document.getElementById('assignForm').submit();
         });
         return false;
@@ -133,6 +137,10 @@ function validateAssignForm(e) {
     // If we couldn't map ANY requested exam to a category, we fallback to allowing anything
     if (requestedCategories.size === 0 && !hasUnknownRequested) {
         window.confirmAction('Confirm Assignment', 'Are you sure you want to assign this exact examination and request payment?', function() {
+            closeAssignModal();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ title: 'Processing...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            }
             document.getElementById('assignForm').submit();
         });
         return false;
@@ -177,6 +185,10 @@ function validateAssignForm(e) {
     }
 
     window.confirmAction('Confirm Assignment', 'Are you sure you want to assign this exact examination and request payment?', function() {
+        closeAssignModal();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Processing...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        }
         document.getElementById('assignForm').submit();
     });
     return false;
