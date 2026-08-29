@@ -1054,8 +1054,8 @@ $statusDescriptions = [
             </div>
 
             <!-- Cash Notice Section -->
-            <div id="cashSection" class="hidden mb-4 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 space-y-1.5">
-                <div class="flex items-center gap-2 font-bold text-amber-800">
+            <div id="cashSection" class="hidden mb-4 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-black space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-black">
                     <i data-lucide="info" class="w-4 h-4 text-amber-600"></i> Cash Payment Reminder
                 </div>
                 <p>Please pay the exact amount due at the clinic cashier / front desk before your X-ray exam.</p>
