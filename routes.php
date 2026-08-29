@@ -138,6 +138,15 @@ $router->post('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->get('/App/Api/disputes.php', 'app/Api/disputes.php');
 $router->post('/App/Api/disputes.php', 'app/Api/disputes.php');
 
+// Additional missing APIs that were working on localhost directly but failing on Railway router
+$router->get('/app/api/notifications.php', 'app/Api/notifications.php');
+$router->post('/app/api/notifications.php', 'app/Api/notifications.php');
+$router->get('/app/api/case_activity.php', 'app/Api/case_activity.php');
+$router->post('/app/api/case_activity.php', 'app/Api/case_activity.php');
+$router->get('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
+$router->post('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
+$router->get('/app/api/active_users_count.php', 'app/Api/active_users_count.php');
+
 // Fallback route for Tailwind CSS on Railway where DocumentRoot is public
 $router->get('/debug-router', function() {
     echo "URI: " . $_SERVER['REQUEST_URI'] . "<br>";
