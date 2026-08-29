@@ -158,6 +158,9 @@ $router->get('/app/api/migrate', function() {
         // xray_services table columns
         "ALTER TABLE xray_services ADD COLUMN is_philhealth_covered TINYINT(1) NOT NULL DEFAULT 0",
         "ALTER TABLE xray_services ADD COLUMN philhealth_discount DECIMAL(10,2) NOT NULL DEFAULT 0.00",
+        // payments table columns
+        "ALTER TABLE payments ADD COLUMN original_amount DECIMAL(10,2) DEFAULT NULL AFTER request_id",
+        "ALTER TABLE payments ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00 AFTER original_amount",
     ];
     foreach ($migrations as $sql) {
         try {
