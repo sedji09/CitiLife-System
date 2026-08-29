@@ -66,7 +66,7 @@ function openAssignModal(id, requestedBodyPart) {
     document.getElementById('assignModal').classList.remove('hidden');
     document.getElementById('assignBodyPart').innerText = requestedBodyPart || 'Not specified';
     const form = document.getElementById('assignForm');
-    form.action = window.__APP__.basePath + '/index.php?role=radtech&page=patient-approval&action=assign_exam&id=' + id;
+    form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
     
     // reset select
     const hiddenInput = form.querySelector('.exam-ms-hidden-input');

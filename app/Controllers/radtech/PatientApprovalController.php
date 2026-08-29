@@ -137,7 +137,8 @@ class PatientApprovalController
                     $_SESSION['flash_error'] = "Assignment failed: " . $e->getMessage();
                 }
                 
-                header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval");
+                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
+                header("Location: " . $redirectBase . "/patient-approval");
                 exit;
             } elseif ($_GET['action'] === 'reject' && isset($_GET['id'])) {
                 $requestId = (int)$_GET['id'];
@@ -158,7 +159,8 @@ class PatientApprovalController
                     $_SESSION['flash_error'] = "Rejection failed: " . $e->getMessage();
                 }
                 
-                header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval");
+                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
+                header("Location: " . $redirectBase . "/patient-approval");
                 exit;
             }
         }
