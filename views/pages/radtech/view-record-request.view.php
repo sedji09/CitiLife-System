@@ -212,7 +212,7 @@
                             <div
                                 class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer">
                                 <img id="xray-main-image" src="<?= htmlspecialchars($savedPaths[0] ?? '') ?>"
-                                    class="max-w-full max-h-full object-contain transition-transform duration-100 ease-out origin-center"
+                                    class="w-full h-full object-contain transition-transform duration-100 ease-out origin-center"
                                     alt="X-ray" draggable="false">
 
                                 <!-- Floating Side Navigation (Fullscreen Only) -->
@@ -299,8 +299,9 @@
 
                                     img.style.opacity = '0';
                                     setTimeout(() => {
-                                        img.src = imagePaths[currentIndex];
                                         img.onload = () => { img.style.opacity = '1'; };
+                                        img.src = imagePaths[currentIndex];
+                                        if (img.complete) { img.style.opacity = '1'; }
                                     }, 150);
 
                                     // Initial Icon State
