@@ -1615,27 +1615,11 @@
   app.config.errorHandler = function (err, vm, info) {
     alert("Vue Error: " + err.toString() + " | info: " + info);
   };
-  const vm = app.mount("#app");
-  window.vm = vm;
-
-  // Fallback: Ensure skeleton hides even if Vue mounting fails
-  function hideSkeletonFallback() {
-    const fallbackLoader = document.getElementById('app-loading');
-    if (fallbackLoader && !fallbackLoader.classList.contains('hidden')) {
-      fallbackLoader.classList.add('fade-out');
-      setTimeout(() => {
-        fallbackLoader.classList.add('hidden');
-      }, 280);
-    }
-  }
-
-  if (document.readyState === 'complete') {
-    // If window already loaded, hide immediately
-    setTimeout(hideSkeletonFallback, 1000); 
-  } else {
-    window.addEventListener('load', () => {
-      setTimeout(hideSkeletonFallback, 1000);
-    });
+  try {
+    const vm = app.mount("#app");
+    window.vm = vm;
+  } catch (e) {
+    console.error("Vue Mount Error:", e);
   }
 
   window.openPatientSettings = function(e) {
@@ -1835,6 +1819,29 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Fallback: Ensure skeleton hides even if Vue mounting fails
+  (function() {
+    function hideSkeletonFallback() {
+      const fallbackLoader = document.getElementById('app-loading');
+      if (fallbackLoader && !fallbackLoader.classList.contains('hidden')) {
+        fallbackLoader.classList.add('fade-out');
+        setTimeout(() => {
+          fallbackLoader.classList.add('hidden');
+        }, 280);
+      }
+    }
+
+    if (document.readyState === 'complete') {
+      setTimeout(hideSkeletonFallback, 1000); 
+    } else {
+      window.addEventListener('load', () => {
+        setTimeout(hideSkeletonFallback, 1000);
+      });
+    }
+  })();
+</script>
 
 <script>
   if (typeof lucide !== 'undefined') {
