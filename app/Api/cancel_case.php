@@ -41,8 +41,8 @@ try {
         exit;
     }
 
-    if ($case['status'] !== 'Pending Approval') {
-        echo json_encode(['success' => false, 'message' => 'Only pending requests can be cancelled']);
+    if (!in_array($case['status'], ['Pending Approval', 'Pending Payment'])) {
+        echo json_encode(['success' => false, 'message' => 'Only pending or unpaid requests can be cancelled']);
         exit;
     }
 
