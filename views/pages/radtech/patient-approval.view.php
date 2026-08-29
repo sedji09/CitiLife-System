@@ -206,12 +206,12 @@ foreach ($allServices as $service) {
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                        <?php if ($patient['status'] === 'Pending Approval'): ?>
-                                            <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>')"
-                                                class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
-                                                <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
-                                            </button>
-                                        <?php endif; ?>
+                                    <?php if (in_array($patient['status'], ['Pending Approval', 'Pending Payment'])): ?>
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>')"
+                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
+                                            <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
+                                        </button>
+                                    <?php endif; ?>
 
                                     <?php if (in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <button
@@ -276,7 +276,7 @@ foreach ($allServices as $service) {
         <h3 class="text-lg font-medium text-gray-900 mb-2">Assign Exact Examination</h3>
         <p class="text-sm text-gray-500 mb-4">Patient requested for: <span id="assignBodyPart" class="font-bold text-gray-800"></span></p>
         
-        <form method="POST" id="assignForm" action="">
+        <form method="POST" id="assignForm" action="" onsubmit="return confirm('Are you sure you want to assign this exact examination and request payment?');">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Select Examination Type</label>
                 <?php 
