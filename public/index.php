@@ -77,3 +77,4 @@ if (!$isLocalhost) {
 }
 
 echo $output;
+
