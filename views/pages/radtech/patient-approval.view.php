@@ -7,10 +7,8 @@ $auditLogModel = new \AuditLogModel($pdo);
 $currentUserId = $_SESSION['user_id'] ?? 0;
 $branchId = $_SESSION['branch_id'] ?? 1;
 
-$successMsg = '';
-$errorMsg = '';
-
-// Actions are handled in PatientApprovalController
+$successMsg = $successMsg ?? '';
+$errorMsg = $errorMsg ?? '';
 
 // Handle update success/error messages
 if (isset($_GET['success']) && $_GET['success'] == 1)
