@@ -1,8 +1,40 @@
 <!-- âœ… Vue production local asset -->
-<script type="text/javascript" src="/<?= PROJECT_DIR ?>/public/assets/js/vue.global.prod.js"></script>
+<script type="text/javascript" src="/<?= PROJECT_DIR ?>/public/assets/js/vue.global.prod.js">
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
+</script>
 
 <!-- âœ… Lucide production local asset -->
-<script type="text/javascript" src="/<?= PROJECT_DIR ?>/public/assets/js/lucide.min.js"></script>
+<script type="text/javascript" src="/<?= PROJECT_DIR ?>/public/assets/js/lucide.min.js">
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
+</script>
 
 <!-- âœ… Inject PHP data -->
 <script>
@@ -27,6 +59,22 @@
     userContactNumber: <?= json_encode($userContactNumber) ?>,
     userHomeAddress: <?= json_encode($userHomeAddress ?? '') ?>
   };
+
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
 </script>
 
 
@@ -206,6 +254,7 @@
     watch: {
     },
     mounted() {
+      setTimeout(() => { const loader = document.getElementById('app-loading'); if (loader) { loader.classList.add('fade-out'); setTimeout(() => loader.classList.add('hidden'), 280); } }, 2000); // FAILSAFE
       // ===== DISMISS LOADING SKELETON =====
       const loader = document.getElementById('app-loading');
       if (loader) {
@@ -1785,6 +1834,22 @@
       window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=manual`;
     };
   })();
+
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
 </script>
 <!-- Session Timeout Warning Modal -->
 <div id="sessionTimeoutModal"
@@ -1841,6 +1906,22 @@
       });
     }
   })();
+
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
 </script>
 
 <script>
@@ -1861,8 +1942,42 @@
       });
     }, 4000);
   });
+
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
 </script>
 
 <?php
-echo '<script src="/' . PROJECT_DIR . '/views/pages/patient/my-records.js?v=' . time() . '"></script>';
+echo '<script src="/' . PROJECT_DIR . '/views/pages/patient/my-records.js?v=' . time() . '">
+  // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loading');
+      if (loader && !loader.classList.contains('hidden')) {
+        console.error('Vue failed to mount! Forcing skeleton removal.');
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.classList.add('hidden'), 280);
+        const app = document.getElementById('app');
+        if (app && app.hasAttribute('v-cloak')) {
+          app.removeAttribute('v-cloak');
+        }
+      }
+    }, 2000);
+  });
+</script>';
 ?>
+
+
