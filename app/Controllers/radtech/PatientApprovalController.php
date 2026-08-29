@@ -162,6 +162,7 @@ class PatientApprovalController
                 $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
                 header("Location: " . $redirectBase . "/patient-approval");
                 exit;
+            }
         }
 
         // Fetch patients pending approval, pending payment, or payment verified
