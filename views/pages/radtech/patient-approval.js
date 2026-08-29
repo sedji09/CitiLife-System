@@ -65,10 +65,28 @@ function closeEditModal() {
 function openAssignModal(id, requestedBodyPart, assignedExam = '') {
     document.getElementById('assignModal').classList.remove('hidden');
     
+    let displayStr = requestedBodyPart || 'Not specified';
+    if (displayStr !== 'Not specified' && window.examCategoryMap) {
+        const parts = displayStr.split(',').map(s => s.trim()).filter(s => s);
+        const categories = new Set();
+        let allMapped = true;
+        parts.forEach(p => {
+            if (window.examCategoryMap[p]) {
+                categories.add(window.examCategoryMap[p]);
+            } else {
+                allMapped = false;
+            }
+        });
+        
+        if (categories.size > 0 && allMapped) {
+            displayStr = Array.from(categories).join(', ');
+        }
+    }
+    
     // Make the requested body part more visible
     const bodyPartEl = document.getElementById('assignBodyPart');
-    bodyPartEl.innerText = requestedBodyPart || 'Not specified';
-    bodyPartEl.className = 'font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-md inline-block text-base shadow-sm mt-1';
+    bodyPartEl.innerText = displayStr;
+    bodyPartEl.setAttribute('data-raw', requestedBodyPart || 'Not specified');
     
     const form = document.getElementById('assignForm');
     form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
@@ -87,10 +105,15 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '') {
 }
 
 function validateAssignForm(e) {
+    e.preventDefault();
+
     // Get requested exams
-    const requestedStr = document.getElementById('assignBodyPart').innerText || '';
+    const requestedStr = document.getElementById('assignBodyPart').getAttribute('data-raw') || '';
     if (requestedStr === 'Not specified') {
-        return confirm('Are you sure you want to assign this exact examination and request payment?');
+        showCustomConfirm('Are you sure you want to assign this exact examination and request payment?', function() {
+            document.getElementById('assignForm').submit();
+        });
+        return false;
     }
 
     const requestedExams = requestedStr.split(',').map(s => s.trim()).filter(s => s);
@@ -109,7 +132,10 @@ function validateAssignForm(e) {
 
     // If we couldn't map ANY requested exam to a category, we fallback to allowing anything
     if (requestedCategories.size === 0 && !hasUnknownRequested) {
-        return confirm('Are you sure you want to assign this exact examination and request payment?');
+        showCustomConfirm('Are you sure you want to assign this exact examination and request payment?', function() {
+            document.getElementById('assignForm').submit();
+        });
+        return false;
     }
 
     // Get assigned exams
@@ -119,7 +145,7 @@ function validateAssignForm(e) {
     const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(s => s);
 
     if (assignedExams.length === 0) {
-        alert('Please select at least one exam type.');
+        showCustomAlert('Please select at least one exam type.');
         return false;
     }
 
@@ -137,12 +163,66 @@ function validateAssignForm(e) {
 
     if (invalidExams.length > 0) {
         const reqCats = Array.from(requestedCategories).map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ');
-        alert(`Restriction Error:\nYou cannot assign "${invalidExams.join(', ')}" because it does not match the patient's requested category (${reqCats}).\n\nPlease select exams only from the requested categories.`);
+        showCustomAlert(`You cannot assign "${invalidExams.join(', ')}" because it does not match the patient's requested category (${reqCats}).\n\nPlease select exams only from the requested categories.`);
         return false;
     }
 
-    return confirm('Are you sure you want to assign this exact examination and request payment?');
+    showCustomConfirm('Are you sure you want to assign this exact examination and request payment?', function() {
+        document.getElementById('assignForm').submit();
+    });
+    return false;
 }
+
+// --- Custom Modal Helpers ---
+function showCustomAlert(message) {
+    document.getElementById('alertMessage').innerText = message;
+    const modal = document.getElementById('customAlertModal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
+    }, 10);
+}
+
+function closeCustomAlert() {
+    const modal = document.getElementById('customAlertModal');
+    modal.classList.add('opacity-0');
+    modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+}
+
+let confirmCallback = null;
+
+function showCustomConfirm(message, callback) {
+    document.getElementById('confirmMessage').innerText = message;
+    confirmCallback = callback;
+    const modal = document.getElementById('customConfirmModal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
+    }, 10);
+}
+
+function closeCustomConfirm() {
+    const modal = document.getElementById('customConfirmModal');
+    modal.classList.add('opacity-0');
+    modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        confirmCallback = null;
+    }, 200);
+}
+
+function confirmCustomAction() {
+    if (confirmCallback) {
+        confirmCallback();
+    }
+    closeCustomConfirm();
+}
+// ----------------------------
 
 function closeAssignModal() {
     document.getElementById('assignModal').classList.add('hidden');

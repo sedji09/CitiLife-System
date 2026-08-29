@@ -272,16 +272,20 @@ foreach ($allServices as $service) {
 
 <!-- Assign Exam Modal -->
 <div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-    <div class="w-full max-w-md p-8 border shadow-2xl rounded-2xl bg-white relative">
-        <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white p-2.5 rounded-full shadow-lg">
-            <i data-lucide="clipboard-list" class="w-6 h-6"></i>
-        </div>
-        <div class="text-center mt-2 mb-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-1">Assign Exact Examination</h3>
-            <div class="text-sm text-gray-500 mt-2 flex flex-col items-center gap-1">
-                <span>Patient requested for:</span>
-                <span id="assignBodyPart" class="font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-md inline-block text-base shadow-sm"></span>
+    <div class="w-full max-w-md p-6 border shadow-2xl rounded-2xl bg-white">
+        <div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
+            <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200">
+                <i data-lucide="clipboard-list" class="w-6 h-6"></i>
             </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Assign Exact Examination</h3>
+                <p class="text-sm text-gray-500 mt-0.5">Select exams for this request</p>
+            </div>
+        </div>
+        
+        <div class="mb-5 flex flex-col gap-1.5 p-3 bg-red-50 rounded-xl border border-red-100">
+            <span class="text-xs font-semibold text-red-800 uppercase tracking-wide">Patient requested body part(s):</span>
+            <span id="assignBodyPart" class="font-bold text-red-600 text-base"></span>
         </div>
         
         <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);">
@@ -302,6 +306,37 @@ foreach ($allServices as $service) {
                     class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">Assign & Request Payment</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Custom Confirm Modal -->
+<div id="customConfirmModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden p-4 opacity-0 transition-opacity duration-200">
+    <div class="w-full max-w-sm p-6 bg-white rounded-2xl shadow-2xl transform scale-95 transition-transform duration-200">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4 border-4 border-blue-50">
+                <i data-lucide="help-circle" class="w-6 h-6 text-blue-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Confirm Assignment</h3>
+            <p id="confirmMessage" class="text-sm text-gray-500 mb-6">Are you sure you want to assign this exact examination and request payment?</p>
+            <div class="flex gap-3 w-full">
+                <button type="button" onclick="closeCustomConfirm()" class="flex-1 py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 transition-all">Cancel</button>
+                <button type="button" onclick="confirmCustomAction()" class="flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all shadow-sm">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Alert Modal -->
+<div id="customAlertModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden p-4 opacity-0 transition-opacity duration-200">
+    <div class="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl transform scale-95 transition-transform duration-200">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 border-4 border-red-50">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Restriction Error</h3>
+            <p id="alertMessage" class="text-sm text-gray-600 mb-6 whitespace-pre-line"></p>
+            <button type="button" onclick="closeCustomAlert()" class="w-full py-2.5 px-4 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 focus:ring-4 focus:ring-gray-200 transition-all shadow-sm">Got it</button>
+        </div>
     </div>
 </div>
 
