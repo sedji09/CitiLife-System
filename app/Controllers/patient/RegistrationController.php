@@ -32,8 +32,8 @@ class RegistrationController
         }
 
         $currentHour = (int) date('G');
-        $isClinicOpen = ($currentHour >= 8 && $currentHour < 21);
-        // $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
+        // $isClinicOpen = ($currentHour >= 8 && $currentHour < 21);
+        $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
 
         // 1. Fetch data
         $branches = $branchModel->getAllBranches();
