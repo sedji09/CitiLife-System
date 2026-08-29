@@ -411,21 +411,6 @@ $statusDescriptions = [
                                         </p>
                                     </div>
                                 </div>
-                                <?php if (!empty($caseRow['amount_due']) || !empty($caseRow['original_price'])): ?>
-                                    <div class="flex items-start gap-3">
-                                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                            <i data-lucide="receipt" class="w-4 h-4 text-red-500"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Amount Due</p>
-                                            <div class="mt-0.5">
-                                                <span class="text-sm font-bold <?= (float)($caseRow['philhealth_discount'] ?? 0) > 0 ? 'text-red-600' : 'text-gray-800' ?> font-mono">
-                                                    ₱<?= number_format($caseRow['amount_due'], 2) ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
                             </div>
                         </div>
                         <?php
@@ -1039,14 +1024,14 @@ $statusDescriptions = [
                 </div>
                 <div class="flex items-center justify-between text-sm" id="philhealthDiscountModalRow">
                     <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
-                        <i data-lucide="shield-check" class="w-4 h-4"></i> PhilHealth Discount
+                        PhilHealth Discount
                     </span>
                     <span id="modalDiscountDisplay" class="font-bold text-emerald-600 font-mono tracking-tight">-₱0.00</span>
                 </div>
             </div>
             <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
                 <span class="text-sm font-bold text-gray-900">Total Amount</span>
-                <span id="paymentAmountDisplay" class="text-2xl font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
+                <span id="paymentAmountDisplay" class="text-xl font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
             </div>
         </div>
         
