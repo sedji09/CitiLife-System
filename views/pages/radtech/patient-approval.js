@@ -163,7 +163,7 @@ function saveEditModal() {
     // Create a form and submit it
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = window.__APP__.basePath + '/app/config/update_patient.php';
+    form.action = window.__APP__.basePath + '/config/update_patient.php';
 
     const inputs = [
         { name: 'id', value: currentEditId },
@@ -364,4 +364,5 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('realtime:updated', () => {
     applyFilters();
 });
+
 
