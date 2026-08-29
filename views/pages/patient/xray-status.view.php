@@ -1053,7 +1053,7 @@ $statusDescriptions = [
             </div>
         </div>
         
-        <form id="paymentForm" method="POST" action="/<?= PROJECT_DIR ?>/app/api/submit_payment.php" enctype="multipart/form-data">
+        <form id="paymentForm" method="POST" action="<?php echo rtrim('/' . PROJECT_DIR, '/'); ?>/app/api/submit_payment.php" enctype="multipart/form-data">
             <input type="hidden" name="case_id" id="paymentCaseId" value="">
             <input type="hidden" name="amount" id="paymentAmount" value="">
             

@@ -606,11 +606,12 @@ class CaseModel
                 b.gcash_qr_path,
                 c.radtech_id,
                 (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
-                NULL as original_price,
-                0.00 as philhealth_discount,
-                0 as amount_due
+                req.original_price,
+                COALESCE(req.philhealth_discount, 0.00) as philhealth_discount,
+                COALESCE(req.amount_due, 0) as amount_due
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
+            LEFT JOIN requests req ON c.request_id = req.id
             WHERE c.patient_id = ? AND c.status NOT IN ('Released', 'Completed')
             
             ORDER BY created_at DESC
