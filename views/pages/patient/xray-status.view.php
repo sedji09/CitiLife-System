@@ -1091,8 +1091,8 @@ $statusDescriptions = [
                         </div>
 
                         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1 flex flex-col justify-center items-center">
-                            <img id="qrCodeImage" src="/<?= PROJECT_DIR ?>/public/assets/images/placeholder-qr.png" alt="GCash QR" class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
-                            <a id="qrCodeDownload" href="/<?= PROJECT_DIR ?>/public/assets/images/placeholder-qr.png" download="CitiLife_QR_Code.png" class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
+                            <img id="qrCodeImage" src="/<?= PROJECT_DIR ?>/public/assets/images/gcash_qr.jpg" alt="GCash QR" class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
+                            <a id="qrCodeDownload" href="/<?= PROJECT_DIR ?>/public/assets/images/gcash_qr.jpg" download="CitiLife_QR_Code.jpg" class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
                                 <i data-lucide="download" class="w-4 h-4"></i> Save QR Code
                             </a>
                         </div>
