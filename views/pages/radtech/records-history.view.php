@@ -219,10 +219,12 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
                     <!-- Main Viewing Area -->
                     <div
-                        class="flex-1 flex flex-col items-center justify-center relative bg-[#0a0a0a] overflow-hidden group/viewer">
-                        <img id="xray-main-image" src="<?= htmlspecialchars($savedPaths[0] ?? '') ?>"
-                            class="max-w-full max-h-full object-contain transition-transform duration-100 ease-out origin-center"
-                            alt="X-ray" draggable="false">
+                        class="flex-1 relative bg-[#0a0a0a] overflow-hidden group/viewer">
+                        <div class="absolute inset-0 flex items-center justify-center p-2">
+                            <img id="xray-main-image" src="<?= htmlspecialchars($savedPaths[0] ?? '') ?>"
+                                class="w-full h-full object-contain transition-transform duration-100 ease-out origin-center"
+                                alt="X-ray" draggable="false">
+                        </div>
 
                         <!-- Classic Bottom Thumbnails -->
                         <?php if (count($savedPaths) > 1): ?>
@@ -291,11 +293,8 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                             scale = 1; translateX = 0; translateY = 0;
                             updateTransform();
 
-                            img.style.opacity = '0';
-                            setTimeout(() => {
-                                img.src = imagePaths[currentIndex];
-                                img.onload = () => { img.style.opacity = '1'; };
-                            }, 150);
+                            // Update image source directly without opacity hacks to ensure it renders reliably
+                            img.src = imagePaths[currentIndex];
 
                             // Initial Icon State
                             updateIconState();
