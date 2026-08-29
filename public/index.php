@@ -67,7 +67,7 @@ try {
 
 $output = ob_get_clean();
 
-$isLocalhost = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1']) || strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false;
+$isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
 
 // Kung tumatakbo sa production (tulad ng Railway), ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
 if (!$isLocalhost) {
