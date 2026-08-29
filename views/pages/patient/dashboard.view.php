@@ -485,15 +485,22 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
                 $sDesc = $statusDescriptions[$displayStatus] ?? '';
                 ?>
-                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box"
-                    style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
-                    <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
-                        Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
-                    </p>
-                    <?php if ($sDesc): ?>
-                        <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed"
-                            style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
-                    <?php endif; ?>
+                <div class="mt-4 sm:mt-5 rounded-xl p-5 border status-summary-box shadow-sm transition-all"
+                    style="background: linear-gradient(to right, <?= $sInfo['bg'] ?>, #ffffff); border-left: 4px solid <?= $sInfo['text'] ?>; border-top-color: <?= $sInfo['border'] ?>; border-right-color: <?= $sInfo['border'] ?>; border-bottom-color: <?= $sInfo['border'] ?>;">
+                    <div class="flex flex-col">
+                        <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style="color: <?= $sInfo['text'] ?>; opacity: 0.7;">
+                            Current Status
+                        </p>
+                        <h4 class="text-lg sm:text-xl font-extrabold tracking-tight mb-2" style="color: <?= $sInfo['text'] ?>">
+                            <?= htmlspecialchars($sInfo['label']) ?>
+                        </h4>
+                        <?php if ($sDesc): ?>
+                            <p class="text-xs sm:text-sm font-medium leading-relaxed"
+                                style="color: <?= $sInfo['text'] ?>; opacity: 0.85;">
+                                <?= $sDesc ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 

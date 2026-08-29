@@ -240,17 +240,17 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="">
-            <div class="flex justify-center gap-2 mb-6" id="otp-container">
+        <form method="POST" action="" class="space-y-6" onsubmit="document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').innerHTML = 'Verifying...';">
+            <div class="flex justify-center gap-2 sm:gap-3" id="otp-container">
                 <?php for ($i = 0; $i < 6; $i++): ?>
-                    <input type="number" name="otp[]" maxlength="1" class="w-12 h-14 text-center text-xl font-bold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white" required>
+                    <input type="number" name="otp[]" maxlength="1" class="w-12 h-14 text-center text-xl font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-red-500 transition-all outline-none" required>
                 <?php endfor; ?>
             </div>
             <div class="flex items-center justify-start mb-6">
                 <input type="checkbox" name="remember" id="remember" class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer">
                 <label for="remember" class="ml-2 text-sm text-gray-600 cursor-pointer select-none">Remember this device for 30 days</label>
             </div>
-            <button type="submit" id="verifyBtn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+            <button type="submit" id="submitBtn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
                 Verify Login
             </button>
         </form>

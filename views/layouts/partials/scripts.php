@@ -214,6 +214,14 @@
           loader.classList.add('hidden');
         }, 280);
       }
+      
+      // Fallback: Ensure skeleton hides even if Vue mounting has issues
+      window.addEventListener('load', () => {
+        const fallbackLoader = document.getElementById('app-loading');
+        if (fallbackLoader && !fallbackLoader.classList.contains('hidden')) {
+            fallbackLoader.classList.add('hidden');
+        }
+      });
       // =====================================
 
       // Load theme from localStorage — support system/dark/light
