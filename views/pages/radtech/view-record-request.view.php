@@ -299,12 +299,8 @@
                                     scale = 1; translateX = 0; translateY = 0;
                                     updateTransform();
 
-                                    img.style.opacity = '0';
-                                    setTimeout(() => {
-                                        img.onload = () => { img.style.opacity = '1'; };
-                                        img.src = imagePaths[currentIndex];
-                                        if (img.complete) { img.style.opacity = '1'; }
-                                    }, 150);
+                                    // Update image source directly without opacity hacks to ensure it renders reliably
+                                    img.src = imagePaths[currentIndex];
 
                                     // Initial Icon State
                                     updateIconState();
