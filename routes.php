@@ -149,14 +149,25 @@ $router->get('/app/api/active_users_count.php', 'app/Api/active_users_count.php'
 
 $router->get('/app/api/migrate', function() {
     global $pdo;
-    try {
-        $pdo->exec("ALTER TABLE requests ADD COLUMN original_price DECIMAL(10,2) DEFAULT NULL");
-        $pdo->exec("ALTER TABLE requests ADD COLUMN philhealth_discount DECIMAL(10,2) DEFAULT 0.00");
-        $pdo->exec("ALTER TABLE requests ADD COLUMN amount_due DECIMAL(10,2) DEFAULT NULL");
-        echo "Migration successful!";
-    } catch (\Throwable $e) {
-        echo "Error: " . $e->getMessage();
+    $results = [];
+    $migrations = [
+        // requests table columns
+        "ALTER TABLE requests ADD COLUMN original_price DECIMAL(10,2) DEFAULT NULL",
+        "ALTER TABLE requests ADD COLUMN philhealth_discount DECIMAL(10,2) DEFAULT 0.00",
+        "ALTER TABLE requests ADD COLUMN amount_due DECIMAL(10,2) DEFAULT NULL",
+        // xray_services table columns
+        "ALTER TABLE xray_services ADD COLUMN is_philhealth_covered TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE xray_services ADD COLUMN philhealth_discount DECIMAL(10,2) NOT NULL DEFAULT 0.00",
+    ];
+    foreach ($migrations as $sql) {
+        try {
+            $pdo->exec($sql);
+            $results[] = "OK: " . $sql;
+        } catch (\Throwable $e) {
+            $results[] = "SKIP (already exists or error): " . $e->getMessage();
+        }
     }
+    echo "<pre>" . implode("\n", $results) . "</pre>";
 });
 
 // Fallback route for Tailwind CSS on Railway where DocumentRoot is public
