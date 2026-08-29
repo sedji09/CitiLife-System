@@ -110,7 +110,7 @@ function validateAssignForm(e) {
     // Get requested exams
     const requestedStr = document.getElementById('assignBodyPart').getAttribute('data-raw') || '';
     if (requestedStr === 'Not specified') {
-        showCustomConfirm('Are you sure you want to assign this exact examination and request payment?', function() {
+        window.confirmAction('Confirm Assignment', 'Are you sure you want to assign this exact examination and request payment?', function() {
             document.getElementById('assignForm').submit();
         });
         return false;
@@ -132,7 +132,7 @@ function validateAssignForm(e) {
 
     // If we couldn't map ANY requested exam to a category, we fallback to allowing anything
     if (requestedCategories.size === 0 && !hasUnknownRequested) {
-        showCustomConfirm('Are you sure you want to assign this exact examination and request payment?', function() {
+        window.confirmAction('Confirm Assignment', 'Are you sure you want to assign this exact examination and request payment?', function() {
             document.getElementById('assignForm').submit();
         });
         return false;
@@ -145,7 +145,11 @@ function validateAssignForm(e) {
     const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(s => s);
 
     if (assignedExams.length === 0) {
-        showCustomAlert('Please select at least one exam type.');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Please select at least one exam type.', 'error');
+        } else {
+            alert('Please select at least one exam type.');
+        }
         return false;
     }
 
@@ -163,66 +167,20 @@ function validateAssignForm(e) {
 
     if (invalidExams.length > 0) {
         const reqCats = Array.from(requestedCategories).map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ');
-        showCustomAlert(`You cannot assign "${invalidExams.join(', ')}" because it does not match the patient's requested category (${reqCats}).\n\nPlease select exams only from the requested categories.`);
+        const errMsg = `You cannot assign "${invalidExams.join(', ')}" because it does not match the patient's requested category (${reqCats}).\n\nPlease select exams only from the requested categories.`;
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Restriction Error', errMsg, 'error');
+        } else {
+            alert(errMsg);
+        }
         return false;
     }
 
-    showCustomConfirm('Are you sure you want to assign this exact examination and request payment?', function() {
+    window.confirmAction('Confirm Assignment', 'Are you sure you want to assign this exact examination and request payment?', function() {
         document.getElementById('assignForm').submit();
     });
     return false;
 }
-
-// --- Custom Modal Helpers ---
-function showCustomAlert(message) {
-    document.getElementById('alertMessage').innerText = message;
-    const modal = document.getElementById('customAlertModal');
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modal.firstElementChild.classList.remove('scale-95');
-    }, 10);
-}
-
-function closeCustomAlert() {
-    const modal = document.getElementById('customAlertModal');
-    modal.classList.add('opacity-0');
-    modal.firstElementChild.classList.add('scale-95');
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 200);
-}
-
-let confirmCallback = null;
-
-function showCustomConfirm(message, callback) {
-    document.getElementById('confirmMessage').innerText = message;
-    confirmCallback = callback;
-    const modal = document.getElementById('customConfirmModal');
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modal.firstElementChild.classList.remove('scale-95');
-    }, 10);
-}
-
-function closeCustomConfirm() {
-    const modal = document.getElementById('customConfirmModal');
-    modal.classList.add('opacity-0');
-    modal.firstElementChild.classList.add('scale-95');
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        confirmCallback = null;
-    }, 200);
-}
-
-function confirmCustomAction() {
-    if (confirmCallback) {
-        confirmCallback();
-    }
-    closeCustomConfirm();
-}
-// ----------------------------
 
 function closeAssignModal() {
     document.getElementById('assignModal').classList.add('hidden');

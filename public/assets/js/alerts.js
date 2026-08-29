@@ -60,15 +60,13 @@ const alerts = {
     });
   },
 
-  /**
-   * Show a professional confirmation dialog
-   */
   confirm: function (title, text, confirmText = 'Yes, Proceed') {
     return Swal.fire({
       title: title,
       text: text,
       icon: 'warning',
       showCancelButton: true,
+      reverseButtons: true,
       confirmButtonColor: '#3b82f6', // blue-500
       cancelButtonColor: '#6b7280', // gray-500
       confirmButtonText: confirmText,

@@ -76,17 +76,38 @@ foreach ($allServices as $service) {
 </div>
 
 <?php if ($successMsg): ?>
-    <div class="mt-4 rounded-lg bg-green-50 border border-green-300 p-3 flex items-center gap-3">
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
-        <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: <?= json_encode($successMsg) ?>,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                });
+            }
+        });
+    </script>
 <?php endif; ?>
 
 <?php if ($errorMsg): ?>
-    <div class="mt-4 rounded-lg bg-red-50 border border-red-300 p-3 flex items-center gap-3">
-        <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
-        <p class="text-sm text-red-800 font-medium"><?= htmlspecialchars($errorMsg) ?></p>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: <?= json_encode($errorMsg) ?>,
+                    customClass: {
+                        popup: 'rounded-3xl border-0 shadow-2xl',
+                        confirmButton: 'rounded-xl px-8 py-3 font-bold'
+                    }
+                });
+            }
+        });
+    </script>
 <?php endif; ?>
 
 <!-- Navigation Tabs -->
@@ -120,8 +141,8 @@ foreach ($allServices as $service) {
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
             <option value="All">All Status</option>
             <option value="Pending Approval">Pending Approval</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="Pending Payment">Pending Payment</option>
+            <option value="Payment Verified">Payment Verified</option>
         </select>
         <select id="sort-date"
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
@@ -310,35 +331,7 @@ foreach ($allServices as $service) {
 </div>
 
 <!-- Custom Confirm Modal -->
-<div id="customConfirmModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden p-4 opacity-0 transition-opacity duration-200">
-    <div class="w-full max-w-sm p-6 bg-white rounded-2xl shadow-2xl transform scale-95 transition-transform duration-200">
-        <div class="flex flex-col items-center text-center">
-            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4 border-4 border-blue-50">
-                <i data-lucide="help-circle" class="w-6 h-6 text-blue-600"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Confirm Assignment</h3>
-            <p id="confirmMessage" class="text-sm text-gray-500 mb-6">Are you sure you want to assign this exact examination and request payment?</p>
-            <div class="flex gap-3 w-full">
-                <button type="button" onclick="closeCustomConfirm()" class="flex-1 py-2.5 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 transition-all">Cancel</button>
-                <button type="button" onclick="confirmCustomAction()" class="flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all shadow-sm">Yes, Proceed</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Custom Alert Modal -->
-<div id="customAlertModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden p-4 opacity-0 transition-opacity duration-200">
-    <div class="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl transform scale-95 transition-transform duration-200">
-        <div class="flex flex-col items-center text-center">
-            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 border-4 border-red-50">
-                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Restriction Error</h3>
-            <p id="alertMessage" class="text-sm text-gray-600 mb-6 whitespace-pre-line"></p>
-            <button type="button" onclick="closeCustomAlert()" class="w-full py-2.5 px-4 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 focus:ring-4 focus:ring-gray-200 transition-all shadow-sm">Got it</button>
-        </div>
-    </div>
-</div>
 
 <!-- Edit Modal -->
 <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">

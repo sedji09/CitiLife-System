@@ -956,13 +956,12 @@ class CaseModel
         $sql = "SELECT r.*, r.id as request_id, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                 FROM requests r 
                 JOIN patients p ON r.patient_id = p.id 
-                WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verified', 'Rejected', 'Cancelled') AND r.branch_id = ?
+                WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verified') AND r.branch_id = ?
                 ORDER BY 
                   CASE 
                     WHEN r.status IN ('Pending Approval', 'Payment Verified') THEN 1 
                     WHEN r.status = 'Pending Payment' THEN 2
-                    WHEN r.status = 'Rejected' THEN 3
-                    ELSE 4
+                    ELSE 3
                   END,
                   r.created_at DESC";
         $stmt = $this->pdo->prepare($sql);
