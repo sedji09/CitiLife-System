@@ -1,42 +1,6 @@
 <?php
 session_start();
 
-// --- BULLETPROOF STATIC FILE FALLBACK FOR RAILWAY ---
-// If Nginx DocumentRoot is set to public/ instead of root, it will 404 on assets 
-// and fallback here. We intercept requests for static files and serve them manually.
-$requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-if (preg_match('#^/(views|public|tailwind|assets)/#', $requestUri)) {
-    // If it's an assets request, it belongs in public/assets
-    if (strpos($requestUri, '/assets/') === 0) {
-        $realPath = realpath(__DIR__ . '/../public' . $requestUri);
-    } else {
-        $realPath = realpath(__DIR__ . '/../' . ltrim($requestUri, '/'));
-    }
-    
-    if ($realPath && is_file($realPath) && strpos($realPath, realpath(__DIR__ . '/../')) === 0) {
-        $ext = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
-        $mimes = [
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'svg' => 'image/svg+xml',
-            'woff' => 'font/woff',
-            'woff2' => 'font/woff2',
-            'ttf' => 'font/ttf',
-            'json' => 'application/json'
-        ];
-        if (isset($mimes[$ext])) {
-            header('Content-Type: ' . $mimes[$ext]);
-            header('Cache-Control: public, max-age=31536000'); // Cache for 1 year
-            readfile($realPath);
-            exit;
-        }
-    }
-}
-// ----------------------------------------------------
-
 require_once __DIR__ . '/../helpers.php';
 
 if (file_exists(__DIR__ . '/../env.php')) {
@@ -107,7 +71,12 @@ $isLocalhost = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1']) || 
 
 // Kung tumatakbo sa production (tulad ng Railway), ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
 if (!$isLocalhost) {
-    // Remove the XAMPP project folder from the path for Railway
+    // 1. Remove the XAMPP project folder AND public folder from the path 
+    //    (e.g., /CitiLife-System/public/assets -> /assets)
+    $output = str_replace('/' . PROJECT_DIR . '/public/', '/', $output);
+    
+    // 2. Remove the XAMPP project folder only for other paths
+    //    (e.g., /CitiLife-System/views -> /views)
     $output = str_replace('/' . PROJECT_DIR . '/', '/', $output);
 }
 
