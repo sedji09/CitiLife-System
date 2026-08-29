@@ -214,14 +214,6 @@
           loader.classList.add('hidden');
         }, 280);
       }
-      
-      // Fallback: Ensure skeleton hides even if Vue mounting has issues
-      window.addEventListener('load', () => {
-        const fallbackLoader = document.getElementById('app-loading');
-        if (fallbackLoader && !fallbackLoader.classList.contains('hidden')) {
-            fallbackLoader.classList.add('hidden');
-        }
-      });
       // =====================================
 
       // Load theme from localStorage — support system/dark/light
@@ -1625,6 +1617,27 @@
   };
   const vm = app.mount("#app");
   window.vm = vm;
+
+  // Fallback: Ensure skeleton hides even if Vue mounting fails
+  function hideSkeletonFallback() {
+    const fallbackLoader = document.getElementById('app-loading');
+    if (fallbackLoader && !fallbackLoader.classList.contains('hidden')) {
+      fallbackLoader.classList.add('fade-out');
+      setTimeout(() => {
+        fallbackLoader.classList.add('hidden');
+      }, 280);
+    }
+  }
+
+  if (document.readyState === 'complete') {
+    // If window already loaded, hide immediately
+    setTimeout(hideSkeletonFallback, 1000); 
+  } else {
+    window.addEventListener('load', () => {
+      setTimeout(hideSkeletonFallback, 1000);
+    });
+  }
+
   window.openPatientSettings = function(e) {
     if (e) e.preventDefault();
     if (window.vm && window.vm.openSettings) {

@@ -202,8 +202,11 @@
   <div class="pt-2 border-t border-gray-300 relative" ref="profileMenuRef">
     <button @click="profileMenuOpen = !profileMenuOpen"
       class="w-full flex items-center gap-3 rounded-xl px-2.5 py-3 transition"
-      :class="profileMenuOpen ? 'bg-gray-100 ring-1 ring-gray-200' : 'hover:bg-gray-100'"
-      :data-tooltip="!isOpen ? 'Profile' : ''" :class="!isOpen ? 'has-tooltip sidebar-tooltip' : ''">
+      :class="[
+        profileMenuOpen ? 'bg-gray-100 ring-1 ring-gray-200' : 'hover:bg-gray-100',
+        !isOpen ? 'has-tooltip sidebar-tooltip' : ''
+      ]"
+      :data-tooltip="!isOpen ? 'Profile' : ''">
       <div class="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center shrink-0 overflow-hidden">
         <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover"></template>
         <span v-else class="text-red-700 font-semibold text-sm" v-text="userInitials"></span>

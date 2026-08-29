@@ -714,6 +714,12 @@
       flex-direction: column;
       gap: 8px;
     }
+    
+    @media (max-width: 768px) {
+      .skel-sidebar {
+        display: none !important;
+      }
+    }
 
     /* Content skeleton */
     .skel-content {
