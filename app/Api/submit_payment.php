@@ -33,7 +33,7 @@ if (empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && $_SERVER['CONTENT_LENG
 $auditLogModel = new \AuditLogModel($pdo);
 
 // Check if case belongs to patient
-$stmt = $pdo->prepare("SELECT id, branch_id FROM requests WHERE id = ? AND patient_id = ? AND status = 'Pending Payment'");
+$stmt = $pdo->prepare("SELECT id, branch_id, original_price, philhealth_discount, amount_due FROM requests WHERE id = ? AND patient_id = ? AND status = 'Pending Payment'");
 $stmt->execute([$caseId, $patientId]);
 $request = $stmt->fetch();
 
@@ -43,6 +43,8 @@ if (!$request) {
 }
 
 $branchId = $request['branch_id'];
+$originalAmount = $request['original_price'] ?? $request['amount_due'] ?? $amount;
+$discountAmount = $request['philhealth_discount'] ?? 0.00;
 $proofPath = null;
 
 if ($paymentMethod === 'GCash') {
@@ -87,9 +89,9 @@ if ($paymentMethod === 'GCash') {
 try {
     $pdo->beginTransaction();
     
-    // Insert into payments
-    $stmt = $pdo->prepare("INSERT INTO payments (request_id, amount, payment_method, reference_number, proof_of_payment_path, status) VALUES (?, ?, ?, ?, ?, 'Pending Verification')");
-    $stmt->execute([$caseId, $amount, $paymentMethod, $referenceNumber, $proofPath]);
+    // Insert into payments including original_amount and discount_amount
+    $stmt = $pdo->prepare("INSERT INTO payments (request_id, original_amount, discount_amount, amount, payment_method, reference_number, proof_of_payment_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending Verification')");
+    $stmt->execute([$caseId, $originalAmount, $discountAmount, $amount, $paymentMethod, $referenceNumber, $proofPath]);
     
     // Update request status to Payment Verifying
     $stmt = $pdo->prepare("UPDATE requests SET status = 'Payment Verifying' WHERE id = ?");

@@ -126,6 +126,7 @@ class PaymentVerificationsController
         // We join `payments` -> `requests` -> `patients`
         $stmtPending = $pdo->prepare("
             SELECT p.*, r.request_number, r.exam_type, r.priority, r.submitted_at,
+                   r.philhealth_status, r.philhealth_id,
                    pat.first_name, pat.last_name, pat.contact_number
             FROM payments p
             JOIN requests r ON p.request_id = r.id
@@ -138,7 +139,8 @@ class PaymentVerificationsController
         
         // Fetch verified/rejected payments (History) - Fetch all for JS processing
         $stmtHistory = $pdo->prepare("
-            SELECT p.*, r.request_number, r.exam_type, pat.first_name, pat.last_name
+            SELECT p.*, r.request_number, r.exam_type, r.philhealth_status, r.philhealth_id,
+                   pat.first_name, pat.last_name
             FROM payments p
             JOIN requests r ON p.request_id = r.id
             JOIN patients pat ON r.patient_id = pat.id

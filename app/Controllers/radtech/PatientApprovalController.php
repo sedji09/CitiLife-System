@@ -86,34 +86,49 @@ class PatientApprovalController
             if ($_GET['action'] === 'assign_exam' && isset($_GET['id'])) {
                 $requestId = (int)$_GET['id'];
                 $examType = $_POST['exam_type'] ?? '';
-            
-                // Calculate total price based on selected exams
-                $examArray = array_map('trim', explode(',', $examType));
-                $totalPrice = 0;
-                if (!empty($examArray)) {
-                    $placeholders = implode(',', array_fill(0, count($examArray), '?'));
-                    $stmtPrice = $pdo->prepare("SELECT SUM(price) FROM xray_services WHERE exam_type IN ($placeholders) AND status = 'active'");
-                    $stmtPrice->execute($examArray);
-                    $totalPrice = (float) $stmtPrice->fetchColumn();
-                }
-                $amountDue = $totalPrice;
 
                 try {
                     $pdo->beginTransaction();
                     
-                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND branch_id = ? AND (status = 'Pending Approval' OR status = 'Pending')");
+                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND branch_id = ? AND (status = 'Pending Approval' OR status = 'Pending' OR status = 'Pending Payment')");
                     $stmt->execute([$requestId, $branchId]);
                     $req = $stmt->fetch();
                     
                     if (!$req) {
                         throw new \Exception("Request not found or not in pending state.");
                     }
+
+                    // Calculate total original price and PhilHealth discount based on selected exams
+                    $examArray = array_filter(array_map('trim', explode(',', $examType)));
+                    $originalPrice = 0.00;
+                    $philhealthDiscount = 0.00;
+                    $hasPhilHealth = ($req['philhealth_status'] === 'With PhilHealth Card');
+
+                    if (!empty($examArray)) {
+                        $placeholders = implode(',', array_fill(0, count($examArray), '?'));
+                        $stmtServices = $pdo->prepare("SELECT exam_type, price, is_philhealth_covered, philhealth_discount FROM xray_services WHERE exam_type IN ($placeholders) AND status = 'active'");
+                        $stmtServices->execute($examArray);
+                        $services = $stmtServices->fetchAll();
+
+                        foreach ($services as $srv) {
+                            $price = (float)$srv['price'];
+                            $originalPrice += $price;
+
+                            if ($hasPhilHealth && (int)$srv['is_philhealth_covered'] === 1) {
+                                $discount = (float)$srv['philhealth_discount'];
+                                // Discount cannot exceed individual procedure price
+                                $philhealthDiscount += min($discount, $price);
+                            }
+                        }
+                    }
+
+                    $amountDue = max(0.00, $originalPrice - $philhealthDiscount);
                     
-                    // Update request with exam type and amount due, set to Pending Payment
-                    $stmtUpdate = $pdo->prepare("UPDATE requests SET exam_type = ?, amount_due = ?, status = 'Pending Payment' WHERE id = ?");
-                    $stmtUpdate->execute([$examType, $amountDue, $requestId]);
+                    // Update request with exam type, original price, PhilHealth discount, and amount due, set to Pending Payment
+                    $stmtUpdate = $pdo->prepare("UPDATE requests SET exam_type = ?, original_price = ?, philhealth_discount = ?, amount_due = ?, status = 'Pending Payment' WHERE id = ?");
+                    $stmtUpdate->execute([$examType, $originalPrice, $philhealthDiscount, $amountDue, $requestId]);
                     
-                    $auditLogModel->addLog($currentUserId, "Assigned Exam", 'Patient Approval', 'Request', $requestId, "Assigned $examType to request #{$req['request_number']}", $branchId);
+                    $auditLogModel->addLog($currentUserId, "Assigned Exam", 'Patient Approval', 'Request', $requestId, "Assigned $examType (Original: PHP $originalPrice, PhilHealth Discount: PHP $philhealthDiscount, Due: PHP $amountDue) to request #{$req['request_number']}", $branchId);
                     
                     $pdo->commit();
                     $_SESSION['flash_success'] = "Exam assigned successfully. Awaiting patient payment.";

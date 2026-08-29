@@ -30,6 +30,12 @@ class ServicePricingController
 
                 $examType = trim($_POST['exam_type'] ?? '');
                 $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT);
+                $isPhilhealthCovered = !empty($_POST['is_philhealth_covered']) ? 1 : 0;
+                $philhealthDiscount = $isPhilhealthCovered ? filter_var($_POST['philhealth_discount'] ?? 0, FILTER_VALIDATE_FLOAT) : 0.00;
+                if ($philhealthDiscount === false || $philhealthDiscount < 0) {
+                    $philhealthDiscount = 0.00;
+                }
+
                 $status = $_POST['status'] ?? 'active';
                 if (!in_array($status, ['active', 'inactive'])) {
                     $status = 'active';
@@ -37,8 +43,10 @@ class ServicePricingController
 
                 if (empty($category) || empty($examType) || $price === false || $price < 0) {
                     $error = "Please fill in all required fields with valid values.";
+                } elseif ($isPhilhealthCovered && $philhealthDiscount > $price) {
+                    $error = "PhilHealth discount cannot exceed the procedure price.";
                 } else {
-                    if ($serviceModel->createService($category, $examType, $price, $status)) {
+                    if ($serviceModel->createService($category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status)) {
                         $newId = $pdo->lastInsertId();
                         $success = "X-Ray service '{$examType}' added successfully!";
                         $auditLogModel->addLog(
@@ -47,7 +55,7 @@ class ServicePricingController
                             'Service Pricing',
                             'Service',
                             $newId,
-                            "Category: $category, Price: PHP $price, Status: $status",
+                            "Category: $category, Price: PHP $price, PhilHealth: " . ($isPhilhealthCovered ? "Yes (Discount: PHP $philhealthDiscount)" : "No") . ", Status: $status",
                             null
                         );
                     } else {
@@ -66,6 +74,12 @@ class ServicePricingController
 
                 $examType = trim($_POST['exam_type'] ?? '');
                 $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT);
+                $isPhilhealthCovered = !empty($_POST['is_philhealth_covered']) ? 1 : 0;
+                $philhealthDiscount = $isPhilhealthCovered ? filter_var($_POST['philhealth_discount'] ?? 0, FILTER_VALIDATE_FLOAT) : 0.00;
+                if ($philhealthDiscount === false || $philhealthDiscount < 0) {
+                    $philhealthDiscount = 0.00;
+                }
+
                 $status = $_POST['status'] ?? 'active';
                 if (!in_array($status, ['active', 'inactive'])) {
                     $status = 'active';
@@ -73,8 +87,10 @@ class ServicePricingController
 
                 if (!$id || empty($category) || empty($examType) || $price === false || $price < 0) {
                     $error = "Please provide valid information to update the service.";
+                } elseif ($isPhilhealthCovered && $philhealthDiscount > $price) {
+                    $error = "PhilHealth discount cannot exceed the procedure price.";
                 } else {
-                    if ($serviceModel->updateService($id, $category, $examType, $price, $status)) {
+                    if ($serviceModel->updateService($id, $category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status)) {
                         $success = "Service '{$examType}' updated successfully!";
                         $auditLogModel->addLog(
                             $currentUserId,
@@ -82,7 +98,7 @@ class ServicePricingController
                             'Service Pricing',
                             'Service',
                             $id,
-                            "Category: $category, Price: PHP $price, Status: $status",
+                            "Category: $category, Price: PHP $price, PhilHealth: " . ($isPhilhealthCovered ? "Yes (Discount: PHP $philhealthDiscount)" : "No") . ", Status: $status",
                             null
                         );
                     } else {

@@ -23,15 +23,17 @@
         <?php
         $activeCount = 0;
         $inactiveCount = 0;
+        $philhealthCoveredCount = 0;
         $totalCount = count($services);
         foreach ($services as $s) {
             if ($s['status'] === 'active') $activeCount++;
             else $inactiveCount++;
+            if (!empty($s['is_philhealth_covered'])) $philhealthCoveredCount++;
         }
         ?>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-500">Active Services</p>
@@ -39,6 +41,15 @@
                 </div>
                 <div class="p-3 bg-green-50 text-green-600 rounded-lg">
                     <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">PhilHealth Covered</p>
+                    <h3 class="text-2xl font-bold text-gray-900"><?= $philhealthCoveredCount ?></h3>
+                </div>
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
                 </div>
             </div>
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
@@ -115,6 +126,7 @@
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Exam Procedure</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Category</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Price (PHP)</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">PhilHealth Coverage</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Actions</th>
                         </tr>
@@ -122,7 +134,7 @@
                     <tbody id="servicesTableBody" class="divide-y divide-gray-100">
                         <?php if (empty($services)): ?>
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                                     <div class="flex flex-col items-center gap-2">
                                         <i data-lucide="tag" class="w-10 h-10 text-gray-200"></i>
                                         <p>No X-Ray services found.</p>
@@ -132,7 +144,7 @@
                         <?php else: ?>
                             <!-- No Results Placeholder Row -->
                             <tr id="noResultsRow" class="hidden">
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                                     <div class="flex flex-col items-center gap-3">
                                         <div class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
                                             <i data-lucide="search-x" class="w-8 h-8 text-gray-300"></i>
@@ -153,7 +165,7 @@
                                                 <i data-lucide="activity" class="w-4 h-4"></i>
                                             </div>
                                             <span class="text-sm font-bold text-gray-800 tracking-tight">
-                                                <?= htmlspecialchars($s['exam_type']) ?>
+                                                 <?= htmlspecialchars($s['exam_type']) ?>
                                             </span>
                                         </div>
                                     </td>
@@ -163,9 +175,20 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-sm font-bold text-gray-900">
+                                        <span class="text-sm font-bold text-gray-900 font-mono">
                                             ₱<?= number_format($s['price'], 2) ?>
                                         </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <?php if (!empty($s['is_philhealth_covered'])): ?>
+                                            <span class="text-sm font-semibold text-emerald-600">
+                                                ₱<?= number_format($s['philhealth_discount'], 2) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-sm font-medium text-gray-400">
+                                                -
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-4">
                                         <?php
@@ -286,6 +309,32 @@
                 </div>
             </div>
 
+            <!-- PhilHealth Coverage Toggle -->
+            <div class="rounded-xl border border-gray-200 bg-stone-50/50 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">PhilHealth Covered</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Enable if this exam is eligible for PhilHealth discount</p>
+                    </div>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="is_philhealth_covered" name="is_philhealth_covered" value="1" onchange="togglePhilhealthDiscount('add')" class="sr-only">
+                        <div id="add_toggle_track" class="w-11 h-6 flex-shrink-0 bg-gray-200 rounded-full border-2 border-transparent transition-colors duration-200 inline-flex items-center">
+                            <div id="add_toggle_knob" class="w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200" style="transform: translateX(0px);"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="add_philhealth_discount_wrapper" class="hidden pt-2 border-t border-gray-200/80">
+                    <label for="philhealth_discount" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">PhilHealth Discount Amount (PHP)</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm pointer-events-none select-none">₱</span>
+                        <input type="number" step="0.01" min="0" id="philhealth_discount" name="philhealth_discount" placeholder="200.00"
+                            class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1">Deducted from the total payable amount for patients with a PhilHealth card.</p>
+                </div>
+            </div>
+
             <div>
                 <label for="status" class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
                 <select id="status" name="status"
@@ -356,6 +405,32 @@
                 </div>
             </div>
 
+            <!-- PhilHealth Coverage Toggle -->
+            <div class="rounded-xl border border-gray-200 bg-stone-50/50 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">PhilHealth Covered</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Enable if this exam is eligible for PhilHealth discount</p>
+                    </div>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="edit_is_philhealth_covered" name="is_philhealth_covered" value="1" onchange="togglePhilhealthDiscount('edit')" class="sr-only">
+                        <div id="edit_toggle_track" class="w-11 h-6 flex-shrink-0 bg-gray-200 rounded-full border-2 border-transparent transition-colors duration-200 inline-flex items-center">
+                            <div id="edit_toggle_knob" class="w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200" style="transform: translateX(0px);"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="edit_philhealth_discount_wrapper" class="hidden pt-2 border-t border-gray-200/80">
+                    <label for="edit_philhealth_discount" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">PhilHealth Discount Amount (PHP)</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm pointer-events-none select-none">₱</span>
+                        <input type="number" step="0.01" min="0" id="edit_philhealth_discount" name="philhealth_discount" placeholder="200.00"
+                            class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1">Deducted from the total payable amount for patients with a PhilHealth card.</p>
+                </div>
+            </div>
+
             <div>
                 <label for="edit_status" class="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
                 <select id="edit_status" name="status"
@@ -380,6 +455,32 @@
 </div>
 
 <script>
+    function togglePhilhealthDiscount(prefix) {
+        const checkboxId = prefix === 'add' ? 'is_philhealth_covered' : 'edit_is_philhealth_covered';
+        const wrapperId = prefix === 'add' ? 'add_philhealth_discount_wrapper' : 'edit_philhealth_discount_wrapper';
+        const inputId   = prefix === 'add' ? 'philhealth_discount' : 'edit_philhealth_discount';
+        const trackId   = prefix === 'add' ? 'add_toggle_track' : 'edit_toggle_track';
+        const knobId    = prefix === 'add' ? 'add_toggle_knob' : 'edit_toggle_knob';
+
+        const checkbox = document.getElementById(checkboxId);
+        const wrapper = document.getElementById(wrapperId);
+        const input = document.getElementById(inputId);
+        const track = document.getElementById(trackId);
+        const knob = document.getElementById(knobId);
+
+        if (checkbox && checkbox.checked) {
+            wrapper.classList.remove('hidden');
+            input.required = true;
+            if (track) { track.classList.remove('bg-gray-200'); track.style.backgroundColor = '#dc2626'; }
+            if (knob) { knob.style.transform = 'translateX(20px)'; }
+        } else {
+            wrapper.classList.add('hidden');
+            input.required = false;
+            if (track) { track.style.backgroundColor = ''; track.classList.add('bg-gray-200'); }
+            if (knob) { knob.style.transform = 'translateX(0px)'; }
+        }
+    }
+
     function applyModalTheme(modalId) {
         const isDark = document.documentElement.classList.contains('theme-dark');
         const modal = document.getElementById(modalId);
@@ -432,6 +533,9 @@
         document.getElementById('price').value = '';
         document.getElementById('category').value = '';
         document.getElementById('status').value = 'active';
+        document.getElementById('is_philhealth_covered').checked = false;
+        document.getElementById('philhealth_discount').value = '';
+        togglePhilhealthDiscount('add');
         toggleCustomCategory('add');
 
         document.getElementById('addServiceModal').classList.remove('hidden');
@@ -447,6 +551,11 @@
         document.getElementById('edit_exam_type').value = service.exam_type;
         document.getElementById('edit_price').value = service.price;
         document.getElementById('edit_status').value = service.status;
+        
+        const isCovered = (parseInt(service.is_philhealth_covered) === 1);
+        document.getElementById('edit_is_philhealth_covered').checked = isCovered;
+        document.getElementById('edit_philhealth_discount').value = isCovered ? parseFloat(service.philhealth_discount || 0).toFixed(2) : '';
+        togglePhilhealthDiscount('edit');
         
         const categorySelect = document.getElementById('edit_category');
         let exists = false;

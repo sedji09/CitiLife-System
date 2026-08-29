@@ -411,6 +411,30 @@ $statusDescriptions = [
                                         </p>
                                     </div>
                                 </div>
+                                <?php if (!empty($caseRow['amount_due']) || !empty($caseRow['original_price'])): ?>
+                                    <div class="flex items-start gap-3">
+                                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                            <i data-lucide="receipt" class="w-4 h-4 text-red-500"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">Amount Due</p>
+                                            <?php if ((float)($caseRow['philhealth_discount'] ?? 0) > 0): ?>
+                                                <div class="flex items-center flex-wrap gap-2 text-sm mt-0.5">
+                                                    <span class="text-gray-400 line-through text-xs">₱<?= number_format($caseRow['original_price'] ?? $caseRow['amount_due'], 2) ?></span>
+                                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                                        <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                                                        -₱<?= number_format($caseRow['philhealth_discount'], 2) ?> PhilHealth
+                                                    </span>
+                                                    <span class="font-extrabold text-red-600 font-mono">₱<?= number_format($caseRow['amount_due'], 2) ?></span>
+                                                </div>
+                                            <?php else: ?>
+                                                <p class="text-sm font-bold text-gray-800 font-mono mt-0.5">
+                                                    ₱<?= number_format($caseRow['amount_due'], 2) ?>
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <?php
@@ -429,7 +453,7 @@ $statusDescriptions = [
                             <?php endif; ?>
                             <?php if ($isPendingPayment): ?>
                                 <button type="button"
-                                    onclick="openPaymentModal(<?= $caseRow['id'] ?>, <?= $caseRow['amount_due'] ?? 0 ?>, '<?= htmlspecialchars($caseRow['gcash_qr_path'] ?? '') ?>')"
+                                    onclick="openPaymentModal(<?= $caseRow['id'] ?>, <?= $caseRow['amount_due'] ?? 0 ?>, <?= $caseRow['original_price'] ?? ($caseRow['amount_due'] ?? 0) ?>, <?= $caseRow['philhealth_discount'] ?? 0 ?>, '<?= htmlspecialchars($caseRow['gcash_qr_path'] ?? '') ?>')"
                                     class="text-sm font-semibold text-white bg-red-600 hover:bg-red-700 px-5 sm:px-6 py-2.5 rounded-lg transition flex items-center shadow-sm">
                                     Pay Now
                                 </button>
@@ -917,14 +941,35 @@ $statusDescriptions = [
         });
     }
 
-    function openPaymentModal(caseId, amount, gcashQrPath) {
+    function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath) {
         document.getElementById('paymentModal').classList.remove('hidden');
         document.getElementById('paymentCaseId').value = caseId;
         document.getElementById('paymentAmount').value = amount;
-        document.getElementById('paymentAmountDisplay').innerText = '₱' + parseFloat(amount).toFixed(2);
         
-        const instAmount = document.getElementById('instructionAmountDisplay');
-        if(instAmount) instAmount.innerText = '₱' + parseFloat(amount).toFixed(2);
+        const origPrice = parseFloat(originalPrice || amount);
+        const disc = parseFloat(philhealthDiscount || 0);
+        const due = parseFloat(amount || 0);
+
+        document.getElementById('modalOriginalPriceDisplay').innerText = '₱' + origPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('modalDiscountDisplay').innerText = '-₱' + disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('paymentAmountDisplay').innerText = '₱' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        const origRow = document.getElementById('originalPriceModalRow');
+        const discRow = document.getElementById('philhealthDiscountModalRow');
+        const cashDiscNotice = document.getElementById('cashDiscountNotice');
+        
+        if (disc > 0) {
+            if (origRow) origRow.classList.remove('hidden');
+            if (discRow) discRow.classList.remove('hidden');
+            if (cashDiscNotice) {
+                cashDiscNotice.classList.remove('hidden');
+                cashDiscNotice.innerHTML = `Note: PhilHealth discount of <strong>₱${disc.toFixed(2)}</strong> applied. Please present your PhilHealth ID at the clinic counter.`;
+            }
+        } else {
+            if (origRow) origRow.classList.add('hidden');
+            if (discRow) discRow.classList.add('hidden');
+            if (cashDiscNotice) cashDiscNotice.classList.add('hidden');
+        }
         
         const gcashOption = document.getElementById('gcashOptionWrapper');
         if (gcashQrPath && gcashQrPath.trim() !== '') {
@@ -936,6 +981,9 @@ $statusDescriptions = [
             // Select cash by default if GCash is hidden
             document.getElementById('paymentMethodCash').click();
         }
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
     
     function closePaymentModal() {
@@ -944,12 +992,14 @@ $statusDescriptions = [
     
     function togglePaymentMethod(method) {
         const gcashSection = document.getElementById('gcashSection');
+        const cashSection = document.getElementById('cashSection');
         const proofInput = document.getElementById('paymentProof');
         const refInput = document.getElementById('referenceNumber');
         const modalContainer = document.getElementById('paymentModalContainer');
         
         if (method === 'GCash') {
             gcashSection.classList.remove('hidden');
+            if (cashSection) cashSection.classList.add('hidden');
             proofInput.required = true;
             if(refInput) refInput.required = true;
             if (modalContainer) {
@@ -959,6 +1009,7 @@ $statusDescriptions = [
             }
         } else {
             gcashSection.classList.add('hidden');
+            if (cashSection) cashSection.classList.remove('hidden');
             proofInput.required = false;
             if(refInput) refInput.required = false;
             if (modalContainer) {
@@ -977,14 +1028,30 @@ $statusDescriptions = [
         <!-- Modal panel -->
         <div id="paymentModalContainer" class="relative transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl w-full max-w-md p-6 sm:p-8 sm:my-8 transition-none">
         
-        <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold text-gray-900">Payment Options</h3>
             <button type="button" onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-lg transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
         
-        <p class="text-sm text-gray-500 mb-5">Total Amount Due: <span id="paymentAmountDisplay" class="font-bold text-gray-800"></span></p>
+        <!-- Itemized Price Breakdown -->
+        <div class="mb-5 bg-stone-50 border border-stone-200/80 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between text-xs text-gray-600" id="originalPriceModalRow">
+                <span>Regular Procedure Fee:</span>
+                <span id="modalOriginalPriceDisplay" class="font-semibold text-gray-800 font-mono">₱0.00</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-emerald-700 font-semibold" id="philhealthDiscountModalRow">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i> PhilHealth Coverage Discount:
+                </span>
+                <span id="modalDiscountDisplay" class="font-bold font-mono">-₱0.00</span>
+            </div>
+            <div class="pt-2 border-t border-stone-200 flex items-center justify-between">
+                <span class="text-sm font-bold text-gray-900">Total Amount to Pay:</span>
+                <span id="paymentAmountDisplay" class="text-lg font-extrabold text-red-600 font-mono">₱0.00</span>
+            </div>
+        </div>
         
         <form id="paymentForm" method="POST" action="/<?= PROJECT_DIR ?>/app/api/submit_payment.php" enctype="multipart/form-data">
             <input type="hidden" name="case_id" id="paymentCaseId" value="">
@@ -1002,6 +1069,15 @@ $statusDescriptions = [
                         <span class="font-medium text-gray-800">Cashless (GCash)</span>
                     </label>
                 </div>
+            </div>
+
+            <!-- Cash Notice Section -->
+            <div id="cashSection" class="hidden mb-4 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-amber-800">
+                    <i data-lucide="info" class="w-4 h-4 text-amber-600"></i> Cash Payment Reminder
+                </div>
+                <p>Please pay the exact amount due at the clinic cashier / front desk before your X-ray exam.</p>
+                <p id="cashDiscountNotice" class="hidden text-[11px] text-emerald-800 font-medium"></p>
             </div>
 
             <div id="gcashSection" class="hidden mb-6">

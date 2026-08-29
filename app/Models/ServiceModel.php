@@ -50,17 +50,17 @@ class ServiceModel {
     /**
      * Create a new service.
      */
-    public function createService($category, $examType, $price, $status = 'active') {
-        $stmt = $this->pdo->prepare("INSERT INTO xray_services (category, exam_type, price, status) VALUES (?, ?, ?, ?)");
-        return $stmt->execute([$category, $examType, $price, $status]);
+    public function createService($category, $examType, $price, $isPhilhealthCovered = 0, $philhealthDiscount = 0.00, $status = 'active') {
+        $stmt = $this->pdo->prepare("INSERT INTO xray_services (category, exam_type, price, is_philhealth_covered, philhealth_discount, status) VALUES (?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([$category, $examType, $price, (int)$isPhilhealthCovered, (float)$philhealthDiscount, $status]);
     }
 
     /**
      * Update an existing service.
      */
-    public function updateService($id, $category, $examType, $price, $status = 'active') {
-        $stmt = $this->pdo->prepare("UPDATE xray_services SET category = ?, exam_type = ?, price = ?, status = ? WHERE id = ?");
-        return $stmt->execute([$category, $examType, $price, $status, $id]);
+    public function updateService($id, $category, $examType, $price, $isPhilhealthCovered = 0, $philhealthDiscount = 0.00, $status = 'active') {
+        $stmt = $this->pdo->prepare("UPDATE xray_services SET category = ?, exam_type = ?, price = ?, is_philhealth_covered = ?, philhealth_discount = ?, status = ? WHERE id = ?");
+        return $stmt->execute([$category, $examType, $price, (int)$isPhilhealthCovered, (float)$philhealthDiscount, $status, $id]);
     }
 
     /**

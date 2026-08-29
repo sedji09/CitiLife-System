@@ -92,9 +92,25 @@
                                     <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
                                     <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
                                     <div class="text-xs text-blue-600 mt-1"><?= htmlspecialchars($payment['exam_type']) ?></div>
+                                    <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
+                                        <div class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                                            PhilHealth: <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-red-600">₱<?= number_format($payment['amount'], 2) ?></div>
+                                    <?php if ((float)($payment['discount_amount'] ?? 0) > 0): ?>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-400 line-through font-mono">₱<?= number_format($payment['original_amount'], 2) ?></span>
+                                            <span class="font-bold text-red-600 font-mono">₱<?= number_format($payment['amount'], 2) ?></span>
+                                        </div>
+                                        <div class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 inline-block px-1.5 py-0.5 rounded mt-0.5">
+                                            -₱<?= number_format($payment['discount_amount'], 2) ?> PhilHealth Discount
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="font-bold text-red-600 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
+                                    <?php endif; ?>
                                     <div class="text-xs text-gray-500 font-mono mt-1">Method: <?= htmlspecialchars($payment['payment_method']) ?></div>
                                     <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
                                         <div class="text-xs text-gray-500 font-mono mt-1">Ref: <?= htmlspecialchars($payment['reference_number']) ?></div>
@@ -105,7 +121,7 @@
                                 </td>
                                 <td class="px-6 py-4 space-x-2">
                                     <?php if ($payment['payment_method'] === 'GCash'): ?>
-                                        <button type="button" onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>')" class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200">
+                                        <button type="button" onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float)($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float)($payment['discount_amount'] ?? 0) ?>, <?= (float)$payment['amount'] ?>)" class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200">
                                             <i data-lucide="image" class="w-4 h-4"></i> Receipt
                                         </button>
                                     <?php endif; ?>
@@ -185,9 +201,24 @@
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
                                     <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
+                                    <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
+                                        <div class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> PhilHealth
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-gray-900">₱<?= number_format($payment['amount'], 2) ?></div>
+                                    <?php if ((float)($payment['discount_amount'] ?? 0) > 0): ?>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-400 line-through font-mono">₱<?= number_format($payment['original_amount'], 2) ?></span>
+                                            <span class="font-bold text-gray-900 font-mono">₱<?= number_format($payment['amount'], 2) ?></span>
+                                        </div>
+                                        <div class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 inline-block px-1.5 py-0.5 rounded mt-0.5">
+                                            -₱<?= number_format($payment['discount_amount'], 2) ?> PhilHealth
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="font-bold text-gray-900 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
+                                    <?php endif; ?>
                                     <div class="text-xs text-gray-500 font-mono mt-1">Method: <?= htmlspecialchars($payment['payment_method']) ?></div>
                                     <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
                                         <div class="text-xs text-gray-500 font-mono mt-1">Ref: <?= htmlspecialchars($payment['reference_number']) ?></div>
@@ -245,7 +276,7 @@
             <!-- Content -->
             <div class="px-6 py-5 flex-1 flex flex-col bg-gray-50/50 min-h-0">
                 <!-- Reference Number Badge -->
-                <div class="mb-5 shrink-0 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="mb-4 shrink-0 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
                         <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider block mb-1">Provided Reference Number</span>
                         <strong id="modal-ref-number" class="text-xl font-mono text-blue-900 tracking-tight"></strong>
@@ -254,9 +285,25 @@
                         Please verify this matches the receipt below
                     </div>
                 </div>
+
+                <!-- Price Breakdown in Modal -->
+                <div class="mb-4 shrink-0 bg-white border border-gray-200/80 rounded-xl p-3.5 space-y-1.5 text-xs">
+                    <div class="flex items-center justify-between text-gray-600" id="receiptModalOrigRow">
+                        <span>Original Procedure Price:</span>
+                        <span id="receiptModalOrigAmount" class="font-semibold font-mono text-gray-800">₱0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between text-emerald-700 font-semibold" id="receiptModalDiscRow">
+                        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i> PhilHealth Discount:</span>
+                        <span id="receiptModalDiscAmount" class="font-bold font-mono">-₱0.00</span>
+                    </div>
+                    <div class="pt-1.5 border-t border-gray-100 flex items-center justify-between text-sm">
+                        <span class="font-bold text-gray-900">Total Paid Amount:</span>
+                        <span id="receiptModalNetAmount" class="font-extrabold text-red-600 font-mono text-base">₱0.00</span>
+                    </div>
+                </div>
                 
                 <!-- Receipt Image Container (Scrollable) -->
-                <div class="bg-gray-200/50 rounded-xl p-4 flex justify-center items-start border border-gray-200 shadow-inner overflow-y-auto flex-1 min-h-[40vh] max-h-[60vh]">
+                <div class="bg-gray-200/50 rounded-xl p-4 flex justify-center items-start border border-gray-200 shadow-inner overflow-y-auto flex-1 min-h-[35vh] max-h-[50vh]">
                     <img id="modal-receipt-img" src="" alt="Receipt" class="max-w-md w-full h-auto rounded-lg shadow-sm">
                 </div>
             </div>
@@ -448,18 +495,38 @@
         initTable('pending', 'pending-row');
     });
 
-    function viewReceipt(path, refNumber) {
+    function viewReceipt(path, refNumber, origAmount, discAmount, netAmount) {
         if (!path) {
             alert('No receipt image available.');
             return;
         }
         
-        let imageSrc = path.startsWith('/') ? '/' + '<?= PROJECT_DIR ?>' + path : '/' + '<?= PROJECT_DIR ?>/' + path;
-        // In case the path was saved with /public already, we might end up with double /public, let's clean it up:
-        imageSrc = imageSrc.replace(/\/public\/public\//g, '/public/');
+        let imageSrc = '<?= "/" . PROJECT_DIR . "/" ?>' + (path.startsWith('/') ? path.substring(1) : path);
         document.getElementById('modal-receipt-img').src = imageSrc;
         document.getElementById('modal-ref-number').textContent = refNumber;
+        
+        const orig = parseFloat(origAmount || netAmount || 0);
+        const disc = parseFloat(discAmount || 0);
+        const net = parseFloat(netAmount || 0);
+
+        document.getElementById('receiptModalOrigAmount').textContent = '₱' + orig.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('receiptModalDiscAmount').textContent = '-₱' + disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('receiptModalNetAmount').textContent = '₱' + net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        const origRow = document.getElementById('receiptModalOrigRow');
+        const discRow = document.getElementById('receiptModalDiscRow');
+        if (disc > 0) {
+            if (origRow) origRow.classList.remove('hidden');
+            if (discRow) discRow.classList.remove('hidden');
+        } else {
+            if (origRow) origRow.classList.add('hidden');
+            if (discRow) discRow.classList.add('hidden');
+        }
+
         document.getElementById('receiptModal').classList.remove('hidden');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
     function closeReceiptModal() {

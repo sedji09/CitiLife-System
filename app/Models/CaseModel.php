@@ -491,6 +491,8 @@ class CaseModel
                 r.branch_id,
                 r.exam_type,
                 r.priority,
+                r.philhealth_status,
+                r.philhealth_id,
                 r.created_at,
                 b.name AS branch_name,
                 b.contact_number_1 AS branch_contact,
@@ -499,6 +501,8 @@ class CaseModel
                 b.gcash_qr_path,
                 NULL as radtech_id,
                 NULL as image_status,
+                r.original_price,
+                r.philhealth_discount,
                 r.amount_due
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
@@ -518,6 +522,8 @@ class CaseModel
                 c.branch_id,
                 c.exam_type,
                 c.priority,
+                c.philhealth_status,
+                c.philhealth_id,
                 c.created_at,
                 b.name AS branch_name,
                 b.contact_number_1 AS branch_contact,
@@ -526,6 +532,8 @@ class CaseModel
                 b.gcash_qr_path,
                 c.radtech_id,
                 (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
+                NULL as original_price,
+                0.00 as philhealth_discount,
                 0 as amount_due
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
@@ -557,6 +565,8 @@ class CaseModel
                 r.branch_id,
                 r.exam_type,
                 r.priority,
+                r.philhealth_status,
+                r.philhealth_id,
                 r.created_at,
                 b.name AS branch_name,
                 b.contact_number_1 AS branch_contact,
@@ -565,6 +575,8 @@ class CaseModel
                 b.gcash_qr_path,
                 NULL as radtech_id,
                 NULL as image_status,
+                r.original_price,
+                r.philhealth_discount,
                 r.amount_due
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
@@ -584,6 +596,8 @@ class CaseModel
                 c.branch_id,
                 c.exam_type,
                 c.priority,
+                c.philhealth_status,
+                c.philhealth_id,
                 c.created_at,
                 b.name AS branch_name,
                 b.contact_number_1 AS branch_contact,
@@ -592,6 +606,8 @@ class CaseModel
                 b.gcash_qr_path,
                 c.radtech_id,
                 (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
+                NULL as original_price,
+                0.00 as philhealth_discount,
                 0 as amount_due
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
@@ -1010,11 +1026,11 @@ class CaseModel
             return ['success' => false, 'message' => "Please upload at least one diagnostic image before submitting."];
 
         // File Processing
-        $uploadedPaths = [];
-        $uploadDir = __DIR__ . '/../../public/assets/uploads/cases/';
+        $uploadDir = __DIR__ . '/../../public/uploads/cases/';
         if (!is_dir($uploadDir))
             mkdir($uploadDir, 0777, true);
 
+        $uploadedPaths = [];
         $count = count($files['name']);
         for ($i = 0; $i < $count; $i++) {
             if ($files['error'][$i] !== UPLOAD_ERR_OK)
@@ -1031,7 +1047,7 @@ class CaseModel
             $newFileName = 'case_' . $caseId . '_' . time() . '_' . $i . '.' . $fileExt;
 
             if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $newFileName)) {
-                $uploadedPaths[] = 'public/assets/uploads/cases/' . $newFileName;
+                $uploadedPaths[] = 'public/uploads/cases/' . $newFileName;
             } else {
                 return ['success' => false, 'message' => "Error saving \"$fileName\"."];
             }

@@ -42,9 +42,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 $patientModel->updatePatient($request['patient_id'], $patientData);
 
-                // 2. Update request PhilHealth info
-                $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ? WHERE id = ?");
-                $stmtUp->execute([$philhealth, $philhealthId, $caseId]);
+                // 2. Update request PhilHealth info & recalculate price if exam already assigned
+                $hasPhilHealth = ($philhealth === 'With PhilHealth Card');
+                $philhealthIdToSave = $hasPhilHealth ? $philhealthId : null;
+
+                $stmtExam = $pdo->prepare("SELECT exam_type, status FROM requests WHERE id = ?");
+                $stmtExam->execute([$caseId]);
+                $reqData = $stmtExam->fetch(PDO::FETCH_ASSOC);
+
+                if ($reqData && !empty($reqData['exam_type']) && in_array($reqData['status'], ['Pending Payment', 'Pending Approval', 'Pending'])) {
+                    $examArray = array_filter(array_map('trim', explode(',', $reqData['exam_type'])));
+                    $originalPrice = 0.00;
+                    $philhealthDiscount = 0.00;
+
+                    if (!empty($examArray)) {
+                        $placeholders = implode(',', array_fill(0, count($examArray), '?'));
+                        $stmtServices = $pdo->prepare("SELECT exam_type, price, is_philhealth_covered, philhealth_discount FROM xray_services WHERE exam_type IN ($placeholders) AND status = 'active'");
+                        $stmtServices->execute($examArray);
+                        $services = $stmtServices->fetchAll();
+
+                        foreach ($services as $srv) {
+                            $price = (float)$srv['price'];
+                            $originalPrice += $price;
+
+                            if ($hasPhilHealth && (int)$srv['is_philhealth_covered'] === 1) {
+                                $discount = (float)$srv['philhealth_discount'];
+                                $philhealthDiscount += min($discount, $price);
+                            }
+                        }
+                    }
+
+                    $amountDue = max(0.00, $originalPrice - $philhealthDiscount);
+                    $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ?, original_price = ?, philhealth_discount = ?, amount_due = ? WHERE id = ?");
+                    $stmtUp->execute([$philhealth, $philhealthIdToSave, $originalPrice, $philhealthDiscount, $amountDue, $caseId]);
+                } else {
+                    $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ? WHERE id = ?");
+                    $stmtUp->execute([$philhealth, $philhealthIdToSave, $caseId]);
+                }
 
                 header('Location: /' . PROJECT_DIR . '/index.php?role=radtech&page=patient-approval&success=1');
                 exit;
