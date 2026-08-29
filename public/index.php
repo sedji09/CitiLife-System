@@ -71,12 +71,8 @@ $isLocalhost = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1']) || 
 
 // Kung tumatakbo sa production (tulad ng Railway), ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
 if (!$isLocalhost) {
-    // 1. Remove the XAMPP project folder AND public folder from the path 
-    //    (e.g., /CitiLife-System/public/assets -> /assets)
-    $output = str_replace('/' . PROJECT_DIR . '/public/', '/', $output);
-    
-    // 2. Remove the XAMPP project folder only for other paths
-    //    (e.g., /CitiLife-System/views -> /views)
+    // Remove the XAMPP project folder only, KEEP the /public/ prefix because DocumentRoot is /app
+    // (e.g., /CitiLife-System/public/assets -> /public/assets)
     $output = str_replace('/' . PROJECT_DIR . '/', '/', $output);
 }
 
