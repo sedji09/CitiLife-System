@@ -11,7 +11,7 @@
     userId: <?= json_encode($_SESSION['user_id'] ?? null) ?>,
     menuItems: <?= json_encode($menuItems) ?>,
     currentPath: <?= json_encode($currentPath) ?>,
-    basePath: <?= json_encode($basePath) ?>,
+    basePath: <?= json_encode((strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? $basePath : "") ?>,
     userDisplayName: <?= json_encode($userDisplayName) ?>,
     userEmail: <?= json_encode($userEmail) ?>,
     userInitials: <?= json_encode($initials) ?>,

@@ -477,7 +477,7 @@ window.submitFeedbackForm = function () {
 
     const formData = new FormData(feedbackForm);
 
-    fetch('/CitiLife-System/app/api/submit_feedback.php', {
+    fetch(window.__APP__.basePath + '/app/api/submit_feedback.php', {
         method: 'POST',
         body: formData
     })
@@ -679,7 +679,7 @@ window.submitDisputeForm = function (e) {
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
 
-    fetch('/CitiLife-System/app/api/disputes.php', {
+    fetch(window.__APP__.basePath + '/app/api/disputes.php', {
         method: 'POST',
         body: formData
     })
@@ -698,7 +698,7 @@ window.submitDisputeForm = function (e) {
                     confirmButtonColor: '#dc2626',
                     customClass: { popup: 'rounded-2xl' }
                 }).then(() => {
-                    window.location.href = '/CitiLife-System/my-records?tab=disputes';
+                    window.location.href = window.__APP__.basePath + '/my-records?tab=disputes';
                 });
             } else {
                 Swal.fire({ icon: 'error', title: 'Error', text: data.message });
@@ -711,4 +711,5 @@ window.submitDisputeForm = function (e) {
             Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection error.' });
         });
 };
+
 
