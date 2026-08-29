@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } catch (Exception $e) {
             error_log('update_patient error: ' . $e->getMessage());
-            header('Location: ' . $redirectBase . '/patient-approval?error=1');
+            header('Location: ' . $redirectBase . '/patient-approval?error=' . urlencode($e->getMessage()));
             exit;
         }
     }

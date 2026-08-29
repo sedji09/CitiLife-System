@@ -15,8 +15,8 @@ $errorMsg = '';
 // Handle update success/error messages
 if (isset($_GET['success']) && $_GET['success'] == 1)
     $successMsg = "Patient information updated successfully.";
-if (isset($_GET['error']) && $_GET['error'] == 1)
-    $errorMsg = "Failed to update patient information.";
+if (isset($_GET['error']) && !empty($_GET['error']))
+    $errorMsg = "Failed to update patient information: " . htmlspecialchars($_GET['error']);
 
 // 2. Data Fetching (Backend Logic)
 require_once __DIR__ . '/../../../config/database.php';
