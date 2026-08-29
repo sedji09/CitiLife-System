@@ -133,6 +133,6 @@ class Router
     {
         http_response_code($httpCode);
         loadView("errors/{$httpCode}");
-        exit;
     }
 }
+

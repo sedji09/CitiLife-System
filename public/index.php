@@ -60,6 +60,7 @@ try {
 } catch (\Throwable $e) {
     // I-log ang totoong error sa server para ma-check mo later kung bakit nag-error
     error_log($e->getMessage());
+    ob_clean();
     
     // I-load ang 500 error view kapag may pumalyang code
     $router->error(500);
@@ -77,4 +78,5 @@ if (!$isLocalhost) {
 }
 
 echo $output;
+
 
