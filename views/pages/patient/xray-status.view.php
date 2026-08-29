@@ -1030,8 +1030,8 @@ $statusDescriptions = [
                 </div>
             </div>
             <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
-                <span class="text-sm font-bold text-gray-900">Total Amount</span>
-                <span id="paymentAmountDisplay" class="text-lg font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
+                <span class="text-sm font-bold text-black">Total Amount</span>
+                <span id="paymentAmountDisplay" class="text-sm font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
             </div>
         </div>
         
@@ -1059,7 +1059,7 @@ $statusDescriptions = [
                     <i data-lucide="info" class="w-4 h-4 text-amber-600"></i> Cash Payment Reminder
                 </div>
                 <p>Please pay the exact amount due at the clinic cashier / front desk before your X-ray exam.</p>
-                <p id="cashDiscountNotice" class="hidden text-[11px] text-emerald-800 font-medium"></p>
+                <p id="cashDiscountNotice" class="hidden text-[11px] text-red-600 font-medium"></p>
             </div>
 
             <div id="gcashSection" class="hidden mb-6">
