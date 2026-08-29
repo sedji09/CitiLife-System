@@ -939,7 +939,7 @@ $statusDescriptions = [
             if (discRow) discRow.classList.remove('hidden');
             if (cashDiscNotice) {
                 cashDiscNotice.classList.remove('hidden');
-                cashDiscNotice.innerHTML = `Note: PhilHealth discount of <strong>₱${disc.toFixed(2)}</strong> applied. Please present your PhilHealth ID at the clinic counter.`;
+                cashDiscNotice.innerHTML = `Note: A PhilHealth discount has been applied. Please present your PhilHealth ID at the clinic counter.`;
             }
         } else {
             if (origRow) origRow.classList.add('hidden');
