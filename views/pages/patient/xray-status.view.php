@@ -64,9 +64,12 @@ $casesToDisplay = [];
 
 // Fetch all exam prices for breakdown
 $examPrices = [];
-$stmtPrices = $pdo->query("SELECT exam_type, price FROM xray_services");
+$stmtPrices = $pdo->query("SELECT exam_type, price, philhealth_discount FROM xray_services");
 while ($row = $stmtPrices->fetch(PDO::FETCH_ASSOC)) {
-    $examPrices[trim(strtolower($row['exam_type']))] = (float)$row['price'];
+    $examPrices[trim(strtolower($row['exam_type']))] = [
+        'price' => (float)$row['price'],
+        'discount' => (float)$row['philhealth_discount']
+    ];
 }
 $examPricesJson = json_encode($examPrices);
 
@@ -945,14 +948,27 @@ $statusDescriptions = [
             const exams = examType.split(',').map(e => e.trim());
             exams.forEach(exam => {
                 const key = exam.toLowerCase();
-                // If price is 0 or not found, we can try to distribute the original price, but usually it's found in DB
-                const price = examPrices[key] || 0;
+                const examData = examPrices[key] || { price: 0, discount: 0 };
+                const price = examData.price;
+                
                 breakdownContainer.innerHTML += `
                     <div class="flex items-center justify-between text-sm">
                         <span class="text-gray-500 font-medium">${exam}</span>
                         <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                 `;
+                
+                // Show individual discount if this case has a total discount > 0 and the exam itself has a discount
+                if (disc > 0 && examData.discount > 0) {
+                    breakdownContainer.innerHTML += `
+                        <div class="flex items-center justify-between text-sm pl-4 mt-1 border-l-2 border-emerald-100 mb-2">
+                            <span class="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                                <i data-lucide="tag" class="w-3 h-3"></i> PhilHealth Discount
+                            </span>
+                            <span class="font-bold text-emerald-600 text-xs font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                    `;
+                }
             });
         } else {
             breakdownContainer.innerHTML += `
@@ -965,17 +981,10 @@ $statusDescriptions = [
         
         const cashDiscNotice = document.getElementById('cashDiscountNotice');
         if (disc > 0) {
-            breakdownContainer.innerHTML += `
-                <div class="flex items-center justify-between text-sm" id="philhealthDiscountModalRow">
-                    <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
-                        PhilHealth Discount
-                    </span>
-                    <span class="font-bold text-emerald-600 font-mono tracking-tight">-₱${disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-            `;
+            // Remove the total discount row, as it's now itemized
             if (cashDiscNotice) {
                 cashDiscNotice.classList.remove('hidden');
-                cashDiscNotice.innerHTML = `Note: A PhilHealth discount has been applied. Please present your PhilHealth ID at the clinic counter.`;
+                cashDiscNotice.innerHTML = `Note: PhilHealth discounts have been applied. Please present your PhilHealth ID at the clinic counter.`;
             }
         } else {
             if (cashDiscNotice) cashDiscNotice.classList.add('hidden');
