@@ -429,7 +429,7 @@ $statusDescriptions = [
                             <?php endif; ?>
                             <?php if ($isPendingPayment): ?>
                                 <button type="button"
-                                    onclick="openPaymentModal(<?= $caseRow['id'] ?>, <?= $caseRow['amount_due'] ?? 0 ?>, <?= $caseRow['original_price'] ?? ($caseRow['amount_due'] ?? 0) ?>, <?= $caseRow['philhealth_discount'] ?? 0 ?>, '<?= htmlspecialchars($caseRow['gcash_qr_path'] ?? '') ?>')"
+                                    onclick="openPaymentModal(<?= $caseRow['id'] ?>, <?= $caseRow['amount_due'] ?? 0 ?>, <?= $caseRow['original_price'] ?? ($caseRow['amount_due'] ?? 0) ?>, <?= $caseRow['philhealth_discount'] ?? 0 ?>, '<?= htmlspecialchars($caseRow['gcash_qr_path'] ?? '') ?>', '<?= htmlspecialchars(addslashes($caseRow['exam_type'] ?? 'X-ray Exam')) ?>')"
                                     class="text-sm font-semibold text-white bg-red-600 hover:bg-red-700 px-5 sm:px-6 py-2.5 rounded-lg transition flex items-center shadow-sm">
                                     Pay Now
                                 </button>
@@ -917,7 +917,7 @@ $statusDescriptions = [
         });
     }
 
-    function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath) {
+    function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath, examType) {
         document.getElementById('paymentModal').classList.remove('hidden');
         document.getElementById('paymentCaseId').value = caseId;
         document.getElementById('paymentAmount').value = amount;
@@ -934,15 +934,18 @@ $statusDescriptions = [
         const discRow = document.getElementById('philhealthDiscountModalRow');
         const cashDiscNotice = document.getElementById('cashDiscountNotice');
         
+        // Always show the original price row and set the exam type
+        if (origRow) origRow.classList.remove('hidden');
+        const examLabel = document.getElementById('modalExamTypeDisplay');
+        if (examLabel) examLabel.innerText = examType || 'Regular Procedure Fee';
+        
         if (disc > 0) {
-            if (origRow) origRow.classList.remove('hidden');
             if (discRow) discRow.classList.remove('hidden');
             if (cashDiscNotice) {
                 cashDiscNotice.classList.remove('hidden');
                 cashDiscNotice.innerHTML = `Note: A PhilHealth discount has been applied. Please present your PhilHealth ID at the clinic counter.`;
             }
         } else {
-            if (origRow) origRow.classList.add('hidden');
             if (discRow) discRow.classList.add('hidden');
             if (cashDiscNotice) cashDiscNotice.classList.add('hidden');
         }
@@ -1019,7 +1022,7 @@ $statusDescriptions = [
             </div>
             <div class="p-5 bg-white space-y-3">
                 <div class="flex items-center justify-between text-sm" id="originalPriceModalRow">
-                    <span class="text-gray-500">Regular Procedure Fee</span>
+                    <span class="text-gray-500 font-medium" id="modalExamTypeDisplay">Regular Procedure Fee</span>
                     <span id="modalOriginalPriceDisplay" class="font-semibold text-gray-800 font-mono tracking-tight">₱0.00</span>
                 </div>
                 <div class="flex items-center justify-between text-sm" id="philhealthDiscountModalRow">
