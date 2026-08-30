@@ -79,8 +79,10 @@ $imagePaths = [];
 if (!empty($caseDetails['image_path'])) {
     $decoded   = json_decode($caseDetails['image_path'], true);
     $rawPaths  = is_array($decoded) ? $decoded : [$caseDetails['image_path']];
+    $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+    $baseUrl = ($isLocalhost && PROJECT_DIR) ? '/' . PROJECT_DIR . '/' : '/';
     foreach ($rawPaths as $p) {
-        $imagePaths[] = '/' . PROJECT_DIR . '/' . ltrim($p, '/');
+        $imagePaths[] = $baseUrl . ltrim($p, '/');
     }
 }
 ?>
@@ -265,8 +267,7 @@ if ($backId) {
                 <?php if (!empty($imagePaths)): ?>
                     <?php foreach ($imagePaths as $idx => $iPath): ?>
                         <?php 
-                        $imgPath = str_starts_with($iPath, '/') ? '/' . PROJECT_DIR . $iPath : '/' . PROJECT_DIR . '/' . $iPath;
-                        $imgPath = str_replace('//', '/', $imgPath);
+                        $imgPath = $iPath;
                         ?>
                     <img id="xray-main-image-<?= $idx ?>" src="<?= htmlspecialchars($imgPath) ?>"
                          data-img-index="<?= $idx ?>"
