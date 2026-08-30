@@ -90,7 +90,7 @@ if (!empty($caseDetails['image_path'])) {
 <?php
 $backPage = $_GET['back_to'] ?? 'patient-history';
 $backId   = $_GET['back_id'] ?? '';
-$backUrl  = "?role=radiologist&page=" . urlencode($backPage);
+$backUrl  = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=" . urlencode($backPage);
 if ($backId) {
     $backUrl .= "&id=" . urlencode($backId);
 }
