@@ -188,12 +188,22 @@
                         <option value="Without PhilHealth Card">Without PhilHealth Card</option>
                     </select>
 
-                    <div id="philhealth-id-container">
-                        <label for="id-number" class="block text-sm font-medium text-gray-700 mb-2">PhilHealth ID
-                            Number</label>
+                    <div id="philhealth-id-container" class="hidden">
+                        <label for="id-number" class="block text-sm font-medium text-gray-700 mb-2">PhilHealth ID Number</label>
                         <input id="id-number" name="id-number" type="text" inputmode="numeric" maxlength="14"
-                            oninput="formatPhilHealthInput(this)" placeholder="XX-XXXXXXXXX-X"
+                            oninput="formatPhilHealthInput(this); checkPhilHealthId();" placeholder="XX-XXXXXXXXX-X"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                        
+                        <div id="philhealth-relation-container" class="mt-3">
+                            <label for="philhealth_relation" class="block text-sm font-medium text-gray-700 mb-2">Patient's Relation to ID</label>
+                            <select id="philhealth_relation" name="philhealth_relation"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                                <option value="" disabled selected>Select relation</option>
+                                <option value="Owner" id="opt-owner">Owner (Principal)</option>
+                                <option value="Family Member" id="opt-family">Family Member (Dependent)</option>
+                            </select>
+                            <p id="philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
+                        </div>
                     </div>
                 </div>
             </fieldset>
@@ -219,13 +229,71 @@
         const select = document.getElementById('card');
         const container = document.getElementById('philhealth-id-container');
         const idInput = document.getElementById('id-number');
+        const relSelect = document.getElementById('philhealth_relation');
         if (select.value === 'With PhilHealth Card') {
             container.classList.remove('hidden');
+            relSelect.required = true;
         } else {
             container.classList.add('hidden');
             idInput.value = '';
             idInput.setCustomValidity('');
+            relSelect.value = '';
+            relSelect.required = false;
         }
+    }
+
+    // Debounce timer for API call
+    let phCheckTimer = null;
+
+    function checkPhilHealthId() {
+        clearTimeout(phCheckTimer);
+        const idInput = document.getElementById('id-number');
+        const msg = document.getElementById('philhealth-status-msg');
+        const optOwner = document.getElementById('opt-owner');
+        const optFamily = document.getElementById('opt-family');
+        const relSelect = document.getElementById('philhealth_relation');
+        const idValue = idInput.value;
+
+        // Reset state
+        msg.classList.add('hidden');
+        msg.innerText = '';
+        optOwner.disabled = false;
+        optOwner.innerText = 'Owner (Principal)';
+        optFamily.disabled = false;
+        optFamily.innerText = 'Family Member (Dependent)';
+        idInput.setCustomValidity('');
+
+        // Only check if format is correct
+        const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
+        if (!philHealthPattern.test(idValue)) {
+            return;
+        }
+
+        phCheckTimer = setTimeout(() => {
+            fetch(`/<?= PROJECT_DIR ?>/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (idInput.value !== idValue) return;
+
+                        if (data.owner_used) {
+                            optOwner.disabled = true;
+                            optOwner.innerText = `Owner (Principal) - Used on ${data.owner_used_date}`;
+                            if (relSelect.value === 'Owner') relSelect.value = '';
+                        }
+                        if (data.family_used) {
+                            optFamily.disabled = true;
+                            optFamily.innerText = `Family Member (Dependent) - Used on ${data.family_used_date}`;
+                            if (relSelect.value === 'Family Member') relSelect.value = '';
+                        }
+                        
+                        if (data.owner_used && data.family_used) {
+                            idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                        }
+                    }
+                })
+                .catch(err => console.error("Error checking PhilHealth ID:", err));
+        }, 500);
     }
 
     function formatPhilHealthInput(input) {

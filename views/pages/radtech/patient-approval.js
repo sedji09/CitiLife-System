@@ -8,6 +8,7 @@ function setModalInputsDisabled(disabled) {
     document.getElementById('modalAddress').disabled = disabled;
     document.getElementById('modalPhilHealth').disabled = disabled;
     document.getElementById('modalPhilHealthId').disabled = disabled;
+    document.getElementById('modalPhilHealthRelation').disabled = disabled;
 
     const okBtn = document.getElementById('modalOkBtn');
     if (okBtn) {
@@ -19,7 +20,7 @@ function setModalInputsDisabled(disabled) {
     }
 }
 
-function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId) {
+function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId, philhealthRelation = '') {
     currentEditId = id;
     setModalInputsDisabled(false);
     document.getElementById('modalName').value = name;
@@ -34,11 +35,15 @@ function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealt
     document.getElementById('modalAddress').value = homeAddress || '';
     document.getElementById('modalPhilHealth').value = philhealth;
     document.getElementById('modalPhilHealthId').value = philhealthId || '';
+    document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
     document.getElementById('editModal').classList.remove('hidden');
     togglePhilHealthId();
+    if (philhealth === 'With PhilHealth Card' && philhealthId) {
+        checkModalPhilHealthId();
+    }
 }
 
-function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId) {
+function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId, philhealthRelation = '') {
     currentEditId = id;
     setModalInputsDisabled(true);
     document.getElementById('modalName').value = name;
@@ -53,6 +58,7 @@ function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealt
     document.getElementById('modalAddress').value = homeAddress || '';
     document.getElementById('modalPhilHealth').value = philhealth;
     document.getElementById('modalPhilHealthId').value = philhealthId || '';
+    document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
     document.getElementById('editModal').classList.remove('hidden');
     togglePhilHealthId();
 }
@@ -216,13 +222,69 @@ function togglePhilHealthId() {
     const status = document.getElementById('modalPhilHealth').value;
     const idField = document.getElementById('philHealthIdField');
     const idInput = document.getElementById('modalPhilHealthId');
+    const relSelect = document.getElementById('modalPhilHealthRelation');
     if (status === 'With PhilHealth Card') {
         idField.classList.remove('hidden');
+        relSelect.required = true;
     } else {
         idField.classList.add('hidden');
         idInput.value = '';
         idInput.setCustomValidity('');
+        relSelect.value = '';
+        relSelect.required = false;
     }
+}
+
+let modalPhCheckTimer = null;
+function checkModalPhilHealthId() {
+    clearTimeout(modalPhCheckTimer);
+    const idInput = document.getElementById('modalPhilHealthId');
+    const msg = document.getElementById('modal-philhealth-status-msg');
+    const optOwner = document.getElementById('modal-opt-owner');
+    const optFamily = document.getElementById('modal-opt-family');
+    const relSelect = document.getElementById('modalPhilHealthRelation');
+    const idValue = idInput.value;
+
+    // Reset state
+    msg.classList.add('hidden');
+    msg.innerText = '';
+    optOwner.disabled = false;
+    optOwner.innerText = 'Owner (Principal)';
+    optFamily.disabled = false;
+    optFamily.innerText = 'Family Member (Dependent)';
+    idInput.setCustomValidity('');
+
+    // Only check if format is correct
+    const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
+    if (!philHealthPattern.test(idValue)) {
+        return;
+    }
+
+    modalPhCheckTimer = setTimeout(() => {
+        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}&exclude_request_id=${currentEditId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (idInput.value !== idValue) return; // Prevent race conditions
+
+                    if (data.owner_used) {
+                        optOwner.disabled = true;
+                        optOwner.innerText = `Owner (Principal) - Used on ${data.owner_used_date}`;
+                        if (relSelect.value === 'Owner') relSelect.value = '';
+                    }
+                    if (data.family_used) {
+                        optFamily.disabled = true;
+                        optFamily.innerText = `Family Member (Dependent) - Used on ${data.family_used_date}`;
+                        if (relSelect.value === 'Family Member') relSelect.value = '';
+                    }
+                    
+                    if (data.owner_used && data.family_used) {
+                        idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                    }
+                }
+            })
+            .catch(err => console.error("Error checking PhilHealth ID:", err));
+    }, 500);
 }
 
 function formatPhilHealthInput(input) {
@@ -251,6 +313,7 @@ function saveEditModal() {
     const homeAddress = document.getElementById('modalAddress').value;
     const philhealth = document.getElementById('modalPhilHealth').value;
     const philhealthId = document.getElementById('modalPhilHealthId').value;
+    const philhealthRelation = document.getElementById('modalPhilHealthRelation').value;
 
     if (!name || !birthdate || !sex || !contact) {
         toast('Please fill in all required fields', 'error');
@@ -271,6 +334,14 @@ function saveEditModal() {
             idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
             return;
         }
+        
+        const relInput = document.getElementById('modalPhilHealthRelation');
+        if (!philhealthRelation) {
+            relInput.setCustomValidity('Relation is required.');
+            relInput.reportValidity();
+            relInput.addEventListener('change', () => relInput.setCustomValidity(''), { once: true });
+            return;
+        }
     }
 
     // Create a form and submit it
@@ -286,7 +357,8 @@ function saveEditModal() {
         { name: 'contact', value: contact },
         { name: 'home_address', value: homeAddress },
         { name: 'philhealth', value: philhealth },
-        { name: 'philhealth_id', value: philhealthId, required: true }
+        { name: 'philhealth_id', value: philhealthId, required: true },
+        { name: 'philhealth_relation', value: philhealthRelation, required: true }
     ];
 
     inputs.forEach(input => {

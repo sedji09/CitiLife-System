@@ -374,6 +374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
         </div>
     </div>
     <script>
+        sessionStorage.clear();
         function togglePassword(inputId, btn) {
             const input = document.getElementById(inputId);
             const isPassword = input.getAttribute('type') === 'password';

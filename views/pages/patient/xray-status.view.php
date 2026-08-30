@@ -961,11 +961,9 @@ $statusDescriptions = [
                 // Show individual discount if this case has a total discount > 0 and the exam itself has a discount
                 if (disc > 0 && examData.discount > 0) {
                     breakdownContainer.innerHTML += `
-                        <div class="flex items-center justify-between text-sm pl-4 mt-1 border-l-2 border-emerald-100 mb-2">
-                            <span class="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                                <i data-lucide="tag" class="w-3 h-3"></i> PhilHealth Discount
-                            </span>
-                            <span class="font-bold text-emerald-600 text-xs font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <div class="flex items-center justify-between text-sm mt-1 mb-2">
+                            <span class="text-emerald-600 font-medium">PhilHealth Discount</span>
+                            <span class="font-semibold text-emerald-600 font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     `;
                 }

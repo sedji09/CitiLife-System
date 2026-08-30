@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $homeAddress  = isset($_POST['home_address'])  ? trim($_POST['home_address'])   : '';
     $philhealth   = isset($_POST['philhealth'])    ? $_POST['philhealth']           : '';
     $philhealthId = isset($_POST['philhealth_id']) ? trim($_POST['philhealth_id']) : '';
+    $philhealthRelation = isset($_POST['philhealth_relation']) ? trim($_POST['philhealth_relation']) : null;
 
     // Extract first and last name
     $nameParts = explode(' ', $name, 2);
@@ -54,6 +55,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 2. Update PhilHealth info & recalculate price if exam already assigned
                 $hasPhilHealth     = ($philhealth === 'With PhilHealth Card');
                 $philhealthIdToSave = $hasPhilHealth ? $philhealthId : null;
+                $philhealthRelationToSave = $hasPhilHealth ? $philhealthRelation : null;
+
+                // Backend Validation for PhilHealth ID
+                if ($hasPhilHealth && $philhealthIdToSave && $philhealthRelationToSave) {
+                    $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Owner' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
+                    $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Owner' AND status != 'Rejected' AND request_id != :req_id";
+                    $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
+                    $stmtOwner->execute([':id' => $philhealthIdToSave, ':req_id' => $caseId]);
+                    $ownerUsed = (bool) $stmtOwner->fetchColumn();
+
+                    $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Family Member' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
+                    $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Family Member' AND status != 'Rejected' AND request_id != :req_id";
+                    $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
+                    $stmtFamily->execute([':id' => $philhealthIdToSave, ':req_id' => $caseId]);
+                    $familyUsed = (bool) $stmtFamily->fetchColumn();
+
+                    if ($philhealthRelationToSave === 'Owner' && $ownerUsed) {
+                        throw new Exception("This PhilHealth ID is already used for the Owner.");
+                    }
+                    if ($philhealthRelationToSave === 'Family Member' && $familyUsed) {
+                        throw new Exception("This PhilHealth ID is already used for a Family Member.");
+                    }
+                }
 
                 $stmtExam = $pdo->prepare("SELECT exam_type, status FROM requests WHERE id = ?");
                 $stmtExam->execute([$caseId]);
@@ -88,14 +112,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $amountDue = max(0.00, $originalPrice - $philhealthDiscount);
                     $stmtUp    = $pdo->prepare(
                         "UPDATE requests
-                         SET philhealth_status = ?, philhealth_id = ?,
+                         SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ?,
                              original_price = ?, philhealth_discount = ?, amount_due = ?
                          WHERE id = ?"
                     );
-                    $stmtUp->execute([$philhealth, $philhealthIdToSave, $originalPrice, $philhealthDiscount, $amountDue, $caseId]);
+                    $stmtUp->execute([$philhealth, $philhealthIdToSave, $philhealthRelationToSave, $originalPrice, $philhealthDiscount, $amountDue, $caseId]);
                 } else {
-                    $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ? WHERE id = ?");
-                    $stmtUp->execute([$philhealth, $philhealthIdToSave, $caseId]);
+                    $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ? WHERE id = ?");
+                    $stmtUp->execute([$philhealth, $philhealthIdToSave, $philhealthRelationToSave, $caseId]);
                 }
 
                 header('Location: ' . $redirectBase . '/patient-approval?success=1');

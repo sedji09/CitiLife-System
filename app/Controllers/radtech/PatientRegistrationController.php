@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'priority'          => $_POST['priority'] ?? 'Routine',
             'philhealth_status' => $_POST['card'] ?? 'Without PhilHealth Card',
             'philhealth_id'     => trim($_POST['id-number'] ?? ''),
+            'philhealth_relation' => $_POST['philhealth_relation'] ?? null,
             'source'            => 'radtech',
             'approval_status'   => 'Approved'
         ];
@@ -97,6 +98,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header("Location: index.php?role=radtech&page=patient-registration");
                 }
                 exit;
+            }
+
+            // --- BACKEND VALIDATION FOR PHILHEALTH ID ---
+            if ($regData['philhealth_status'] === 'With PhilHealth Card' && !empty($regData['philhealth_id']) && !empty($regData['philhealth_relation'])) {
+                $pid = $regData['philhealth_id'];
+                $prel = $regData['philhealth_relation'];
+                
+                $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Owner' AND status != 'Cancelled' AND status != 'Rejected'";
+                $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Owner' AND status != 'Rejected'";
+                $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
+                $stmtOwner->execute([$pid, $pid]);
+                $ownerUsed = (bool) $stmtOwner->fetchColumn();
+
+                $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Family Member' AND status != 'Cancelled' AND status != 'Rejected'";
+                $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Family Member' AND status != 'Rejected'";
+                $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
+                $stmtFamily->execute([$pid, $pid]);
+                $familyUsed = (bool) $stmtFamily->fetchColumn();
+
+                if ($prel === 'Owner' && $ownerUsed) {
+                    throw new \Exception("This PhilHealth ID is already used for the Owner.");
+                }
+                if ($prel === 'Family Member' && $familyUsed) {
+                    throw new \Exception("This PhilHealth ID is already used for a Family Member.");
+                }
             }
 
             $result = $patientModel->processRegistration($regData, $caseModel, null);

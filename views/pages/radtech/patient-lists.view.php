@@ -335,26 +335,95 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 <script>
+    function getQueueInputs() {
+        return {
+            searchInput: document.getElementById('search-input'),
+            filterPriority: document.getElementById('filter-priority'),
+            filterDate: document.getElementById('filter-date'),
+            sortDate: document.getElementById('sort-date'),
+            tbody: document.getElementById('table-body')
+        };
+    }
+
+    function saveQueueState() {
+        const { searchInput, filterPriority, filterDate, sortDate } = getQueueInputs();
+        if (searchInput) sessionStorage.setItem('CitiLife_radtechQueue_search', searchInput.value);
+        if (filterPriority) sessionStorage.setItem('CitiLife_radtechQueue_priority', filterPriority.value);
+        if (filterDate) sessionStorage.setItem('CitiLife_radtechQueue_date', filterDate.value);
+        if (sortDate) sessionStorage.setItem('CitiLife_radtechQueue_sort', sortDate.value);
+        sessionStorage.setItem('CitiLife_radtechQueue_page', currentMainPage);
+    }
+
+    function restoreFiltersFromSession() {
+        const { searchInput, filterPriority, filterDate, sortDate } = getQueueInputs();
+        const urlParams = new window.URLSearchParams(window.location.search);
+
+        // Priority filter
+        if (urlParams.has('filterPriority')) {
+            if (filterPriority) filterPriority.value = urlParams.get('filterPriority');
+        } else if (filterPriority) {
+            const savedPriority = sessionStorage.getItem('CitiLife_radtechQueue_priority');
+            if (savedPriority) filterPriority.value = savedPriority;
+        }
+
+        // Date filter
+        if (urlParams.has('filterDate')) {
+            if (filterDate) filterDate.value = urlParams.get('filterDate');
+        } else if (urlParams.has('highlight')) {
+            if (filterDate) filterDate.value = 'All';
+        } else if (filterDate) {
+            const savedDate = sessionStorage.getItem('CitiLife_radtechQueue_date');
+            if (savedDate) filterDate.value = savedDate;
+        }
+
+        // Search input
+        if (urlParams.has('search')) {
+            if (searchInput) searchInput.value = urlParams.get('search');
+        } else if (searchInput) {
+            const savedSearch = sessionStorage.getItem('CitiLife_radtechQueue_search');
+            if (savedSearch !== null) searchInput.value = savedSearch;
+        }
+
+        // Sort date
+        if (sortDate) {
+            const savedSort = sessionStorage.getItem('CitiLife_radtechQueue_sort');
+            if (savedSort) sortDate.value = savedSort;
+        }
+
+        // Page
+        if (!urlParams.has('highlight')) {
+            const savedPage = parseInt(sessionStorage.getItem('CitiLife_radtechQueue_page'));
+            if (savedPage && savedPage > 0) {
+                currentMainPage = savedPage;
+            }
+        }
+    }
+
     document.addEventListener('input', (e) => {
-        if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'filter-date' || e.target.id === 'sort-date')) {
+        if (e.target && e.target.id === 'search-input') {
+            currentMainPage = 1;
+            saveQueueState();
             applyFilters();
         }
     });
 
     document.addEventListener('change', (e) => {
         if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'filter-date' || e.target.id === 'sort-date')) {
+            currentMainPage = 1;
+            saveQueueState();
             applyFilters();
         }
     });
 
     function applyFilters(targetTbody = null) {
-        const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-        const priority = document.getElementById('filter-priority')?.value || '<?= htmlspecialchars($defaultPriorityFilter) ?>';
-        const dateFilter = document.getElementById('filter-date')?.value || '<?= htmlspecialchars($defaultDateFilter) ?>';
-        const sort = document.getElementById('sort-date')?.value || 'Newest Case';
-
-        const tbody = targetTbody || document.getElementById('table-body');
+        const { searchInput, filterPriority, filterDate, sortDate, tbody: defaultTbody } = getQueueInputs();
+        const tbody = targetTbody || defaultTbody;
         if (!tbody) return;
+
+        const search = (searchInput?.value || '').toLowerCase().trim();
+        const priority = filterPriority?.value || '<?= htmlspecialchars($defaultPriorityFilter) ?>';
+        const dateFilter = filterDate?.value || '<?= htmlspecialchars($defaultDateFilter) ?>';
+        const sort = sortDate?.value || 'Newest Case';
 
         let rows = Array.from(tbody.querySelectorAll('tr.record-row'));
         let visibleCount = 0;
@@ -397,7 +466,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
             const rowStatus = (row.dataset.status || '').toLowerCase();
             const isToday = row.dataset.isToday === 'true';
 
-            const matchSearch = name.includes(search) || id.includes(search) || patient.includes(search) || rowPriority.toLowerCase().includes(search) || rowStatus.includes(search);
+            const matchSearch = !search || name.includes(search) || id.includes(search) || patient.includes(search) || rowPriority.toLowerCase().includes(search) || rowStatus.includes(search);
             const matchPriority = priority === 'Filter by Priority' || priority === 'All' || priority === rowPriority;
 
             let matchDate = true;
@@ -436,7 +505,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
     const mainItemsPerPage = 7;
     
     function paginateMain(matchedRows, targetTbody = null) {
-        const tbody = targetTbody || document.getElementById('table-body');
+        const { tbody: defaultTbody } = getQueueInputs();
+        const tbody = targetTbody || defaultTbody;
         if (!tbody) return;
 
         const totalRecords = matchedRows.length;
@@ -489,7 +559,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
             } else {
                 btn.onclick = () => {
                     currentMainPage = page;
-                    // re-apply filters which will also paginate
+                    saveQueueState();
                     applyFilters();
                 };
             }
@@ -530,77 +600,90 @@ $currentTab = $_GET['tab'] ?? 'completed';
         controls.appendChild(createButton('Next &rsaquo;', currentMainPage + 1, currentMainPage >= totalPages));
     }
 
-    // Initial sorting and highlight logic on load
-    document.addEventListener('DOMContentLoaded', () => {
-        // Default Sort & Filter
-        setTimeout(() => {
-            applyFilters();
-        }, 100);
+    function initPatientQueue() {
+        restoreFiltersFromSession();
+        applyFilters();
 
         // ── Highlight row from notification ───────────────────────────────
-        setTimeout(() => {
-            const params = new window.URLSearchParams(window.location.search);
-            const highlightId = params.get('highlight');
-            if (highlightId) {
-                const rows = document.querySelectorAll('#table-body tr.record-row');
-                let targetRow = null;
+        const params = new window.URLSearchParams(window.location.search);
+        const highlightId = params.get('highlight');
+        if (highlightId) {
+            const rows = document.querySelectorAll('#table-body tr.record-row');
+            let targetRow = null;
+            
+            rows.forEach(row => {
+                if ((row.dataset.id || '').toLowerCase() === highlightId.toLowerCase()) {
+                    targetRow = row;
+                }
+            });
+            
+            if (targetRow) {
+                const matchedRows = Array.from(rows).filter(r => r.hasAttribute('data-matched'));
+                const targetIndex = matchedRows.indexOf(targetRow);
+                if (targetIndex !== -1) {
+                    currentMainPage = Math.floor(targetIndex / mainItemsPerPage) + 1;
+                    saveQueueState();
+                    paginateMain(matchedRows);
+                }
                 
-                // First pass to find the row
-                rows.forEach(row => {
-                    if ((row.dataset.id || '').toLowerCase() === highlightId.toLowerCase()) {
-                        targetRow = row;
-                    }
-                });
-                
-                if (targetRow) {
-                    // Update currentMainPage based on matchedRows index
-                    const matchedRows = Array.from(rows).filter(r => r.hasAttribute('data-matched'));
-                    const targetIndex = matchedRows.indexOf(targetRow);
-                    if (targetIndex !== -1) {
-                        currentMainPage = Math.floor(targetIndex / mainItemsPerPage) + 1;
-                        paginateMain(matchedRows);
-                    }
-                    
-                    const tableWrapper = targetRow.closest('.overflow-y-auto');
-                    if (tableWrapper) {
-                        const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
-                        tableWrapper.scrollTo({ top: rowTop - 40, behavior: 'smooth' });
-                    } else {
-                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+                const tableWrapper = targetRow.closest('.overflow-y-auto');
+                if (tableWrapper) {
+                    const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
+                    tableWrapper.scrollTo({ top: rowTop - 40, behavior: 'smooth' });
+                } else {
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
 
-                    targetRow.style.transition = 'background-color 0.4s ease';
-                    targetRow.style.backgroundColor = '#fef08a';
+                targetRow.style.transition = 'background-color 0.4s ease';
+                targetRow.style.backgroundColor = '#fef08a';
+                setTimeout(() => {
+                    targetRow.style.backgroundColor = '#fde047';
                     setTimeout(() => {
-                        targetRow.style.backgroundColor = '#fde047';
+                        targetRow.style.backgroundColor = '#fef08a';
                         setTimeout(() => {
-                            targetRow.style.backgroundColor = '#fef08a';
+                            targetRow.style.backgroundColor = '#fde047';
                             setTimeout(() => {
-                                targetRow.style.backgroundColor = '#fde047';
-                                setTimeout(() => {
-                                    targetRow.style.transition = 'background-color 1.5s ease';
-                                    targetRow.style.backgroundColor = '';
-                                }, 300);
+                                targetRow.style.transition = 'background-color 1.5s ease';
+                                targetRow.style.backgroundColor = '';
                             }, 300);
                         }, 300);
-                    }, 200);
+                    }, 300);
+                }, 200);
 
-                    const banner = document.createElement('div');
-                    banner.id = 'highlight-banner';
-                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
-                    banner.style.cssText = 'margin-left:auto;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
-                    const header = document.querySelector('h2');
-                    if (header && header.parentElement) {
-                        header.parentElement.insertAdjacentElement('afterend', banner);
-                    }
-                    setTimeout(() => {
-                        banner.style.transition = 'opacity 0.5s';
-                        banner.style.opacity = '0';
-                        setTimeout(() => banner.remove(), 500);
-                    }, 6000);
+                const banner = document.createElement('div');
+                banner.id = 'highlight-banner';
+                banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
+                banner.style.cssText = 'margin-left:auto;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                const header = document.querySelector('h2');
+                if (header && header.parentElement) {
+                    header.parentElement.insertAdjacentElement('afterend', banner);
                 }
+                setTimeout(() => {
+                    banner.style.transition = 'opacity 0.5s';
+                    banner.style.opacity = '0';
+                    setTimeout(() => banner.remove(), 500);
+                }, 6000);
             }
-        }, 150);
+        }
+    }
+
+    // Initial trigger
+    initPatientQueue();
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initPatientQueue, 20);
+        });
+    } else {
+        setTimeout(initPatientQueue, 20);
+    }
+
+    window.addEventListener('load', () => {
+        setTimeout(initPatientQueue, 50);
+    });
+
+    window.addEventListener('pageshow', () => {
+        initPatientQueue();
     });
 
     // Re-apply filters when real-time polling updates the table content

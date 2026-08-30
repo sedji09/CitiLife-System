@@ -73,6 +73,8 @@
                     <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-4">Request / Patient</th>
+                            <th class="px-6 py-4">Exam Type</th>
+                            <th class="px-6 py-4">PhilHealth Number</th>
                             <th class="px-6 py-4">Amount & Ref #</th>
                             <th class="px-6 py-4">Date Submitted</th>
                             <th class="px-6 py-4">Actions</th>
@@ -91,26 +93,21 @@
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
                                     <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
-                                    <div class="text-xs text-blue-600 mt-1"><?= htmlspecialchars($payment['exam_type']) ?></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-700"><?= htmlspecialchars($payment['exam_type']) ?></div>
+                                </td>
+                                <td class="px-6 py-4">
                                     <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
-                                        <div class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
-                                            PhilHealth: <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
                                         </div>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-400 italic">None</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php if ((float)($payment['discount_amount'] ?? 0) > 0): ?>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs text-gray-400 line-through font-mono">₱<?= number_format($payment['original_amount'], 2) ?></span>
-                                            <span class="font-bold text-red-600 font-mono">₱<?= number_format($payment['amount'], 2) ?></span>
-                                        </div>
-                                        <div class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 inline-block px-1.5 py-0.5 rounded mt-0.5">
-                                            -₱<?= number_format($payment['discount_amount'], 2) ?> PhilHealth Discount
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="font-bold text-red-600 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
-                                    <?php endif; ?>
+                                    <div class="font-bold text-red-600 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
                                     <div class="text-xs text-gray-500 font-mono mt-1">Method: <?= htmlspecialchars($payment['payment_method']) ?></div>
                                     <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
                                         <div class="text-xs text-gray-500 font-mono mt-1">Ref: <?= htmlspecialchars($payment['reference_number']) ?></div>
@@ -119,26 +116,28 @@
                                 <td class="px-6 py-4 text-gray-500">
                                     <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
                                 </td>
-                                <td class="px-6 py-4 space-x-2">
-                                    <?php if ($payment['payment_method'] === 'GCash'): ?>
-                                        <button type="button" onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float)($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float)($payment['discount_amount'] ?? 0) ?>, <?= (float)$payment['amount'] ?>)" class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200">
-                                            <i data-lucide="image" class="w-4 h-4"></i> Receipt
-                                        </button>
-                                    <?php endif; ?>
-                                    <form method="POST" class="inline-block">
-                                        <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
-                                        <input type="hidden" name="action" value="verify">
-                                        <button type="button" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 border border-green-200">
-                                            <i data-lucide="check" class="w-4 h-4"></i> Verify
-                                        </button>
-                                    </form>
-                                    <form method="POST" class="inline-block">
-                                        <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
-                                        <input type="hidden" name="action" value="reject">
-                                        <button type="button" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 border border-red-200">
-                                            <i data-lucide="x" class="w-4 h-4"></i> Reject
-                                        </button>
-                                    </form>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <?php if ($payment['payment_method'] === 'GCash'): ?>
+                                            <button type="button" title="View Receipt" onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float)($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float)($payment['discount_amount'] ?? 0) ?>, <?= (float)$payment['amount'] ?>, '<?= htmlspecialchars($payment['exam_type'] ?? 'Exam') ?>')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-700 transition">
+                                                <i data-lucide="image" class="w-4 h-4"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <form method="POST" class="inline-block m-0">
+                                            <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
+                                            <input type="hidden" name="action" value="verify">
+                                            <button type="button" title="Verify Payment" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 transition">
+                                                <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
+                                            </button>
+                                        </form>
+                                        <form method="POST" class="inline-block m-0">
+                                            <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="button" title="Reject Payment" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
+                                                <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -183,9 +182,11 @@
                     <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
                         <tr>
                             <th class="px-6 py-4">Request / Patient</th>
+                            <th class="px-6 py-4">Exam Type</th>
+                            <th class="px-6 py-4">PhilHealth Number</th>
                             <th class="px-6 py-4">Amount & Ref #</th>
                             <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Date Verified</th>
+                            <th class="px-6 py-4">Date Processed</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100" id="historyTableBody">
@@ -201,24 +202,21 @@
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
                                     <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-700"><?= htmlspecialchars($payment['exam_type']) ?></div>
+                                </td>
+                                <td class="px-6 py-4">
                                     <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
-                                        <div class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> PhilHealth
+                                        <div class="text-sm font-medium text-gray-900">
+                                            <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
                                         </div>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-400 italic">None</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php if ((float)($payment['discount_amount'] ?? 0) > 0): ?>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs text-gray-400 line-through font-mono">₱<?= number_format($payment['original_amount'], 2) ?></span>
-                                            <span class="font-bold text-gray-900 font-mono">₱<?= number_format($payment['amount'], 2) ?></span>
-                                        </div>
-                                        <div class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 inline-block px-1.5 py-0.5 rounded mt-0.5">
-                                            -₱<?= number_format($payment['discount_amount'], 2) ?> PhilHealth
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="font-bold text-gray-900 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
-                                    <?php endif; ?>
+                                    <div class="font-bold text-gray-900 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
                                     <div class="text-xs text-gray-500 font-mono mt-1">Method: <?= htmlspecialchars($payment['payment_method']) ?></div>
                                     <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
                                         <div class="text-xs text-gray-500 font-mono mt-1">Ref: <?= htmlspecialchars($payment['reference_number']) ?></div>
@@ -226,11 +224,11 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <?php if ($payment['status'] === 'Verified'): ?>
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400">
                                             <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verified
                                         </span>
                                     <?php else: ?>
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400">
                                             <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected
                                         </span>
                                     <?php endif; ?>
@@ -287,24 +285,29 @@
                 </div>
 
                 <!-- Price Breakdown in Modal -->
-                <div class="mb-4 shrink-0 bg-white border border-gray-200/80 rounded-xl p-3.5 space-y-1.5 text-xs">
-                    <div class="flex items-center justify-between text-gray-600" id="receiptModalOrigRow">
-                        <span>Original Procedure Price:</span>
-                        <span id="receiptModalOrigAmount" class="font-semibold font-mono text-gray-800">₱0.00</span>
+                <div class="mb-4 shrink-0 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                    <div class="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex items-center gap-2 text-xs font-bold text-gray-600 tracking-wider">
+                        <i data-lucide="receipt" class="w-4 h-4"></i> PAYMENT BREAKDOWN
                     </div>
-                    <div class="flex items-center justify-between text-emerald-700 font-semibold" id="receiptModalDiscRow">
-                        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i> PhilHealth Discount:</span>
-                        <span id="receiptModalDiscAmount" class="font-bold font-mono">-₱0.00</span>
+                    <div class="p-4 space-y-3">
+                        <div class="flex items-center justify-between text-gray-700 text-sm font-semibold" id="receiptModalOrigRow">
+                            <span id="receiptModalExamType">Chest PA</span>
+                            <span id="receiptModalOrigAmount" class="font-bold text-gray-900">₱0.00</span>
+                        </div>
+                        <div class="flex items-center justify-between" id="receiptModalDiscRow">
+                            <span class="text-emerald-600 text-sm font-medium">PhilHealth Discount</span>
+                            <span id="receiptModalDiscAmount" class="font-semibold text-emerald-600 text-sm font-mono tracking-tight">-₱0.00</span>
+                        </div>
                     </div>
-                    <div class="pt-1.5 border-t border-gray-100 flex items-center justify-between text-sm">
-                        <span class="font-bold text-gray-900">Total Paid Amount:</span>
-                        <span id="receiptModalNetAmount" class="font-extrabold text-red-600 font-mono text-base">₱0.00</span>
+                    <div class="bg-red-50/30 px-4 py-3 border-t border-red-100 flex items-center justify-between">
+                        <span class="font-extrabold text-gray-900 text-sm tracking-wide">Total Amount</span>
+                        <span id="receiptModalNetAmount" class="font-black text-red-600 text-[15px]">₱0.00</span>
                     </div>
                 </div>
                 
-                <!-- Receipt Image Container (Scrollable) -->
-                <div class="bg-gray-200/50 rounded-xl p-4 flex justify-center items-start border border-gray-200 shadow-inner overflow-y-auto flex-1 min-h-[35vh] max-h-[50vh]">
-                    <img id="modal-receipt-img" src="" alt="Receipt" class="max-w-md w-full h-auto rounded-lg shadow-sm">
+                <!-- Receipt Image Area -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-inner flex-1 min-h-[200px] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
+                    <img id="modal-receipt-img" src="" alt="Receipt" class="w-full h-auto block">
                 </div>
             </div>
             
@@ -495,7 +498,7 @@
         initTable('pending', 'pending-row');
     });
 
-    function viewReceipt(path, refNumber, origAmount, discAmount, netAmount) {
+    function viewReceipt(path, refNumber, origAmount, discAmount, netAmount, examType) {
         if (!path) {
             alert('No receipt image available.');
             return;
@@ -504,6 +507,7 @@
         let imageSrc = '<?= "/" . PROJECT_DIR . "/" ?>' + (path.startsWith('/') ? path.substring(1) : path);
         document.getElementById('modal-receipt-img').src = imageSrc;
         document.getElementById('modal-ref-number').textContent = refNumber;
+        document.getElementById('receiptModalExamType').textContent = examType;
         
         const orig = parseFloat(origAmount || netAmount || 0);
         const disc = parseFloat(discAmount || 0);
@@ -513,13 +517,10 @@
         document.getElementById('receiptModalDiscAmount').textContent = '-₱' + disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         document.getElementById('receiptModalNetAmount').textContent = '₱' + net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
-        const origRow = document.getElementById('receiptModalOrigRow');
         const discRow = document.getElementById('receiptModalDiscRow');
         if (disc > 0) {
-            if (origRow) origRow.classList.remove('hidden');
             if (discRow) discRow.classList.remove('hidden');
         } else {
-            if (origRow) origRow.classList.add('hidden');
             if (discRow) discRow.classList.add('hidden');
         }
 

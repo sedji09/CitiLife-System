@@ -310,6 +310,7 @@ class PatientModel
                     'priority' => $data['priority'] ?? 'Routine',
                     'philhealth_status' => $data['philhealth_status'] ?? 'Without PhilHealth Card',
                     'philhealth_id' => $data['philhealth_id'] ?? null,
+                    'philhealth_relation' => $data['philhealth_relation'] ?? null,
                     'status' => 'Pending Approval'
                 ];
 
@@ -327,12 +328,11 @@ class PatientModel
                     'radtech',
                     $branchId
                 );
-
             } else {
                 // RadTech Flow: Create a Case directly (skips Request phase)
                 $caseNumber = $caseModel->generateCaseNumber($branchId);
                 
-                $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', NULL)");
+                $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NULL)");
                 $stmtCase->execute([
                     $caseNumber, 
                     $patientId, 
@@ -340,7 +340,8 @@ class PatientModel
                     $data['exam_type'] ?? 'To be determined',
                     $data['priority'] ?? 'Routine', 
                     $data['philhealth_status'] ?? 'Without PhilHealth Card', 
-                    $data['philhealth_id'] ?? null
+                    $data['philhealth_id'] ?? null,
+                    $data['philhealth_relation'] ?? null
                 ]);
                 $finalId = $pdo->lastInsertId();
                 $finalNumber = $caseNumber;

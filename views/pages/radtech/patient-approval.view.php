@@ -14,7 +14,7 @@ $errorMsg = $errorMsg ?? '';
 if (isset($_GET['success']) && $_GET['success'] == 1)
     $successMsg = "Patient information updated successfully.";
 if (isset($_GET['error']) && !empty($_GET['error']))
-    $errorMsg = "Failed to update patient information. Please try again.";
+    $errorMsg = htmlspecialchars($_GET['error']);
 
 // 2. Data Fetching (Backend Logic)
 require_once __DIR__ . '/../../../config/database.php';
@@ -234,14 +234,14 @@ foreach ($allServices as $service) {
 
                                     <?php if (in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <button
-                                            onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
+                                            onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
                                             class="text-sm font-medium text-gray-600 hover:text-gray-700 transition" title="View">
                                             <i data-lucide="eye"
                                                 class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
                                         </button>
                                     <?php else: ?>
                                         <button
-                                            onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>')"
+                                            onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
                                             class="text-sm font-medium text-blue-600 hover:text-blue-700 transition" title="Edit">
                                             <i data-lucide="edit"
                                                 class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
@@ -386,8 +386,19 @@ foreach ($allServices as $service) {
                 <div id="philHealthIdField" class="hidden">
                     <label class="block text-sm font-medium text-gray-700">PhilHealth ID Number</label>
                     <input type="text" id="modalPhilHealthId" inputmode="numeric" maxlength="14"
-                        oninput="formatPhilHealthInput(this)"
+                        oninput="formatPhilHealthInput(this); checkModalPhilHealthId();"
                         class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full" placeholder="XX-XXXXXXXXX-X">
+                    
+                    <div id="modalPhilHealthRelationContainer" class="mt-3">
+                        <label class="block text-sm font-medium text-gray-700">Patient's Relation to ID</label>
+                        <select id="modalPhilHealthRelation"
+                            class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
+                            <option value="" disabled selected>Select relation</option>
+                            <option value="Owner" id="modal-opt-owner">Owner (Principal)</option>
+                            <option value="Family Member" id="modal-opt-family">Family Member (Dependent)</option>
+                        </select>
+                        <p id="modal-philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
+                    </div>
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-4">

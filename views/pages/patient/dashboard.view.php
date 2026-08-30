@@ -130,18 +130,18 @@ $statusColors = [
 ];
 
 $statusDescriptions = [
-    'Pending' => 'Your request is under review.',
-    'Pending Payment' => 'Please proceed to payment.',
-    'Payment Verifying' => 'Payment proof submitted. Awaiting verification.',
-    'Payment Verified' => 'Payment verified. Awaiting final approval.',
-    'Approved' => 'Request approved. Proceed to X-ray.',
-    'X-ray Taken' => 'Images captured.',
-    'Under Reading' => 'Under radiologist review.',
-    'Report Ready' => 'Your X-ray report is ready. Please visit the clinic to get your results.',
-    'Released' => 'Report released.',
-    'Completed' => 'Your X-ray examination has been completed and the report has been released.',
+    'Pending' => 'Your X-ray request has been received and is pending approval from the RadTech team.',
+    'Pending Payment' => 'The RadTech has assigned your examination type. Please proceed to payment.',
+    'Payment Verifying' => 'Your payment proof has been submitted. Please wait for the Branch Admin to verify your payment.',
+    'Payment Verified' => 'Your payment has been verified. Awaiting final approval.',
+    'Approved' => 'Your request has been approved. Please proceed to the X-ray room for the examination.',
+    'X-ray Taken' => 'Your X-ray images have been captured and are being prepared for expert reading.',
+    'Under Reading' => 'Your X-ray images have been captured and sent to the Radiologist for interpretation. Once the reading is complete, it will be marked as Ready for Release.',
+    'Report Ready' => 'Your X-ray report is ready. Please visit the branch to collect your results.',
+    'Released' => 'Your X-ray report has been released. You can now view your report result below.',
+    'Completed' => 'Your X-ray examination has been completed. You can view your report result below.',
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
-    'Cancelled' => 'Your request has been cancelled.',
+    'Cancelled' => 'You have cancelled this request.',
 ];
 
 // --- QUEUE MANAGEMENT LOGIC ---
@@ -485,22 +485,15 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
                 $sDesc = $statusDescriptions[$displayStatus] ?? '';
                 ?>
-                <div class="mt-4 sm:mt-5 rounded-xl p-5 border status-summary-box shadow-sm transition-all"
-                    style="background: linear-gradient(to right, <?= $sInfo['bg'] ?>, #ffffff); border-left: 4px solid <?= $sInfo['text'] ?>; border-top-color: <?= $sInfo['border'] ?>; border-right-color: <?= $sInfo['border'] ?>; border-bottom-color: <?= $sInfo['border'] ?>;">
-                    <div class="flex flex-col">
-                        <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style="color: <?= $sInfo['text'] ?>; opacity: 0.7;">
-                            Current Status
-                        </p>
-                        <h4 class="text-lg sm:text-xl font-extrabold tracking-tight mb-2" style="color: <?= $sInfo['text'] ?>">
-                            <?= htmlspecialchars($sInfo['label']) ?>
-                        </h4>
-                        <?php if ($sDesc): ?>
-                            <p class="text-xs sm:text-sm font-medium leading-relaxed"
-                                style="color: <?= $sInfo['text'] ?>; opacity: 0.85;">
-                                <?= $sDesc ?>
-                            </p>
-                        <?php endif; ?>
-                    </div>
+                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box"
+                    style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
+                    <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
+                        Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
+                    </p>
+                    <?php if ($sDesc): ?>
+                        <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed"
+                            style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
 

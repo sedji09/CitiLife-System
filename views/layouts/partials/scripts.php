@@ -1744,6 +1744,7 @@
 
       // Forced logout
       if (remaining <= 0) {
+        sessionStorage.clear();
         window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=timeout`;
       }
     }, 1000);
@@ -1764,6 +1765,7 @@
         const totalTimeout = timeoutMinutes * 60;
 
         if (idleSeconds >= totalTimeout) {
+          sessionStorage.clear();
           window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=timeout`;
         }
       }
@@ -1782,6 +1784,7 @@
 
     // Modal Action: Logout Now
     window.logoutNow = function () {
+      sessionStorage.clear();
       window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=manual`;
     };
   })();
