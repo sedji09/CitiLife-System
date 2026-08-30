@@ -151,8 +151,10 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
             if (!empty($caseDetails['image_path'])) {
                 $decoded = json_decode($caseDetails['image_path'], true);
                 $rawPaths = is_array($decoded) ? $decoded : [$caseDetails['image_path']];
+                $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+                $baseUrl = ($isLocalhost && PROJECT_DIR) ? '/' . PROJECT_DIR . '/' : '/';
                 foreach ($rawPaths as $p) {
-                    $savedPaths[] = '/' . PROJECT_DIR . '/' . ltrim($p, '/');
+                    $savedPaths[] = $baseUrl . ltrim($p, '/');
                 }
             }
             // encode paths for JS safely
