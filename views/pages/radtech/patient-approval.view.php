@@ -167,7 +167,7 @@ foreach ($allServices as $service) {
             <tbody id="table-body" class="text-gray-800 bg-white realtime-update">
                 <?php if (count($pendingPatients) === 0): ?>
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-gray-500">
+                        <td colspan="7" class="text-center py-8 text-gray-500">
                             No pending approvals found.
                         </td>
                     </tr>
