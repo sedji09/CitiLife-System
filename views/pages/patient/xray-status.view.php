@@ -62,6 +62,14 @@ if ($patientId) {
 
 $casesToDisplay = [];
 
+// Fetch all exam prices for breakdown
+$examPrices = [];
+$stmtPrices = $pdo->query("SELECT exam_type, price FROM xray_services");
+while ($row = $stmtPrices->fetch(PDO::FETCH_ASSOC)) {
+    $examPrices[trim(strtolower($row['exam_type']))] = (float)$row['price'];
+}
+$examPricesJson = json_encode($examPrices);
+
 // 2. Fetch Case Info (Backend logic)
 if ($patientId) {
     $activeCases = $caseModel->getActiveCasesByPatient($patientId);
@@ -917,6 +925,8 @@ $statusDescriptions = [
         });
     }
 
+    const examPrices = <?= $examPricesJson ?>;
+
     function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath, examType) {
         document.getElementById('paymentModal').classList.remove('hidden');
         document.getElementById('paymentCaseId').value = caseId;
@@ -926,27 +936,48 @@ $statusDescriptions = [
         const disc = parseFloat(philhealthDiscount || 0);
         const due = parseFloat(amount || 0);
 
-        document.getElementById('modalOriginalPriceDisplay').innerText = '₱' + origPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('modalDiscountDisplay').innerText = '-₱' + disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         document.getElementById('paymentAmountDisplay').innerText = '₱' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
-        const origRow = document.getElementById('originalPriceModalRow');
-        const discRow = document.getElementById('philhealthDiscountModalRow');
+        const breakdownContainer = document.getElementById('paymentBreakdownContainer');
+        breakdownContainer.innerHTML = '';
+        
+        if (examType) {
+            const exams = examType.split(',').map(e => e.trim());
+            exams.forEach(exam => {
+                const key = exam.toLowerCase();
+                // If price is 0 or not found, we can try to distribute the original price, but usually it's found in DB
+                const price = examPrices[key] || 0;
+                breakdownContainer.innerHTML += `
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500 font-medium">${exam}</span>
+                        <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                `;
+            });
+        } else {
+            breakdownContainer.innerHTML += `
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500 font-medium">Regular Procedure Fee</span>
+                    <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${origPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+            `;
+        }
+        
         const cashDiscNotice = document.getElementById('cashDiscountNotice');
-        
-        // Always show the original price row and set the exam type
-        if (origRow) origRow.classList.remove('hidden');
-        const examLabel = document.getElementById('modalExamTypeDisplay');
-        if (examLabel) examLabel.innerText = examType || 'Regular Procedure Fee';
-        
         if (disc > 0) {
-            if (discRow) discRow.classList.remove('hidden');
+            breakdownContainer.innerHTML += `
+                <div class="flex items-center justify-between text-sm" id="philhealthDiscountModalRow">
+                    <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
+                        PhilHealth Discount
+                    </span>
+                    <span class="font-bold text-emerald-600 font-mono tracking-tight">-₱${disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+            `;
             if (cashDiscNotice) {
                 cashDiscNotice.classList.remove('hidden');
                 cashDiscNotice.innerHTML = `Note: A PhilHealth discount has been applied. Please present your PhilHealth ID at the clinic counter.`;
             }
         } else {
-            if (discRow) discRow.classList.add('hidden');
             if (cashDiscNotice) cashDiscNotice.classList.add('hidden');
         }
         
@@ -1020,17 +1051,8 @@ $statusDescriptions = [
                 <i data-lucide="receipt" class="w-4 h-4 text-gray-500"></i>
                 <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Payment Breakdown</span>
             </div>
-            <div class="p-5 bg-white space-y-3">
-                <div class="flex items-center justify-between text-sm" id="originalPriceModalRow">
-                    <span class="text-gray-500 font-medium" id="modalExamTypeDisplay">Regular Procedure Fee</span>
-                    <span id="modalOriginalPriceDisplay" class="font-semibold text-gray-800 font-mono tracking-tight">₱0.00</span>
-                </div>
-                <div class="flex items-center justify-between text-sm" id="philhealthDiscountModalRow">
-                    <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
-                        PhilHealth Discount
-                    </span>
-                    <span id="modalDiscountDisplay" class="font-bold text-emerald-600 font-mono tracking-tight">-₱0.00</span>
-                </div>
+            <div class="p-5 bg-white space-y-3" id="paymentBreakdownContainer">
+                <!-- Dynamically populated by JS -->
             </div>
             <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
                 <span class="text-sm font-bold text-black">Total Amount</span>
