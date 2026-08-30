@@ -49,6 +49,12 @@ class ReportReadyController
                     if (!$caseData)
                         throw new \Exception("Case not found.");
 
+                    // Security: ensure case belongs to this RadTech's branch
+                    $branchId = $_SESSION['branch_id'] ?? null;
+                    if ((int) $caseData['branch_id'] !== (int) $branchId) {
+                        throw new \Exception("Unauthorized: case does not belong to your branch.");
+                    }
+
                     if ($caseData['released'] == 0) {
                         // Save images
                         if (!empty($images)) {

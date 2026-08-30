@@ -45,6 +45,11 @@ if (isset($_GET['action'])) {
             if (!$caseData)
                 throw new \Exception("Case not found.");
 
+            // Security: ensure case belongs to this branch admin's branch
+            if ((int) $caseData['branch_id'] !== (int) $branchId) {
+                throw new \Exception("Unauthorized: case does not belong to your branch.");
+            }
+
             if ($caseData['released'] == 0) {
                 if (!empty($images)) {
                     $uploadDir = __DIR__ . '/../../../public/uploads/reports';

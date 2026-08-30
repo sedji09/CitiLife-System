@@ -92,12 +92,28 @@ try {
             exit;
         }
 
+        // Fetch dispute & case info first for branch ownership check
+        $stmtBranch = $pdo->prepare("SELECT rd.case_id, c.case_number, c.branch_id FROM result_disputes rd JOIN cases c ON rd.case_id = c.id WHERE rd.id = ?");
+        $stmtBranch->execute([$disputeId]);
+        $disData = $stmtBranch->fetch(PDO::FETCH_ASSOC);
+
+        // Security: non-admin_central staff may only act on their own branch's disputes
+        if ($disData && $role !== 'admin_central') {
+            $sessionBranch = $_SESSION['branch_id'] ?? null;
+            if ($sessionBranch && (int) $disData['branch_id'] !== (int) $sessionBranch) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized: dispute does not belong to your branch.']);
+                exit;
+            }
+        }
+
         $disputeModel->escalateToRadiologist($disputeId, $radtechNotes);
 
         // Fetch case info to send notification to Radiologist
-        $stmt = $pdo->prepare("SELECT rd.case_id, c.case_number, c.branch_id FROM result_disputes rd JOIN cases c ON rd.case_id = c.id WHERE rd.id = ?");
-        $stmt->execute([$disputeId]);
-        $disData = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!isset($disData)) {
+            $stmt = $pdo->prepare("SELECT rd.case_id, c.case_number, c.branch_id FROM result_disputes rd JOIN cases c ON rd.case_id = c.id WHERE rd.id = ?");
+            $stmt->execute([$disputeId]);
+            $disData = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
 
         if ($disData) {
             $pdo->prepare("
@@ -133,9 +149,9 @@ try {
             exit;
         }
 
-        // Fetch dispute & case patient data
+        // Fetch dispute & case patient data (also used for branch check)
         $stmtDisp = $pdo->prepare("
-            SELECT rd.*, c.patient_id, c.case_number, p.email, p.first_name, u.id AS patient_user_id 
+            SELECT rd.*, c.patient_id, c.case_number, c.branch_id, p.email, p.first_name, u.id AS patient_user_id 
             FROM result_disputes rd 
             JOIN cases c ON rd.case_id = c.id 
             JOIN patients p ON c.patient_id = p.id
@@ -144,6 +160,15 @@ try {
         ");
         $stmtDisp->execute([$disputeId]);
         $disputeInfo = $stmtDisp->fetch(PDO::FETCH_ASSOC);
+
+        // Security: non-admin_central staff may only resolve disputes in their own branch
+        if ($disputeInfo && $role !== 'admin_central') {
+            $sessionBranch = $_SESSION['branch_id'] ?? null;
+            if ($sessionBranch && (int) $disputeInfo['branch_id'] !== (int) $sessionBranch) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized: dispute does not belong to your branch.']);
+                exit;
+            }
+        }
 
         $notes = 'Clerical/demographic error corrected by RadTech.';
 

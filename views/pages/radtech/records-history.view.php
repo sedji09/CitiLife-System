@@ -3,16 +3,35 @@ require_once __DIR__ . '/../../../config/database.php';
 
 $caseModel = new \CaseModel($pdo);
 
-$caseId = $_GET['id'] ?? 0;
+$caseId   = (int) ($_GET['id'] ?? 0);
 $branchId = $_SESSION['branch_id'] ?? 1;
 
 // Fetch case details (Backend logic)
 $caseDetails = $caseModel->getCaseById($caseId);
 
-// Security Check: Ensure the case belongs to this branch
-if (!$caseDetails || $caseDetails['branch_id'] != $branchId) {
-    echo "<div class='p-6 mt-10 text-center text-red-600 bg-red-50 rounded-lg'>Record not found or invalid branch access.</div>";
-    exit;
+// Security Check:
+// 1. Case must exist and belong to this RadTech's branch.
+// 2. Case must be released (released = 1) — prevents accessing in-progress queue cases
+//    by manually changing the ?id= parameter.
+//    This mirrors exactly the set of records shown in the Records History list.
+$isReleased = !empty($caseDetails['released']) && (int) $caseDetails['released'] === 1;
+$isInBranch = $caseDetails && (int) $caseDetails['branch_id'] === (int) $branchId;
+
+if (!$caseDetails || !$isInBranch || !$isReleased) {
+    ?>
+    <div class="max-w-2xl mx-auto mt-12 p-8 rounded-2xl bg-white border border-gray-200 shadow-sm text-center">
+        <div class="mx-auto h-16 w-16 rounded-full bg-red-50 flex items-center justify-center mb-4 text-red-600">
+            <i data-lucide="shield-alert" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Record Not Available</h3>
+        <p class="text-sm text-gray-500 mb-6">Record not found or invalid branch access.</p>
+        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=xray-patient-records"
+            class="inline-flex items-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm py-2.5 px-5 transition shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Patient Records
+        </a>
+    </div>
+    <?php
+    return;
 }
 
 $fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);

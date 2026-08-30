@@ -6,6 +6,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// --- AUTH GUARD ---
+// Every request to this endpoint requires an active session.
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    exit;
+}
+
+$sessionRole    = $_SESSION['role'] ?? '';
+$sessionUserId  = (int) ($_SESSION['user_id'] ?? 0);
+$sessionPatientId = isset($_SESSION['patient_id']) ? (int) $_SESSION['patient_id'] : null;
+
 $action = $_GET['action'] ?? '';
 $caseId = isset($_REQUEST['case_id']) ? (int) $_REQUEST['case_id'] : 0;
 
@@ -15,7 +26,13 @@ if (!$caseId) {
 }
 
 if ($action === 'ping') {
-    // Received from radiologist
+    // --- ROLE GUARD: Only radiologist (or other staff) may ping ---
+    $staffRoles = ['radiologist', 'radtech', 'branch_admin', 'admin_central', 'it_admin'];
+    if (!in_array($sessionRole, $staffRoles, true)) {
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        exit;
+    }
+
     $status = $_POST['status'] ?? 'viewing'; // 'typing' or 'viewing' or 'inactive'
 
     if ($status === 'inactive') {
@@ -33,7 +50,34 @@ if ($action === 'ping') {
 }
 
 if ($action === 'status') {
-    // Received from patient page
+    // --- OWNERSHIP GUARD: Patients may only poll their own cases ---
+    if ($sessionRole === 'patient') {
+        if (!$sessionPatientId) {
+            // Attempt to resolve patient_id from users table if not cached in session
+            $stmtP = $pdo->prepare("SELECT patient_id FROM users WHERE id = ? LIMIT 1");
+            $stmtP->execute([$sessionUserId]);
+            $sessionPatientId = (int) ($stmtP->fetchColumn() ?: 0);
+            if ($sessionPatientId) {
+                $_SESSION['patient_id'] = $sessionPatientId;
+            }
+        }
+
+        if (!$sessionPatientId) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            exit;
+        }
+
+        // Verify the requested case_id belongs to this patient
+        $stmtOwn = $pdo->prepare("SELECT id FROM cases WHERE id = ? AND patient_id = ? LIMIT 1");
+        $stmtOwn->execute([$caseId, $sessionPatientId]);
+        if (!$stmtOwn->fetchColumn()) {
+            // Case not found or belongs to another patient — return silent inactive
+            echo json_encode(['success' => true, 'state' => 'inactive', 'diff' => 999999]);
+            exit;
+        }
+    }
+
+    // Received from patient page (or staff)
     $stmt = $pdo->prepare("
         SELECT 
             rad_activity_status, 
@@ -44,17 +88,17 @@ if ($action === 'status') {
     ");
     $stmt->execute([$caseId]);
     $row = $stmt->fetch();
-    
+
     if (!$row) {
         echo json_encode(['success' => false]);
         exit;
     }
-    
+
     $radStatus = $row['rad_activity_status'];
-    $diff = $row['diff_seconds'] !== null ? (int)$row['diff_seconds'] : 999999;
-    
+    $diff = $row['diff_seconds'] !== null ? (int) $row['diff_seconds'] : 999999;
+
     $displayStatus = 'inactive';
-    
+
     if ($radStatus) {
         if ($diff > 12) {
             // More than 12 seconds since last ping -> left the page or closed
@@ -72,11 +116,11 @@ if ($action === 'status') {
             $displayStatus = 'idle';
         }
     }
-    
+
     echo json_encode([
         'success' => true,
-        'state' => $displayStatus,
-        'diff' => $diff
+        'state'   => $displayStatus,
+        'diff'    => $diff
     ]);
     exit;
 }

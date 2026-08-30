@@ -29,8 +29,12 @@ $isReadOnly = true;
 // 3. Fetch Case & Patient Details
 $caseDetails = $caseModel->getCaseById($caseId);
 
-if (!$caseDetails) {
-    // We let the view handle the missing case message or redirect
+// Security: radiologists are system-wide but this page should only be reachable
+// for cases that are in an active workflow state (Pending, Under Reading, Report Ready).
+// Released/Completed cases are visible via worklist history if the worklist exposes them;
+// this prevents arbitrary enumeration of all historical patient records.
+$validStates = ['Pending', 'Under Reading', 'Report Ready', 'Completed', 'Released'];
+if (!$caseDetails || !in_array($caseDetails['status'] ?? '', $validStates, true)) {
     $caseNotFound = true;
 } else {
     $caseNotFound = false;

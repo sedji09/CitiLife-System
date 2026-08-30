@@ -48,6 +48,11 @@ if (isset($_GET['action'])) {
             if (!$caseData)
                 throw new \Exception("Case not found.");
 
+            // Security: ensure case belongs to this RadTech's branch
+            if ((int) $caseData['branch_id'] !== (int) $branchId) {
+                throw new \Exception("Unauthorized: case does not belong to your branch.");
+            }
+
             if ($caseData['released'] == 0) {
                 // Save images
                 if (!empty($images)) {
@@ -161,6 +166,11 @@ if (isset($_GET['action'])) {
                 $id = (int) $_GET['id'];
                 try {
                     $caseData = $caseModel->getCaseById($id);
+
+                    // Security: ensure case belongs to this RadTech's branch
+                    if ($caseData && (int) $caseData['branch_id'] !== (int) ($branchId ?: $_SESSION['branch_id'] ?? 0)) {
+                        throw new \Exception("Unauthorized: case does not belong to your branch.");
+                    }
 
                     if ($caseData && $caseData['released'] == 0) {
                         // Check if case has an active dispute and mark as Resolved

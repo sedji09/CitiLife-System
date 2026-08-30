@@ -111,6 +111,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
 if (!$caseDetails) {
     $caseNotFound = true;
 } else {
+    // Security: block write operations on already-released/completed cases unless
+    // they have an active dispute workflow in progress.
+    $terminalStatuses = ['Released', 'Completed'];
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($caseDetails['status'], $terminalStatuses, true)) {
+        require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+        $disputeCheck = new \ResultDisputeModel($pdo);
+        $ongoingDispute = $disputeCheck->getActiveDisputeByCase($caseId);
+        if (!$ongoingDispute) {
+            $errorMsg = 'This case has already been released and cannot be modified.';
+        }
+    }
+
     $caseNotFound = false;
 
     // 3. Patient History (Completed/Report Ready only)
