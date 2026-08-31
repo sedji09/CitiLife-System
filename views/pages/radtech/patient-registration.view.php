@@ -199,8 +199,8 @@
                             <select id="philhealth_relation" name="philhealth_relation"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                                 <option value="" disabled selected>Select relation</option>
-                                <option value="Owner" id="opt-owner">Owner (Principal)</option>
-                                <option value="Family Member" id="opt-family">Family Member (Dependent)</option>
+                                <option value="Owner" id="opt-owner">Principal Member</option>
+                                <option value="Family Member" id="opt-family">Qualified Dependent</option>
                             </select>
                             <p id="philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
                         </div>
@@ -258,9 +258,9 @@
         msg.classList.add('hidden');
         msg.innerText = '';
         optOwner.disabled = false;
-        optOwner.innerText = 'Owner (Principal)';
+        optOwner.innerText = 'Principal Member';
         optFamily.disabled = false;
-        optFamily.innerText = 'Family Member (Dependent)';
+        optFamily.innerText = 'Qualified Dependent';
         idInput.setCustomValidity('');
 
         // Only check if format is correct
@@ -278,13 +278,13 @@
 
                         if (data.owner_used) {
                             optOwner.disabled = true;
-                            optOwner.innerText = `Owner (Principal) - Used on ${data.owner_used_date}`;
-                            if (relSelect.value === 'Owner') relSelect.value = '';
+                            optOwner.innerText = `Principal Member - Used on ${data.owner_used_date}`;
+                            if (relSelect.value === 'Principal Member') relSelect.value = '';
                         }
                         if (data.family_used) {
                             optFamily.disabled = true;
-                            optFamily.innerText = `Family Member (Dependent) - Used on ${data.family_used_date}`;
-                            if (relSelect.value === 'Family Member') relSelect.value = '';
+                            optFamily.innerText = `Qualified Dependent - Used on ${data.family_used_date}`;
+                            if (relSelect.value === 'Qualified Dependent') relSelect.value = '';
                         }
                         
                         if (data.owner_used && data.family_used) {

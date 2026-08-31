@@ -394,8 +394,8 @@ foreach ($allServices as $service) {
                         <select id="modalPhilHealthRelation"
                             class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
                             <option value="" disabled selected>Select relation</option>
-                            <option value="Owner" id="modal-opt-owner">Owner (Principal)</option>
-                            <option value="Family Member" id="modal-opt-family">Family Member (Dependent)</option>
+                            <option value="Owner" id="modal-opt-owner">Principal Member</option>
+                            <option value="Family Member" id="modal-opt-family">Qualified Dependent</option>
                         </select>
                         <p id="modal-philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
                     </div>

@@ -258,9 +258,9 @@ function checkModalPhilHealthId() {
     msg.classList.add('hidden');
     msg.innerText = '';
     optOwner.disabled = false;
-    optOwner.innerText = 'Owner (Principal)';
+    optOwner.innerText = 'Principal Member';
     optFamily.disabled = false;
-    optFamily.innerText = 'Family Member (Dependent)';
+    optFamily.innerText = 'Qualified Dependent';
     idInput.setCustomValidity('');
 
     // Only check if format is correct
@@ -280,22 +280,22 @@ function checkModalPhilHealthId() {
                     const isSameId = (idValue === currentOriginalPhilHealthId);
 
                     if (data.owner_used) {
-                        if (isSameId && currentOriginalRelation === 'Owner') {
+                        if (isSameId && currentOriginalRelation === 'Principal Member') {
                             optOwner.disabled = false;
                         } else {
                             optOwner.disabled = true;
-                            if (relSelect.value === 'Owner') relSelect.value = '';
+                            if (relSelect.value === 'Principal Member') relSelect.value = '';
                         }
-                        optOwner.innerText = `Owner (Principal) - Used on ${data.owner_used_date}`;
+                        optOwner.innerText = `Principal Member - Used on ${data.owner_used_date}`;
                     }
                     if (data.family_used) {
-                        if (isSameId && currentOriginalRelation === 'Family Member') {
+                        if (isSameId && currentOriginalRelation === 'Qualified Dependent') {
                             optFamily.disabled = false;
                         } else {
                             optFamily.disabled = true;
-                            if (relSelect.value === 'Family Member') relSelect.value = '';
+                            if (relSelect.value === 'Qualified Dependent') relSelect.value = '';
                         }
-                        optFamily.innerText = `Family Member (Dependent) - Used on ${data.family_used_date}`;
+                        optFamily.innerText = `Qualified Dependent - Used on ${data.family_used_date}`;
                     }
                     
                     if (data.owner_used && data.family_used) {
