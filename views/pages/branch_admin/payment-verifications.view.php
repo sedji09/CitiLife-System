@@ -365,9 +365,11 @@
             const itemsPerPage = 5;
 
             function updateTable() {
-                // If there are no rows at all, leave the static empty state and hide pagination
+                // If there are no rows at all, leave the static empty state and show pagination as disabled
                 if (hasNoData) {
-                    if (paginationContainer) paginationContainer.style.display = 'none';
+                    if (paginationContainer) paginationContainer.style.display = 'flex';
+                    if (paginationInfo) paginationInfo.innerHTML = 'No records';
+                    renderPagination(1);
                     return;
                 }
 
