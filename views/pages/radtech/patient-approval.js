@@ -1,4 +1,6 @@
 let currentEditId = null;
+let currentOriginalPhilHealthId = '';
+let currentOriginalRelation = '';
 
 function setModalInputsDisabled(disabled) {
     document.getElementById('modalName').disabled = disabled;
@@ -59,8 +61,15 @@ function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealt
     document.getElementById('modalPhilHealth').value = philhealth;
     document.getElementById('modalPhilHealthId').value = philhealthId || '';
     document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
+    
+    currentOriginalPhilHealthId = philhealthId || '';
+    currentOriginalRelation = philhealthRelation || '';
+    
     document.getElementById('editModal').classList.remove('hidden');
     togglePhilHealthId();
+    if (philhealth === 'With PhilHealth Card' && philhealthId) {
+        checkModalPhilHealthId();
+    }
 }
 
 function closeEditModal() {
@@ -261,25 +270,38 @@ function checkModalPhilHealthId() {
     }
 
     modalPhCheckTimer = setTimeout(() => {
-        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}&exclude_request_id=${currentEditId}`)
+        // We no longer exclude the current request ID so we can get its usage date too.
+        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     if (idInput.value !== idValue) return; // Prevent race conditions
 
+                    const isSameId = (idValue === currentOriginalPhilHealthId);
+
                     if (data.owner_used) {
-                        optOwner.disabled = true;
+                        if (isSameId && currentOriginalRelation === 'Owner') {
+                            optOwner.disabled = false;
+                        } else {
+                            optOwner.disabled = true;
+                            if (relSelect.value === 'Owner') relSelect.value = '';
+                        }
                         optOwner.innerText = `Owner (Principal) - Used on ${data.owner_used_date}`;
-                        if (relSelect.value === 'Owner') relSelect.value = '';
                     }
                     if (data.family_used) {
-                        optFamily.disabled = true;
+                        if (isSameId && currentOriginalRelation === 'Family Member') {
+                            optFamily.disabled = false;
+                        } else {
+                            optFamily.disabled = true;
+                            if (relSelect.value === 'Family Member') relSelect.value = '';
+                        }
                         optFamily.innerText = `Family Member (Dependent) - Used on ${data.family_used_date}`;
-                        if (relSelect.value === 'Family Member') relSelect.value = '';
                     }
                     
                     if (data.owner_used && data.family_used) {
-                        idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                        if (!isSameId) {
+                            idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                        }
                     }
                 }
             })
