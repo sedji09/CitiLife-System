@@ -82,8 +82,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100" id="pendingTableBody">
                         <?php if (empty($pendingPayments)): ?>
-                            <tr>
-                                <td colspan="4" class="p-12 text-center text-gray-500">No records match your filters.</td>
+                            <tr data-static-empty="1">
+                                <td colspan="6" class="p-12 text-center text-gray-500">No pending payments to verify.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($pendingPayments as $payment): ?>
@@ -191,8 +191,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100" id="historyTableBody">
                         <?php if (empty($paymentHistory)): ?>
-                            <tr>
-                                <td colspan="4" class="p-12 text-center text-gray-500">No records match your filters.</td>
+                            <tr data-static-empty="1">
+                                <td colspan="6" class="p-12 text-center text-gray-500">No payment history found.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($paymentHistory as $payment): ?>
@@ -357,12 +357,20 @@
 
             if (!tableBody) return;
 
+            // Exclude static PHP empty-state rows from JS management
             let allRows = Array.from(tableBody.querySelectorAll('.' + rowClass));
+            const hasNoData = allRows.length === 0; // truly no records in DB
             let filteredRows = [];
             let currentPage = 1;
             const itemsPerPage = 5;
 
             function updateTable() {
+                // If there are no rows at all, leave the static empty state and hide pagination
+                if (hasNoData) {
+                    if (paginationContainer) paginationContainer.style.display = 'none';
+                    return;
+                }
+
                 const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
                 const sortOrder = sortSelect ? sortSelect.value : 'new';
 
@@ -388,7 +396,7 @@
                 tableBody.innerHTML = '';
                 
                 if (filteredRows.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="4" class="p-12 text-center text-gray-500">No records match your filters.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-gray-500">No records match your filters.</td></tr>';
                     if (paginationContainer) paginationContainer.style.display = 'flex';
                     if (paginationInfo) paginationInfo.innerHTML = 'No records';
                     renderPagination(1);
