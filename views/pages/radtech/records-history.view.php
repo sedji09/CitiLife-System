@@ -25,7 +25,7 @@ if (!$caseDetails || !$isInBranch || !$isReleased) {
         </div>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Record Not Available</h3>
         <p class="text-sm text-gray-500 mb-6">Record not found or invalid branch access.</p>
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=xray-patient-records"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=xray-patient-records"
             class="inline-flex items-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm py-2.5 px-5 transition shadow-sm">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Patient Records
         </a>
@@ -40,7 +40,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2">
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=xray-patient-records" aria-label="Go back to records"
+    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=xray-patient-records" aria-label="Go back to records"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>

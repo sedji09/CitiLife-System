@@ -16,11 +16,11 @@
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex">
-        <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=queue"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&tab=queue"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'queue' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Active Queue
         </a>
-        <a href="/<?= PROJECT_DIR ?>/index.php?page=branch-xray-cases&tab=records"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&tab=records"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $currentTab === 'records' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Records
         </a>
@@ -185,33 +185,33 @@
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <?php if ($currentTab === 'queue'): ?>
-                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&id=<?= $row['id'] ?>"
+                                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Case Detals">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
                                         <?php if ($row['status'] === 'Report Ready'): ?>
                                             <a href="javascript:void(0)"
-                                                onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                                onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                                 class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                                                 title="Print Preliminary Report">
                                                 <i data-lucide="printer" class="w-4 h-4"></i>
                                             </a>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <a href="/<?= PROJECT_DIR ?>/index.php?page=records-history&id=<?= $row['id'] ?>"
+                                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=records-history&id=<?= $row['id'] ?>"
                                             class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                                             title="View Record Details">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                                             title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
+                                            onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
                                             class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                                             title="Download PDF">
                                             <i data-lucide="download" class="w-4 h-4"></i>

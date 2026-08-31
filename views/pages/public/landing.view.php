@@ -37,7 +37,7 @@ $xrayCategories = array_keys($groupedRates);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/landing-page-styles.css">
+    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/landing-page-styles.css">
 
 </head>
 
@@ -47,7 +47,7 @@ $xrayCategories = array_keys($groupedRates);
     <nav class="landing-nav" id="landing-nav">
         <div class="nav-inner">
             <a href="#home" class="nav-brand">
-                <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
                     onerror="this.style.display='none'">
                 <div class="nav-brand-text">
                     <span class="nav-brand-name">CitiLife</span>
@@ -71,7 +71,7 @@ $xrayCategories = array_keys($groupedRates);
     <!-- ===== HERO ===== -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo" class="hero-logo" onerror="this.style.display='none'">
+            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo" class="hero-logo" onerror="this.style.display='none'">
             <h1>
                 CitiLife Diagnostic Center<br>
                 <span>Radiology Patient Portal</span>
@@ -506,13 +506,13 @@ $xrayCategories = array_keys($groupedRates);
             <button class="modal-close" onclick="closeLoginModal()">&times;</button>
             <div class="modal-header">
                 <div class="modal-logo-wrapper">
-                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo" class="modal-logo" onerror="this.style.display='none'">
+                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo" class="modal-logo" onerror="this.style.display='none'">
                 </div>
                 <h2>Patient Portal</h2>
                 <p>Welcome! Access your X-ray records.</p>
             </div>
             
-            <form action="/<?= PROJECT_DIR ?>/patient-login" method="POST" class="modal-form">
+            <form action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-login" method="POST" class="modal-form">
                 <?php if (isset($_GET['error'])): ?>
                     <div style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
                         <?= htmlspecialchars($_GET['error']) ?>
@@ -556,7 +556,7 @@ $xrayCategories = array_keys($groupedRates);
                 </div>
 
                 <div class="modal-forgot">
-                    <a href="/<?= PROJECT_DIR ?>/forgot-password">Forgot your password?</a>
+                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>forgot-password">Forgot your password?</a>
                 </div>
 
                 <button type="submit" class="modal-submit-btn">Log in</button>
@@ -572,7 +572,7 @@ $xrayCategories = array_keys($groupedRates);
     <div id="signupModal" class="modal-overlay">
         <div class="modal-card modal-card-large" style="max-width: 750px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
             <button class="modal-close" onclick="closeSignupModal()" style="position: absolute; top: 16px; right: 16px; z-index: 100; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">&times;</button>
-            <iframe id="signupIframe" src="/<?= PROJECT_DIR ?>/patient-signup?iframe=1" style="width: 100%; height: 500px; border: none; border-radius: 24px; transition: height 0.3s ease;"></iframe>
+            <iframe id="signupIframe" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-signup?iframe=1" style="width: 100%; height: 500px; border: none; border-radius: 24px; transition: height 0.3s ease;"></iframe>
         </div>
     </div>
     <script>

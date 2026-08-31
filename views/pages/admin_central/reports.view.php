@@ -9,7 +9,7 @@ $branchId = $_SESSION['branch_id'] ?? null;
 ?>
 
 <!-- Include Chart.js -->
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/chart.min.js"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/chart.min.js"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
 <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
@@ -426,4 +426,4 @@ $branchId = $_SESSION['branch_id'] ?? null;
     </div>
 </div>
 
-<script src="/<?= PROJECT_DIR ?>/views/pages/admin_central/reports.js?v=<?= time() ?>"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/admin_central/reports.js?v=<?= time() ?>"></script>

@@ -164,7 +164,7 @@ if (!$isMultiExam) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radiology Report — <?= $caseNum ?></title>
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <style>
         /* ── Google Fonts ── */
         @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
@@ -708,13 +708,13 @@ if (!$isMultiExam) {
     <div class="page">
         <!-- Watermark -->
         <div class="watermark">
-            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/logo-template.png" alt="Watermark">
+            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/logo-template.png" alt="Watermark">
         </div>
 
         <!-- Header -->
         <div class="report-header">
             <div class="header-left">
-                <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
                     class="header-logo">
                 <div class="header-text">
                     <h1>CITILIFE</h1>

@@ -10,7 +10,7 @@
         <!-- Breadcrumbs & Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <a href="/<?= PROJECT_DIR ?>/patient-records"
+                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-records"
                     class="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-500/50 transition-all shadow-sm">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </a>
@@ -19,7 +19,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <a href="/<?= PROJECT_DIR ?>/records-history?patient_number=<?= urlencode($patient['patient_number']) ?>"
+                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>records-history?patient_number=<?= urlencode($patient['patient_number']) ?>"
                     class="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-all">
                     <i data-lucide="history" class="w-4 h-4 text-blue-500"></i>
                     View Clinical History

@@ -21,7 +21,7 @@ sort($examTypes);
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2 mb-4">
-    <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=worklist"
+    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=worklist"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
@@ -172,7 +172,7 @@ sort($examTypes);
                                 </span>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
-                                <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $branchId ?>"
+                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $branchId ?>"
                                     class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
                                     <i data-lucide="microscope" class="w-4 h-4 mr-1"></i> Review Case
                                 </a>

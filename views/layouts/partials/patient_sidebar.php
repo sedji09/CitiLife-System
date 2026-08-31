@@ -153,7 +153,7 @@
           <span>Settings</span>
         </button>
         <div class="my-1 border-t border-white/10"></div>
-        <a href="/<?= PROJECT_DIR ?>/logout"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout"
           class="w-full flex items-center gap-3 px-3 py-2 text-left text-sm text-red-300 hover:text-red-200 hover:bg-white/10 rounded-lg transition">
           <i data-lucide="log-out" class="w-4 h-4 opacity-70"></i>
           <span>Log out</span>
@@ -240,7 +240,7 @@
           <span>Settings</span>
         </button>
         <div class="my-2 border-t border-white/10"></div>
-        <a href="/<?= PROJECT_DIR ?>/logout"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout"
           class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-red-300 hover:text-red-200 hover:bg-white/10 transition">
           <i data-lucide="log-out" class="text-base opacity-90"></i>
           <span>Log out</span>

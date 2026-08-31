@@ -268,7 +268,7 @@ sort($priorities);
                                     </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
-                                    <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
+                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
                                         class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
                                         <i data-lucide="microscope" class="w-4 h-4 mr-1"></i> Review Case
                                     </a>
@@ -346,7 +346,7 @@ sort($priorities);
                                 <?= date('M j, Y h:i A', strtotime($d['created_at'])) ?>
                             </td>
                             <td class="px-4 py-3.5 whitespace-nowrap">
-                                <a href="/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=case-review&id=<?= $d['case_id'] ?>&branch_id=<?= $d['branch_id'] ?>"
+                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $d['case_id'] ?>&branch_id=<?= $d['branch_id'] ?>"
                                    class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
                                     <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Amend Report
                                 </a>

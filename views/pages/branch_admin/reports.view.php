@@ -67,7 +67,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
 </style>
 
 <!-- Include Chart.js -->
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/chart.min.js"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/chart.min.js"></script>
 
 <div class="space-y-6">
     <!-- Header -->
@@ -449,4 +449,4 @@ $branchName = $branchData['name'] ?? 'Your Branch';
     </div>
 </div>
 
-<script src="/<?= PROJECT_DIR ?>/views/pages/branch_admin/reports.js?v=<?= time() ?>"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/branch_admin/reports.js?v=<?= time() ?>"></script>

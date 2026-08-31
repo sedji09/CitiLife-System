@@ -12,7 +12,7 @@ $homeLink = ($role !== 'guest') ? "/" . PROJECT_DIR . "/dashboard" : "/" . PROJE
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found | CitiLife System</title>
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
 
@@ -88,7 +88,7 @@ $homeLink = ($role !== 'guest') ? "/" . PROJECT_DIR . "/dashboard" : "/" . PROJE
 
     <div class="max-w-xl w-full flex flex-col items-center">
         <div class="mascot-container mb-2">
-            <img src="/<?= PROJECT_DIR ?>/public/assets/img/errors/404_illustration.png" alt="404" class="mascot-img">
+            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/errors/404_illustration.png" alt="404" class="mascot-img">
         </div>
 
         <div class="relative z-10 w-full">

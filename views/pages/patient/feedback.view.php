@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto space-y-6 p-4 md:p-6 pb-24">
     <!-- Header with Back Button -->
     <div class="flex items-center gap-3">
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=patient&page=my-records" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-red-600 transition shadow-sm">
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=my-records" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-red-600 transition shadow-sm">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <div>
@@ -50,7 +50,7 @@
         <?php endif; ?>
 
         <div class="p-6">
-            <form action="/<?= PROJECT_DIR ?>/index.php?role=patient&page=feedback" method="POST" class="space-y-6">
+            <form action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=feedback" method="POST" class="space-y-6">
                 <input type="hidden" name="case_id" value="<?= htmlspecialchars($caseId ?? '') ?>">
                 <!-- Star Rating -->
                 <div>

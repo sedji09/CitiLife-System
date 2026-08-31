@@ -1,16 +1,16 @@
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?>">
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/noc-theme.css?v=<?= time() ?>">
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/drive-preview.css?v=<?= time() ?>">
-  <script src="/<?= PROJECT_DIR ?>/public/assets/js/drive-preview.js?v=<?= time() ?>"></script>
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?>">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/noc-theme.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/drive-preview.css?v=<?= time() ?>">
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/drive-preview.js?v=<?= time() ?>"></script>
 
   <!-- Premium Alerts & Dialogs (SweetAlert2) -->
   <link rel="stylesheet"
-    href="/<?= PROJECT_DIR ?>/public/assets/vendor/sweetalert2/sweetalert2.min.css?v=<?= time() ?>">
-  <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
-  <script src="/<?= PROJECT_DIR ?>/public/assets/js/alerts.js?v=<?= time() ?>"></script>
-  <script src="/<?= PROJECT_DIR ?>/public/assets/js/security.js?v=<?= time() ?>"></script>
+    href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/sweetalert2/sweetalert2.min.css?v=<?= time() ?>">
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/alerts.js?v=<?= time() ?>"></script>
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
 
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
   <style>
     /* ===== Settings Modal Responsive Styles ===== */
     .settings-modal-shell {

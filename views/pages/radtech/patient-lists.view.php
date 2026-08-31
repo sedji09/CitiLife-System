@@ -58,16 +58,16 @@ $currentTab = $_GET['tab'] ?? 'completed';
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= (($_GET['page'] ?? 'patient-lists') === 'patient-lists' && $currentTab !== 'disputes') ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Queue
         </a>
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Pending Approval
         </a>
     
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&tab=disputes"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Error Reports
             <?php if ($pendingDisputeCount > 0): ?>
@@ -277,7 +277,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
                                     <!-- View button always active -->
-                                    <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>"
+                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>"
                                         class="text-sm font-medium text-blue-500 hover:text-blue-700 transition"
                                         title="View Case">
                                         <i data-lucide="eye"
@@ -287,7 +287,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                     <?php if ($isReportReady): ?>
                                         <!-- Print Result — active when Report Ready -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
                                             class="text-green-500 hover:text-green-700 transition" title="Print Report">
                                             <i data-lucide="printer"
                                                 class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
@@ -1215,7 +1215,7 @@ function confirmReupload(caseId) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = '/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-details&id=' + caseId + '&from=disputes';
+            window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=' + caseId + '&from=disputes';
         }
     });
 }
@@ -1223,7 +1223,7 @@ function confirmReupload(caseId) {
 function submitEscalation(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    fetch('/<?= PROJECT_DIR ?>/app/Api/disputes.php?action=escalate_to_radiologist', {
+    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=escalate_to_radiologist', {
         method: 'POST', body: fd
     }).then(r=>r.json()).then(res=>{
         closeEscalateModal();
@@ -1237,7 +1237,7 @@ function submitEscalation(e) {
 function submitResolution(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    fetch('/<?= PROJECT_DIR ?>/app/Api/disputes.php?action=resolve_dispute', {
+    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
         method: 'POST', body: fd
     }).then(r=>r.json()).then(res=>{
         closeResolveModal();
@@ -1258,7 +1258,7 @@ setInterval(() => {
     const isResolveOpen = resModal && !resModal.classList.contains('hidden');
 
     if (isDisputesTab && !isEscalateOpen && !isResolveOpen) {
-        fetch('/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&tab=disputes')
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes')
             .then(res => res.text())
             .then(html => {
                 const parser = new DOMParser();

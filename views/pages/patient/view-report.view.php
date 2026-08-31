@@ -887,12 +887,12 @@ if (!$isMultiExam) {
                 <div class="page" id="main-report-page">
                     <!-- Watermark -->
                     <div class="watermark">
-                        <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/logo-template.png" alt="Watermark">
+                        <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/logo-template.png" alt="Watermark">
                     </div>
 
                     <div class="report-header">
                         <div class="header-left">
-                            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" class="header-logo">
+                            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" class="header-logo">
                             <div class="header-text">
                                 <h1>CITILIFE</h1>
                                 <p>DIAGNOSTIC CENTER</p>
@@ -1075,7 +1075,7 @@ if (!$isMultiExam) {
                     </div>
 
                     <div style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ccc; background: #000; padding: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); position: relative; z-index: 1;">
-                        <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($imgSrc) ?>" alt="X-Ray Image"
+                        <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($imgSrc) ?>" alt="X-Ray Image"
                             style="max-width: 100%; max-height: 220mm; object-fit: contain;">
                     </div>
 

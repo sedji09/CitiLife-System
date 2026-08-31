@@ -292,7 +292,7 @@ if ($activeDispute && $backPage === 'worklist') {
                 <?php else: ?>
                 <?php foreach ($patientHistory as $h): ?>
                 <div class="px-5 py-3 hover:bg-red-50 transition cursor-pointer group"
-                     onclick="window.location.href='/<?= PROJECT_DIR ?>/index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>&back_to=case-review&back_id=<?= $caseId ?>'">
+                     onclick="window.location.href='<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>&back_to=case-review&back_id=<?= $caseId ?>'">
                     <div class="flex justify-between items-start">
                         <p class="text-xs font-bold text-gray-800 group-hover:text-red-600 transition"><?= htmlspecialchars($h['exam_type']) ?></p>
                         <span class="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5"><?= htmlspecialchars($h['branch_name']) ?></span>
@@ -871,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fd = new window.FormData();
         fd.append('status', radStatus);
         
-        fetch(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, {
+        fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, {
             method: 'POST',
             body: fd
         }).catch(err => console.error(err));
@@ -891,11 +891,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const fd = new window.FormData();
             fd.append('status', 'inactive');
             try {
-                navigator.sendBeacon(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, fd);
+                navigator.sendBeacon(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, fd);
             } catch(e) {}
             // Fallback keepalive
             try {
-                fetch(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, {
+                fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, {
                     method: 'POST', body: fd, keepalive: true
                 }).catch(()=>{});
             } catch(e) {}

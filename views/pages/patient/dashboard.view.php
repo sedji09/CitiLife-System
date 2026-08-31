@@ -347,7 +347,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         </div>
 
         <!-- Request New X-ray Button -->
-        <a href="/<?= PROJECT_DIR ?>/registration"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
             class="mb-5 flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3.5 px-4 transition shadow-sm">
             <i data-lucide="plus-circle" class="w-5 h-5"></i> New X-ray Request
         </a>
@@ -360,7 +360,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Get Started</h3>
             <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your
                 results.</p>
-            <a href="/<?= PROJECT_DIR ?>/registration"
+            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Register as Patient
             </a>
@@ -510,7 +510,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     $statusLink = 'xray-status';
                 }
                 ?>
-                <a href="/<?= PROJECT_DIR ?>/<?= $statusLink ?>"
+                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= $statusLink ?>"
                     class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-4 transition shadow-sm">
                     View Full Status <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </a>
@@ -530,7 +530,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             const caseId = dot.getAttribute('data-case-id');
             if (!caseId) return;
 
-            fetch(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=status&case_id=${caseId}`)
+            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=status&case_id=${caseId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

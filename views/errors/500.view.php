@@ -12,7 +12,7 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>500 - Server Error | CitiLife System</title>
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
 
@@ -91,7 +91,7 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
 
     <div class="max-w-xl w-full flex flex-col items-center">
         <div class="mascot-container mb-2">
-            <img src="/<?= PROJECT_DIR ?>/public/assets/img/errors/500_illustrations.png" alt="500" class="mascot-img">
+            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/errors/500_illustrations.png" alt="500" class="mascot-img">
         </div>
 
         <div class="relative z-10 w-full">

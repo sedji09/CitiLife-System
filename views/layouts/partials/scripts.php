@@ -1,8 +1,8 @@
 <!-- âœ… Vue production local asset -->
-<script type="text/javascript" src="/<?= PROJECT_DIR ?>/public/assets/js/vue.global.prod.js"></script>
+<script type="text/javascript" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/vue.global.prod.js"></script>
 
 <!-- âœ… Lucide production local asset -->
-<script type="text/javascript" src="/<?= PROJECT_DIR ?>/public/assets/js/lucide.min.js"></script>
+<script type="text/javascript" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/lucide.min.js"></script>
 
 <!-- âœ… Inject PHP data -->
 <script>
@@ -388,13 +388,13 @@
         if (this.role === 'patient') return;
 
         // Fetch unread count
-        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_unread_count', { credentials: 'same-origin' })
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_unread_count', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => { if (data.success) this.unreadMessageCount = data.count; })
           .catch(err => console.error(err));
 
         // Fetch conversations (always, so badge count stays live)
-        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_conversations', { credentials: 'same-origin' })
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_conversations', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -435,7 +435,7 @@
         // Fetch active chats — only append NEW messages to avoid re-render stealing focus
         this.activeChats.forEach(chat => {
           const markReadParam = chat.minimized ? '0' : '1';
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
+          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               if (data.success) {
@@ -511,7 +511,7 @@
         this.isSearchingStaff = true;
         const currentQuery = this.staffSearchQuery;
         const cacheBuster = '&_t=' + new Date().getTime();
-        fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (this.staffSearchQuery !== currentQuery) return;
@@ -572,7 +572,7 @@
         // Clear unread badge when user opens the chat
         if (!chat.minimized) {
           chat.unreadCount = 0;
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
+          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
@@ -588,7 +588,7 @@
         if (existing) {
           existing.minimized = false;
           existing.unreadCount = 0; // Clear badge when user opens it
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
+          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -603,7 +603,7 @@
             attachmentPreviews: []
           });
 
-          fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
+          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               const chat = this.activeChats.find(c => c.id === conv.id);
@@ -685,7 +685,7 @@
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
             this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
-            fetch('/<?= PROJECT_DIR ?>/app/api/messages.php?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
@@ -760,7 +760,7 @@
             formData.append('attachment', file);
           }
 
-          return fetch('/<?= PROJECT_DIR ?>/app/api/messages.php', {
+          return fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php', {
             method: 'POST', credentials: 'same-origin',
             body: formData
           }).then(res => res.json());
@@ -808,7 +808,7 @@
         const formData = new FormData();
         formData.append('email', this.userEmail);
 
-        fetch('/<?= PROJECT_DIR ?>/app/api/request_password_reset.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/request_password_reset.php', {
           method: 'POST', credentials: 'same-origin',
 
           body: formData
@@ -922,7 +922,7 @@
           formData.append('signature', this.signatureFile);
         }
 
-        fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
           method: 'POST', credentials: 'same-origin',
 
           body: formData
@@ -977,7 +977,7 @@
         formData.append('professional_title', this.editProfessionalTitle);
         formData.append('is_available', this.editIsAvailable ? 1 : 0);
 
-        fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
           method: 'POST', credentials: 'same-origin',
 
           body: formData
@@ -1035,7 +1035,7 @@
       },
       requestEmailChange() {
         this.emailChangeState = 'sending';
-        fetch('/<?= PROJECT_DIR ?>/app/api/send_email_change_otp.php', { method: 'POST', credentials: 'same-origin' })
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/send_email_change_otp.php', { method: 'POST', credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -1054,7 +1054,7 @@
       },
       verifyEmailChangeOtp() {
         if (!this.otpCode) return;
-        fetch('/<?= PROJECT_DIR ?>/app/api/verify_email_change_otp.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/verify_email_change_otp.php', {
           method: 'POST', credentials: 'same-origin',
 
           headers: { 'Content-Type': 'application/json' },
@@ -1104,7 +1104,7 @@
           formData.append('avatar', this.uploadFile);
         }
 
-        fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
           method: 'POST', credentials: 'same-origin',
 
           body: formData
@@ -1183,7 +1183,7 @@
           formData.append('system_name', this.userDisplayName);
         }
 
-        fetch('/<?= PROJECT_DIR ?>/app/api/update_profile.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
           method: 'POST', credentials: 'same-origin',
 
           body: formData
@@ -1240,7 +1240,7 @@
         this.globalNotificationOptionsOpen = !this.globalNotificationOptionsOpen;
       },
       fetchNotifications(isInitial = false) {
-        fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', { credentials: 'same-origin' })
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (!data.error) {
@@ -1360,7 +1360,7 @@
       },
 
       markAllRead() {
-        fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_read' })
@@ -1395,7 +1395,7 @@
       },
       markAsUnread(id) {
         this.activeNotificationDropdown = null;
-        fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_unread', notification_id: id })
@@ -1414,7 +1414,7 @@
           if (this.undoTimeout) {
             clearTimeout(this.undoTimeout);
             if (this.pendingDeleteId) {
-              fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+              fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId }),
@@ -1446,7 +1446,7 @@
             this.showUndoToast = false;
             clearInterval(this.undoInterval);
             if (this.pendingDeleteId === id) {
-              fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+              fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', notification_id: id })
@@ -1475,7 +1475,7 @@
           clearTimeout(this.undoTimeout);
           clearInterval(this.undoInterval);
           if (this.pendingDeleteId) {
-            fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
               method: 'POST', credentials: 'same-origin',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId })
@@ -1503,7 +1503,7 @@
           }
 
           // Navigate immediately to avoid perceived delay ("hindi agad napupunta")
-          fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id }),
@@ -1511,7 +1511,7 @@
           });
           window.location.href = link;
         } else {
-          fetch('/<?= PROJECT_DIR ?>/app/api/notifications.php', {
+          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id })
@@ -1745,7 +1745,7 @@
       // Forced logout
       if (remaining <= 0) {
         sessionStorage.clear();
-        window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=timeout`;
+        window.location.href = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout?reason=timeout`;
       }
     }, 1000);
 
@@ -1766,7 +1766,7 @@
 
         if (idleSeconds >= totalTimeout) {
           sessionStorage.clear();
-          window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=timeout`;
+          window.location.href = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout?reason=timeout`;
         }
       }
     });
@@ -1785,7 +1785,7 @@
     // Modal Action: Logout Now
     window.logoutNow = function () {
       sessionStorage.clear();
-      window.location.href = `/<?= PROJECT_DIR ?>/logout?reason=manual`;
+      window.location.href = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout?reason=manual`;
     };
   })();
 </script>

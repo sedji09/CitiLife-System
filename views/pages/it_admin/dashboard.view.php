@@ -310,7 +310,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                         <i data-lucide="list-tree" class="w-4 h-4 noc-text-cyan"></i>
                         Recent System Activities
                     </h3>
-                    <a href="/<?= PROJECT_DIR ?>/audit-logs"
+                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>audit-logs"
                         class="text-xs font-bold hover:underline noc-text-cyan">View All</a>
                 </div>
                 <div class="noc-feed-card-body noc-card-alt custom-scrollbar"
@@ -359,7 +359,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                     <i data-lucide="zap" class="w-4 h-4 noc-text-amber"></i> Quick Actions
                 </h3>
                 <div class="space-y-3">
-                    <a href="/<?= PROJECT_DIR ?>/backup-maintenance"
+                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>backup-maintenance"
                         class="flex items-center justify-between w-full p-3 rounded-lg transition noc-card-alt noc-hover">
                         <div class="flex items-center gap-3">
                             <i data-lucide="database-backup" class="w-4 h-4 noc-text-cyan"></i>
@@ -367,7 +367,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                         </div>
                         <i data-lucide="chevron-right" class="w-4 h-4 noc-text-muted"></i>
                     </a>
-                    <a href="/<?= PROJECT_DIR ?>/audit-logs"
+                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>audit-logs"
                         class="flex items-center justify-between w-full p-3 rounded-lg transition noc-card-alt noc-hover">
                         <div class="flex items-center gap-3">
                             <i data-lucide="file-terminal" class="w-4 h-4 noc-text-indigo"></i>
@@ -376,7 +376,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                         <i data-lucide="chevron-right" class="w-4 h-4 noc-text-muted"></i>
                     </a>
                     <?php if ($lockedAccounts > 0): ?>
-                        <a href="/<?= PROJECT_DIR ?>/audit-logs?module=Authentication"
+                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>audit-logs?module=Authentication"
                             class="flex items-center justify-between w-full p-3 rounded-lg transition noc-card-alt noc-hover"
                             style="border-left: 3px solid var(--noc-accent-rose);">
                             <div class="flex items-center gap-3">
@@ -461,7 +461,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
     }, 1000);
     setInterval(async () => {
         try {
-            const res = await fetch('/<?= PROJECT_DIR ?>/app/api/active_users_count.php');
+            const res = await fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/active_users_count.php');
             if (res.ok) {
                 const data = await res.json();
                 const activeEl = document.getElementById('realtime-active-users');

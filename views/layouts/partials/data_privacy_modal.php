@@ -459,7 +459,7 @@ if (empty($_SESSION['data_privacy_accepted'])):
                     <!-- Hero Card (Patient) -->
                     <div id="dpm-hero-card">
                         <div id="dpm-hero-logo">
-                            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
                         </div>
                         <div id="dpm-hero-content">
@@ -513,7 +513,7 @@ if (empty($_SESSION['data_privacy_accepted'])):
                     <!-- Hero Card (Staff) -->
                     <div id="dpm-hero-card">
                         <div id="dpm-hero-logo">
-                            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
                         </div>
                         <div id="dpm-hero-content">
@@ -574,7 +574,7 @@ if (empty($_SESSION['data_privacy_accepted'])):
 
             <!-- 4. FOOTER ACTIONS -->
             <div id="dpm-footer">
-                <a href="/<?= PROJECT_DIR ?>/logout" class="dpm-btn dpm-btn-decline">
+                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout" class="dpm-btn dpm-btn-decline">
                     Decline & Logout
                 </a>
                 <button id="acceptPrivacyBtn" class="dpm-btn dpm-btn-accept">
@@ -602,7 +602,7 @@ if (empty($_SESSION['data_privacy_accepted'])):
                     acceptBtn.disabled = true;
                     acceptBtn.innerHTML = 'Processing...';
 
-                    fetch('/<?= PROJECT_DIR ?>/accept-privacy', {
+                    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>accept-privacy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

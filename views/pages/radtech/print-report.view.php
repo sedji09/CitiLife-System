@@ -129,7 +129,7 @@ if (!$isMultiExam) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radiology Report — <?= $caseNum ?></title>
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <style>
         /* ── Google Fonts ── */
         @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
@@ -661,13 +661,13 @@ if (!$isMultiExam) {
         ?>
         <!-- Watermark -->
         <div class="watermark">
-            <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/logo-template.png" alt="Watermark">
+            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/logo-template.png" alt="Watermark">
         </div>
 
         <!-- Header -->
         <div class="report-header">
             <div class="header-left">
-                <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
                     class="header-logo">
                 <div class="header-text">
                     <h1>CITILIFE</h1>
@@ -890,7 +890,7 @@ if (!$isMultiExam) {
 
                 <div
                     style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ccc; background: #000; padding: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); position: relative; z-index: 1;">
-                    <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($sPath) ?>" alt="X-Ray Image"
+                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="X-Ray Image"
                         style="max-width: 100%; max-height: 220mm; object-fit: contain;">
                 </div>
 
@@ -903,8 +903,8 @@ if (!$isMultiExam) {
     <?php endif; ?>
 
     <!-- Load PDF generation scripts regardless of preview mode -->
-    <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/html2canvas/html2canvas.min.js"></script>
-    <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/jspdf/jspdf.umd.min.js"></script>
+    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/html2canvas/html2canvas.min.js"></script>
+    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/jspdf/jspdf.umd.min.js"></script>
     <script>
         const _IS_MULTI = <?= $isMultiExam ? 'true' : 'false' ?>;
         const _BRANCH = '<?= addslashes($branch) ?>';

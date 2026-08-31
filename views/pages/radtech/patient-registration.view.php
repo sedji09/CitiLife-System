@@ -270,7 +270,7 @@
         }
 
         phCheckTimer = setTimeout(() => {
-            fetch(`/<?= PROJECT_DIR ?>/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}`)
+            fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {

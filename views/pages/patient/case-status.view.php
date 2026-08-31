@@ -128,7 +128,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Case Not Found</h3>
             <p class="text-sm text-gray-500 mb-5">We could not locate the details for this case.</p>
-            <a href="/<?= PROJECT_DIR ?>/my-records"
+            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records"
                 class="inline-flex items-center gap-2 rounded-xl bg-gray-600 hover:bg-gray-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to My Records
             </a>
@@ -141,7 +141,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Request Rejected</h3>
             <p class="text-sm text-gray-500 mb-5">This request has been rejected. You can view it under the <strong>Rejected</strong> tab in My Records.</p>
-            <a href="/<?= PROJECT_DIR ?>/my-records?tab=rejected"
+            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records?tab=rejected"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Go to My Records
             </a>

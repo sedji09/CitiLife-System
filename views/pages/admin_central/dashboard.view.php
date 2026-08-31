@@ -5,7 +5,7 @@
 ?>
 
 <!-- Include Chart.js -->
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/chart.min.js"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/chart.min.js"></script>
 
 <div class="space-y-4 pb-10"> <!-- Compact spacing -->
     <!-- Header -->

@@ -200,7 +200,7 @@ $statusDescriptions = [
         </div>
         <h3 class="text-lg font-semibold text-gray-700 mb-2">No Active Case Found</h3>
         <p class="text-sm text-gray-500 mb-5">You don't have any active X-ray case at the moment.</p>
-        <a href="/<?= PROJECT_DIR ?>/registration"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
             class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
         </a>
@@ -552,7 +552,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-base font-bold text-gray-800 mb-1">Want to register a new X-ray request?</h3>
             <p class="text-sm text-gray-500 mb-4">You can submit a new X-ray examination request anytime.</p>
-            <a href="/<?= PROJECT_DIR ?>/registration"
+            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-6 transition shadow-sm">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> New X-ray Request
             </a>
@@ -905,7 +905,7 @@ $statusDescriptions = [
                     }
                 });
 
-                fetch('/<?= PROJECT_DIR ?>/app/api/cancel_case.php', {
+                fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/cancel_case.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ case_id: caseId })
@@ -914,7 +914,7 @@ $statusDescriptions = [
                     .then(data => {
                         if (data.success) {
                             Swal.fire('Cancelled!', 'Your request has been cancelled.', 'success').then(() => {
-                                window.location.href = '/<?= PROJECT_DIR ?>/xray-status';
+                                window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>xray-status';
                             });
                         } else {
                             Swal.fire('Error', data.message || 'Failed to cancel the request.', 'error');
@@ -1105,8 +1105,8 @@ $statusDescriptions = [
                         </div>
 
                         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1 flex flex-col justify-center items-center">
-                            <img id="qrCodeImage" src="/<?= PROJECT_DIR ?>/public/assets/images/gcash_qr.jpg" alt="GCash QR" class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
-                            <a id="qrCodeDownload" href="/<?= PROJECT_DIR ?>/public/assets/images/gcash_qr.jpg" download="CitiLife_QR_Code.jpg" class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
+                            <img id="qrCodeImage" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg" alt="GCash QR" class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
+                            <a id="qrCodeDownload" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg" download="CitiLife_QR_Code.jpg" class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
                                 <i data-lucide="download" class="w-4 h-4"></i> Save QR Code
                             </a>
                         </div>
@@ -1272,7 +1272,7 @@ $statusDescriptions = [
             const caseId = dot.getAttribute('data-case-id');
             if (!caseId) return;
 
-            fetch(`/<?= PROJECT_DIR ?>/app/api/case_activity.php?action=status&case_id=${caseId}`)
+            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=status&case_id=${caseId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

@@ -112,7 +112,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 }
 ?>
 <!-- Include Chart.js -->
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/chart.min.js"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/chart.min.js"></script>
 
 <div class="space-y-6">
 
@@ -331,7 +331,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
 
         <!-- Card 1: Pending STAT -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?priority=STAT&status=pending"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?priority=STAT&status=pending"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 p-2 rounded-lg">
@@ -352,7 +352,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 2: Total Pending -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?status=pending"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?status=pending"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #fed7aa;" onmouseenter="this.style.borderColor='#fb923c'"
             onmouseleave="this.style.borderColor='#fed7aa'">
@@ -376,7 +376,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 3: Overdue -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?status=overdue"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?status=overdue"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 p-2 rounded-lg">
@@ -395,7 +395,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 4: In Progress -->
-        <a href="/<?= PROJECT_DIR ?>/worklist?status=Under+Reading"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?status=Under+Reading"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #bfdbfe;" onmouseenter="this.style.borderColor='#60a5fa'"
             onmouseleave="this.style.borderColor='#bfdbfe'">
@@ -560,7 +560,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         const firstPoint = exactElements[0];
                         const label = chart.data.labels[firstPoint.index];
                         const datasetLabel = chart.data.datasets[firstPoint.datasetIndex].label;
-                        window.location.href = '/<?= PROJECT_DIR ?>/worklist?branch=' + encodeURIComponent(label) + '&priority=' + encodeURIComponent(datasetLabel);
+                        window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?branch=' + encodeURIComponent(label) + '&priority=' + encodeURIComponent(datasetLabel);
                     }
                 },
                 onHover: (e, activeElements) => {
@@ -624,7 +624,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     if (exactElements.length > 0) {
                         const firstPoint = exactElements[0];
                         const label = chart.data.labels[firstPoint.index]; // Branch
-                        window.location.href = '/<?= PROJECT_DIR ?>/worklist?branch=' + encodeURIComponent(label);
+                        window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?branch=' + encodeURIComponent(label);
                     }
                 },
                 onHover: (e, activeElements) => {

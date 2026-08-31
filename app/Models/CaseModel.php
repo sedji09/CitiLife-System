@@ -452,7 +452,7 @@ class CaseModel
         $requestNumber = $this->generateRequestNumber();
         $status = $data['status'] ?? 'Pending Approval';
 
-        $stmt = $this->pdo->prepare("INSERT INTO requests (request_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO requests (request_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $requestNumber,
             $data['patient_id'],
@@ -461,6 +461,7 @@ class CaseModel
             $data['priority'] ?? 'Routine',
             $data['philhealth_status'] ?? 'Without PhilHealth Card',
             $data['philhealth_id'] ?? null,
+            $data['philhealth_relation'] ?? null,
             $status
         ]);
 

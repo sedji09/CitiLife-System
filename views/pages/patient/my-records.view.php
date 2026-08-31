@@ -143,7 +143,7 @@ $statusBadge = [
                     </div>
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">No Completed Records</h3>
                     <p class="text-sm text-gray-500 mb-5">Your completed X-ray examination history will appear here.</p>
-                    <a href="/<?= PROJECT_DIR ?>/registration"
+                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
                         class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
                     </a>
@@ -266,7 +266,7 @@ $statusBadge = [
                                 $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
                                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                                 ?>
-                                <a href="/<?= PROJECT_DIR ?>/case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
+                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
                                     <?= $onClickAttr ?>
                                     class="px-3 sm:px-4 py-1.5 sm:py-2 border border-green-600 rounded-lg text-xs sm:text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors">
                                     View Status

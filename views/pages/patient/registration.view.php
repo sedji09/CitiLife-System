@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="/<?= PROJECT_DIR ?>/index.php?role=patient&page=registration" class="space-y-4" enctype="multipart/form-data">
+            <form method="POST" action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=registration" class="space-y-4" enctype="multipart/form-data">
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>

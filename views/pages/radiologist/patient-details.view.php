@@ -156,7 +156,7 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div class="flex flex-wrap gap-3">
                 <?php foreach ($savedPaths as $idx => $sPath): ?>
                     <div class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm">
-                        <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($sPath) ?>" 
+                        <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" 
                              alt="X-ray <?= $idx + 1 ?>"
                              class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
                         <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] font-bold text-white py-1 text-center uppercase tracking-tighter">

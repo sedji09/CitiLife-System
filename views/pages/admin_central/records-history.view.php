@@ -267,7 +267,7 @@
     });
 
     function viewCaseDetail(caseId) {
-        const url = `/<?= PROJECT_DIR ?>/index.php?page=print-report&id=${caseId}&preview=true`;
+        const url = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=${caseId}&preview=true`;
         const popupWidth = 850;
         const popupHeight = 800;
         const left = (screen.width - popupWidth) / 2;

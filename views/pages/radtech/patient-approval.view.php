@@ -111,15 +111,15 @@ foreach ($allServices as $service) {
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Patient Queue
         </a>
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700">
             Pending Approval
         </a>
-        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-lists&tab=disputes"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Patient Error Reports
             <?php if ($pendingDisputeCount > 0): ?>
@@ -249,7 +249,7 @@ foreach ($allServices as $service) {
                                     <?php endif; ?>
 
                                         <?php if ($patient['status'] === 'Payment Verified'): ?>
-                                            <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
+                                            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
                                                 onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
                                                 class="text-sm font-medium text-green-600 hover:text-green-700 transition"
                                                 title="Approve">
@@ -263,7 +263,7 @@ foreach ($allServices as $service) {
                                         <?php endif; ?>
                                         
                                     <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled', 'Payment Verified'])): ?>
-                                        <a href="/<?= PROJECT_DIR ?>/index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
+                                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
                                             onclick="confirmAction('Confirm Rejection', 'Would you like to confirm rejecting this patient registration?', this.href, 'Yes, Proceed', false, event)"
                                             class="text-sm font-medium text-red-600 hover:text-red-700 transition" title="Reject">
                                             <i data-lucide="circle-x"
@@ -412,7 +412,7 @@ foreach ($allServices as $service) {
 </div>
 
 <script
-    src="/<?= PROJECT_DIR ?>/views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
+    src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
     // ── Exam Category Mapping for Validation ─────────────────────────────────

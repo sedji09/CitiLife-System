@@ -258,10 +258,10 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
             <?php if (!empty($savedPaths)): ?>
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($savedPaths as $idx => $sPath): ?>
-                        <div onclick="window.open('/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseId ?>&preview=true', '_blank')"
+                        <div onclick="window.open('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>&preview=true', '_blank')"
                             class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm"
                             title="Click to view full report & image">
-                            <img src="/<?= PROJECT_DIR ?>/<?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
+                            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
                                 class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
                             <div
                                 class="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] font-bold text-white py-1 text-center uppercase tracking-tighter">
@@ -384,7 +384,7 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
 
             <?php if ($isReportReady): ?>
                 <a href="javascript:void(0)"
-                    onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '/<?= PROJECT_DIR ?>/index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
+                    onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
                     class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
                     <i data-lucide="printer" class="w-4 h-4"></i>
                     Print Result
