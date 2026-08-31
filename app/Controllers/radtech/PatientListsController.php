@@ -21,6 +21,7 @@ $auditLogModel = new \AuditLogModel($pdo);
 $userModel = new \UserModel($pdo);
 
 $currentUserId = $_SESSION['user_id'] ?? 0;
+$branchId = $_SESSION['branch_id'] ?? 1;
 
 // 1. Ensure Schema
 $caseModel->ensureSchema();
