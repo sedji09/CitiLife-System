@@ -72,6 +72,17 @@ if ($isPatient) {
     $userContactNumber = $patientData['contact_number'] ?? '';
     $userHomeAddress = $patientData['home_address'] ?? '';
     $userPatientNumber = $patientData['patient_number'] ?? '';
+
+    // Override display name with actual patient name (not email-derived)
+    if ($userFirstName || $userLastName) {
+      $fullName = trim($userFirstName . ' ' . $userLastName);
+      $userDisplayName = $fullName;
+      $nameParts = explode(' ', $fullName);
+      $initials = strtoupper(
+        substr($nameParts[0], 0, 1) .
+        (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : '')
+      );
+    }
   }
 }
 
