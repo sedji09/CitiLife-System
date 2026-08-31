@@ -133,6 +133,7 @@ $router->post('/app/api/submit_feedback.php', 'app/Api/submit_feedback.php');
 $router->post('/app/api/send_email_change_otp.php', 'app/Api/send_email_change_otp.php');
 $router->post('/app/api/verify_email_change_otp.php', 'app/Api/verify_email_change_otp.php');
 $router->post('/config/update_patient.php', 'config/update_patient.php');
+$router->get('/app/api/check_philhealth.php', 'app/Api/check_philhealth.php');
 $router->get('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->post('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->get('/App/Api/disputes.php', 'app/Api/disputes.php');
@@ -161,6 +162,9 @@ $router->get('/app/api/migrate', function() {
         // payments table columns
         "ALTER TABLE payments ADD COLUMN original_amount DECIMAL(10,2) DEFAULT NULL AFTER request_id",
         "ALTER TABLE payments ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00 AFTER original_amount",
+        // Modify ENUM values to match Principal Member and Qualified Dependent
+        "ALTER TABLE requests MODIFY COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') NULL DEFAULT NULL",
+        "ALTER TABLE cases MODIFY COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') NULL DEFAULT NULL",
     ];
     foreach ($migrations as $sql) {
         try {

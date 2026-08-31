@@ -289,6 +289,8 @@
                         
                         if (data.owner_used && data.family_used) {
                             idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                            msg.innerText = "This PhilHealth ID is already fully utilized.";
+                            msg.classList.remove('hidden');
                         }
                     }
                 })

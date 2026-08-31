@@ -311,6 +311,8 @@ function checkModalPhilHealthId() {
                         if (!isSameId) {
                             idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
                         }
+                        msg.innerText = "This PhilHealth ID is already fully utilized.";
+                        msg.classList.remove('hidden');
                     }
                 }
             })

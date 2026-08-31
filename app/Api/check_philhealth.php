@@ -26,8 +26,13 @@ try {
     // Check Owner Usage (OTHER records)
     $sqlOwnerReqOther = $sqlOwnerReq;
     $sqlOwnerCaseOther = $sqlOwnerCase;
-    if ($exclude_request_id) $sqlOwnerReqOther .= " AND id != " . (int)$exclude_request_id;
-    if ($exclude_case_id) $sqlOwnerCaseOther .= " AND id != " . (int)$exclude_case_id;
+    if ($exclude_request_id) {
+        $sqlOwnerReqOther .= " AND id != " . (int)$exclude_request_id;
+        $sqlOwnerCaseOther .= " AND (request_id IS NULL OR request_id != " . (int)$exclude_request_id . ")";
+    }
+    if ($exclude_case_id) {
+        $sqlOwnerCaseOther .= " AND id != " . (int)$exclude_case_id;
+    }
     $stmtOwnerOther = $pdo->prepare("SELECT created_at FROM ($sqlOwnerReqOther UNION ALL $sqlOwnerCaseOther) AS combined ORDER BY created_at DESC LIMIT 1");
     $stmtOwnerOther->execute([$philhealth_id, $philhealth_id]);
     $ownerUsedByOther = (bool) $stmtOwnerOther->fetchColumn();
@@ -42,8 +47,13 @@ try {
     // Check Family Member Usage (OTHER records)
     $sqlFamilyReqOther = $sqlFamilyReq;
     $sqlFamilyCaseOther = $sqlFamilyCase;
-    if ($exclude_request_id) $sqlFamilyReqOther .= " AND id != " . (int)$exclude_request_id;
-    if ($exclude_case_id) $sqlFamilyCaseOther .= " AND id != " . (int)$exclude_case_id;
+    if ($exclude_request_id) {
+        $sqlFamilyReqOther .= " AND id != " . (int)$exclude_request_id;
+        $sqlFamilyCaseOther .= " AND (request_id IS NULL OR request_id != " . (int)$exclude_request_id . ")";
+    }
+    if ($exclude_case_id) {
+        $sqlFamilyCaseOther .= " AND id != " . (int)$exclude_case_id;
+    }
     $stmtFamilyOther = $pdo->prepare("SELECT created_at FROM ($sqlFamilyReqOther UNION ALL $sqlFamilyCaseOther) AS combined ORDER BY created_at DESC LIMIT 1");
     $stmtFamilyOther->execute([$philhealth_id, $philhealth_id]);
     $familyUsedByOther = (bool) $stmtFamilyOther->fetchColumn();
