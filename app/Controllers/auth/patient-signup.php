@@ -132,15 +132,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     require_once basePath('app/Models/AuditLogModel.php');
                     $auditLogModel = new \AuditLogModel($pdo);
-                    $auditLogModel->addLog(
-                        null,
-                        'Patient Registration',
-                        'Patient Portal',
-                        'Patient',
-                        $patientId,
-                        "Patient initiated account registration",
-                        $branchId
-                    );
+                    try {
+                        $auditLogModel->addLog(
+                            null,
+                            'Patient Registration',
+                            'Patient Portal',
+                            'Patient',
+                            $patientId,
+                            "Patient initiated account registration",
+                            $branchId
+                        );
+                    } catch (\Throwable $logEx) {
+                        // Audit log is best-effort; user_id is null before account creation
+                    }
 
                     $success = 'We found your record! Please check your email for the verification link to create your password.';
                 }

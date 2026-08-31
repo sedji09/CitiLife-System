@@ -67,139 +67,231 @@ if (empty($token)) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete Account Setup - CitiLife System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Create Password - CitiLife System</title>
+    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .bg-pattern {
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Password strength indicator animation */
+        .strength-bar {
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8">
-        <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">Create Password</h2>
-            <p class="text-gray-500">Secure your portal account to view your records.</p>
+
+<body class="bg-pattern min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
+
+    <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
+        <div class="p-5 sm:p-8">
+            <div class="text-center mb-5 sm:mb-8">
+                <!-- CitiLife Logo -->
+                <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-sm">
+                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                        class="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Create Password</h1>
+                <p class="text-sm text-gray-500 mt-2">Secure your portal account to view your records.</p>
+            </div>
+
+            <?php if (!empty($message)): ?>
+                <!-- Error / Invalid Token State -->
+                <div class="mb-6 p-4 rounded-lg bg-red-50 border-l-4 border-red-500 text-red-700 text-sm flex items-start">
+                    <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span><?= htmlspecialchars($message) ?></span>
+                </div>
+                <div class="text-center">
+                    <a href="/<?= PROJECT_DIR ?>/?signup=1"
+                        class="text-sm font-semibold text-red-600 hover:text-red-700 hover:underline transition-colors">
+                        ← Return to Sign Up
+                    </a>
+                </div>
+            <?php else: ?>
+
+                <?php if (!empty($error)): ?>
+                    <div class="mb-6 p-4 rounded-lg bg-red-50 border-l-4 border-red-500 text-red-700 text-sm flex items-start">
+                        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span><?= htmlspecialchars($error) ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" action="" class="space-y-4 sm:space-y-6" onsubmit="return validatePasswords()">
+                    <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
+
+                    <!-- New Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">New Password</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <input type="password" id="password" name="password" required
+                                class="pl-10 pr-10 appearance-none block w-full px-3 py-2.5 sm:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors sm:text-sm"
+                                placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('password', this)" tabindex="-1"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <input type="password" id="confirm_password" name="confirm_password" required
+                                class="pl-10 pr-10 appearance-none block w-full px-3 py-2.5 sm:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors sm:text-sm"
+                                placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('confirm_password', this)" tabindex="-1"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="match_indicator" class="text-xs font-semibold mt-1 hidden"></p>
+                    </div>
+
+                    <!-- Password Requirements -->
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <p class="text-xs font-semibold text-gray-500 mb-1.5">Password requirements:</p>
+                        <ul class="space-y-1">
+                            <li id="req-length" class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                At least 8 characters
+                            </li>
+                            <li id="req-upper" class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Uppercase letter
+                            </li>
+                            <li id="req-number" class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Number
+                            </li>
+                            <li id="req-special" class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Special character
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="pt-1 sm:pt-2">
+                        <button type="submit"
+                            class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+
+            <?php endif; ?>
         </div>
 
-        <?php if (!empty($message)): ?>
-            <div class="bg-red-50 text-red-700 p-4 rounded-lg mb-6 flex items-start gap-3">
-                <i class="fas fa-exclamation-circle mt-0.5"></i>
-                <p class="text-sm font-medium"><?= htmlspecialchars($message) ?></p>
-            </div>
-            <div class="text-center">
-                <a href="/<?= PROJECT_DIR ?>/?signup=1" class="text-blue-600 font-medium hover:underline">Return to Sign Up</a>
-            </div>
-        <?php else: ?>
-
-            <?php if (!empty($error)): ?>
-                <div class="bg-red-50 text-red-700 p-4 rounded-lg mb-6 flex items-start gap-3">
-                    <i class="fas fa-exclamation-circle mt-0.5"></i>
-                    <p class="text-sm font-medium"><?= htmlspecialchars($error) ?></p>
-                </div>
-            <?php endif; ?>
-
-            <form method="POST" action="" class="space-y-5" onsubmit="return validatePasswords()">
-                <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
-
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                    <div class="relative">
-                        <input type="password" id="password" name="password" required 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10 pr-10">
-                        <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
-                        <button type="button" onclick="togglePasswordVisibility('password', this)" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                    <div class="relative">
-                        <input type="password" id="confirm_password" name="confirm_password" required 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10 pr-10">
-                        <i class="fas fa-check-circle absolute left-3 top-3 text-gray-400"></i>
-                        <button type="button" onclick="togglePasswordVisibility('confirm_password', this)" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <p id="match_indicator" class="text-xs font-semibold mt-1 hidden"></p>
-                </div>
-
-                <div class="text-xs text-gray-500 mt-2 space-y-1">
-                    <p>Password requirements:</p>
-                    <ul class="list-disc pl-5">
-                        <li>At least 8 characters</li>
-                        <li>Uppercase letter</li>
-                        <li>Number</li>
-                        <li>Special character</li>
-                    </ul>
-                </div>
-
-                <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition-colors mt-6 shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-200">
-                    Create Account
-                </button>
-            </form>
-
-            <script>
-                function togglePasswordVisibility(inputId, btn) {
-                    const input = document.getElementById(inputId);
-                    const icon = btn.querySelector('i');
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        icon.classList.remove('fa-eye');
-                        icon.classList.add('fa-eye-slash');
-                    } else {
-                        input.type = 'password';
-                        icon.classList.remove('fa-eye-slash');
-                        icon.classList.add('fa-eye');
-                    }
-                }
-
-                const pwd = document.getElementById('password');
-                const confirmPwd = document.getElementById('confirm_password');
-                const indicator = document.getElementById('match_indicator');
-
-                function checkMatch() {
-                    const val1 = pwd.value;
-                    const val2 = confirmPwd.value;
-
-                    if (val2.length === 0) {
-                        indicator.classList.add('hidden');
-                        return;
-                    }
-
-                    indicator.classList.remove('hidden');
-                    if (val1 === val2) {
-                        indicator.textContent = 'Passwords match';
-                        indicator.style.color = '#22c55e'; // green-500
-                    } else {
-                        indicator.textContent = 'Passwords do not match';
-                        indicator.style.color = '#ef4444'; // red-500
-                    }
-                }
-
-                pwd.addEventListener('input', checkMatch);
-                confirmPwd.addEventListener('input', checkMatch);
-
-                function validatePasswords() {
-                    if (pwd.value !== confirmPwd.value) {
-                        alert("Passwords do not match.");
-                        return false;
-                    }
-                    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-                    if (!regex.test(pwd.value)) {
-                        alert("Password must be at least 8 characters and include an uppercase letter, number, and special character.");
-                        return false;
-                    }
-                    return true;
-                }
-            </script>
-        <?php endif; ?>
+        <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">
+            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.</p>
+        </div>
     </div>
+
+    <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const isPassword = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isPassword ? 'text' : 'password');
+            btn.innerHTML = isPassword ?
+                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>' :
+                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>';
+        }
+
+        const pwd = document.getElementById('password');
+        const confirmPwd = document.getElementById('confirm_password');
+        const indicator = document.getElementById('match_indicator');
+
+        const reqs = {
+            length:  { el: document.getElementById('req-length'),  test: v => v.length >= 8 },
+            upper:   { el: document.getElementById('req-upper'),   test: v => /[A-Z]/.test(v) },
+            number:  { el: document.getElementById('req-number'),  test: v => /[0-9]/.test(v) },
+            special: { el: document.getElementById('req-special'), test: v => /[^A-Za-z0-9]/.test(v) },
+        };
+
+        function updateRequirements(val) {
+            Object.values(reqs).forEach(({ el, test }) => {
+                const passed = test(val);
+                el.classList.toggle('text-green-600', passed);
+                el.classList.toggle('text-gray-400', !passed);
+            });
+        }
+
+        function checkMatch() {
+            if (!confirmPwd.value.length) { indicator.classList.add('hidden'); return; }
+            indicator.classList.remove('hidden');
+            const match = pwd.value === confirmPwd.value;
+            indicator.textContent = match ? 'Passwords match ✓' : 'Passwords do not match';
+            indicator.style.color = match ? '#16a34a' : '#ef4444';
+        }
+
+        if (pwd) {
+            pwd.addEventListener('input', () => { updateRequirements(pwd.value); checkMatch(); });
+            confirmPwd.addEventListener('input', checkMatch);
+        }
+
+        function validatePasswords() {
+            if (!pwd || !confirmPwd) return true;
+            if (pwd.value !== confirmPwd.value) {
+                alert('Passwords do not match.');
+                return false;
+            }
+            const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+            if (!regex.test(pwd.value)) {
+                alert('Password must be at least 8 characters and include an uppercase letter, number, and special character.');
+                return false;
+            }
+            return true;
+        }
+    </script>
 </body>
-</html>
+
+</html>
