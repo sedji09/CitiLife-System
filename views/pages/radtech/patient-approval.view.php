@@ -211,6 +211,11 @@ foreach ($allServices as $service) {
                                         class="inline-flex items-center rounded-full border border-orange-400 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
                                         Pending Payment
                                     </span>
+                                <?php elseif ($patient['status'] === 'Payment Verifying'): ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-blue-400 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                        Payment Verifying
+                                    </span>
                                 <?php elseif ($patient['status'] === 'Payment Verified'): ?>
                                     <span
                                         class="inline-flex items-center rounded-full border border-green-400 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
