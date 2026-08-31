@@ -17,10 +17,10 @@ try {
     global $pdo;
 
     // Check Owner Usage (ANY record)
-    $sqlOwnerReq = "SELECT created_at FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected'";
-    $sqlOwnerCase = "SELECT created_at FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Rejected'";
+    $sqlOwnerReq = "SELECT created_at FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected'";
+    $sqlOwnerCase = "SELECT created_at FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Principal Member' AND status != 'Rejected'";
     $stmtOwner = $pdo->prepare("SELECT created_at FROM ($sqlOwnerReq UNION ALL $sqlOwnerCase) AS combined ORDER BY created_at DESC LIMIT 1");
-    $stmtOwner->execute([':id' => $philhealth_id]);
+    $stmtOwner->execute([$philhealth_id, $philhealth_id]);
     $ownerUsedDate = $stmtOwner->fetchColumn();
 
     // Check Owner Usage (OTHER records)
@@ -29,14 +29,14 @@ try {
     if ($exclude_request_id) $sqlOwnerReqOther .= " AND id != " . (int)$exclude_request_id;
     if ($exclude_case_id) $sqlOwnerCaseOther .= " AND id != " . (int)$exclude_case_id;
     $stmtOwnerOther = $pdo->prepare("SELECT created_at FROM ($sqlOwnerReqOther UNION ALL $sqlOwnerCaseOther) AS combined ORDER BY created_at DESC LIMIT 1");
-    $stmtOwnerOther->execute([':id' => $philhealth_id]);
+    $stmtOwnerOther->execute([$philhealth_id, $philhealth_id]);
     $ownerUsedByOther = (bool) $stmtOwnerOther->fetchColumn();
     
     // Check Family Member Usage (ANY record)
-    $sqlFamilyReq = "SELECT created_at FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected'";
-    $sqlFamilyCase = "SELECT created_at FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected'";
+    $sqlFamilyReq = "SELECT created_at FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected'";
+    $sqlFamilyCase = "SELECT created_at FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected'";
     $stmtFamily = $pdo->prepare("SELECT created_at FROM ($sqlFamilyReq UNION ALL $sqlFamilyCase) AS combined ORDER BY created_at DESC LIMIT 1");
-    $stmtFamily->execute([':id' => $philhealth_id]);
+    $stmtFamily->execute([$philhealth_id, $philhealth_id]);
     $familyUsedDate = $stmtFamily->fetchColumn();
 
     // Check Family Member Usage (OTHER records)
@@ -45,7 +45,7 @@ try {
     if ($exclude_request_id) $sqlFamilyReqOther .= " AND id != " . (int)$exclude_request_id;
     if ($exclude_case_id) $sqlFamilyCaseOther .= " AND id != " . (int)$exclude_case_id;
     $stmtFamilyOther = $pdo->prepare("SELECT created_at FROM ($sqlFamilyReqOther UNION ALL $sqlFamilyCaseOther) AS combined ORDER BY created_at DESC LIMIT 1");
-    $stmtFamilyOther->execute([':id' => $philhealth_id]);
+    $stmtFamilyOther->execute([$philhealth_id, $philhealth_id]);
     $familyUsedByOther = (bool) $stmtFamilyOther->fetchColumn();
 
     echo json_encode([

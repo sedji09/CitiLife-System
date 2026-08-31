@@ -40,6 +40,10 @@ function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealt
     document.getElementById('modalPhilHealth').value = philhealth;
     document.getElementById('modalPhilHealthId').value = philhealthId || '';
     document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
+    
+    currentOriginalPhilHealthId = philhealthId || '';
+    currentOriginalRelation = philhealthRelation || '';
+    
     document.getElementById('editModal').classList.remove('hidden');
     togglePhilHealthId();
     if (philhealth === 'With PhilHealth Card' && philhealthId) {
