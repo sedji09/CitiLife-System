@@ -2,7 +2,7 @@
     if (window.__RECORDS_INIT_DONE__) return;
     
     // Prevent running on non-my-records pages
-    if (!document.getElementById('completed-cards-container') && !document.getElementById('rejected-cards-container')) {
+    if (!document.getElementById('my-records-wrapper')) {
         return;
     }
     
