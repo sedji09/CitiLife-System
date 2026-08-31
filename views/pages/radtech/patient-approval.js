@@ -276,7 +276,7 @@ function checkModalPhilHealthId() {
         // (Use a global variable that tracks the currently editing request ID, if one exists)
         const reqIdParam = window.currentEditingPatientId ? `&exclude_request_id=${window.currentEditingPatientId}` : '';
 
-        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}${reqIdParam}`)
+        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}${reqIdParam}&t=${new Date().getTime()}`, { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
