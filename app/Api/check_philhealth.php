@@ -17,8 +17,8 @@ try {
     global $pdo;
 
     // Check Owner Usage
-    $sqlOwnerReq = "SELECT created_at FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Owner' AND status != 'Cancelled' AND status != 'Rejected'";
-    $sqlOwnerCase = "SELECT created_at FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Owner' AND status != 'Rejected'";
+    $sqlOwnerReq = "SELECT created_at FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected'";
+    $sqlOwnerCase = "SELECT created_at FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Rejected'";
     
     if ($exclude_request_id) {
         $sqlOwnerReq .= " AND id != " . (int)$exclude_request_id;
@@ -32,8 +32,8 @@ try {
     $ownerUsedDate = $stmtOwner->fetchColumn();
     
     // Check Family Member Usage
-    $sqlFamilyReq = "SELECT created_at FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Family Member' AND status != 'Cancelled' AND status != 'Rejected'";
-    $sqlFamilyCase = "SELECT created_at FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Family Member' AND status != 'Rejected'";
+    $sqlFamilyReq = "SELECT created_at FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected'";
+    $sqlFamilyCase = "SELECT created_at FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected'";
 
     if ($exclude_request_id) {
         $sqlFamilyReq .= " AND id != " . (int)$exclude_request_id;

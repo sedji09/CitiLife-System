@@ -199,8 +199,8 @@
                             <select id="philhealth_relation" name="philhealth_relation"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                                 <option value="" disabled selected>Select relation</option>
-                                <option value="Owner" id="opt-owner">Principal Member</option>
-                                <option value="Family Member" id="opt-family">Qualified Dependent</option>
+                                <option value="Principal Member" id="opt-owner">Principal Member</option>
+                                <option value="Qualified Dependent" id="opt-family">Qualified Dependent</option>
                             </select>
                             <p id="philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
                         </div>

@@ -59,23 +59,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Backend Validation for PhilHealth ID
                 if ($hasPhilHealth && $philhealthIdToSave && $philhealthRelationToSave) {
-                    $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Owner' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
-                    $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Owner' AND status != 'Rejected' AND request_id != :req_id";
+                    $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
+                    $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Rejected' AND request_id != :req_id";
                     $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
                     $stmtOwner->execute([':id' => $philhealthIdToSave, ':req_id' => $caseId]);
                     $ownerUsed = (bool) $stmtOwner->fetchColumn();
 
-                    $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Family Member' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
-                    $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Family Member' AND status != 'Rejected' AND request_id != :req_id";
+                    $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
+                    $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected' AND request_id != :req_id";
                     $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
                     $stmtFamily->execute([':id' => $philhealthIdToSave, ':req_id' => $caseId]);
                     $familyUsed = (bool) $stmtFamily->fetchColumn();
 
-                    if ($philhealthRelationToSave === 'Owner' && $ownerUsed) {
-                        throw new Exception("This PhilHealth ID is already used for the Owner.");
+                    if ($philhealthRelationToSave === 'Principal Member' && $ownerUsed) {
+                        throw new Exception("This PhilHealth ID is already used for the Principal Member.");
                     }
-                    if ($philhealthRelationToSave === 'Family Member' && $familyUsed) {
-                        throw new Exception("This PhilHealth ID is already used for a Family Member.");
+                    if ($philhealthRelationToSave === 'Qualified Dependent' && $familyUsed) {
+                        throw new Exception("This PhilHealth ID is already used for a Qualified Dependent.");
                     }
                 }
 

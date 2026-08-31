@@ -105,23 +105,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pid = $regData['philhealth_id'];
                 $prel = $regData['philhealth_relation'];
                 
-                $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Owner' AND status != 'Cancelled' AND status != 'Rejected'";
-                $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Owner' AND status != 'Rejected'";
+                $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected'";
+                $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Principal Member' AND status != 'Rejected'";
                 $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
-                $stmtOwner->execute([$pid, $pid]);
+                $stmtOwner->execute([$regData['philhealth_id'], $regData['philhealth_id']]);
                 $ownerUsed = (bool) $stmtOwner->fetchColumn();
 
-                $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Family Member' AND status != 'Cancelled' AND status != 'Rejected'";
-                $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Family Member' AND status != 'Rejected'";
+                $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected'";
+                $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected'";
                 $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
-                $stmtFamily->execute([$pid, $pid]);
+                $stmtFamily->execute([$regData['philhealth_id'], $regData['philhealth_id']]);
                 $familyUsed = (bool) $stmtFamily->fetchColumn();
 
-                if ($prel === 'Owner' && $ownerUsed) {
-                    throw new \Exception("This PhilHealth ID is already used for the Owner.");
+                if ($prel === 'Principal Member' && $ownerUsed) {
+                    throw new \Exception("This PhilHealth ID is already used for the Principal Member.");
                 }
-                if ($prel === 'Family Member' && $familyUsed) {
-                    throw new \Exception("This PhilHealth ID is already used for a Family Member.");
+                if ($prel === 'Qualified Dependent' && $familyUsed) {
+                    throw new \Exception("This PhilHealth ID is already used for a Qualified Dependent.");
                 }
             }
 
