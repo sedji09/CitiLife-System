@@ -1,6 +1,7 @@
 let currentEditId = null;
 let currentOriginalPhilHealthId = '';
 let currentOriginalRelation = '';
+window.currentEditingPatientId = null;
 
 function setModalInputsDisabled(disabled) {
     document.getElementById('modalName').disabled = disabled;
@@ -23,6 +24,7 @@ function setModalInputsDisabled(disabled) {
 }
 
 function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId, philhealthRelation = '') {
+    window.currentEditingPatientId = id;
     currentEditId = id;
     setModalInputsDisabled(false);
     document.getElementById('modalName').value = name;
@@ -270,8 +272,11 @@ function checkModalPhilHealthId() {
     }
 
     modalPhCheckTimer = setTimeout(() => {
-        // We no longer exclude the current request ID so we can get its usage date too.
-        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}`)
+        // Exclude current request so we know if it's used by SOMEONE ELSE
+        // (Use a global variable that tracks the currently editing request ID, if one exists)
+        const reqIdParam = window.currentEditingPatientId ? `&exclude_request_id=${window.currentEditingPatientId}` : '';
+
+        fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}${reqIdParam}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -280,7 +285,7 @@ function checkModalPhilHealthId() {
                     const isSameId = (idValue === currentOriginalPhilHealthId);
 
                     if (data.owner_used) {
-                        if (isSameId && currentOriginalRelation === 'Principal Member') {
+                        if (isSameId && currentOriginalRelation === 'Principal Member' && !data.owner_used_by_other) {
                             optOwner.disabled = false;
                         } else {
                             optOwner.disabled = true;
@@ -289,7 +294,7 @@ function checkModalPhilHealthId() {
                         optOwner.innerText = `Principal Member - Used on ${data.owner_used_date}`;
                     }
                     if (data.family_used) {
-                        if (isSameId && currentOriginalRelation === 'Qualified Dependent') {
+                        if (isSameId && currentOriginalRelation === 'Qualified Dependent' && !data.family_used_by_other) {
                             optFamily.disabled = false;
                         } else {
                             optFamily.disabled = true;
