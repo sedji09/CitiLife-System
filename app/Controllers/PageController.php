@@ -12,7 +12,7 @@ class PageController
             session_start();
         }
 
-        $role = $_SESSION['role'] ?? 'radtech';
+        $role = $_SESSION['role'] ?? null;
         $userEmail = $_SESSION['email'] ?? 'user@example.com';
         $userId = $_SESSION['user_id'] ?? 0;
         $branchId = $_SESSION['branch_id'] ?? null;

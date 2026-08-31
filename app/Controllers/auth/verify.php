@@ -49,6 +49,7 @@ if (empty($token)) {
                     $_SESSION['user_id'] = $userId;
                     $_SESSION['email'] = $email;
                     $_SESSION['role'] = 'patient';
+                    $_SESSION['patient_id'] = $patientId;
 
                     header("Location: /" . PROJECT_DIR . "/dashboard");
                     exit;
