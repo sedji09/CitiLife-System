@@ -39,12 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Invalid email format.";
         } else {
-            // Prepare statement to fetch user by email along with patient name
+            // Prepare statement to fetch user by email along with patient name, prioritizing patient role
             $stmt = $pdo->prepare('
             SELECT u.*, p.first_name, p.last_name 
             FROM users u 
             LEFT JOIN patients p ON u.patient_id = p.id 
-            WHERE u.email = :email LIMIT 1
+            WHERE u.email = :email 
+            ORDER BY CASE WHEN u.role = \'patient\' THEN 1 ELSE 2 END 
+            LIMIT 1
         ');
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();

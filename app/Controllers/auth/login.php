@@ -73,8 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Invalid email format.";
         } else {
-            // Prepare statement to fetch user by email
-            $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+            // Prepare statement to fetch user by email, prioritizing staff roles
+            $stmt = $pdo->prepare('
+                SELECT * FROM users 
+                WHERE email = :email 
+                ORDER BY CASE WHEN role != \'patient\' THEN 1 ELSE 2 END 
+                LIMIT 1
+            ');
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
 
