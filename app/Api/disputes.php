@@ -238,9 +238,8 @@ try {
             require_once __DIR__ . '/../../app/Helpers/mailer_helper.php';
             $patientName = htmlspecialchars($disputeInfo['first_name']);
             $caseNum = htmlspecialchars($disputeInfo['case_number']);
-            $refToken = !empty($disputeInfo['case_id']) ? base64_encode('Citilife_Case_' . $disputeInfo['case_id']) : '';
-            $reportUrl = !empty($refToken) 
-                ? (appBaseUrl() . "/" . PROJECT_DIR . "/view-report?ref=" . $refToken)
+            $reportUrl = !empty($disputeInfo['case_id']) 
+                ? (appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $disputeInfo['case_id'])
                 : (appBaseUrl() . "/" . PROJECT_DIR . "/dashboard");
 
             $emailSubject = "Error Report Resolved - Citilife Diagnostic Center";
