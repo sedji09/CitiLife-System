@@ -47,7 +47,7 @@ if (!function_exists('sendViaBrevo')) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $result = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch); // curl_close is deprecated in PHP 8.5, unset works for both CurlHandle objects and resources
         
         $response = json_decode($result, true);
         if ($httpCode >= 200 && $httpCode < 300 && isset($response['messageId'])) {
