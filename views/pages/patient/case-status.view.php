@@ -94,7 +94,29 @@ $statusDescriptions = [
 ?>
 
 <style>
-    /* Dark mode transparency for status summary box */
+    /* Dark mode styling for unified card and status summary */
+    body.theme-dark .case-status-card {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    body.theme-dark .case-status-card .bg-gray-50\/50,
+    body.theme-dark .case-status-card .bg-gray-50 {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    body.theme-dark .case-status-card h2,
+    body.theme-dark .case-status-card h3,
+    body.theme-dark .case-status-card .text-gray-900,
+    body.theme-dark .case-status-card .text-gray-800 {
+        color: #f1f5f9 !important;
+    }
+    body.theme-dark .case-status-card .text-gray-600,
+    body.theme-dark .case-status-card .text-gray-500 {
+        color: #94a3b8 !important;
+    }
+    body.theme-dark .case-status-card .divide-gray-100 > * + * {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
     body.theme-dark .status-summary-box {
         background: transparent !important;
         border-color: rgba(255, 255, 255, 0.15) !important;
@@ -190,181 +212,184 @@ $statusDescriptions = [
             $currentStep = 2;
             $displayStatus = $caseRow['status'] ?: 'Pending';
         }
+
+        $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
+        $sDesc = $statusDescriptions[$displayStatus] ?? '';
+        $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
         ?>
-        <div class="mb-10">
-        <?php if (in_array($caseRow['status'], ['Released', 'Completed'])): ?>
-        <!-- Completed / Released State Banner -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <i data-lucide="circle-check-big" class="w-5 h-5 text-green-600"></i>
-                <h2 class="font-bold text-gray-900">X-ray Report Released</h2>
+
+        <!-- Unified Single Frame Container: Progress -> Case Info -> View Report -->
+        <div class="case-status-card rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden mb-10 divide-y divide-gray-100">
+
+            <!-- 1. EXAMINATION PROGRESS SECTION -->
+            <div class="progress-section">
+                <div class="px-5 py-4 bg-gray-50/50 flex items-center justify-between border-b border-gray-100/80">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="activity" class="w-5 h-5 text-red-600"></i>
+                        <h2 class="font-bold text-gray-900 text-base">Examination Progress</h2>
+                    </div>
+                    <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold" style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
+                        <?= htmlspecialchars($sInfo['label']) ?>
+                    </span>
+                </div>
+                <div class="p-3 sm:p-5 space-y-4 sm:space-y-5">
+                    <!-- Step tracker -->
+                    <?php if (!$isRejected): ?>
+                        <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2.5 pb-2">
+                            <?php foreach ($steps as $num => $label): ?>
+                                <?php
+                                $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
+                                $active = $num === $currentStep && $currentStep !== count($steps);
+                                ?>
+                                <div class="flex flex-col items-center gap-1 sm:gap-2 flex-1 min-w-[40px] sm:min-w-[56px]">
+                                    <div class="relative flex items-center w-full">
+                                        <?php
+                                        $nextNum = $num + 1;
+                                        $nextDone = $nextNum < $currentStep || ($nextNum === count($steps) && $currentStep === count($steps));
+                                        $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
+                                        ?>
+                                        <?php if ($num > 1): ?>
+                                            <div class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>"
+                                                style="z-index:0"></div>
+                                        <?php endif; ?>
+                                        <?php if ($num < count($steps)): ?>
+                                            <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"
+                                                style="z-index:0"></div>
+                                        <?php endif; ?>
+                                        <div class="relative z-10 mx-auto h-7 w-7 sm:h-10 sm:w-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition
+                                    <?php if ($done): ?>bg-green-500 border-green-500 text-white
+                                    <?php elseif ($active): ?>bg-red-500 border-red-500 text-white ring-2 sm:ring-4 ring-red-100
+                                    <?php else: ?>bg-white border-gray-200 text-gray-400<?php endif; ?>">
+                                            <?php if ($done): ?>
+                                                <i data-lucide="check" class="w-3 h-3 sm:w-4 sm:h-4"></i>
+                                            <?php else: ?>
+                                                <?= $num ?>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <span
+                                        class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-700' : 'text-gray-400' ?>"><?= $label ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box" style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
+                        <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
+                            Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
+                        </p>
+                        <?php if ($sDesc): ?>
+                            <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed" style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
-            <div class="p-5 space-y-4">
-                <p class="text-sm text-gray-600">Your X-ray report for case <span
-                        class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
-                    has been released. You may view your result below.</p>
+
+            <!-- 2. CASE INFO SECTION -->
+            <div class="case-info-section">
+                <div class="px-5 py-4 bg-gray-50/50 flex items-center justify-between border-b border-gray-100/80">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-red-600"></i>
+                        <h2 class="font-bold text-gray-900 text-base">Case Information</h2>
+                    </div>
+                    <?php if (!empty($contacts)): ?>
+                        <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>)' class="text-xs font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="phone" class="w-3.5 h-3.5"></i> Contact Clinic
+                        </button>
+                    <?php endif; ?>
+                </div>
+                <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Reference #</p>
+                                <p class="text-sm font-semibold text-red-600 font-mono">
+                                    <?= htmlspecialchars($caseRow['case_number']) ?></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Branch</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars($caseRow['branch_name'] ?? $caseRow['branch'] ?? '—') ?></p>
+                            </div>
+                        </div>
+                        <?php if ($radtechName): ?>
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Radiologic Technologist</p>
+                                    <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Examination Type</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars($caseRow['exam_type'] ?? '—') ?></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Date</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars(date('F j, Y', strtotime($caseRow['created_at']))) ?></p>
+                            </div>
+                        </div>
+                        <?php if (!empty($caseRow['radiologist_name'])): ?>
+                            <div class="flex items-start gap-3">
+                                <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="stethoscope" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Radiologist</p>
+                                    <p class="text-sm font-semibold text-gray-800">Dr. <?= htmlspecialchars($caseRow['radiologist_name']) ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. VIEW REPORT ACTION BUTTON (AT THE BOTTOM) -->
+            <?php if (in_array($caseRow['status'], ['Released', 'Completed'])): ?>
                 <?php
                 $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
                 $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
                 ?>
-                <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
-                    class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
-                    style="background: linear-gradient(135deg, #15803d, #16a34a);">
-                    <i data-lucide="eye" class="w-4 h-4"></i>
-                    View Report
-                </a>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Case Information Card -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-5">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 class="font-bold text-gray-900">Case Information</h2>
-                <?php 
-                    $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
-                    if (!empty($contacts)): 
-                ?>
-                    <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>)' class="text-xs font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i data-lucide="phone" class="w-3.5 h-3.5"></i> Contact Clinic
-                    </button>
-                <?php endif; ?>
-            </div>
-            <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div class="space-y-3">
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Reference #</p>
-                            <p class="text-sm font-semibold text-red-600 font-mono">
-                                <?= htmlspecialchars($caseRow['case_number']) ?></p>
-                        </div>
+                <div class="px-4 sm:px-6 py-4 bg-gray-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-green-600 shrink-0"></i>
+                        <span>Official X-ray report is available for viewing.</span>
                     </div>
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Branch</p>
-                            <p class="text-sm font-semibold text-gray-800">
-                                <?= htmlspecialchars($caseRow['branch_name'] ?? $caseRow['branch'] ?? '—') ?></p>
-                        </div>
-                    </div>
-                    <?php if ($radtechName): ?>
-                        <div class="flex items-start gap-3">
-                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Radiologic Technologist</p>
-                                <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+                    <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
+                        class="inline-flex items-center justify-center gap-2 rounded-xl text-white font-bold text-xs sm:text-sm py-2.5 px-6 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap"
+                        style="background: linear-gradient(135deg, #15803d, #16a34a);">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                        <span>View Report</span>
+                    </a>
                 </div>
-                <div class="space-y-3">
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Examination Type</p>
-                            <p class="text-sm font-semibold text-gray-800">
-                                <?= htmlspecialchars($caseRow['exam_type'] ?? '—') ?></p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Date</p>
-                            <p class="text-sm font-semibold text-gray-800">
-                                <?= htmlspecialchars(date('F j, Y', strtotime($caseRow['created_at']))) ?></p>
-                        </div>
-                    </div>
-                    <?php if (!empty($caseRow['radiologist_name'])): ?>
-                        <div class="flex items-start gap-3">
-                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="stethoscope" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Radiologist</p>
-                                <p class="text-sm font-semibold text-gray-800">Dr. <?= htmlspecialchars($caseRow['radiologist_name']) ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
+            <?php endif; ?>
 
-        <!-- Examination Progress -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100">
-                <h2 class="font-bold text-gray-900">Examination Progress</h2>
-            </div>
-            <div class="p-3 sm:p-5 space-y-4 sm:space-y-5">
-                <!-- Step tracker -->
-                <?php if (!$isRejected): ?>
-                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2.5 pb-2">
-                        <?php foreach ($steps as $num => $label): ?>
-                            <?php
-                            $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
-                            $active = $num === $currentStep && $currentStep !== count($steps);
-                            ?>
-                            <div class="flex flex-col items-center gap-1 sm:gap-2 flex-1 min-w-[40px] sm:min-w-[56px]">
-                                <div class="relative flex items-center w-full">
-                                    <?php
-                                    $nextNum = $num + 1;
-                                    $nextDone = $nextNum < $currentStep || ($nextNum === count($steps) && $currentStep === count($steps));
-                                    $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
-                                    ?>
-                                    <?php if ($num > 1): ?>
-                                        <div class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>"
-                                            style="z-index:0"></div>
-                                    <?php endif; ?>
-                                    <?php if ($num < count($steps)): ?>
-                                        <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"
-                                            style="z-index:0"></div>
-                                    <?php endif; ?>
-                                    <div class="relative z-10 mx-auto h-7 w-7 sm:h-10 sm:w-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition
-                                <?php if ($done): ?>bg-green-500 border-green-500 text-white
-                                <?php elseif ($active): ?>bg-red-500 border-red-500 text-white ring-2 sm:ring-4 ring-red-100
-                                <?php else: ?>bg-white border-gray-200 text-gray-400<?php endif; ?>">
-                                        <?php if ($done): ?>
-                                            <i data-lucide="check" class="w-3 h-3 sm:w-4 sm:h-4"></i>
-                                        <?php else: ?>
-                                            <?= $num ?>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <span
-                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-700' : 'text-gray-400' ?>"><?= $label ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <?php
-                $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
-                $sDesc = $statusDescriptions[$displayStatus] ?? '';
-                ?>
-                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box" style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
-                    <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
-                        Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
-                    </p>
-                    <?php if ($sDesc): ?>
-                        <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed" style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
-                    <?php endif; ?>
-                </div>
-
-            </div>
-        </div>
-
-        </div> <!-- End mb-10 wrapper -->
+        </div> <!-- End Unified Container -->
     <?php endif; ?>
 </div>
 
