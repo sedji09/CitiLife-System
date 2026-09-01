@@ -118,6 +118,7 @@ class PageController
             'check-record-request' => 'radtech',
             'xray-patient-records' => 'radtech',
             'record-request' => 'radtech',
+            'patient-details' => 'radtech',
             'worklist' => 'radiologist',
             'patient-history' => 'radiologist',
             'case-review' => 'radiologist',

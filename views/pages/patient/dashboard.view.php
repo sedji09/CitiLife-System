@@ -62,8 +62,8 @@ foreach ($serviceModel->getActiveServices() as $srv) {
     $serviceName = $srv['exam_type'] ?? ($srv['name'] ?? '');
     if (!empty($serviceName)) {
         $examPrices[strtolower(trim($serviceName))] = [
-            'price' => (float)($srv['price'] ?? 0),
-            'discount' => (float)($srv['philhealth_discount'] ?? 0)
+            'price' => (float) ($srv['price'] ?? 0),
+            'discount' => (float) ($srv['philhealth_discount'] ?? 0)
         ];
     }
 }
@@ -251,6 +251,14 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         color: #e2e8f0 !important;
     }
 
+    .stepper-text-active {
+        color: #1f2937;
+    }
+
+    body.theme-dark .stepper-text-active {
+        color: #e2e8f0 !important;
+    }
+
     body.theme-dark .status-summary-box strong {
         color: #fff !important;
     }
@@ -363,10 +371,13 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     }
 
     @keyframes qbLivePulse {
-        0%, 100% {
+
+        0%,
+        100% {
             opacity: 1;
             box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
         }
+
         50% {
             opacity: 0.6;
             box-shadow: 0 0 0 4px rgba(74, 222, 128, 0);
@@ -378,20 +389,23 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
     <!-- Success banner if newly registered/requested -->
     <?php if (isset($_GET['registered']) && $_GET['registered'] == 1 && !isset($_GET['ajax_polling'])): ?>
-        <div id="success-banner" class="mb-5 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3 transition-all duration-500 shadow-sm">
+        <div id="success-banner"
+            class="mb-5 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3 transition-all duration-500 shadow-sm">
             <div class="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
                 <i data-lucide="check-circle-2" class="w-6 h-6"></i>
             </div>
             <div class="flex-1">
                 <h4 class="text-sm font-bold text-emerald-900">Request Submitted Successfully!</h4>
-                <p class="text-xs text-emerald-700 mt-0.5">Your X-ray request has been received. Please check your case details below.</p>
+                <p class="text-xs text-emerald-700 mt-0.5">Your X-ray request has been received. Please check your case
+                    details below.</p>
             </div>
-            <button type="button" onclick="dismissSuccessBanner()" class="text-emerald-500 hover:text-emerald-700 p-1 rounded-lg transition-colors">
+            <button type="button" onclick="dismissSuccessBanner()"
+                class="text-emerald-500 hover:text-emerald-700 p-1 rounded-lg transition-colors">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
         <script>
-            (function() {
+            (function () {
                 // Check if already dismissed in this session
                 if (sessionStorage.getItem('registered_banner_dismissed') === '1') {
                     const b = document.getElementById('success-banner');
@@ -410,10 +424,10 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         const u = new URL(window.__APP__.currentPath, window.location.origin);
                         u.searchParams.delete('registered');
                         window.__APP__.currentPath = u.pathname + u.search;
-                    } catch (e) {}
+                    } catch (e) { }
                 }
 
-                window.dismissSuccessBanner = function() {
+                window.dismissSuccessBanner = function () {
                     sessionStorage.setItem('registered_banner_dismissed', '1');
                     const banner = document.getElementById('success-banner');
                     if (banner) {
@@ -430,7 +444,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     <?php endif; ?>
 
     <!-- Welcome banner -->
-    <div class="mb-5" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+    <div class="mb-5"
+        style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
                 <?= htmlspecialchars($displayName) ?>
@@ -499,7 +514,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 <i data-lucide="user-plus" class="w-8 h-8 text-red-600"></i>
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Get Started</h3>
-            <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your results.</p>
+            <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your
+                results.</p>
             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Register as Patient
@@ -519,7 +535,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         Your Queue #</div>
                     <div
                         style="font-size: 24px; font-weight: 800; line-height: 1; color: #1e293b; font-variant-numeric: tabular-nums;">
-                        <?= $patientQueueNumber ?></div>
+                        <?= $patientQueueNumber ?>
+                    </div>
                 </div>
 
                 <!-- Divider -->
@@ -535,7 +552,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         PEOPLE AHEAD OF YOU</div>
                     <div
                         style="font-size: 24px; font-weight: 800; line-height: 1; color: #dc2626; font-variant-numeric: tabular-nums;">
-                        <?= str_pad($peopleAhead, 2, '0', STR_PAD_LEFT) ?></div>
+                        <?= str_pad($peopleAhead, 2, '0', STR_PAD_LEFT) ?>
+                    </div>
                     <?php if ($statAhead > 0): ?>
                         <div style="margin-top: 4px;"><span
                                 style="font-size: 7px; font-weight: 700; letter-spacing: 0.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Includes
@@ -580,7 +598,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
             <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100 gap-2">
                 <h2 class="font-bold text-gray-900 text-sm sm:text-base whitespace-nowrap">Latest X-ray Status</h2>
-                <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs"
+                <span
+                    class="inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
                     <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background: <?= $sInfo['text'] ?>"></span>
                     <?= htmlspecialchars($displayStatus) ?>
@@ -606,26 +625,34 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                         $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
                                         ?>
                                         <?php if ($num > 1): ?>
-                                            <div class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
+                                            <div
+                                                class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>">
+                                            </div>
                                         <?php endif; ?>
                                         <?php if ($num < count($steps)): ?>
-                                            <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
+                                            <div
+                                                class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>">
+                                            </div>
                                         <?php endif; ?>
-                                        <div class="relative z-10 mx-auto h-6 w-6 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
+                                        <div
+                                            class="relative z-10 mx-auto h-6 w-6 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-base md:text-lg font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
                                     <?php if ($done): ?>bg-green-500 text-white
                                     <?php elseif ($active): ?>bg-red-500 text-white
                                     <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
                                             <?php if ($num === 5 && ($latestCase['status'] ?? '') === 'Under Reading'): ?>
-                                                <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>" class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                                                <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>"
+                                                    class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                             <?php endif; ?>
                                             <?php if ($done): ?>
-                                                <i data-lucide="check" class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]"></i>
+                                                <i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>
                                             <?php else: ?>
                                                 <?= $num ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-sm leading-[1.1] sm:leading-tight <?= $done || $active ? 'text-[#1f2937] font-medium' : 'text-gray-400 font-medium' ?> w-full" style="word-break: normal; overflow-wrap: normal;">
+                                    <span
+                                        class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs md:whitespace-nowrap leading-[1.1] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full"
+                                        style="word-break: normal; overflow-wrap: normal;">
                                         <?= htmlspecialchars($stepLabel) ?>
                                     </span>
                                 </div>
@@ -678,6 +705,19 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             </div>
                         </div>
 
+                        <!-- Date -->
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Date</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars(date('F j, Y', strtotime($latestCase['created_at']))) ?>
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- Radiologic Technologist (if assigned) -->
                         <?php if ($radtechName): ?>
                             <div class="flex items-center gap-3">
@@ -725,25 +765,15 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             </div>
                         </div>
 
-                        <!-- Date -->
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Date</p>
-                                <p class="text-sm font-semibold text-gray-800">
-                                    <?= htmlspecialchars(date('F j, Y', strtotime($latestCase['created_at']))) ?>
-                                </p>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>
 
             <?php if ($canCancel || $isPendingPayment || $isCompletedOrReleased): ?>
                 <!-- Footer / Action Buttons -->
-                <div class="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-1.5 sm:gap-3">
+                <div
+                    class="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-1.5 sm:gap-3">
                     <?php if ($canCancel): ?>
                         <button type="button"
                             onclick="cancelCase(<?= $latestCase['id'] ?>, '<?= htmlspecialchars($latestCase['case_number']) ?>')"
@@ -768,7 +798,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 Report an Error
                             </button>
                         <?php elseif (in_array($latestCase['id'], $disputedCaseIds)): ?>
-                            <span class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
+                            <span
+                                class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
                                 Error Reported
                             </span>
                         <?php endif; ?>
@@ -803,14 +834,18 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         <div class="custom-alert-icon-container">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" fill="currentColor" opacity="0.15" />
-                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" />
+                <path
+                    d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"
+                    fill="currentColor" opacity="0.15" />
+                <path
+                    d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" />
                 <circle cx="12" cy="11" r="3" />
                 <path d="M12 14v4" />
             </svg>
         </div>
         <h3 class="custom-alert-title">Result Access Expired</h3>
-        <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance.</p>
+        <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic
+            for assistance.</p>
         <div class="custom-alert-buttons-container">
             <a id="expired-alert-contact-btn" href="#" class="custom-alert-btn-secondary"
                 style="text-decoration:none; display:none; justify-content:center; align-items:center;">Contact Us</a>
@@ -821,18 +856,22 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 </div>
 
 <!-- Payment Modal -->
-<div id="paymentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+<div id="paymentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
     <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0 py-8">
-        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="closePaymentModal()"></div>
-        
-        <div id="paymentModalContainer" class="relative transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl w-full max-w-md p-6 sm:p-8 sm:my-8 transition-none">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true"
+            onclick="closePaymentModal()"></div>
+
+        <div id="paymentModalContainer"
+            class="relative transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl w-full max-w-md p-6 sm:p-8 sm:my-8 transition-none">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Payment Options</h3>
-                <button type="button" onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                <button type="button" onclick="closePaymentModal()"
+                    class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-lg transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
+
             <!-- Itemized Price Breakdown -->
             <div class="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
                 <div class="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
@@ -843,39 +882,51 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </div>
                 <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
                     <span class="text-sm font-bold text-black">Total Amount</span>
-                    <span id="paymentAmountDisplay" class="text-sm font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
+                    <span id="paymentAmountDisplay"
+                        class="text-sm font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
                 </div>
             </div>
-            
-            <form id="paymentForm" method="POST" action="<?php echo rtrim('/' . PROJECT_DIR, '/'); ?>/app/api/submit_payment.php" enctype="multipart/form-data">
+
+            <form id="paymentForm" method="POST"
+                action="<?php echo rtrim('/' . PROJECT_DIR, '/'); ?>/app/api/submit_payment.php"
+                enctype="multipart/form-data">
                 <input type="hidden" name="case_id" id="paymentCaseId" value="">
                 <input type="hidden" name="amount" id="paymentAmount" value="">
-                
+
                 <div class="mb-5">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Select Payment Method</label>
                     <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 w-full transition">
-                            <input type="radio" name="payment_method" id="paymentMethodCash" value="Cash" class="form-radio text-red-600 focus:ring-red-500" onchange="togglePaymentMethod('Cash')" required>
+                        <label
+                            class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 w-full transition">
+                            <input type="radio" name="payment_method" id="paymentMethodCash" value="Cash"
+                                class="form-radio text-red-600 focus:ring-red-500"
+                                onchange="togglePaymentMethod('Cash')" required>
                             <span class="font-medium text-gray-800">Cash</span>
                         </label>
-                        <label id="gcashOptionWrapper" class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 w-full transition">
-                            <input type="radio" name="payment_method" value="GCash" class="form-radio text-red-600 focus:ring-red-500" onchange="togglePaymentMethod('GCash')" required>
+                        <label id="gcashOptionWrapper"
+                            class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 w-full transition">
+                            <input type="radio" name="payment_method" value="GCash"
+                                class="form-radio text-red-600 focus:ring-red-500"
+                                onchange="togglePaymentMethod('GCash')" required>
                             <span class="font-medium text-gray-800">Cashless (GCash)</span>
                         </label>
                     </div>
                 </div>
 
                 <!-- Cash Notice Section -->
-                <div id="cashSection" class="hidden mb-5 p-5 rounded-xl bg-amber-50 border border-amber-200 text-black space-y-2 shadow-sm">
+                <div id="cashSection"
+                    class="hidden mb-5 p-5 rounded-xl bg-amber-50 border border-amber-200 text-black space-y-2 shadow-sm">
                     <div class="flex items-center gap-2 font-bold text-amber-900 text-base">
                         <i data-lucide="info" class="w-5 h-5 text-amber-600"></i> Cash Payment Reminder
                     </div>
-                    <p class="text-sm leading-relaxed text-gray-800">Please pay the exact amount due at the clinic cashier or front desk before your X-ray exam.</p>
+                    <p class="text-sm leading-relaxed text-gray-800">Please pay the exact amount due at the clinic
+                        cashier or front desk before your X-ray exam.</p>
                     <p id="cashDiscountNotice" class="hidden text-xs italic text-red-600 font-medium mt-2"></p>
                 </div>
 
                 <div id="gcashSection" class="hidden mb-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 bg-blue-50/40 border border-blue-100 rounded-2xl p-5 lg:p-6 mb-2">
+                    <div
+                        class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 bg-blue-50/40 border border-blue-100 rounded-2xl p-5 lg:p-6 mb-2">
                         <!-- Left Column: QR Code Container -->
                         <div class="flex flex-col">
                             <div class="mb-4 text-[#0a2540] flex items-center gap-2">
@@ -883,18 +934,26 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 <h4 class="font-bold text-base sm:text-lg">Pay via GCash or Any E-Wallet</h4>
                             </div>
 
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1 flex flex-col justify-center items-center">
-                                <img id="qrCodeImage" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg" alt="GCash QR" class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
-                                <a id="qrCodeDownload" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg" download="Citilife_QR_Code.jpg" class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
+                            <div
+                                class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1 flex flex-col justify-center items-center">
+                                <img id="qrCodeImage"
+                                    src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg"
+                                    alt="GCash QR"
+                                    class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
+                                <a id="qrCodeDownload"
+                                    href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg"
+                                    download="Citilife_QR_Code.jpg"
+                                    class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
                                     <i data-lucide="download" class="w-4 h-4"></i> Save QR Code
                                 </a>
                             </div>
                         </div>
-                        
+
                         <!-- Right Column: Instructions & Submit -->
                         <div class="flex flex-col justify-between">
                             <div>
-                                <h5 class="font-bold text-[#0a2540] text-sm mb-4 uppercase tracking-wider">Payment Instructions</h5>
+                                <h5 class="font-bold text-[#0a2540] text-sm mb-4 uppercase tracking-wider">Payment
+                                    Instructions</h5>
                                 <ol class="text-sm text-gray-700 space-y-4 mb-6 pl-0" style="list-style-type: none;">
                                     <li class="flex items-start gap-3">
                                         <span class="font-bold text-blue-600 w-5 flex-shrink-0">1</span>
@@ -920,21 +979,28 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                     <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
                                     <h4 class="font-bold">Submit Payment Details</h4>
                                 </div>
-                                
+
                                 <div class="mb-4">
                                     <label class="block text-sm text-[#0a2540] mb-2">Reference Number</label>
-                                    <input type="text" name="reference_number" id="referenceNumber" class="w-full border border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm py-2 sm:py-2.5 px-3" placeholder="e.g. 100023456789">
+                                    <input type="text" name="reference_number" id="referenceNumber"
+                                        class="w-full border border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm py-2 sm:py-2.5 px-3"
+                                        placeholder="e.g. 100023456789">
                                 </div>
-                                
+
                                 <div>
                                     <label class="block text-sm text-[#0a2540] mb-2">Upload Receipt Screenshot</label>
                                     <div class="relative">
-                                        <input type="file" name="payment_proof" id="paymentProof" accept="image/*" 
-                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                        <input type="file" name="payment_proof" id="paymentProof" accept="image/*"
+                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                             onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file chosen'">
-                                        <div class="w-full flex items-center justify-between border border-gray-200 rounded-lg overflow-hidden bg-white">
-                                            <span id="fileNameDisplay" class="px-3 py-2.5 sm:py-3 text-sm text-gray-400 truncate flex-1">No file chosen</span>
-                                            <span class="bg-blue-50 text-[#0a2540] text-sm font-semibold px-4 py-2.5 sm:py-3 border-l border-gray-200 transition">Choose File</span>
+                                        <div
+                                            class="w-full flex items-center justify-between border border-gray-200 rounded-lg overflow-hidden bg-white">
+                                            <span id="fileNameDisplay"
+                                                class="px-3 py-2.5 sm:py-3 text-sm text-gray-400 truncate flex-1">No
+                                                file chosen</span>
+                                            <span
+                                                class="bg-blue-50 text-[#0a2540] text-sm font-semibold px-4 py-2.5 sm:py-3 border-l border-gray-200 transition">Choose
+                                                File</span>
                                         </div>
                                     </div>
                                 </div>
@@ -942,9 +1008,10 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="mt-6">
-                    <button type="submit" class="appearance-none w-full flex justify-center items-center px-4 py-3 sm:py-3.5 bg-red-600 text-white text-sm sm:text-base font-bold rounded-xl hover:bg-red-700 shadow-sm transition border-none outline-none focus:ring-4 focus:ring-red-100">
+                    <button type="submit"
+                        class="appearance-none w-full flex justify-center items-center px-4 py-3 sm:py-3.5 bg-red-600 text-white text-sm sm:text-base font-bold rounded-xl hover:bg-red-700 shadow-sm transition border-none outline-none focus:ring-4 focus:ring-red-100">
                         Submit Payment
                     </button>
                 </div>
@@ -976,7 +1043,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
         <div class="bg-red-50 border-b border-red-100 px-6 py-3 flex items-center gap-2 text-sm text-red-800">
             <i data-lucide="folder-open" class="w-4 h-4 text-red-600"></i>
-            <span class="font-medium">Feedback for Case: <span class="font-bold text-red-700" id="feedback-case-number"></span></span>
+            <span class="font-medium">Feedback for Case: <span class="font-bold text-red-700"
+                    id="feedback-case-number"></span></span>
         </div>
 
         <div class="p-6">
@@ -985,7 +1053,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
                 <!-- Star Rating -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Overall Rating <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Overall Rating <span
+                            class="text-red-500">*</span></label>
                     <div class="flex items-center gap-2" id="feedback-star-container">
                         <?php for ($i = 1; $i <= 5; $i++): ?>
                             <button type="button"
@@ -994,7 +1063,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
                                     fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round"
                                     stroke-linejoin="round" class="w-8 h-8 pointer-events-none">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                    <polygon
+                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                                 </svg>
                             </button>
                         <?php endfor; ?>
@@ -1038,7 +1108,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </div>
                 <div>
                     <h2 class="font-bold text-gray-900 text-base">Report an Error / Dispute Result</h2>
-                    <p class="text-xs text-gray-500">Notice an issue with your report or info? Report it to the clinic.</p>
+                    <p class="text-xs text-gray-500">Notice an issue with your report or info? Report it to the clinic.
+                    </p>
                 </div>
             </div>
             <button type="button" onclick="closeDisputeModal()"
@@ -1047,51 +1118,66 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             </button>
         </div>
 
-        <div class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex flex-shrink-0 items-center justify-between text-xs text-gray-700">
+        <div
+            class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex flex-shrink-0 items-center justify-between text-xs text-gray-700">
             <div>Case #: <span class="font-bold font-mono text-red-600" id="dispute-case-number"></span></div>
             <div class="font-medium text-gray-500" id="dispute-exam-type"></div>
         </div>
 
-        <form id="dispute-form" onsubmit="submitDisputeForm(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <form id="dispute-form" onsubmit="submitDisputeForm(event)"
+            class="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div class="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
                 <input type="hidden" name="case_id" id="dispute-case-id">
                 <input type="hidden" name="action" value="submit_dispute">
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span
+                            class="text-red-500">*</span></label>
                     <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
                         class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
                         <option value="" disabled selected>-- Select Category --</option>
                         <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
-                        <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist Re-examination)</option>
+                        <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist
+                            Re-examination)</option>
                         <option value="both_error">3. Both (Wrong Patient Info & Image Discrepancy)</option>
                     </select>
                 </div>
 
-                <div id="demographic-options-container" class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
-                    <label class="block text-xs font-bold text-gray-700">Select what needs correction: <span class="text-red-500">*</span></label>
+                <div id="demographic-options-container"
+                    class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                    <label class="block text-xs font-bold text-gray-700">Select what needs correction: <span
+                            class="text-red-500">*</span></label>
                     <div class="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-first-name" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                        <label
+                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-first-name" class="rounded text-red-600 focus:ring-red-500"
+                                onchange="toggleCorrectionInputs()">
                             <span class="font-medium">First Name</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-last-name" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                        <label
+                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-last-name" class="rounded text-red-600 focus:ring-red-500"
+                                onchange="toggleCorrectionInputs()">
                             <span class="font-medium">Last Name</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-age" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                        <label
+                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-age" class="rounded text-red-600 focus:ring-red-500"
+                                onchange="toggleCorrectionInputs()">
                             <span class="font-medium">Age</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                            <input type="checkbox" id="chk-sex" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                        <label
+                            class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-sex" class="rounded text-red-600 focus:ring-red-500"
+                                onchange="toggleCorrectionInputs()">
                             <span class="font-medium">Sex</span>
                         </label>
                     </div>
                 </div>
 
                 <div id="general-description-container" class="hidden space-y-1">
-                    <label class="block text-xs font-bold text-gray-700">Details of Findings Discrepancy: <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-gray-700">Details of Findings Discrepancy: <span
+                            class="text-red-500">*</span></label>
                     <textarea name="findings_description" id="dispute-description" rows="3"
                         class="w-full rounded-xl border border-gray-300 p-3 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
                         placeholder="Please describe the discrepancy or issue with the radiologist's findings..."></textarea>
@@ -1175,35 +1261,35 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         document.getElementById('paymentModal').classList.remove('hidden');
         document.getElementById('paymentCaseId').value = caseId;
         document.getElementById('paymentAmount').value = amount;
-        
+
         const origPrice = parseFloat(originalPrice || amount);
         const disc = parseFloat(philhealthDiscount || 0);
         const due = parseFloat(amount || 0);
 
-        document.getElementById('paymentAmountDisplay').innerText = '₱' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
+        document.getElementById('paymentAmountDisplay').innerText = '₱' + due.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         const breakdownContainer = document.getElementById('paymentBreakdownContainer');
         breakdownContainer.innerHTML = '';
-        
+
         if (examType) {
             const exams = examType.split(',').map(e => e.trim());
             exams.forEach(exam => {
                 const key = exam.toLowerCase();
                 const examData = examPrices[key] || { price: 0, discount: 0 };
                 const price = examData.price;
-                
+
                 breakdownContainer.innerHTML += `
                     <div class="flex items-center justify-between text-sm">
                         <span class="text-gray-500 font-medium">${exam}</span>
-                        <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 `;
-                
+
                 if (disc > 0 && examData.discount > 0) {
                     breakdownContainer.innerHTML += `
                         <div class="flex items-center justify-between text-sm mt-1 mb-2">
                             <span class="text-emerald-600 font-medium">PhilHealth Discount</span>
-                            <span class="font-semibold text-emerald-600 font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="font-semibold text-emerald-600 font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     `;
                 }
@@ -1212,11 +1298,11 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             breakdownContainer.innerHTML += `
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-500 font-medium">Regular Procedure Fee</span>
-                    <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${origPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${origPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
             `;
         }
-        
+
         const cashDiscNotice = document.getElementById('cashDiscountNotice');
         if (disc > 0) {
             if (cashDiscNotice) {
@@ -1226,7 +1312,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         } else {
             if (cashDiscNotice) cashDiscNotice.classList.add('hidden');
         }
-        
+
         const gcashOption = document.getElementById('gcashOptionWrapper');
         if (gcashQrPath && gcashQrPath.trim() !== '') {
             if (gcashOption) gcashOption.classList.remove('hidden');
@@ -1240,23 +1326,23 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             lucide.createIcons();
         }
     }
-    
+
     function closePaymentModal() {
         document.getElementById('paymentModal').classList.add('hidden');
     }
-    
+
     function togglePaymentMethod(method) {
         const gcashSection = document.getElementById('gcashSection');
         const cashSection = document.getElementById('cashSection');
         const proofInput = document.getElementById('paymentProof');
         const refInput = document.getElementById('referenceNumber');
         const modalContainer = document.getElementById('paymentModalContainer');
-        
+
         if (method === 'GCash') {
             gcashSection.classList.remove('hidden');
             if (cashSection) cashSection.classList.add('hidden');
             proofInput.required = true;
-            if(refInput) refInput.required = true;
+            if (refInput) refInput.required = true;
             if (modalContainer) {
                 modalContainer.classList.remove('max-w-md', 'sm:max-w-md');
                 modalContainer.style.maxWidth = '56rem';
@@ -1266,22 +1352,22 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             gcashSection.classList.add('hidden');
             if (cashSection) cashSection.classList.remove('hidden');
             proofInput.required = false;
-            if(refInput) refInput.required = false;
+            if (refInput) refInput.required = false;
             if (modalContainer) {
                 modalContainer.style.maxWidth = '28rem';
             }
         }
     }
 
-    document.addEventListener('submit', function(e) {
+    document.addEventListener('submit', function (e) {
         if (e.target && e.target.id === 'paymentForm') {
             e.preventDefault();
-            
+
             const form = e.target;
             const formData = new FormData(form);
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;
-            
+
             Swal.fire({
                 title: 'Uploading...',
                 text: 'Please wait while we process your payment.',
@@ -1290,7 +1376,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     Swal.showLoading();
                 }
             });
-        
+
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processing...';
             if (window.lucide) lucide.createIcons();
@@ -1299,34 +1385,34 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: data.message,
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        document.getElementById('paymentModal').classList.add('hidden');
-                        window.location.reload();
-                    });
-                } else {
-                    Swal.fire('Error', data.message || 'An error occurred.', 'error');
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            document.getElementById('paymentModal').classList.add('hidden');
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'An error occurred.', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'Failed to connect to the server. Please try again.', 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('Error', 'Failed to connect to the server. Please try again.', 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-            });
+                });
         }
     });
 

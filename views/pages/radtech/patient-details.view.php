@@ -257,9 +257,9 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
             <?php if (!empty($savedPaths)): ?>
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($savedPaths as $idx => $sPath): ?>
-                        <div onclick="window.open('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>&preview=true', '_blank')"
+                        <div onclick="openLightbox('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>')"
                             class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm"
-                            title="Click to view full report & image">
+                            title="Click to view image fullscreen">
                             <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
                                 class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
                             <div
@@ -728,3 +728,69 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
         });
     </script>
 <?php endif; ?>
+
+<!-- Image Lightbox Modal -->
+<div id="image-lightbox-modal" class="fixed inset-0 z-[9999] hidden bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="relative inline-block max-w-[95vw] max-h-[90vh]">
+        <!-- Close Button (Positioned relative to the image container) -->
+        <button onclick="closeLightbox()" class="absolute text-black bg-white hover:bg-gray-200 rounded-full p-2 transition-colors z-10 shadow-lg border border-gray-300" style="top: -20px; right: -20px;" title="Close">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <!-- The Image -->
+        <img id="lightbox-main-img" src="" class="max-w-[95vw] max-h-[90vh] object-contain rounded-lg shadow-2xl scale-95 transition-transform duration-300 bg-black">
+    </div>
+</div>
+
+<script>
+function openLightbox(src) {
+    const modal = document.getElementById('image-lightbox-modal');
+    const img = document.getElementById('lightbox-main-img');
+    img.src = src;
+    
+    // Disable background scrolling
+    document.body.classList.add('overflow-hidden');
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Trigger animations
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        img.classList.remove('scale-95');
+        img.classList.add('scale-100');
+    }, 10);
+}
+
+function closeLightbox() {
+    const modal = document.getElementById('image-lightbox-modal');
+    const img = document.getElementById('lightbox-main-img');
+    
+    // Reverse animations
+    modal.classList.add('opacity-0');
+    img.classList.remove('scale-100');
+    img.classList.add('scale-95');
+    
+    // Enable background scrolling
+    document.body.classList.remove('overflow-hidden');
+    
+    // Hide modal after animation completes
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        img.src = '';
+    }, 300);
+}
+
+// Close lightbox on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('image-lightbox-modal').classList.contains('hidden')) {
+        closeLightbox();
+    }
+});
+
+// Close lightbox on background click
+document.getElementById('image-lightbox-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeLightbox();
+    }
+});
+</script>

@@ -230,13 +230,6 @@ foreach ($allServices as $service) {
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <?php if (in_array($patient['status'], ['Pending Approval', 'Pending Payment'])): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>', '<?= ($patient['status'] === 'Pending Payment') ? htmlspecialchars($patient['exam_type']) : '' ?>')"
-                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
-                                            <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
-                                        </button>
-                                    <?php endif; ?>
-
                                     <?php if (in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
                                         <button
                                             onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
@@ -251,6 +244,19 @@ foreach ($allServices as $service) {
                                             <i data-lucide="edit"
                                                 class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
                                         </button>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (in_array($patient['status'], ['Pending Approval', 'Pending Payment'])): ?>
+                                        <?php if (isset($patient['is_verified']) && $patient['is_verified'] == 1): ?>
+                                            <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>', '<?= ($patient['status'] === 'Pending Payment') ? htmlspecialchars($patient['exam_type']) : '' ?>')"
+                                                class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
+                                                <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
+                                            </button>
+                                        <?php else: ?>
+                                            <button disabled class="text-sm font-medium text-gray-400 cursor-not-allowed" title="Please Edit and verify patient info first">
+                                                <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
+                                            </button>
+                                        <?php endif; ?>
                                     <?php endif; ?>
 
                                         <?php if ($patient['status'] === 'Payment Verified'): ?>

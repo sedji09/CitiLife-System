@@ -1008,6 +1008,10 @@ class CaseModel
             $params[] = $data['image_path'];
         }
 
+        if (isset($data['clear_findings']) && $data['clear_findings'] === true) {
+            $sql .= ", findings = NULL, impression = NULL";
+        }
+
         $sql .= " WHERE id = ?";
         $params[] = $caseId;
 
@@ -1060,6 +1064,10 @@ class CaseModel
             }
         }
 
+        // Fetch old case to compare exam_type
+        $oldCase = $this->getCaseById($caseId);
+        $clearFindings = ($oldCase && $oldCase['exam_type'] !== $data['exam_type']);
+
         // Database Update
         $submitData = [
             'exam_type' => $data['exam_type'],
@@ -1068,7 +1076,8 @@ class CaseModel
             'clinical_information' => $data['clinical_information'] ?? '',
             'image_path' => json_encode($uploadedPaths),
             'radtech_id' => $data['radtech_id'] ?? null,
-            'radiologist_id' => $data['radiologist_id'] ?? null
+            'radiologist_id' => $data['radiologist_id'] ?? null,
+            'clear_findings' => $clearFindings
         ];
 
         if ($this->submitToRadiologist($caseId, $submitData)) {

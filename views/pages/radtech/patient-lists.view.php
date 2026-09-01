@@ -863,9 +863,25 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 <div class="font-medium"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
                                 <div class="text-xs text-gray-500"><?= htmlspecialchars($d['patient_number'] ?? '') ?></div>
                             </td>
-                            <td class="py-3 px-4 max-w-[200px] overflow-hidden">
-                                <div class="truncate text-xs font-medium text-amber-800 bg-amber-50 px-2 py-1 rounded block w-full max-w-[190px]" title="<?= htmlspecialchars($d['description']) ?>">
-                                    <?= htmlspecialchars($d['description']) ?>
+                            <td class="py-3 px-4 max-w-[250px] align-top">
+                                <?php
+                                $fullText = $d['description'];
+                                $isLong = strlen($fullText) > 35;
+                                $disputeId = $d['id'];
+                                ?>
+                                <div class="text-xs font-medium text-amber-800 bg-amber-50 px-2 py-1.5 rounded w-full border border-amber-100" style="word-wrap: break-word; white-space: normal;" data-dispute-text="<?= $disputeId ?>">
+                                    <?php if ($isLong): ?>
+                                        <div class="short-text block">
+                                            <?= htmlspecialchars(substr($fullText, 0, 35)) ?>...
+                                            <button type="button" onclick="toggleDisputeText(<?= $disputeId ?>, true)" class="text-amber-600 hover:text-amber-900 underline ml-1 cursor-pointer font-bold inline-block">See more</button>
+                                        </div>
+                                        <div class="full-text hidden">
+                                            <?= htmlspecialchars($fullText) ?>
+                                            <button type="button" onclick="toggleDisputeText(<?= $disputeId ?>, false)" class="text-amber-600 hover:text-amber-900 underline ml-1 cursor-pointer font-bold block mt-1">See less</button>
+                                        </div>
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($fullText) ?>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
@@ -904,10 +920,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                                 class="text-blue-500 hover:text-blue-700 transition <?= !$showReupload ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Re-upload & Correct">
                                             <i data-lucide="image-up" class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
                                         </button>
-                                        <button type="button" <?= $showEscalate ? 'onclick="openEscalateModal(' . $d['id'] . ', \'' . htmlspecialchars($d['case_number']) . '\')"' : 'disabled' ?>
-                                                class="text-red-500 hover:text-red-700 transition <?= !$showEscalate ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Escalate to Radiologist">
-                                            <i data-lucide="stethoscope" class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
-                                        </button>
+
                                         <button type="button" <?= $showResolve ? 'onclick="openResolveModal(' . $d['id'] . ', \'' . htmlspecialchars($d['case_number']) . '\', \'Fix & Resolve Ticket\', ' . htmlspecialchars(json_encode($d['description']), ENT_QUOTES, 'UTF-8') . ')"' : 'disabled' ?>
                                                 class="text-green-500 hover:text-green-700 transition <?= !$showResolve ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Fix & Resolve">
                                             <i data-lucide="clipboard-check" class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
@@ -1056,12 +1069,49 @@ $currentTab = $_GET['tab'] ?? 'completed';
     document.addEventListener('realtime:beforeUpdate', (e) => {
         const newEl = e.detail.newEl;
         if (newEl && newEl.id === 'disputes-table-body') {
+            if (window.expandedDisputes) {
+                window.expandedDisputes.forEach(id => {
+                    const container = newEl.querySelector(`[data-dispute-text="${id}"]`);
+                    if (container) {
+                        const shortText = container.querySelector('.short-text');
+                        const fullText = container.querySelector('.full-text');
+                        if (shortText && fullText) {
+                            shortText.style.display = 'none';
+                            fullText.style.display = 'block';
+                        }
+                    }
+                });
+            }
             paginateDisputes(newEl);
         }
         if (newEl && newEl.id === 'table-body') {
             applyFilters(newEl);
         }
     });
+
+    window.expandedDisputes = window.expandedDisputes || new Set();
+
+    function toggleDisputeText(id, expand) {
+        if (expand) {
+            window.expandedDisputes.add(id);
+        } else {
+            window.expandedDisputes.delete(id);
+        }
+        
+        const container = document.querySelector(`[data-dispute-text="${id}"]`);
+        if (!container) return;
+        const shortText = container.querySelector('.short-text');
+        const fullText = container.querySelector('.full-text');
+        if (shortText && fullText) {
+            if (expand) {
+                shortText.style.display = 'none';
+                fullText.style.display = 'block';
+            } else {
+                shortText.style.display = 'block';
+                fullText.style.display = 'none';
+            }
+        }
+    }
 </script>
 
 <!-- ESCALATE TO RADIOLOGIST MODAL -->

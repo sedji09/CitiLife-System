@@ -154,7 +154,11 @@ if ($activeDispute && $backPage === 'worklist') {
         </span>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div class="bg-red-50 p-3 rounded-xl border border-red-200 col-span-1 md:col-span-2">
+        <div class="bg-red-50 p-3 rounded-xl border border-red-200 col-span-1">
+            <span class="font-bold text-red-900 block mb-1">Patient Error Report / Complaint:</span>
+            <p class="text-red-800 font-medium"><?= htmlspecialchars($activeDispute['description'] ?: 'No description provided by patient.') ?></p>
+        </div>
+        <div class="bg-red-50 p-3 rounded-xl border border-red-200 col-span-1">
             <span class="font-bold text-red-900 block mb-1">RadTech Internal Notes:</span>
             <p class="text-red-800 font-medium"><?= htmlspecialchars($activeDispute['radtech_notes'] ?: 'No internal notes provided.') ?></p>
         </div>

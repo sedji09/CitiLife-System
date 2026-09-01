@@ -113,12 +113,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtUp    = $pdo->prepare(
                         "UPDATE requests
                          SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ?,
-                             original_price = ?, philhealth_discount = ?, amount_due = ?
+                             original_price = ?, philhealth_discount = ?, amount_due = ?, is_verified = 1
                          WHERE id = ?"
                     );
                     $stmtUp->execute([$philhealth, $philhealthIdToSave, $philhealthRelationToSave, $originalPrice, $philhealthDiscount, $amountDue, $caseId]);
+
                 } else {
-                    $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ? WHERE id = ?");
+                    $stmtUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ?, is_verified = 1 WHERE id = ?");
                     $stmtUp->execute([$philhealth, $philhealthIdToSave, $philhealthRelationToSave, $caseId]);
                 }
 

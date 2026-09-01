@@ -101,6 +101,12 @@ $statusDescriptions = [
     body.theme-dark .status-summary-box p {
         color: #e2e8f0 !important;
     }
+    .stepper-text-active {
+        color: #1f2937;
+    }
+    body.theme-dark .stepper-text-active {
+        color: #e2e8f0 !important;
+    }
     body.theme-dark .status-summary-box strong {
         color: #fff !important;
     }
@@ -248,21 +254,21 @@ $statusDescriptions = [
                                         <?php if ($num < count($steps)): ?>
                                             <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
                                         <?php endif; ?>
-                                        <div class="relative z-10 mx-auto h-6 w-6 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
+                                        <div class="relative z-10 mx-auto h-6 w-6 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-base md:text-lg font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
                                     <?php if ($done): ?>bg-green-500 text-white
                                     <?php elseif ($active): ?>bg-red-500 text-white
                                     <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
                                             <?php if ($num === 5 && ($caseRow['status'] ?? '') === 'Under Reading'): ?>
-                                                <span id="rad-activity-dot" data-case-id="<?= $caseRow['id'] ?? 0 ?>" class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                                                <span id="rad-activity-dot" data-case-id="<?= $caseRow['id'] ?? 0 ?>" class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                             <?php endif; ?>
                                             <?php if ($done): ?>
-                                                <i data-lucide="check" class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]"></i>
+                                                <i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>
                                             <?php else: ?>
                                                 <?= $num ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-sm leading-[1.1] sm:leading-tight <?= $done || $active ? 'text-[#1f2937] font-medium' : 'text-gray-400 font-medium' ?> w-full" style="word-break: normal; overflow-wrap: normal;">
+                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs md:whitespace-nowrap leading-[1.1] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full" style="word-break: normal; overflow-wrap: normal;">
                                         <?= htmlspecialchars($stepLabel) ?>
                                     </span>
                                 </div>
