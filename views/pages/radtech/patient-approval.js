@@ -123,6 +123,56 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '') {
     }
     
     document.getElementById('assign_exam_price').value = '0';
+    checkLiveExamCategoryMatch();
+}
+
+function checkLiveExamCategoryMatch() {
+    const warningBox = document.getElementById('assignExamWarning');
+    const warningText = document.getElementById('assignExamWarningText');
+    if (!warningBox || !warningText) return;
+
+    const requestedStr = document.getElementById('assignBodyPart') ? document.getElementById('assignBodyPart').getAttribute('data-raw') : '';
+    if (!requestedStr || requestedStr === 'Not specified') {
+        warningBox.classList.add('hidden');
+        return;
+    }
+
+    const requestedExams = requestedStr.split(',').map(s => s.trim()).filter(s => s);
+    const requestedCategories = new Set();
+
+    requestedExams.forEach(exam => {
+        const cat = window.examCategoryMap && window.examCategoryMap[exam];
+        if (cat) {
+            requestedCategories.add(cat.toLowerCase());
+        }
+    });
+
+    if (requestedCategories.size === 0) {
+        warningBox.classList.add('hidden');
+        return;
+    }
+
+    const form = document.getElementById('assignForm');
+    const hiddenInput = form ? form.querySelector('.exam-ms-hidden-input') : null;
+    const assignedStr = hiddenInput ? hiddenInput.value : '';
+    const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(s => s);
+
+    let invalidExams = [];
+    assignedExams.forEach(exam => {
+        const cat = window.examCategoryMap && window.examCategoryMap[exam];
+        if (cat && !requestedCategories.has(cat.toLowerCase())) {
+            invalidExams.push(exam);
+        }
+    });
+
+    if (invalidExams.length > 0) {
+        const reqCats = Array.from(requestedCategories).map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ');
+        warningText.innerHTML = `<strong>Category Mismatch:</strong> <em>"${invalidExams.join(', ')}"</em> is not under <strong>${reqCats}</strong> (patient's requested part). Please assign an exam matching the requested body part.`;
+        warningBox.classList.remove('hidden');
+        if (window.lucide) window.lucide.createIcons();
+    } else {
+        warningBox.classList.add('hidden');
+    }
 }
 
 function validateAssignForm(e) {
@@ -220,6 +270,11 @@ function closeAssignModal() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    const assignModal = document.getElementById('assignModal');
+    if (assignModal) {
+        assignModal.addEventListener('exam-ms:change', checkLiveExamCategoryMatch);
+    }
+
     const assignSelect = document.getElementById('assign_exam_select');
     const assignPriceInput = document.getElementById('assign_exam_price');
     
