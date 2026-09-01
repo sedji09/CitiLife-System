@@ -728,6 +728,8 @@ class CaseModel
 
     /**
      * Generate a unique case number.
+     * @param int|null $branchId
+     * @return string
      */
     public function generateCaseNumber($branchId = null)
     {

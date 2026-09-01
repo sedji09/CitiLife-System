@@ -199,7 +199,7 @@ $statusDescriptions = [
                 <i data-lucide="circle-check-big" class="w-5 h-5 text-green-600"></i>
                 <h2 class="font-bold text-gray-900">X-ray Report Released</h2>
             </div>
-            <div class="p-5 space-y-4">
+            <div class="p-4 sm:p-5 space-y-4">
                 <p class="text-sm text-gray-600">Your X-ray report for case <span
                         class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
                     has been released. You may view your result below.</p>
@@ -208,18 +208,7 @@ $statusDescriptions = [
                 $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
                 ?>
-<<<<<<< Updated upstream
-                <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
-                    class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
-                    style="background: linear-gradient(135deg, #15803d, #16a34a);">
-                    <i data-lucide="eye" class="w-4 h-4"></i>
-                    View Report
-                </a>
-            </div>
-        </div>
-        <?php endif; ?>
-=======
-                <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50/70 flex items-center justify-between gap-2.5 sm:gap-4">
+                <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50/70 rounded-xl border border-gray-100 flex items-center justify-between gap-2.5 sm:gap-4">
                     <span class="text-xs sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
                     <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                         class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-xs sm:text-sm py-2.5 px-3.5 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
@@ -228,8 +217,9 @@ $statusDescriptions = [
                         <span>View Report</span>
                     </a>
                 </div>
-            <?php endif; ?>
->>>>>>> Stashed changes
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Case Information Card -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-5">
