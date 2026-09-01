@@ -13,12 +13,12 @@ $caseId = isset($_GET['case_id']) ? (int) $_GET['case_id'] : 0;
 $reqId = isset($_GET['request_id']) ? (int) $_GET['request_id'] : 0;
 
 $steps = [
-    1 => 'Registered',
+    1 => 'Registration',
     2 => 'Payment',
-    3 => 'Approved by RadTech',
-    4 => 'X-ray Taken',
-    5 => 'Under Reading',
-    6 => 'Ready for Release',
+    3 => 'RadTech Verification',
+    4 => 'X-ray Examination',
+    5 => 'Radiologist Reading',
+    6 => 'Report Finalized',
     7 => 'Released',
 ];
 
