@@ -126,10 +126,18 @@ if (!function_exists('sendEmailAsync')) {
         $payload = base64_encode(json_encode($data));
         $scriptPath = __DIR__ . '/background_mailer.php';
         
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            pclose(popen("start /B php \"$scriptPath\" \"$payload\" 2>nul >nul", "r"));
-        } else {
-            exec("php \"$scriptPath\" \"$payload\" > /dev/null 2>&1 &");
+        try {
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                pclose(popen("start /B php \"$scriptPath\" \"$payload\" 2>nul >nul", "r"));
+            } else {
+                if (!function_exists('exec')) {
+                    throw new Exception("exec is disabled");
+                }
+                exec("php \"$scriptPath\" \"$payload\" > /dev/null 2>&1 &");
+            }
+        } catch (\Throwable $e) {
+            // Fallback to synchronous sending if background fails or exec is disabled
+            sendEmail($toEmail, $toName, $subject, $body, $altBody);
         }
     }
 }
