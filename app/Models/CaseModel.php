@@ -353,7 +353,7 @@ class CaseModel
                             require_once __DIR__ . '/../Helpers/mailer_helper.php';
                             $patientName = $cData['first_name'] . ' ' . $cData['last_name'];
                             $subject = "Your X-ray Report is Ready - Citilife System";
-                            $dashboardUrl = appBaseUrl() . "/" . PROJECT_DIR . "/dashboard";
+                            $dashboardUrl = appBaseUrl() . "/" . PROJECT_DIR . "/patient-login?redirect=" . urlencode("/" . PROJECT_DIR . "/dashboard");
                             $body = renderNotificationEmail(
                                 $patientName,
                                 "Your X-ray Report is Ready",

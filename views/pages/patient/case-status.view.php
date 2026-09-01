@@ -208,6 +208,7 @@ $statusDescriptions = [
                 $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
                 ?>
+<<<<<<< Updated upstream
                 <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                     class="inline-flex items-center gap-2 rounded-xl text-white font-semibold text-sm py-3 px-6 transition shadow-sm hover:shadow-md"
                     style="background: linear-gradient(135deg, #15803d, #16a34a);">
@@ -217,6 +218,18 @@ $statusDescriptions = [
             </div>
         </div>
         <?php endif; ?>
+=======
+                <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50/70 flex items-center justify-between gap-2.5 sm:gap-4">
+                    <span class="text-xs sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
+                    <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
+                        class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-xs sm:text-sm py-2.5 px-3.5 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
+                        style="background: linear-gradient(135deg, #15803d, #16a34a);">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                        <span>View Report</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+>>>>>>> Stashed changes
 
         <!-- Case Information Card -->
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-5">

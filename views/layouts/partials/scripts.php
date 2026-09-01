@@ -94,7 +94,7 @@
         // General Settings — Notification Toggles
         notifEmail: localStorage.getItem('citilife_notif_email') !== 'false',
         notifSystem: localStorage.getItem('citilife_notif_system') !== 'false',
-        notifSound: localStorage.getItem('citilife_notif_sound') === 'true',
+        notifSound: localStorage.getItem('citilife_notif_sound') !== 'false',
         toasts: [],
         editFirstName: '',
         editLastName: '',
