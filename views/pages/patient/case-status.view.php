@@ -227,51 +227,47 @@ $statusDescriptions = [
             <div class="p-4 sm:p-6">
                 <!-- 7-Step Progress Tracker -->
                 <?php if (!$isRejected): ?>
-                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 w-full pt-2 pb-2">
-                        <?php foreach ($steps as $num => $stepLabel): ?>
-                            <?php
-                            $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
-                            $active = $num === $currentStep && $currentStep !== count($steps);
-                            $pending = $num > $currentStep;
-                            ?>
-                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-0 px-0.5">
-                                <div class="relative flex items-center w-full">
-                                    <?php
-                                    $nextNum = $num + 1;
-                                    $nextDone = $nextNum < $currentStep || ($nextNum === count($steps) && $currentStep === count($steps));
-                                    $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
-                                    ?>
-                                    <?php if ($num > 1): ?>
-                                        <div
-                                            class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>">
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if ($num < count($steps)): ?>
-                                        <div
-                                            class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>">
-                                        </div>
-                                    <?php endif; ?>
-                                    <div class="relative z-10 mx-auto h-7 w-7 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition shrink-0
-                                <?php if ($done): ?>bg-green-500 border-green-500 text-white
-                                <?php elseif ($active): ?>bg-red-500 border-red-500 text-white ring-2 sm:ring-4 ring-red-100
-                                <?php else: ?>bg-white border-gray-200 text-gray-400<?php endif; ?>">
-                                        <?php if ($num === 5 && ($caseRow['status'] ?? '') === 'Under Reading'): ?>
-                                            <span id="rad-activity-dot" data-case-id="<?= $caseRow['id'] ?? 0 ?>"
-                                                class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                    <div class="w-full pt-2 pb-2">
+                        <div class="flex items-start justify-between w-full gap-0.5 sm:gap-1">
+                            <?php foreach ($steps as $num => $stepLabel): ?>
+                                <?php
+                                $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
+                                $active = $num === $currentStep && $currentStep !== count($steps);
+                                $pending = $num > $currentStep;
+                                ?>
+                                <div class="flex flex-col items-center flex-1 min-w-0 text-center px-0.5 sm:px-0">
+                                    <div class="relative flex items-center w-full">
+                                        <?php
+                                        $nextNum = $num + 1;
+                                        $nextDone = $nextNum < $currentStep || ($nextNum === count($steps) && $currentStep === count($steps));
+                                        $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
+                                        ?>
+                                        <?php if ($num > 1): ?>
+                                            <div class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
                                         <?php endif; ?>
-                                        <?php if ($done): ?>
-                                            <i data-lucide="check" class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]"></i>
-                                        <?php else: ?>
-                                            <?= $num ?>
+                                        <?php if ($num < count($steps)): ?>
+                                            <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
                                         <?php endif; ?>
+                                        <div class="relative z-10 mx-auto h-6 w-6 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
+                                    <?php if ($done): ?>bg-green-500 text-white
+                                    <?php elseif ($active): ?>bg-red-500 text-white
+                                    <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
+                                            <?php if ($num === 5 && ($caseRow['status'] ?? '') === 'Under Reading'): ?>
+                                                <span id="rad-activity-dot" data-case-id="<?= $caseRow['id'] ?? 0 ?>" class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                                            <?php endif; ?>
+                                            <?php if ($done): ?>
+                                                <i data-lucide="check" class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]"></i>
+                                            <?php else: ?>
+                                                <?= $num ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
+                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs leading-[1.1] sm:leading-tight <?= $done || $active ? 'text-[#1f2937] font-medium' : 'text-gray-400 font-medium' ?> w-full" style="word-break: normal; overflow-wrap: normal;">
+                                        <?= htmlspecialchars($stepLabel) ?>
+                                    </span>
                                 </div>
-                                <span
-                                    class="text-center text-[8.5px] sm:text-[11px] leading-[1.15] font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> w-full px-0.5 break-words">
-                                    <?= htmlspecialchars($stepLabel) ?>
-                                </span>
-                            </div>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
 
@@ -393,17 +389,17 @@ $statusDescriptions = [
 
                 <!-- Bottom Action Row (View Report if Released/Completed) -->
                 <?php if (in_array($caseRow['status'] ?? '', ['Released', 'Completed']) || ($caseRow['approval_status'] ?? '') === 'Completed'): ?>
-                    <div class="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <span class="text-xs sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
+                    <div class="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between gap-3 sm:gap-4">
+                        <span class="text-[11px] sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
                         <?php
                         $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
                         $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
                         $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                         ?>
                         <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
-                            class="inline-flex items-center justify-center gap-2 rounded-xl text-white font-semibold text-xs sm:text-sm py-2.5 px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
+                            class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-[11px] sm:text-xs py-2 sm:py-2.5 px-4 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
                             style="background: linear-gradient(135deg, #15803d, #16a34a);">
-                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 h-4"></i>
                             <span>View Report</span>
                         </a>
                     </div>
