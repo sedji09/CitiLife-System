@@ -262,7 +262,7 @@ $statusDescriptions = [
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs leading-[1.1] sm:leading-tight <?= $done || $active ? 'text-[#1f2937] font-medium' : 'text-gray-400 font-medium' ?> w-full" style="word-break: normal; overflow-wrap: normal;">
+                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-sm leading-[1.1] sm:leading-tight <?= $done || $active ? 'text-[#1f2937] font-medium' : 'text-gray-400 font-medium' ?> w-full" style="word-break: normal; overflow-wrap: normal;">
                                         <?= htmlspecialchars($stepLabel) ?>
                                     </span>
                                 </div>
