@@ -23,12 +23,12 @@ $statusSteps = [
 ];
 
 $steps = [
-    1 => 'Registered',
-    2 => 'Approved by RadTech',
-    3 => 'X-ray Taken',
-    4 => 'Under Reading',
-    5 => 'Ready for Release',
-    6 => 'Released',
+    1 => ['short' => 'Register', 'full' => 'Registered'],
+    2 => ['short' => 'Approval', 'full' => 'Approved by RadTech'],
+    3 => ['short' => 'X-ray', 'full' => 'X-ray Taken'],
+    4 => ['short' => 'Reading', 'full' => 'Under Reading'],
+    5 => ['short' => 'Ready', 'full' => 'Ready for Release'],
+    6 => ['short' => 'Released', 'full' => 'Released'],
 ];
 
 // 1. Fetch Patient Info
@@ -313,12 +313,14 @@ $statusDescriptions = [
                 <!-- Step tracker -->
                 <?php if (!$isRejected): ?>
                     <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2.5 pb-2">
-                        <?php foreach ($steps as $num => $label): ?>
+                        <?php foreach ($steps as $num => $stepInfo): ?>
                             <?php
+                            $label = is_array($stepInfo) ? $stepInfo['full'] : $stepInfo;
+                            $shortLabel = is_array($stepInfo) ? $stepInfo['short'] : $stepInfo;
                             $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
                             $active = $num === $currentStep && $currentStep !== count($steps);
                             ?>
-                            <div class="flex flex-col items-center gap-1 sm:gap-2 flex-1 min-w-[40px] sm:min-w-[56px]">
+                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-[38px] sm:min-w-[56px]">
                                 <div class="relative flex items-center w-full">
                                     <?php
                                     $nextNum = $num + 1;
@@ -345,7 +347,10 @@ $statusDescriptions = [
                                     </div>
                                 </div>
                                 <span
-                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-700' : 'text-gray-400' ?>"><?= $label ?></span>
+                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> max-w-full">
+                                    <span class="sm:hidden"><?= htmlspecialchars($shortLabel) ?></span>
+                                    <span class="hidden sm:inline"><?= htmlspecialchars($label) ?></span>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                     </div>

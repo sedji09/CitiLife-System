@@ -34,7 +34,8 @@
         <a href="javascript:void(0)" onclick="switchTab('pending')" id="tab-pending"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $activeTab === 'pending' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300' ?>">
             Pending Verification
-            <span id="pendingBadgeCount" class="<?= count($pendingPayments) > 0 ? '' : 'hidden' ?> inline-flex items-center justify-center bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span id="pendingBadgeCount"
+                class="<?= count($pendingPayments) > 0 ? '' : 'hidden' ?> inline-flex items-center justify-center bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
                 <?= count($pendingPayments) ?>
             </span>
         </a>
@@ -50,16 +51,18 @@
 
     <!-- Pending Tab -->
     <div id="content-pending" class="<?= $activeTab === 'pending' ? '' : 'hidden' ?>">
-        
+
         <!-- Search and Filters -->
         <div class="mt-6 flex flex-col gap-4">
             <div class="flex gap-4 items-center w-full">
                 <div class="relative w-full max-w-md">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                    <input type="text" id="pendingSearchInput" placeholder="Search Request # or Patient Name..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all">
+                    <input type="text" id="pendingSearchInput" placeholder="Search Request # or Patient Name..."
+                        class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all">
                 </div>
-                
-                <select id="pendingSortSelect" class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white">
+
+                <select id="pendingSortSelect"
+                    class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white">
                     <option value="new">Newest First</option>
                     <option value="old">Oldest First</option>
                 </select>
@@ -85,59 +88,71 @@
                             </tr>
                         <?php else: ?>
                             <?php foreach ($pendingPayments as $payment): ?>
-                            <tr class="hover:bg-gray-50 transition pending-row"
-                                data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
-                                data-date="<?= strtotime($payment['created_at']) ?>">
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
-                                    <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-700"><?= htmlspecialchars($payment['exam_type']) ?></div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
-                                        <div class="text-sm font-medium text-gray-900">
-                                            <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
+                                <tr class="hover:bg-gray-50 transition pending-row"
+                                    data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
+                                    data-date="<?= strtotime($payment['created_at']) ?>">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
                                         </div>
-                                    <?php else: ?>
-                                        <span class="text-xs text-gray-400 italic">None</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-red-600 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
-                                    <div class="text-xs text-gray-500 font-mono mt-1">Method: <?= htmlspecialchars($payment['payment_method']) ?></div>
-                                    <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
-                                        <div class="text-xs text-gray-500 font-mono mt-1">Ref: <?= htmlspecialchars($payment['reference_number']) ?></div>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4 text-gray-500">
-                                    <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-2">
-                                        <?php if ($payment['payment_method'] === 'GCash'): ?>
-                                            <button type="button" title="View Receipt" onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float)($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float)($payment['discount_amount'] ?? 0) ?>, <?= (float)$payment['amount'] ?>, '<?= htmlspecialchars($payment['exam_type'] ?? 'Exam') ?>')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-700 transition">
-                                                <i data-lucide="image" class="w-4 h-4"></i>
-                                            </button>
+                                        <div class="text-xs text-gray-500">
+                                            <?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-700">
+                                            <?= htmlspecialchars($payment['exam_type']) ?></div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-xs text-gray-400 italic">None</span>
                                         <?php endif; ?>
-                                        <form method="POST" class="inline-block m-0">
-                                            <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
-                                            <input type="hidden" name="action" value="verify">
-                                            <button type="button" title="Verify Payment" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 transition">
-                                                <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
-                                            </button>
-                                        </form>
-                                        <form method="POST" class="inline-block m-0">
-                                            <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
-                                            <input type="hidden" name="action" value="reject">
-                                            <button type="button" title="Reject Payment" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
-                                                <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-red-600 font-mono">
+                                            ₱<?= number_format($payment['amount'], 2) ?></div>
+                                        <div class="text-xs text-gray-500 font-mono mt-1">Method:
+                                            <?= htmlspecialchars($payment['payment_method']) ?></div>
+                                        <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
+                                            <div class="text-xs text-gray-500 font-mono mt-1">Ref:
+                                                <?= htmlspecialchars($payment['reference_number']) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-500">
+                                        <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <?php if ($payment['payment_method'] === 'GCash'): ?>
+                                                <button type="button" title="View Receipt"
+                                                    onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float) ($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float) ($payment['discount_amount'] ?? 0) ?>, <?= (float) $payment['amount'] ?>, '<?= htmlspecialchars($payment['exam_type'] ?? 'Exam') ?>')"
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-700 transition">
+                                                    <i data-lucide="image" class="w-4 h-4"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                            <form method="POST" class="inline-block m-0">
+                                                <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
+                                                <input type="hidden" name="action" value="verify">
+                                                <button type="button" title="Verify Payment"
+                                                    onclick="confirmAction(this.form, 'verify')"
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 transition">
+                                                    <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" class="inline-block m-0">
+                                                <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="button" title="Reject Payment"
+                                                    onclick="confirmAction(this.form, 'reject')"
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
+                                                    <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
@@ -145,9 +160,11 @@
             </div>
 
             <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50" id="pending-pagination-container">
+            <div class="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50"
+                id="pending-pagination-container">
                 <span class="text-sm text-gray-600" id="pending-pagination-info">
-                    Showing page <span class="font-semibold text-gray-800">1</span> of <span class="font-semibold text-gray-800">1</span>
+                    Showing page <span class="font-semibold text-gray-800">1</span> of <span
+                        class="font-semibold text-gray-800">1</span>
                 </span>
                 <div class="flex items-center flex-wrap gap-1.5" id="pending-pagination-controls">
                     <!-- JS will render pagination here -->
@@ -158,22 +175,24 @@
 
     <!-- History Tab -->
     <div id="content-history" class="<?= $activeTab === 'history' ? '' : 'hidden' ?>">
-        
+
         <!-- Search and Filters -->
         <div class="mt-6 flex flex-col gap-4">
             <div class="flex gap-4 items-center w-full">
                 <div class="relative w-full max-w-md">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                    <input type="text" id="historySearchInput" placeholder="Search Request # or Patient Name..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all">
+                    <input type="text" id="historySearchInput" placeholder="Search Request # or Patient Name..."
+                        class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all">
                 </div>
-                
-                <select id="historySortSelect" class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white">
+
+                <select id="historySortSelect"
+                    class="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white">
                     <option value="new">Newest First</option>
                     <option value="old">Oldest First</option>
                 </select>
             </div>
         </div>
-        
+
         <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-600">
@@ -194,47 +213,55 @@
                             </tr>
                         <?php else: ?>
                             <?php foreach ($paymentHistory as $payment): ?>
-                            <tr class="hover:bg-gray-50 transition history-row" 
-                                data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
-                                data-date="<?= strtotime($payment['updated_at']) ?>">
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?></div>
-                                    <div class="text-xs text-gray-500"><?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-700"><?= htmlspecialchars($payment['exam_type']) ?></div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
-                                        <div class="text-sm font-medium text-gray-900">
-                                            <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
+                                <tr class="hover:bg-gray-50 transition history-row"
+                                    data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
+                                    data-date="<?= strtotime($payment['updated_at']) ?>">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
                                         </div>
-                                    <?php else: ?>
-                                        <span class="text-xs text-gray-400 italic">None</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-gray-900 font-mono">₱<?= number_format($payment['amount'], 2) ?></div>
-                                    <div class="text-xs text-gray-500 font-mono mt-1">Method: <?= htmlspecialchars($payment['payment_method']) ?></div>
-                                    <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
-                                        <div class="text-xs text-gray-500 font-mono mt-1">Ref: <?= htmlspecialchars($payment['reference_number']) ?></div>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <?php if ($payment['status'] === 'Verified'): ?>
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400">
-                                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verified
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400">
-                                            <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4 text-gray-500">
-                                    <?= date('M d, Y h:i A', strtotime($payment['updated_at'])) ?>
-                                </td>
-                            </tr>
+                                        <div class="text-xs text-gray-500">
+                                            <?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-700">
+                                            <?= htmlspecialchars($payment['exam_type']) ?></div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-xs text-gray-400 italic">None</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900 font-mono">
+                                            ₱<?= number_format($payment['amount'], 2) ?></div>
+                                        <div class="text-xs text-gray-500 font-mono mt-1">Method:
+                                            <?= htmlspecialchars($payment['payment_method']) ?></div>
+                                        <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
+                                            <div class="text-xs text-gray-500 font-mono mt-1">Ref:
+                                                <?= htmlspecialchars($payment['reference_number']) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <?php if ($payment['status'] === 'Verified'): ?>
+                                            <span
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400">
+                                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verified
+                                            </span>
+                                        <?php else: ?>
+                                            <span
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400">
+                                                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-500">
+                                        <?= date('M d, Y h:i A', strtotime($payment['updated_at'])) ?>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
@@ -242,9 +269,11 @@
             </div>
 
             <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50" id="history-pagination-container">
+            <div class="px-6 py-4 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50"
+                id="history-pagination-container">
                 <span class="text-sm text-gray-600" id="history-pagination-info">
-                    Showing page <span class="font-semibold text-gray-800">1</span> of <span class="font-semibold text-gray-800">1</span>
+                    Showing page <span class="font-semibold text-gray-800">1</span> of <span
+                        class="font-semibold text-gray-800">1</span>
                 </span>
                 <div class="flex items-center flex-wrap gap-1.5" id="history-pagination-controls">
                     <!-- JS will render pagination here -->
@@ -255,26 +284,31 @@
 </div>
 
 <!-- Receipt Modal -->
-<div id="receiptModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+<div id="receiptModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-sm"
+    aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
-        <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[90vh]">
-            
+        <div
+            class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[90vh]">
+
             <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
                 <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2" id="modal-title">
                     <i data-lucide="receipt" class="w-5 h-5 text-blue-600"></i> Payment Receipt
                 </h3>
-                <button type="button" onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-600 transition">
+                <button type="button" onclick="closeReceiptModal()"
+                    class="text-gray-400 hover:text-gray-600 transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
+
             <!-- Content -->
             <div class="px-6 py-5 flex-1 flex flex-col bg-gray-50/50 min-h-0">
                 <!-- Reference Number Badge -->
-                <div class="mb-4 shrink-0 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div
+                    class="mb-4 shrink-0 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
-                        <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider block mb-1">Provided Reference Number</span>
+                        <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider block mb-1">Provided
+                            Reference Number</span>
                         <strong id="modal-ref-number" class="text-xl font-mono text-blue-900 tracking-tight"></strong>
                     </div>
                     <div class="text-xs text-blue-700 bg-blue-100/50 px-3 py-1.5 rounded-lg">
@@ -284,17 +318,20 @@
 
                 <!-- Price Breakdown in Modal -->
                 <div class="mb-4 shrink-0 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                    <div class="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex items-center gap-2 text-xs font-bold text-gray-600 tracking-wider">
+                    <div
+                        class="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex items-center gap-2 text-xs font-bold text-gray-600 tracking-wider">
                         <i data-lucide="receipt" class="w-4 h-4"></i> PAYMENT BREAKDOWN
                     </div>
                     <div class="p-4 space-y-3">
-                        <div class="flex items-center justify-between text-gray-700 text-sm font-semibold" id="receiptModalOrigRow">
+                        <div class="flex items-center justify-between text-gray-700 text-sm font-semibold"
+                            id="receiptModalOrigRow">
                             <span id="receiptModalExamType">Chest PA</span>
                             <span id="receiptModalOrigAmount" class="font-bold text-gray-900">₱0.00</span>
                         </div>
                         <div class="flex items-center justify-between" id="receiptModalDiscRow">
                             <span class="text-emerald-600 text-sm font-medium">PhilHealth Discount</span>
-                            <span id="receiptModalDiscAmount" class="font-semibold text-emerald-600 text-sm font-mono tracking-tight">-₱0.00</span>
+                            <span id="receiptModalDiscAmount"
+                                class="font-semibold text-emerald-600 text-sm font-mono tracking-tight">-₱0.00</span>
                         </div>
                     </div>
                     <div class="bg-red-50/30 px-4 py-3 border-t border-red-100 flex items-center justify-between">
@@ -302,17 +339,19 @@
                         <span id="receiptModalNetAmount" class="font-black text-red-600 text-[15px]">₱0.00</span>
                     </div>
                 </div>
-                
+
                 <!-- Receipt Image Area -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-inner flex-1 min-h-[200px] overflow-y-auto" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-inner flex-1 min-h-[200px] overflow-y-auto"
+                    style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
                     <img id="modal-receipt-img" src="" alt="Receipt" class="w-full h-auto block">
                 </div>
             </div>
-            
+
             <!-- Footer -->
             <div class="bg-white px-6 py-4 border-t border-gray-100 flex justify-end shrink-0">
-                <button type="button" onclick="closeReceiptModal()" class="inline-flex justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition">
-                    Close Viewer
+                <button type="button" onclick="closeReceiptModal()"
+                    class="inline-flex justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition">
+                    Close
                 </button>
             </div>
 
@@ -324,13 +363,13 @@
     function switchTab(tabId) {
         document.getElementById('content-pending').classList.add('hidden');
         document.getElementById('content-history').classList.add('hidden');
-        
+
         document.getElementById('tab-pending').className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
         document.getElementById('tab-history').className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
-        
+
         document.getElementById('content-' + tabId).classList.remove('hidden');
         document.getElementById('tab-' + tabId).className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 text-red-600 border-b-2 border-red-600 active-tab';
-        
+
         // Update URL slightly without reloading to remember tab
         const url = new URL(window.location);
         if (tabId === 'history') {
@@ -522,7 +561,7 @@
 
                 // Render Rows
                 tableBody.innerHTML = '';
-                
+
                 if (filteredRows.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-gray-500">No records match your filters.</td></tr>';
                     if (paginationContainer) paginationContainer.style.display = 'flex';
@@ -548,14 +587,14 @@
                 if (paginationInfo) {
                     paginationInfo.innerHTML = `Showing page <span class="font-semibold text-gray-800">${currentPage}</span> of <span class="font-semibold text-gray-800">${totalPages}</span>`;
                 }
-                
+
                 renderPagination(totalPages);
             }
 
             function renderPagination(totalPages) {
                 if (!paginationControls) return;
                 paginationControls.innerHTML = '';
-                
+
                 const createBtn = (label, pageNum, disabled = false, isActive = false) => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
@@ -630,7 +669,7 @@
                 currentPage = 1;
                 updateTable();
             });
-            
+
             if (sortSelect) sortSelect.addEventListener('change', () => {
                 currentPage = 1;
                 updateTable();
@@ -713,22 +752,22 @@
             alert('No receipt image available.');
             return;
         }
-        
+
         let base = '<?= "/" . (defined("PROJECT_DIR") ? trim(PROJECT_DIR, "/") . "/" : "") ?>';
         let cleanPath = path.startsWith('/') ? path.substring(1) : path;
         let imageSrc = base + cleanPath;
         document.getElementById('modal-receipt-img').src = imageSrc;
         document.getElementById('modal-ref-number').textContent = refNumber;
         document.getElementById('receiptModalExamType').textContent = examType;
-        
+
         const orig = parseFloat(origAmount || netAmount || 0);
         const disc = parseFloat(discAmount || 0);
         const net = parseFloat(netAmount || 0);
 
-        document.getElementById('receiptModalOrigAmount').textContent = '₱' + orig.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('receiptModalDiscAmount').textContent = '-₱' + disc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('receiptModalNetAmount').textContent = '₱' + net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
+        document.getElementById('receiptModalOrigAmount').textContent = '₱' + orig.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('receiptModalDiscAmount').textContent = '-₱' + disc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('receiptModalNetAmount').textContent = '₱' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         const discRow = document.getElementById('receiptModalDiscRow');
         if (disc > 0) {
             if (discRow) discRow.classList.remove('hidden');

@@ -139,13 +139,13 @@ if ($latestCase) {
 }
 
 $steps = [
-    1 => 'Registration',
-    2 => 'Payment',
-    3 => 'RadTech Verification',
-    4 => 'X-ray Examination',
-    5 => 'Radiologist Reading',
-    6 => 'Report Finalized',
-    7 => 'Released',
+    1 => ['short' => 'Register', 'full' => 'Registration'],
+    2 => ['short' => 'Payment', 'full' => 'Payment'],
+    3 => ['short' => 'Approval', 'full' => 'RadTech Approval'],
+    4 => ['short' => 'X-ray', 'full' => 'X-ray Exam'],
+    5 => ['short' => 'Reading', 'full' => 'Radiologist Reading'],
+    6 => ['short' => 'Ready', 'full' => 'Report Ready'],
+    7 => ['short' => 'Released', 'full' => 'Released'],
 ];
 
 $statusColors = [
@@ -578,25 +578,28 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         <!-- Latest X-ray Status Card -->
         <div id="patient-dashboard-latest-status"
             class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 class="font-bold text-gray-900">Latest X-ray Status</h2>
-                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold"
+            <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100 gap-2">
+                <h2 class="font-bold text-gray-900 text-sm sm:text-base whitespace-nowrap">Latest X-ray Status</h2>
+                <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
-                    <?= htmlspecialchars($sInfo['label']) ?>
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background: <?= $sInfo['text'] ?>"></span>
+                    <?= htmlspecialchars($displayStatus) ?>
                 </span>
             </div>
 
-            <div class="p-5">
+            <div class="p-4 sm:p-5">
                 <!-- Step Progress Bar -->
                 <?php if (!$isRejected): ?>
-                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2.5 pb-2">
-                        <?php foreach ($steps as $num => $label): ?>
+                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2 pb-2">
+                        <?php foreach ($steps as $num => $stepInfo): ?>
                             <?php
+                            $label = is_array($stepInfo) ? $stepInfo['full'] : $stepInfo;
+                            $shortLabel = is_array($stepInfo) ? $stepInfo['short'] : $stepInfo;
                             $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
                             $active = $num === $currentStep && $currentStep !== count($steps);
                             $pending = $num > $currentStep;
                             ?>
-                            <div class="flex flex-col items-center gap-1 sm:gap-1 flex-1 min-w-[40px] sm:min-w-[48px]">
+                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-[38px] sm:min-w-[48px]">
                                 <div class="relative flex items-center w-full">
                                     <?php
                                     $nextNum = $num + 1;
@@ -629,7 +632,10 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                     </div>
                                 </div>
                                 <span
-                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-700' : 'text-gray-400' ?>"><?= $label ?></span>
+                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> max-w-full">
+                                    <span class="sm:hidden"><?= htmlspecialchars($shortLabel) ?></span>
+                                    <span class="hidden sm:inline"><?= htmlspecialchars($label) ?></span>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                     </div>
