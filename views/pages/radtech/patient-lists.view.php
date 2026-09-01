@@ -863,25 +863,23 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 <div class="font-medium"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
                                 <div class="text-xs text-gray-500"><?= htmlspecialchars($d['patient_number'] ?? '') ?></div>
                             </td>
-                            <td class="py-3 px-4 max-w-[250px] align-top">
+                            <td class="py-3 px-4 max-w-[260px] align-middle">
                                 <?php
-                                $fullText = $d['description'];
-                                $isLong = strlen($fullText) > 35;
-                                $disputeId = $d['id'];
+                                $fullText = $d['description'] ?? '';
+                                $cleanPreview = mb_strimwidth(strip_tags($fullText), 0, 36, '...');
+                                $disputePayload = [
+                                    'id' => $d['id'],
+                                    'case_number' => $d['case_number'],
+                                    'patient_name' => $d['first_name'] . ' ' . $d['last_name'],
+                                    'patient_number' => $d['patient_number'] ?? '',
+                                    'description' => $fullText,
+                                    'status' => $d['status'],
+                                    'created_at' => date('M d, Y h:i A', strtotime($d['created_at']))
+                                ];
+                                $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
                                 ?>
-                                <div class="text-xs font-medium text-amber-800 bg-amber-50 px-2 py-1.5 rounded w-full border border-amber-100" style="word-wrap: break-word; white-space: normal;" data-dispute-text="<?= $disputeId ?>">
-                                    <?php if ($isLong): ?>
-                                        <div class="short-text block">
-                                            <?= htmlspecialchars(substr($fullText, 0, 35)) ?>...
-                                            <button type="button" onclick="toggleDisputeText(<?= $disputeId ?>, true)" class="text-amber-600 hover:text-amber-900 underline ml-1 cursor-pointer font-bold inline-block">See more</button>
-                                        </div>
-                                        <div class="full-text hidden">
-                                            <?= htmlspecialchars($fullText) ?>
-                                            <button type="button" onclick="toggleDisputeText(<?= $disputeId ?>, false)" class="text-amber-600 hover:text-amber-900 underline ml-1 cursor-pointer font-bold block mt-1">See less</button>
-                                        </div>
-                                    <?php else: ?>
-                                        <?= htmlspecialchars($fullText) ?>
-                                    <?php endif; ?>
+                                <div class="text-xs font-medium text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200 shadow-xs truncate" title="<?= htmlspecialchars($fullText) ?>">
+                                    <?= htmlspecialchars($cleanPreview) ?>
                                 </div>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
@@ -907,15 +905,22 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             <td class="py-3 px-4 text-xs text-gray-500 whitespace-nowrap">
                                 <?= date('M d, Y h:i A', strtotime($d['created_at'])) ?>
                             </td>
-                            <td class="py-3 px-4">
-                                <?php if ($currStatus === 'Pending RadTech Review'): ?>
-                                    <?php
-                                        $cat = $d['dispute_category'] ?? '';
-                                        $showReupload = in_array($cat, ['both_error', 'exam_details_error', 'findings_error']);
-                                        $showEscalate = in_array($cat, ['both_error', 'exam_details_error', 'findings_error']);
-                                        $showResolve  = in_array($cat, ['both_error', 'demographic_error']) || empty($cat); // Empty fallback
-                                    ?>
-                                    <div class="flex items-center justify-start gap-1">
+                            <td class="py-3 px-4 whitespace-nowrap">
+                                <div class="flex items-center justify-start gap-1.5">
+                                    <button type="button" 
+                                            onclick='openDisputeDetailsModal(<?= $jsonPayload ?>)'
+                                            class="text-amber-700 hover:text-amber-900 transition cursor-pointer" 
+                                            title="View Correction Details">
+                                        <i data-lucide="eye" class="w-6 h-6 mr-1 bg-amber-100 px-1 py-1 rounded-md border border-amber-400"></i>
+                                    </button>
+
+                                    <?php if ($currStatus === 'Pending RadTech Review'): ?>
+                                        <?php
+                                            $cat = $d['dispute_category'] ?? '';
+                                            $showReupload = in_array($cat, ['both_error', 'exam_details_error', 'findings_error']);
+                                            $showEscalate = in_array($cat, ['both_error', 'exam_details_error', 'findings_error']);
+                                            $showResolve  = in_array($cat, ['both_error', 'demographic_error']) || empty($cat); // Empty fallback
+                                        ?>
                                         <button type="button" <?= $showReupload ? 'onclick="confirmReupload(' . $d['case_id'] . ')"' : 'disabled' ?>
                                                 class="text-blue-500 hover:text-blue-700 transition <?= !$showReupload ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Re-upload & Correct">
                                             <i data-lucide="image-up" class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
@@ -925,17 +930,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                                 class="text-green-500 hover:text-green-700 transition <?= !$showResolve ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Fix & Resolve">
                                             <i data-lucide="clipboard-check" class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
                                         </button>
-                                    </div>
-                                <?php elseif ($currStatus === 'Pending RadTech Verification'): ?>
-                                    <div class="flex items-center justify-start gap-1">
+                                    <?php elseif ($currStatus === 'Pending RadTech Verification'): ?>
                                         <button type="button" onclick="openResolveModal(<?= $d['id'] ?>, '<?= htmlspecialchars($d['case_number']) ?>', 'Final Approve & Release Amended Report', <?= htmlspecialchars(json_encode($d['description']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['old_findings'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['findings'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['old_impression'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['impression'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['exam_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)"
                                                 class="text-green-500 hover:text-green-700 transition" title="Final Verify & Release">
                                             <i data-lucide="check-circle-2" class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
                                         </button>
-                                    </div>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-400 italic">No action needed</span>
-                                <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -1066,53 +1067,104 @@ $currentTab = $_GET['tab'] ?? 'completed';
         }, 100);
     });
 
+    function openDisputeDetailsModal(data) {
+        if (!data) return;
+        const subEl = document.getElementById('ddm-subtitle');
+        const nameEl = document.getElementById('ddm-patient-name');
+        const numEl = document.getElementById('ddm-patient-number');
+        const dateEl = document.getElementById('ddm-date');
+        const textEl = document.getElementById('ddm-full-text');
+        const statusBadge = document.getElementById('ddm-status-badge');
+
+        if (subEl) subEl.innerText = `Case #${data.case_number}`;
+        if (nameEl) nameEl.innerText = data.patient_name || 'Patient';
+        if (numEl) numEl.innerText = data.patient_number || '';
+        if (dateEl) dateEl.innerText = data.created_at || '';
+        if (textEl) textEl.innerText = data.description || 'No description provided.';
+
+        if (statusBadge) {
+            let badgeClass = 'text-green-700 bg-green-50 border-green-200';
+            if (data.status === 'Pending RadTech Review') badgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
+            else if (data.status === 'Escalated to Radiologist') badgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+            else if (data.status === 'Pending RadTech Verification') badgeClass = 'text-blue-700 bg-blue-50 border-blue-200';
+            statusBadge.innerHTML = `<span class="inline-flex items-center gap-1 text-[11px] font-semibold ${badgeClass} border px-2.5 py-0.5 rounded-lg">${data.status}</span>`;
+        }
+
+        const modal = document.getElementById('dispute-details-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function closeDisputeDetailsModal() {
+        const modal = document.getElementById('dispute-details-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
     document.addEventListener('realtime:beforeUpdate', (e) => {
         const newEl = e.detail.newEl;
         if (newEl && newEl.id === 'disputes-table-body') {
-            if (window.expandedDisputes) {
-                window.expandedDisputes.forEach(id => {
-                    const container = newEl.querySelector(`[data-dispute-text="${id}"]`);
-                    if (container) {
-                        const shortText = container.querySelector('.short-text');
-                        const fullText = container.querySelector('.full-text');
-                        if (shortText && fullText) {
-                            shortText.style.display = 'none';
-                            fullText.style.display = 'block';
-                        }
-                    }
-                });
-            }
             paginateDisputes(newEl);
         }
         if (newEl && newEl.id === 'table-body') {
             applyFilters(newEl);
         }
     });
-
-    window.expandedDisputes = window.expandedDisputes || new Set();
-
-    function toggleDisputeText(id, expand) {
-        if (expand) {
-            window.expandedDisputes.add(id);
-        } else {
-            window.expandedDisputes.delete(id);
-        }
-        
-        const container = document.querySelector(`[data-dispute-text="${id}"]`);
-        if (!container) return;
-        const shortText = container.querySelector('.short-text');
-        const fullText = container.querySelector('.full-text');
-        if (shortText && fullText) {
-            if (expand) {
-                shortText.style.display = 'none';
-                fullText.style.display = 'block';
-            } else {
-                shortText.style.display = 'block';
-                fullText.style.display = 'none';
-            }
-        }
-    }
 </script>
+
+<!-- DISPUTE / CORRECTION DETAILS MODAL -->
+<div id="dispute-details-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-start justify-between border-b border-gray-100 pb-3.5">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-amber-100 text-amber-700 rounded-xl border border-amber-200">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-base">Correction Request Details</h3>
+                    <p id="ddm-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
+                </div>
+            </div>
+            <button onclick="closeDisputeDetailsModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Meta Summary Bar -->
+        <div class="grid grid-cols-2 gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-100 text-xs">
+            <div>
+                <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">Patient Info</span>
+                <span id="ddm-patient-name" class="font-bold text-gray-900 text-xs block"></span>
+                <span id="ddm-patient-number" class="text-gray-500 text-[11px] block mt-0.5"></span>
+            </div>
+            <div>
+                <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">Submission & Status</span>
+                <span id="ddm-date" class="font-medium text-gray-700 text-xs block"></span>
+                <div id="ddm-status-badge" class="mt-1.5"></div>
+            </div>
+        </div>
+
+        <!-- Full Statement Content -->
+        <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="message-square-text" class="w-3.5 h-3.5 text-amber-600"></i> Correction Requested / Notes:
+            </label>
+            <div class="p-4 bg-amber-50/70 border border-amber-200/90 rounded-xl max-h-80 overflow-y-auto shadow-inner">
+                <div id="ddm-full-text" class="text-xs text-amber-950 font-medium whitespace-pre-wrap leading-relaxed"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-2 border-t border-gray-100">
+            <button type="button" onclick="closeDisputeDetailsModal()" 
+                    class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- ESCALATE TO RADIOLOGIST MODAL -->
 <div id="escalate-dispute-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/50 p-4">

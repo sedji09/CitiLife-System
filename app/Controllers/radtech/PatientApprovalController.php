@@ -122,6 +122,83 @@ class PatientApprovalController
 
                     // Calculate total original price and PhilHealth discount based on selected exams
                     $examArray = array_filter(array_map('trim', explode(',', $examType)));
+                    if (empty($examArray)) {
+                        throw new \Exception("Please select at least one examination procedure.");
+                    }
+
+                    // Validate that assigned exams match the patient's requested body part(s)
+                    $requestedExamStr = trim($req['exam_type'] ?? '');
+                    if ($requestedExamStr !== '' && strtolower($requestedExamStr) !== 'to be determined' && strtolower($requestedExamStr) !== 'not specified') {
+                        $stmtAll = $pdo->query("SELECT exam_type, category FROM xray_services WHERE status = 'active'");
+                        $allActiveServices = $stmtAll->fetchAll(\PDO::FETCH_ASSOC);
+                        
+                        $bodyPartAliases = [
+                            'head' => ['Skull', 'Head'],
+                            'skull' => ['Skull', 'Head'],
+                            'face / nose' => ['Skull', 'Head', 'Facial'],
+                            'jaw' => ['Skull', 'Head', 'Mandible'],
+                            'chest' => ['Chest', 'Thorax', 'Lungs'],
+                            'abdomen' => ['Abdomen', 'Stomach'],
+                            'abdomen / stomach' => ['Abdomen', 'Stomach'],
+                            'spine' => ['Spine'],
+                            'neck' => ['Neck', 'Spine', 'Cervical'],
+                            'upper back' => ['Spine', 'Thoracic'],
+                            'lower back' => ['Spine', 'Lumbar'],
+                            'back' => ['Spine'],
+                            'upper extremities' => ['Upper Extremities', 'Arm'],
+                            'arm' => ['Upper Extremities', 'Arm'],
+                            'upper arm' => ['Upper Extremities', 'Arm'],
+                            'elbow' => ['Upper Extremities', 'Elbow'],
+                            'forearm' => ['Upper Extremities', 'Forearm'],
+                            'hand / wrist' => ['Upper Extremities', 'Hand', 'Wrist'],
+                            'hand' => ['Upper Extremities', 'Hand'],
+                            'wrist' => ['Upper Extremities', 'Wrist'],
+                            'shoulder' => ['Upper Extremities', 'Shoulder'],
+                            'lower extremities' => ['Lower Extremities', 'Leg'],
+                            'pelvis / hip' => ['Pelvis', 'Lower Extremities'],
+                            'pelvis' => ['Pelvis', 'Lower Extremities'],
+                            'hip' => ['Pelvis', 'Lower Extremities'],
+                            'thigh' => ['Lower Extremities', 'Femur'],
+                            'knee' => ['Lower Extremities', 'Knee'],
+                            'lower leg' => ['Lower Extremities', 'Leg'],
+                            'leg' => ['Lower Extremities', 'Leg'],
+                            'ankle' => ['Lower Extremities', 'Ankle'],
+                            'foot' => ['Lower Extremities', 'Foot']
+                        ];
+
+                        $requestedParts = array_filter(array_map('trim', explode(',', $requestedExamStr)));
+                        $allowedExams = [];
+                        foreach ($requestedParts as $part) {
+                            $partLower = strtolower($part);
+                            $aliases = $bodyPartAliases[$partLower] ?? [$part];
+
+                            foreach ($allActiveServices as $as) {
+                                $srvNameLower = strtolower($as['exam_type']);
+                                $srvCatLower = strtolower($as['category']);
+
+                                if ($srvCatLower === $partLower || $srvNameLower === $partLower) {
+                                    $allowedExams[] = $as['exam_type'];
+                                } else {
+                                    foreach ($aliases as $alias) {
+                                        $aliasLower = strtolower($alias);
+                                        if ($srvCatLower === $aliasLower || strpos($srvCatLower, $aliasLower) !== false || strpos($aliasLower, $srvCatLower) !== false) {
+                                            $allowedExams[] = $as['exam_type'];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        $allowedExams = array_unique($allowedExams);
+                        if (!empty($allowedExams)) {
+                            foreach ($examArray as $assignedItem) {
+                                if (!in_array($assignedItem, $allowedExams)) {
+                                    throw new \Exception("Cannot assign '$assignedItem': It does not match the patient's requested body part ($requestedExamStr).");
+                                }
+                            }
+                        }
+                    }
+
                     $originalPrice = 0.00;
                     $philhealthDiscount = 0.00;
                     $hasPhilHealth = ($req['philhealth_status'] === 'With PhilHealth Card');

@@ -76,15 +76,18 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Body Part to Examine</label>
                     <?php
-                    // Retrieve dynamic categories from DB if available
-                    $availableOptions = !empty($groupedServices) ? array_keys($groupedServices) : [
-                        'Head', 'Face / Nose', 'Jaw', 'Neck', 'Chest', 
-                        'Abdomen / Stomach', 'Shoulder', 'Upper Arm', 'Elbow', 
-                        'Forearm', 'Hand / Wrist', 'Upper Back', 'Lower Back', 
-                        'Pelvis / Hip', 'Thigh', 'Knee', 'Lower Leg', 'Ankle', 'Foot'
+                    // Retrieve dynamic categories from DB and standard anatomical parts
+                    $dbCategories = !empty($groupedServices) ? array_keys($groupedServices) : [];
+                    $standardBodyParts = [
+                        'Chest', 'Skull', 'Head', 'Abdomen', 'Upper Extremities', 'Lower Extremities', 
+                        'Spine', 'Pelvis', 'Neck', 'Shoulder', 'Arm', 'Elbow', 
+                        'Forearm', 'Hand / Wrist', 'Upper Back', 'Lower Back', 'Pelvis / Hip', 
+                        'Thigh', 'Knee', 'Lower Leg', 'Ankle', 'Foot'
                     ];
+                    $availableOptions = array_values(array_unique(array_merge($dbCategories, $standardBodyParts)));
+                    sort($availableOptions);
                     $examInputName = 'exam_type';
-                    $placeholderText = 'Select body parts...';
+                    $placeholderText = 'Select body parts (e.g. Chest, Skull)...';
                     include basePath('views/components/exam-selector.php');
                     ?>
                     <p class="text-xs text-gray-500 mt-2">

@@ -309,13 +309,19 @@ foreach ($allServices as $service) {
             </div>
             <div>
                 <h3 class="text-lg font-bold text-gray-900">Assign Exact Examination</h3>
-                <p class="text-sm text-gray-500 mt-0.5">Select exams for this request</p>
+                <p class="text-sm text-gray-500 mt-0.5">Select procedures for this patient request</p>
             </div>
         </div>
         
-        <div class="mb-5 flex flex-col gap-1.5 p-3 bg-red-50 rounded-xl border border-red-100">
-            <span class="text-xs font-semibold text-red-800 uppercase tracking-wide">Patient requested body part(s):</span>
-            <span id="assignBodyPart" class="font-bold text-red-600 text-base"></span>
+        <div class="mb-5 flex flex-col gap-1.5 p-4 bg-red-50 rounded-xl border border-red-100">
+            <span class="text-xs font-semibold text-red-800 uppercase tracking-wide flex items-center gap-1.5">
+                <i data-lucide="user-check" class="w-4 h-4 text-red-600"></i> Patient requested body part(s):
+            </span>
+            <span id="assignBodyPart" class="font-bold text-gray-900 text-base"></span>
+            <div id="assignAllowedBadge" class="text-xs italic text-red-600 flex items-center gap-1.5 mt-0.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
+                <span id="assignAllowedBadgeText">Choices filtered to procedures only</span>
+            </div>
         </div>
         
         <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);">
@@ -326,8 +332,8 @@ foreach ($allServices as $service) {
                 $placeholderText = 'Select Exam Type...';
                 include basePath('views/components/exam-selector.php'); 
                 ?>
-                <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-xs">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2.5 shadow-sm">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
                     <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
                 </div>
                 <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
@@ -426,36 +432,62 @@ foreach ($allServices as $service) {
     </div>
 </div>
 
+<script>
+    // ── Exam Category Mapping for Validation & Filtering ─────────────────────
+    <?php
+    $activeServicesList = $serviceModel->getActiveServices();
+    $examCategoryMap = [];
+    $servicesByCategory = [];
+    foreach ($activeServicesList as $srv) {
+        $examCategoryMap[$srv['exam_type']] = $srv['category'];
+        $servicesByCategory[$srv['category']][] = $srv['exam_type'];
+    }
+
+    // Comprehensive body part to category alias mapping
+    $bodyPartAliases = [
+        'head' => ['Skull', 'Head'],
+        'skull' => ['Skull', 'Head'],
+        'face / nose' => ['Skull', 'Head', 'Facial'],
+        'jaw' => ['Skull', 'Head', 'Mandible'],
+        'chest' => ['Chest', 'Thorax', 'Lungs'],
+        'abdomen' => ['Abdomen', 'Stomach'],
+        'abdomen / stomach' => ['Abdomen', 'Stomach'],
+        'spine' => ['Spine'],
+        'neck' => ['Neck', 'Spine', 'Cervical'],
+        'upper back' => ['Spine', 'Thoracic'],
+        'lower back' => ['Spine', 'Lumbar'],
+        'back' => ['Spine'],
+        'upper extremities' => ['Upper Extremities', 'Arm'],
+        'arm' => ['Upper Extremities', 'Arm'],
+        'upper arm' => ['Upper Extremities', 'Arm'],
+        'elbow' => ['Upper Extremities', 'Elbow'],
+        'forearm' => ['Upper Extremities', 'Forearm'],
+        'hand / wrist' => ['Upper Extremities', 'Hand', 'Wrist'],
+        'hand' => ['Upper Extremities', 'Hand'],
+        'wrist' => ['Upper Extremities', 'Wrist'],
+        'shoulder' => ['Upper Extremities', 'Shoulder'],
+        'lower extremities' => ['Lower Extremities', 'Leg'],
+        'pelvis / hip' => ['Pelvis', 'Lower Extremities'],
+        'pelvis' => ['Pelvis', 'Lower Extremities'],
+        'hip' => ['Pelvis', 'Lower Extremities'],
+        'thigh' => ['Lower Extremities', 'Femur'],
+        'knee' => ['Lower Extremities', 'Knee'],
+        'lower leg' => ['Lower Extremities', 'Leg'],
+        'leg' => ['Lower Extremities', 'Leg'],
+        'ankle' => ['Lower Extremities', 'Ankle'],
+        'foot' => ['Lower Extremities', 'Foot']
+    ];
+    ?>
+    window.examCategoryMap = <?= json_encode($examCategoryMap) ?>;
+    window.servicesByCategory = <?= json_encode($servicesByCategory) ?>;
+    window.allActiveServices = <?= json_encode($activeServicesList) ?>;
+    window.bodyPartAliases = <?= json_encode($bodyPartAliases) ?>;
+</script>
+
 <script
     src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
-    // ── Exam Category Mapping for Validation ─────────────────────────────────
-    <?php
-    $examCategoryMap = [];
-    foreach ($examServices as $srv) {
-        $examCategoryMap[$srv['name']] = $srv['category'];
-    }
-    // Add legacy mappings manually based on known categories
-    $legacyCategories = [
-        'Chest PA' => 'Chest',
-        'Abdominal X-ray' => 'Abdomen',
-        'Extremity X-ray' => 'Upper Extremities', // Fallback
-        'Skull X-ray' => 'Skull', // Or Head
-        'Lumbar Spine' => 'Spine',
-        'Pelvis' => 'Pelvis',
-        'Neck' => 'Neck',
-        'Head' => 'Skull',
-        'Legs' => 'Lower Extremities'
-    ];
-    foreach ($legacyCategories as $legacy => $cat) {
-        if (!isset($examCategoryMap[$legacy])) {
-            $examCategoryMap[$legacy] = $cat;
-        }
-    }
-    ?>
-    window.examCategoryMap = <?= json_encode($examCategoryMap) ?>;
-
     // ── Vanilla JS Datepicker init ─────────────────────────────────────────────
     let modalDatePicker = null;
     document.addEventListener('DOMContentLoaded', () => {

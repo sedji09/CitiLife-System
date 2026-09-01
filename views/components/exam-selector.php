@@ -179,9 +179,12 @@ $uuid = uniqid('es_');
                 // Update placeholder
                 searchInput.placeholder = selected.length === 0 ? (searchInput.getAttribute('data-placeholder') || "Search...") : "";
 
-                // Hide already selected options from the dropdown list
+                // Hide already selected options and disallowed options from the dropdown list
                 dropdown.querySelectorAll('.exam-ms-option').forEach(opt => {
-                    if (selected.includes(opt.getAttribute('data-value'))) {
+                    if (opt.getAttribute('data-allowed') === 'false') {
+                        opt.classList.add('hidden');
+                        opt.classList.remove('match-visible');
+                    } else if (selected.includes(opt.getAttribute('data-value'))) {
                         opt.classList.add('hidden');
                         opt.classList.remove('match-visible'); // remove custom match flag
                     } else {
@@ -208,6 +211,12 @@ $uuid = uniqid('es_');
                 const q = query.toLowerCase();
 
                 options.forEach(opt => {
+                    // Check if option is disallowed by category filtering
+                    if (opt.getAttribute('data-allowed') === 'false') {
+                        opt.classList.add('hidden');
+                        return;
+                    }
+
                     const val = opt.getAttribute('data-value');
                     // Skip if already selected
                     if (selected.includes(val)) {
@@ -282,6 +291,11 @@ $uuid = uniqid('es_');
                 // Click on an option to select it
                 const option = e.target.closest('.exam-ms-option');
                 if (option) {
+                    if (option.getAttribute('data-allowed') === 'false') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
                     const container = option.closest('.exam-ms-component');
                     const val = option.getAttribute('data-value');
                     const hiddenInput = container.querySelector('.exam-ms-hidden-input');
