@@ -45,6 +45,16 @@ class FeedbackController
             if ($postCaseId === '')
                 $postCaseId = null;
 
+            $feedbackBranchId = $branchId; // Default to patient's branch
+            if ($postCaseId) {
+                require_once __DIR__ . '/../../Models/CaseModel.php';
+                $caseModel = new \CaseModel($pdo);
+                $postCaseData = $caseModel->getCaseById($postCaseId);
+                if ($postCaseData && !empty($postCaseData['branch_id'])) {
+                    $feedbackBranchId = $postCaseData['branch_id'];
+                }
+            }
+
             if (!$patientId) {
                 $errorMsg = "You must have a completed patient profile to submit feedback.";
             } elseif ($rating < 1 || $rating > 5) {
@@ -56,11 +66,11 @@ class FeedbackController
                     $errorMsg = "You have already submitted feedback for this case.";
                 } else {
                     try {
-                        $feedbackModel->submitFeedback($postCaseId, $patientId, $userId, $branchId, $rating, $comments);
+                        $feedbackModel->submitFeedback($postCaseId, $patientId, $userId, $feedbackBranchId, $rating, $comments);
                         $successMsg = "Thank you! Your feedback has been submitted successfully.";
 
                         // Notify Branch Admin
-                        if ($branchId) {
+                        if ($feedbackBranchId) {
                             $patientName = $patientData['first_name'] . ' ' . $patientData['last_name'];
 
                             // Add audit log for patient feedback
@@ -73,7 +83,7 @@ class FeedbackController
                                 'feedback',
                                 $postCaseId, // entity_id
                                 "Comments: " . ($comments ?: 'No comments provided.'),
-                                $branchId
+                                $feedbackBranchId
                             );
 
                             $notificationModel->add(
@@ -82,7 +92,7 @@ class FeedbackController
                                 "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=feedback",
                                 null,
                                 'branch_admin',
-                                $branchId
+                                $feedbackBranchId
                             );
                         }
 
@@ -99,9 +109,9 @@ class FeedbackController
                         if ($rating <= 2) {
                             $patientNameForEmail = $patientData['first_name'] . ' ' . $patientData['last_name'];
                             $branchName = 'Unknown Branch';
-                            if ($branchId) {
+                            if ($feedbackBranchId) {
                                 $stmtBranch = $pdo->prepare("SELECT name FROM branches WHERE id = ?");
-                                $stmtBranch->execute([$branchId]);
+                                $stmtBranch->execute([$feedbackBranchId]);
                                 $branchName = $stmtBranch->fetchColumn() ?: 'Unknown Branch';
                             }
                             
@@ -129,9 +139,9 @@ class FeedbackController
                             $emailsToNotify = [];
                             
                             // Get branch admins
-                            if ($branchId) {
+                            if ($feedbackBranchId) {
                                 $stmt = $pdo->prepare("SELECT email FROM users WHERE role = 'branch_admin' AND branch_id = ? AND status = 'Active'");
-                                $stmt->execute([$branchId]);
+                                $stmt->execute([$feedbackBranchId]);
                                 while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                                     if (!empty($row['email'])) $emailsToNotify[] = $row['email'];
                                 }
