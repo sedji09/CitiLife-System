@@ -151,7 +151,7 @@ try {
 
         // Fetch dispute & case patient data (also used for branch check)
         $stmtDisp = $pdo->prepare("
-            SELECT rd.*, c.patient_id, c.case_number, c.branch_id, p.email, p.first_name, u.id AS patient_user_id 
+            SELECT rd.*, c.patient_id, c.case_number, c.branch_id, p.email, p.first_name, u.id AS patient_user_id, u.email AS user_email 
             FROM result_disputes rd 
             JOIN cases c ON rd.case_id = c.id 
             JOIN patients p ON c.patient_id = p.id
@@ -233,7 +233,8 @@ try {
         }
 
         // Email the Patient
-        if ($disputeInfo && !empty($disputeInfo['email'])) {
+        $patientEmail = !empty($disputeInfo['user_email']) ? $disputeInfo['user_email'] : $disputeInfo['email'];
+        if ($disputeInfo && !empty($patientEmail)) {
             require_once __DIR__ . '/../../app/Helpers/mailer_helper.php';
             $patientName = htmlspecialchars($disputeInfo['first_name']);
             $caseNum = htmlspecialchars($disputeInfo['case_number']);
@@ -257,7 +258,7 @@ try {
                 "You're receiving this notification because an error report for your case was resolved.",
                 "#1f883d"
             );
-            sendEmail($disputeInfo['email'], $disputeInfo['first_name'], $emailSubject, $emailBody);
+            sendEmail($patientEmail, $disputeInfo['first_name'], $emailSubject, $emailBody);
         }
 
         $auditLog->addLog($userId, 'Dispute Resolved', 'Clinic Management', 'Dispute', $disputeId, "Resolved dispute. Notes: {$notes}");
