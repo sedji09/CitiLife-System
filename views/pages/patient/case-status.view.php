@@ -10,25 +10,16 @@ $stmtU->execute([$userId]);
 $userAccountStatus = $stmtU->fetchColumn() ?: 'Pending';
 
 $caseId = isset($_GET['case_id']) ? (int) $_GET['case_id'] : 0;
-
-// Status mapping (Frontend logic)
-$statusSteps = [
-    'Pending' => 2,
-    'Approved' => 3,
-    'X-ray Taken' => 4,
-    'Under Reading' => 4,
-    'Report Ready' => 5,
-    'Released' => 6,
-    'Completed' => 6,
-];
+$reqId = isset($_GET['request_id']) ? (int) $_GET['request_id'] : 0;
 
 $steps = [
-    1 => ['short' => 'Register', 'full' => 'Registered'],
-    2 => ['short' => 'Approval', 'full' => 'Approved by RadTech'],
-    3 => ['short' => 'X-ray', 'full' => 'X-ray Taken'],
-    4 => ['short' => 'Reading', 'full' => 'Under Reading'],
-    5 => ['short' => 'Ready', 'full' => 'Ready for Release'],
-    6 => ['short' => 'Released', 'full' => 'Released'],
+    1 => 'Registered',
+    2 => 'Payment',
+    3 => 'Approved by RadTech',
+    4 => 'X-ray Taken',
+    5 => 'Under Reading',
+    6 => 'Ready for Release',
+    7 => 'Released',
 ];
 
 // 1. Fetch Patient Info
@@ -43,9 +34,7 @@ if (!$patientId) {
 
 $caseRow = null;
 
-$reqId = isset($_GET['request_id']) ? (int) $_GET['request_id'] : 0;
-
-// 2. Fetch specific case
+// 2. Fetch specific case or request
 if ($patientId) {
     if ($caseId) {
         $caseRow = $caseModel->getCaseById($caseId);
@@ -53,7 +42,9 @@ if ($patientId) {
             $caseRow = null; // Security check
         }
     } elseif ($reqId) {
-        $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name, r.patient_id, 'Pending' as approval_status 
+        $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, r.amount_due, r.original_price, r.philhealth_discount,
+                                         b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, b.gcash_qr_path,
+                                         r.patient_id, 'Pending' as approval_status, 'Request' as record_type
                                   FROM requests r 
                                   LEFT JOIN branches b ON r.branch_id = b.id 
                                   WHERE r.id = ?");
@@ -72,6 +63,9 @@ $isRejectedGlobal = ($userAccountStatus === 'Rejected');
 
 $statusColors = [
     'Pending' => ['bg' => '#FFF7ED', 'border' => '#FED7AA', 'text' => '#C2410C', 'label' => 'Pending Review'],
+    'Pending Payment' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'Pending Payment'],
+    'Payment Verifying' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'Payment Verifying'],
+    'Payment Verified' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Payment Verified'],
     'Approved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Approved – For Examination'],
     'X-ray Taken' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'X-ray Taken'],
     'Under Reading' => ['bg' => '#EFF6FF', 'border' => '#DBEAFE', 'text' => '#1D4ED8', 'label' => 'Under Reading by Radiologist'],
@@ -79,10 +73,14 @@ $statusColors = [
     'Released' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Released'],
     'Completed' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Completed'],
     'Rejected' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Rejected'],
+    'Cancelled' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Cancelled'],
 ];
 
 $statusDescriptions = [
     'Pending' => 'Your X-ray request has been received and is pending approval from the RadTech team.',
+    'Pending Payment' => 'The RadTech has assigned your examination type. Please proceed to payment.',
+    'Payment Verifying' => 'Your payment proof has been submitted. Please wait for the Branch Admin to verify your payment.',
+    'Payment Verified' => 'Your payment has been verified. Awaiting examination schedule.',
     'Approved' => 'Your request has been approved. Please proceed to the X-ray room for the examination.',
     'X-ray Taken' => 'Your X-ray images have been captured and are being prepared for expert reading.',
     'Under Reading' => 'Your X-ray images have been captured and sent to the Radiologist for interpretation. Once the reading is complete, it will be marked as Ready for Release.',
@@ -90,6 +88,7 @@ $statusDescriptions = [
     'Released' => 'Your X-ray report has been released. You can now view your report result below.',
     'Completed' => 'Your X-ray examination has been completed. You can view your report result below.',
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
+    'Cancelled' => 'You have cancelled this request.',
 ];
 ?>
 
@@ -100,7 +99,7 @@ $statusDescriptions = [
         border-color: rgba(255, 255, 255, 0.15) !important;
     }
     body.theme-dark .status-summary-box p {
-        color: #e2e8f0 !important; /* light gray/white for visibility */
+        color: #e2e8f0 !important;
     }
     body.theme-dark .status-summary-box strong {
         color: #fff !important;
@@ -148,179 +147,94 @@ $statusDescriptions = [
         </div>
     <?php else: ?>
         <?php
-        $radtechName = $caseModel->getRadTechName($caseRow['radtech_id'] ?? null);
+        $radtechName = $caseRow['radtech_name'] ?? $caseModel->getRadTechName($caseRow['radtech_id'] ?? null);
+        $radiologistName = $caseRow['radiologist_name'] ?? null;
         $currentStep = 0;
         $displayStatus = 'Pending';
         $isRejected = $isRejectedGlobal;
         
-        if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Rejected') {
+        $statusVal = $caseRow['status'] ?? 'Pending';
+        $recordType = $caseRow['record_type'] ?? ($reqId ? 'Request' : 'Case');
+
+        if ($statusVal === 'Rejected' || ($caseRow['approval_status'] ?? '') === 'Rejected') {
             $currentStep = 0;
             $displayStatus = 'Rejected';
             $isRejected = true;
-        } elseif ($caseRow['status'] === 'Pending') {
-            if (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Pending') {
-                $currentStep = 2;
-                $displayStatus = 'Pending';
-            } elseif (isset($caseRow['approval_status']) && $caseRow['approval_status'] === 'Approved') {
-                if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
-                    $currentStep = 4;
-                    $displayStatus = 'X-ray Taken';
-                } else {
-                    $currentStep = 3;
-                    $displayStatus = 'Approved';
-                }
+        } elseif ($statusVal === 'Cancelled') {
+            $currentStep = 0;
+            $displayStatus = 'Cancelled';
+            $isRejected = true;
+        } elseif ($recordType === 'Request' && in_array($statusVal, ['Pending Approval', 'Pending'])) {
+            $currentStep = 2;
+            $displayStatus = 'Pending';
+        } elseif ($statusVal === 'Pending Payment') {
+            $currentStep = 2;
+            $displayStatus = 'Pending Payment';
+        } elseif ($statusVal === 'Payment Verifying') {
+            $currentStep = 2;
+            $displayStatus = 'Payment Verifying';
+        } elseif ($statusVal === 'Payment Verified') {
+            $currentStep = 3;
+            $displayStatus = 'Payment Verified';
+        } elseif ($recordType === 'Case' && $statusVal === 'Pending') {
+            if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {
+                $currentStep = 5;
+                $displayStatus = 'X-ray Taken';
             } else {
-                $currentStep = 2;
-                $displayStatus = 'Pending';
+                $currentStep = 4;
+                $displayStatus = 'Approved';
             }
-        } elseif ($caseRow['status'] === 'Under Reading') {
+        } elseif ($statusVal === 'Approved') {
             $currentStep = 4;
-            $displayStatus = 'Under Reading';
-        } elseif ($caseRow['status'] === 'Report Ready') {
+            $displayStatus = 'Approved';
+        } elseif ($statusVal === 'X-ray Taken') {
             $currentStep = 5;
-            $displayStatus = 'Report Ready';
-        } elseif (in_array($caseRow['status'], ['Released', 'Completed'])) {
+            $displayStatus = 'X-ray Taken';
+        } elseif ($statusVal === 'Under Reading') {
+            $currentStep = 5;
+            $displayStatus = 'Under Reading';
+        } elseif ($statusVal === 'Report Ready') {
             $currentStep = 6;
-            $displayStatus = $caseRow['status'];
-        } elseif ($caseRow['status'] === 'Rejected') {
-            $currentStep = 0;
-            $displayStatus = 'Rejected';
-            $isRejected = true;
+            $displayStatus = 'Report Ready';
+        } elseif (in_array($statusVal, ['Released', 'Completed'])) {
+            $currentStep = 7;
+            $displayStatus = $statusVal;
         } else {
             $currentStep = 2;
-            $displayStatus = $caseRow['status'] ?: 'Pending';
+            $displayStatus = $statusVal ?: 'Pending';
         }
+
+        $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
+        $sDesc = $statusDescriptions[$displayStatus] ?? '';
+        $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
         ?>
-        <div class="mb-10">
-        <?php if (in_array($caseRow['status'], ['Released', 'Completed'])): ?>
-        <!-- Completed / Released State Banner -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <i data-lucide="circle-check-big" class="w-5 h-5 text-green-600"></i>
-                <h2 class="font-bold text-gray-900">X-ray Report Released</h2>
-            </div>
-            <div class="p-4 sm:p-5 space-y-4">
-                <p class="text-sm text-gray-600">Your X-ray report for case <span
-                        class="font-mono font-semibold text-red-600"><?= htmlspecialchars($caseRow['case_number']) ?></span>
-                    has been released. You may view your result below.</p>
-                <?php
-                $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
-                $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
-                $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
-                ?>
-                <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50/70 rounded-xl border border-gray-100 flex items-center justify-between gap-2.5 sm:gap-4">
-                    <span class="text-xs sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
-                    <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
-                        class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-xs sm:text-sm py-2.5 px-3.5 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
-                        style="background: linear-gradient(135deg, #15803d, #16a34a);">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                        <span>View Report</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
 
-        <!-- Case Information Card -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-4 sm:mb-5">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 class="font-bold text-gray-900">Case Information</h2>
-                <?php 
-                    $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
-                    if (!empty($contacts)): 
-                ?>
-                    <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>)' class="text-xs font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i data-lucide="phone" class="w-3.5 h-3.5"></i> Contact Clinic
-                    </button>
-                <?php endif; ?>
-            </div>
-            <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div class="space-y-3">
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Reference #</p>
-                            <p class="text-sm font-semibold text-red-600 font-mono">
-                                <?= htmlspecialchars($caseRow['case_number']) ?></p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Branch</p>
-                            <p class="text-sm font-semibold text-gray-800">
-                                <?= htmlspecialchars($caseRow['branch_name'] ?? $caseRow['branch'] ?? '—') ?></p>
-                        </div>
-                    </div>
-                    <?php if ($radtechName): ?>
-                        <div class="flex items-start gap-3">
-                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Radiologic Technologist</p>
-                                <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+        <!-- Unified Layout Matching Picture 4 -->
+        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-8">
+            <!-- Header: Examination Progress + Status Badge -->
+            <div class="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 gap-2">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="activity" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
+                    <h2 class="font-bold text-gray-900 text-sm sm:text-base">Examination Progress</h2>
                 </div>
-                <div class="space-y-3">
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Examination Type</p>
-                            <p class="text-sm font-semibold text-gray-800">
-                                <?= htmlspecialchars($caseRow['exam_type'] ?? '—') ?></p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                            <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500">Date</p>
-                            <p class="text-sm font-semibold text-gray-800">
-                                <?= htmlspecialchars(date('F j, Y', strtotime($caseRow['created_at']))) ?></p>
-                        </div>
-                    </div>
-                    <?php if (!empty($caseRow['radiologist_name'])): ?>
-                        <div class="flex items-start gap-3">
-                            <div class="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="stethoscope" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Radiologist</p>
-                                <p class="text-sm font-semibold text-gray-800">Dr. <?= htmlspecialchars($caseRow['radiologist_name']) ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs"
+                    style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background: <?= $sInfo['text'] ?>"></span>
+                    <?= htmlspecialchars($displayStatus) ?>
+                </span>
             </div>
-        </div>
 
-        <!-- Examination Progress -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100">
-                <h2 class="font-bold text-gray-900">Examination Progress</h2>
-            </div>
-            <div class="p-3 sm:p-5 space-y-4 sm:space-y-5">
-                <!-- Step tracker -->
+            <div class="p-4 sm:p-6">
+                <!-- 7-Step Progress Tracker -->
                 <?php if (!$isRejected): ?>
-                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2.5 pb-2">
-                        <?php foreach ($steps as $num => $stepInfo): ?>
+                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 w-full pt-2 pb-2">
+                        <?php foreach ($steps as $num => $stepLabel): ?>
                             <?php
-                            $label = is_array($stepInfo) ? $stepInfo['full'] : $stepInfo;
-                            $shortLabel = is_array($stepInfo) ? $stepInfo['short'] : $stepInfo;
                             $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
                             $active = $num === $currentStep && $currentStep !== count($steps);
+                            $pending = $num > $currentStep;
                             ?>
-                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-[38px] sm:min-w-[56px]">
+                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-0 px-0.5">
                                 <div class="relative flex items-center w-full">
                                     <?php
                                     $nextNum = $num + 1;
@@ -328,51 +242,174 @@ $statusDescriptions = [
                                     $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
                                     ?>
                                     <?php if ($num > 1): ?>
-                                        <div class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>"
-                                            style="z-index:0"></div>
+                                        <div
+                                            class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>">
+                                        </div>
                                     <?php endif; ?>
                                     <?php if ($num < count($steps)): ?>
-                                        <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"
-                                            style="z-index:0"></div>
+                                        <div
+                                            class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>">
+                                        </div>
                                     <?php endif; ?>
-                                    <div class="relative z-10 mx-auto h-7 w-7 sm:h-10 sm:w-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition
+                                    <div class="relative z-10 mx-auto h-7 w-7 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition shrink-0
                                 <?php if ($done): ?>bg-green-500 border-green-500 text-white
                                 <?php elseif ($active): ?>bg-red-500 border-red-500 text-white ring-2 sm:ring-4 ring-red-100
                                 <?php else: ?>bg-white border-gray-200 text-gray-400<?php endif; ?>">
+                                        <?php if ($num === 5 && ($caseRow['status'] ?? '') === 'Under Reading'): ?>
+                                            <span id="rad-activity-dot" data-case-id="<?= $caseRow['id'] ?? 0 ?>"
+                                                class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                                        <?php endif; ?>
                                         <?php if ($done): ?>
-                                            <i data-lucide="check" class="w-3 h-3 sm:w-4 sm:h-4"></i>
+                                            <i data-lucide="check" class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]"></i>
                                         <?php else: ?>
                                             <?= $num ?>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <span
-                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> max-w-full">
-                                    <span class="sm:hidden"><?= htmlspecialchars($shortLabel) ?></span>
-                                    <span class="hidden sm:inline"><?= htmlspecialchars($label) ?></span>
+                                    class="text-center text-[8.5px] sm:text-[11px] leading-[1.15] font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> w-full px-0.5 break-words">
+                                    <?= htmlspecialchars($stepLabel) ?>
                                 </span>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
 
-                <?php
-                $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
-                $sDesc = $statusDescriptions[$displayStatus] ?? '';
-                ?>
-                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box" style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
+                <!-- Status Summary Box -->
+                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box"
+                    style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
                     <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
                         Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
                     </p>
                     <?php if ($sDesc): ?>
-                        <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed" style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
+                        <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed"
+                            style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
                     <?php endif; ?>
                 </div>
 
+                <!-- Case Information Section inside card -->
+                <div class="mt-6 pt-6 border-t border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="h-7 w-7 rounded-lg bg-red-50 flex items-center justify-center">
+                                <i data-lucide="clipboard-list" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-900 text-sm sm:text-base">Case Information</h3>
+                        </div>
+                        <?php if (!empty($contacts)): ?>
+                            <button type="button"
+                                onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition shadow-2xs active:scale-95">
+                                <i data-lucide="phone" class="w-3.5 h-3.5 text-gray-500"></i>
+                                <span>Contact Clinic</span>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div class="space-y-4">
+                            <!-- Reference Number -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Reference #</p>
+                                    <p class="text-sm font-semibold text-red-600 font-mono">
+                                        <?= htmlspecialchars($caseRow['case_number']) ?>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Branch -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Branch</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars($caseRow['branch_name'] ?? ($caseRow['branch'] ?? '—')) ?>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Radiologic Technologist -->
+                            <?php if ($radtechName): ?>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                        <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Radiologic Technologist</p>
+                                        <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Examination Type -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Examination Type</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars($caseRow['exam_type'] ?? '—') ?>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Date -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Date</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars(date('F j, Y', strtotime($caseRow['created_at']))) ?>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Radiologist -->
+                            <?php if (!empty($radiologistName)): ?>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                        <i data-lucide="stethoscope" class="w-4 h-4 text-red-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Radiologist</p>
+                                        <p class="text-sm font-semibold text-gray-800">Dr. <?= htmlspecialchars($radiologistName) ?></p>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Row (View Report if Released/Completed) -->
+                <?php if (in_array($caseRow['status'] ?? '', ['Released', 'Completed']) || ($caseRow['approval_status'] ?? '') === 'Completed'): ?>
+                    <div class="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <span class="text-xs sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
+                        <?php
+                        $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
+                        $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
+                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
+                        ?>
+                        <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
+                            class="inline-flex items-center justify-center gap-2 rounded-xl text-white font-semibold text-xs sm:text-sm py-2.5 px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
+                            style="background: linear-gradient(135deg, #15803d, #16a34a);">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span>View Report</span>
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
-
-        </div> <!-- End mb-10 wrapper -->
     <?php endif; ?>
 </div>
 
@@ -390,21 +427,21 @@ $statusDescriptions = [
         </div>
         <h3 class="custom-alert-title">Result Access Expired</h3>
         <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance</p>
-                <div class="custom-alert-buttons-container">
-                    <?php if (!empty($contacts)): ?>
-                        <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>); document.getElementById("expired-alert-modal").classList.remove("show");' class="custom-alert-btn-secondary" style="display:inline-flex; justify-content:center; align-items:center;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> Contact Clinic
-                        </button>
-                    <?php else: ?>
-                        <button type="button" class="custom-alert-btn-secondary" style="display:none;">Contact Us</button>
-                    <?php endif; ?>
-                    <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
-                </div>
+        <div class="custom-alert-buttons-container">
+            <?php if (!empty($contacts)): ?>
+                <button type="button" onclick='showContactOptions(<?= json_encode(array_values($contacts)) ?>); document.getElementById("expired-alert-modal").classList.remove("show");' class="custom-alert-btn-secondary" style="display:inline-flex; justify-content:center; align-items:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> Contact Clinic
+                </button>
+            <?php else: ?>
+                <button type="button" class="custom-alert-btn-secondary" style="display:none;">Contact Us</button>
+            <?php endif; ?>
+            <button class="custom-alert-btn" onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+        </div>
     </div>
 </div>
 
 <script>
-    function showExpiredAlert(e) {
+    function showExpiredAlert(e, contacts) {
         if (e) {
             e.preventDefault();
             e.stopPropagation();

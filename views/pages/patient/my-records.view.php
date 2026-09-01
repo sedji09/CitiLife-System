@@ -76,6 +76,10 @@ if ($patientRow && isset($patientRow['patient_number'])) {
 
 $statusBadge = [
     'Pending' => ['bg' => 'bg-orange-50', 'text' => 'text-orange-700', 'border' => 'border-orange-400', 'label' => 'Pending'],
+    'Pending Approval' => ['bg' => 'bg-orange-50', 'text' => 'text-orange-700', 'border' => 'border-orange-400', 'label' => 'Pending'],
+    'Pending Payment' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-400', 'label' => 'Pending Payment'],
+    'Payment Verifying' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'Payment Verifying'],
+    'Payment Verified' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-400', 'label' => 'Payment Verified'],
     'Approved' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'Approved'],
     'X-ray Taken' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'X-ray Taken'],
     'Under Reading' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'Under Reading'],
@@ -83,6 +87,7 @@ $statusBadge = [
     'Released' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Released'],
     'Completed' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Completed'],
     'Rejected' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-400', 'label' => 'Rejected'],
+    'Cancelled' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-400', 'label' => 'Cancelled'],
 ];
 ?>
 

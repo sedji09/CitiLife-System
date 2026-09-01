@@ -139,13 +139,13 @@ if ($latestCase) {
 }
 
 $steps = [
-    1 => ['short' => 'Register', 'full' => 'Registration'],
-    2 => ['short' => 'Payment', 'full' => 'Payment'],
-    3 => ['short' => 'Approval', 'full' => 'RadTech Approval'],
-    4 => ['short' => 'X-ray', 'full' => 'X-ray Exam'],
-    5 => ['short' => 'Reading', 'full' => 'Radiologist Reading'],
-    6 => ['short' => 'Ready', 'full' => 'Report Ready'],
-    7 => ['short' => 'Released', 'full' => 'Released'],
+    1 => 'Registered',
+    2 => 'Payment',
+    3 => 'Approved by RadTech',
+    4 => 'X-ray Taken',
+    5 => 'Under Reading',
+    6 => 'Ready for Release',
+    7 => 'Released',
 ];
 
 $statusColors = [
@@ -590,16 +590,14 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <div class="p-4 sm:p-5">
                 <!-- Step Progress Bar -->
                 <?php if (!$isRejected): ?>
-                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 overflow-x-auto pt-2 pb-2">
-                        <?php foreach ($steps as $num => $stepInfo): ?>
+                    <div class="flex items-start justify-between gap-0.5 sm:gap-1 w-full pt-2 pb-2">
+                        <?php foreach ($steps as $num => $stepLabel): ?>
                             <?php
-                            $label = is_array($stepInfo) ? $stepInfo['full'] : $stepInfo;
-                            $shortLabel = is_array($stepInfo) ? $stepInfo['short'] : $stepInfo;
                             $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
                             $active = $num === $currentStep && $currentStep !== count($steps);
                             $pending = $num > $currentStep;
                             ?>
-                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-[38px] sm:min-w-[48px]">
+                            <div class="flex flex-col items-center gap-1 sm:gap-1.5 flex-1 min-w-0 px-0.5">
                                 <div class="relative flex items-center w-full">
                                     <?php
                                     $nextNum = $num + 1;
@@ -616,25 +614,24 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                             class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>">
                                         </div>
                                     <?php endif; ?>
-                                    <div class="relative z-10 mx-auto h-7 w-7 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition
+                                    <div class="relative z-10 mx-auto h-7 w-7 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition shrink-0
                                 <?php if ($done): ?>bg-green-500 border-green-500 text-white
                                 <?php elseif ($active): ?>bg-red-500 border-red-500 text-white ring-2 sm:ring-4 ring-red-100
                                 <?php else: ?>bg-white border-gray-200 text-gray-400<?php endif; ?>">
-                                        <?php if ($num === 5 && $latestCase['status'] === 'Under Reading'): ?>
+                                        <?php if ($num === 5 && ($latestCase['status'] ?? '') === 'Under Reading'): ?>
                                             <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>"
                                                 class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                         <?php endif; ?>
                                         <?php if ($done): ?>
-                                            <i data-lucide="check" class="w-3 h-3 sm:w-4 sm:h-4"></i>
+                                            <i data-lucide="check" class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]"></i>
                                         <?php else: ?>
                                             <?= $num ?>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <span
-                                    class="text-center text-[8px] sm:text-[10px] leading-tight font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> max-w-full">
-                                    <span class="sm:hidden"><?= htmlspecialchars($shortLabel) ?></span>
-                                    <span class="hidden sm:inline"><?= htmlspecialchars($label) ?></span>
+                                    class="text-center text-[8.5px] sm:text-[11px] leading-[1.15] font-medium <?= $done || $active ? 'text-gray-800 font-semibold' : 'text-gray-400' ?> w-full px-0.5 break-words">
+                                    <?= htmlspecialchars($stepLabel) ?>
                                 </span>
                             </div>
                         <?php endforeach; ?>
