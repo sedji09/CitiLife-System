@@ -152,7 +152,7 @@ sort($priorities);
                         <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Action</th>
                     </tr>
                 </thead>
-                <tbody class="text-gray-800 bg-white divide-y divide-gray-100">
+                <tbody id="worklist-tbody" class="text-gray-800 bg-white divide-y divide-gray-100">
                     <?php if (count($records) === 0): ?>
                         <tr class="empty-state-row">
                             <td colspan="8" class="text-center py-8 text-gray-500">
@@ -162,19 +162,21 @@ sort($priorities);
                     <?php else: ?>
                         <?php foreach ($records as $row):
                             // Map Priority Weight for sorting: STAT > Urgent > Priority > Normal > Routine
-                            $pWeight = 0;
-                            if ($row['priority'] === 'STAT')
+                            $pWeight = 1;
+                            $pUpper = strtoupper(trim($row['priority'] ?? ''));
+                            if ($pUpper === 'STAT')
                                 $pWeight = 5;
-                            elseif ($row['priority'] === 'Urgent')
+                            elseif ($pUpper === 'URGENT')
                                 $pWeight = 4;
-                            elseif ($row['priority'] === 'Priority')
+                            elseif ($pUpper === 'PRIORITY')
                                 $pWeight = 3;
-                            elseif ($row['priority'] === 'Normal')
+                            elseif ($pUpper === 'NORMAL')
                                 $pWeight = 2;
                             else
                                 $pWeight = 1;
 
-                            $isEmergency = ($row['priority'] === 'STAT') ? 1 : 0;
+                            $isEmergency = ($pUpper === 'STAT') ? 1 : 0;
+                            $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
                             ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
@@ -183,7 +185,7 @@ sort($priorities);
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'])) ?>"
-                                data-date="<?= strtotime($row['created_at']) ?>">
+                                data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="font-medium"><?= htmlspecialchars($row['case_number']) ?></div>
                                 </td>
@@ -308,7 +310,7 @@ sort($priorities);
                     <th class="text-left font-semibold px-4 py-3">Action</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 bg-white">
+            <tbody id="disputes-tbody" class="divide-y divide-gray-100 bg-white">
                 <?php if (count($radDisputes) === 0): ?>
                     <tr>
                         <td colspan="6" class="text-center py-8 text-gray-500">
@@ -394,15 +396,45 @@ sort($priorities);
                 confirmButton: 'rounded-xl font-bold px-6 py-2'
             }
         }).then(() => {
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
-    // Search, Filter, Sort Logic
+    }
+
+    // Tab Switching for Radiologist (Worklist vs Escalated Disputes)
+    window.switchRadTab = function(tab) {
+        sessionStorage.setItem('Citilife_radWorklist_tab', tab);
+        const workCard = document.getElementById('worklist-table-card');
+        const dispCard = document.getElementById('rad-disputes-table-card');
+        const filterCtrls = document.querySelector('.mt-6.flex.flex-col.gap-4');
+        const workBtn = document.getElementById('tab-rad-worklist-btn');
+        const dispBtn = document.getElementById('tab-rad-disputes-btn');
+
+        if (tab === 'worklist') {
+            if (workCard) workCard.classList.remove('hidden');
+            if (dispCard) dispCard.classList.add('hidden');
+            if (filterCtrls) filterCtrls.classList.remove('hidden');
+
+            if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
+            if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
+        } else {
+            if (workCard) workCard.classList.add('hidden');
+            if (dispCard) dispCard.classList.remove('hidden');
+            if (filterCtrls) filterCtrls.classList.add('hidden');
+
+            if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
+            if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+        }
+    };
+
+    // Search, Filter, Sort, Pagination & State Persistence Logic
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('searchInput');
         const filterBranch = document.getElementById('filterBranch');
         const filterPriority = document.getElementById('filterPriority');
         const sortOption = document.getElementById('sortOption');
-        const tbody = document.querySelector('tbody');
+        const worklistTbody = document.getElementById('worklist-tbody') || document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
 
         const ROWS_PER_PAGE = 8;
@@ -412,10 +444,67 @@ sort($priorities);
         const DISPUTES_PER_PAGE = 8;
         let currentDisputesPage = 1;
 
-        function updateTable() {
-            if (!searchInput || !filterBranch || !filterPriority || !sortOption) return;
+        function saveWorklistState() {
+            if (searchInput) sessionStorage.setItem('Citilife_radWorklist_search', searchInput.value);
+            if (filterBranch) sessionStorage.setItem('Citilife_radWorklist_branch', filterBranch.value);
+            if (filterPriority) sessionStorage.setItem('Citilife_radWorklist_priority', filterPriority.value);
+            if (sortOption) sessionStorage.setItem('Citilife_radWorklist_sort', sortOption.value);
+            sessionStorage.setItem('Citilife_radWorklist_page', currentPage);
+            sessionStorage.setItem('Citilife_radWorklist_disputesPage', currentDisputesPage);
+        }
 
-            const searchTerm = searchInput.value.toLowerCase();
+        function restoreWorklistState() {
+            const params = new URLSearchParams(window.location.search);
+            const hasHighlight = params.has('highlight_case') || params.has('highlight') || params.has('case_id') || params.has('highlight_dispute_case');
+
+            if (params.has('branch')) {
+                if (filterBranch) filterBranch.value = params.get('branch');
+            } else if (filterBranch) {
+                const savedBranch = sessionStorage.getItem('Citilife_radWorklist_branch');
+                if (savedBranch !== null) filterBranch.value = savedBranch;
+            }
+
+            if (params.has('priority')) {
+                if (filterPriority) filterPriority.value = params.get('priority');
+            } else if (filterPriority) {
+                const savedPriority = sessionStorage.getItem('Citilife_radWorklist_priority');
+                if (savedPriority !== null) filterPriority.value = savedPriority;
+            }
+
+            if (params.has('sort')) {
+                if (sortOption) sortOption.value = params.get('sort');
+            } else if (sortOption) {
+                const savedSort = sessionStorage.getItem('Citilife_radWorklist_sort');
+                if (savedSort !== null) sortOption.value = savedSort;
+            }
+
+            if (params.has('search')) {
+                if (searchInput) searchInput.value = params.get('search');
+            } else if (searchInput) {
+                const savedSearch = sessionStorage.getItem('Citilife_radWorklist_search');
+                if (savedSearch !== null) searchInput.value = savedSearch;
+            }
+
+            if (!hasHighlight) {
+                const savedPage = parseInt(sessionStorage.getItem('Citilife_radWorklist_page'));
+                if (savedPage && savedPage > 0) {
+                    currentPage = savedPage;
+                }
+                const savedDisputesPage = parseInt(sessionStorage.getItem('Citilife_radWorklist_disputesPage'));
+                if (savedDisputesPage && savedDisputesPage > 0) {
+                    currentDisputesPage = savedDisputesPage;
+                }
+                const savedTab = sessionStorage.getItem('Citilife_radWorklist_tab');
+                if (savedTab && !params.has('tab') && !params.has('status')) {
+                    window.switchRadTab(savedTab);
+                }
+            }
+        }
+
+        function updateTable() {
+            if (!searchInput || !filterBranch || !filterPriority || !sortOption || !worklistTbody) return;
+
+            const searchTerm = searchInput.value.toLowerCase().trim();
             const branchValue = filterBranch.value;
             const priorityValue = filterPriority.value;
             const sortValue = sortOption.value;
@@ -433,37 +522,29 @@ sort($priorities);
                 }
             }
 
-            // Sort rows
+            // Accurate sorting
             allRows.sort((a, b) => {
-                // STAT ALWAYS first overrides everything EXCEPT when sorting by priority explicitly
-                if (!sortValue.startsWith('priority_')) {
-                    const emA = parseInt(a.dataset.stat);
-                    const emB = parseInt(b.dataset.stat);
-                    if (emA !== emB) {
-                        return emB - emA; // 1 before 0
-                    }
-                }
+                const dateA = parseInt(a.dataset.date) || 0;
+                const dateB = parseInt(b.dataset.date) || 0;
+                const weightA = parseInt(a.dataset.pweight) || 0;
+                const weightB = parseInt(b.dataset.pweight) || 0;
 
-                // Normal sorting if neither is stat, or if both are stat
-                let val;
                 if (sortValue === 'date_desc') {
-                    val = parseInt(b.dataset.date) - parseInt(a.dataset.date);
+                    return dateB - dateA;
                 } else if (sortValue === 'date_asc') {
-                    val = parseInt(a.dataset.date) - parseInt(b.dataset.date);
+                    return dateA - dateB;
                 } else if (sortValue === 'priority_desc') {
-                    val = parseInt(b.dataset.pweight) - parseInt(a.dataset.pweight);
+                    if (weightB !== weightA) return weightB - weightA;
+                    return dateB - dateA;
                 } else if (sortValue === 'priority_asc') {
-                    val = parseInt(a.dataset.pweight) - parseInt(b.dataset.pweight);
+                    if (weightA !== weightB) return weightA - weightB;
+                    return dateB - dateA;
                 }
-                // Secondary sort by date just in case
-                if (val === 0) {
-                    return parseInt(b.dataset.date) - parseInt(a.dataset.date);
-                }
-                return val;
+                return dateB - dateA;
             });
 
             // Reorder in DOM
-            allRows.forEach(row => tbody.appendChild(row));
+            allRows.forEach(row => worklistTbody.appendChild(row));
 
             // Apply filtering
             let filteredRows = [];
@@ -499,10 +580,10 @@ sort($priorities);
             });
 
             // Handle "No records found" state
-            let noRecordsRow = tbody.querySelector('.no-records');
-            let emptyStateRow = tbody.querySelector('.empty-state-row');
+            let noRecordsRow = worklistTbody.querySelector('.no-records');
+            let emptyStateRow = worklistTbody.querySelector('.empty-state-row');
 
-            if (emptyStateRow && emptyStateRow.style.display !== 'none') {
+            if (emptyStateRow && emptyStateRow.style.display !== 'none' && allRows.length === 0) {
                 return;
             }
 
@@ -511,10 +592,10 @@ sort($priorities);
                     noRecordsRow = document.createElement('tr');
                     noRecordsRow.className = 'no-records';
                     noRecordsRow.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No matching records found.</td>`;
-                    tbody.appendChild(noRecordsRow);
+                    worklistTbody.appendChild(noRecordsRow);
                 } else {
                     noRecordsRow.style.display = '';
-                    tbody.appendChild(noRecordsRow);
+                    worklistTbody.appendChild(noRecordsRow);
                 }
             } else if (noRecordsRow) {
                 noRecordsRow.style.display = 'none';
@@ -557,6 +638,7 @@ sort($priorities);
                 } else {
                     btn.onclick = () => {
                         currentPage = page;
+                        saveWorklistState();
                         updateTable();
                         const card = document.getElementById('worklist-table-card');
                         if (card) {
@@ -583,28 +665,23 @@ sort($priorities);
 
             // Page numbers
             if (totalPages <= 7) {
-                // Show all pages
                 for (let i = 1; i <= totalPages; i++) {
                     container.appendChild(createButton(i, i, false, i == currentPage));
                 }
             } else {
-                // We have many pages
                 if (currentPage <= 4) {
-                    // Near start: 1, 2, 3, 4, 5, ..., T
                     for (let i = 1; i <= 5; i++) {
                         container.appendChild(createButton(i, i, false, i == currentPage));
                     }
                     container.appendChild(createEllipsis());
                     container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentPage));
                 } else if (currentPage >= totalPages - 3) {
-                    // Near end: 1, ..., T-4, T-3, T-2, T-1, T
                     container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
                     for (let i = totalPages - 4; i <= totalPages; i++) {
                         container.appendChild(createButton(i, i, false, i == currentPage));
                     }
                 } else {
-                    // Middle: 1, ..., C-1, C, C+1, ..., T
                     container.appendChild(createButton(1, 1, false, 1 == currentPage));
                     container.appendChild(createEllipsis());
 
@@ -627,7 +704,7 @@ sort($priorities);
         function updateDisputesTable() {
             if (!searchInput) return;
 
-            const searchTerm = searchInput.value.toLowerCase();
+            const searchTerm = searchInput.value.toLowerCase().trim();
 
             let filteredRows = [];
             allDisputeRows.forEach(row => {
@@ -684,6 +761,7 @@ sort($priorities);
                 } else {
                     btn.onclick = () => {
                         currentDisputesPage = page;
+                        saveWorklistState();
                         updateDisputesTable();
                         const card = document.getElementById('rad-disputes-table-card');
                         if (card) {
@@ -732,17 +810,11 @@ sort($priorities);
             container.appendChild(createButton('Last &raquo;', totalPages, currentDisputesPage >= totalPages));
         }
 
-        const paramsList = new window.URLSearchParams(window.location.search);
-        const urlBranch = paramsList.get('branch');
-        const urlPriority = paramsList.get('priority');
-
-        if (urlBranch && filterBranch) filterBranch.value = urlBranch;
-        if (urlPriority && filterPriority) filterPriority.value = urlPriority;
-
         // Reset to page 1 on filter/sort change
         function onFilterSortChange() {
             currentPage = 1;
             currentDisputesPage = 1;
+            saveWorklistState();
             updateTable();
             updateDisputesTable();
         }
@@ -751,35 +823,6 @@ sort($priorities);
         if (filterBranch) filterBranch.addEventListener('change', onFilterSortChange);
         if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
         if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
-
-        // Tab Switching for Radiologist (Worklist vs Escalated Disputes)
-        window.switchRadTab = function(tab) {
-            const workCard = document.getElementById('worklist-table-card');
-            const dispCard = document.getElementById('rad-disputes-table-card');
-            const filterCtrls = document.querySelector('.mt-6.flex.flex-col.gap-4');
-            const workBtn = document.getElementById('tab-rad-worklist-btn');
-            const dispBtn = document.getElementById('tab-rad-disputes-btn');
-
-            if (tab === 'worklist') {
-                if (workCard) workCard.classList.remove('hidden');
-                if (dispCard) dispCard.classList.add('hidden');
-                if (filterCtrls) filterCtrls.classList.remove('hidden');
-
-                if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
-                if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
-            } else {
-                if (workCard) workCard.classList.add('hidden');
-                if (dispCard) dispCard.classList.remove('hidden');
-                if (filterCtrls) filterCtrls.classList.add('hidden');
-
-                if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
-                if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
-            }
-        };
-
-        if (paramsList.get('status') === 'disputes' || paramsList.get('tab') === 'disputes') {
-            window.switchRadTab('disputes');
-        }
 
         function handleHighlight() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -890,7 +933,15 @@ sort($priorities);
             }
         }
 
-        // Initial pagination
+        // Restore saved filters, page, and active tab from session
+        restoreWorklistState();
+
+        const paramsList = new window.URLSearchParams(window.location.search);
+        if (paramsList.get('status') === 'disputes' || paramsList.get('tab') === 'disputes') {
+            window.switchRadTab('disputes');
+        }
+
+        // Render tables
         updateTable();
         updateDisputesTable();
 
