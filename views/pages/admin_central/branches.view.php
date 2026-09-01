@@ -677,7 +677,7 @@
     }
 
     // Pagination State
-    let currentPage = parseInt(sessionStorage.getItem('CitiLife_adminBranches_page')) || 1;
+    let currentPage = parseInt(sessionStorage.getItem('Citilife_adminBranches_page')) || 1;
     const itemsPerPage = 7;
 
     function filterAndSortBranches(resetPage = true) {
@@ -819,7 +819,7 @@
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        sessionStorage.setItem('CitiLife_adminBranches_page', currentPage);
+        sessionStorage.setItem('Citilife_adminBranches_page', currentPage);
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);

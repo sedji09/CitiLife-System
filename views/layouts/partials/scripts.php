@@ -79,7 +79,7 @@
         uploadPreview: null,
         savingProfile: false,
         isRequestingReset: false,
-        themeMode: localStorage.getItem('citilife_theme') || 'system',
+        themeMode: localStorage.getItem('citilife_theme') || 'light',
         // RadTech Settings
         userSignature: window.__APP__.userSignature,
         userProfessionalTitle: window.__APP__.userProfessionalTitle,
@@ -216,9 +216,8 @@
       }
       // =====================================
 
-      // Load theme from localStorage — support system/dark/light
-      this.themeMode = localStorage.getItem('citilife_theme') || 'system';
-      console.log("Vue Mounted - themeMode from localStorage:", this.themeMode);
+      // Load theme from localStorage — default to light mode
+      this.themeMode = localStorage.getItem('citilife_theme') || 'light';
       this._applyTheme(this.themeMode);
 
       // Watch OS preference changes live (affects 'system' mode)
@@ -854,6 +853,11 @@
           this.editSex = window.__APP__.userSex || 'Male';
           this.editContactNumber = window.__APP__.userContactNumber || '';
           this.editHomeAddress = window.__APP__.userHomeAddress || '';
+
+          const fullName = ((this.editFirstName || '') + ' ' + (this.editLastName || '')).trim();
+          if (!this.editDisplayName || this.editDisplayName === fullName) {
+            this.editDisplayName = this.editFirstName || '';
+          }
         }
         this.editPassword = '';
         this.editConfirmPassword = '';
@@ -1090,6 +1094,7 @@
         formData.append('email', this.editEmail);
 
         if (this.role === 'patient') {
+          formData.append('display_name', this.editDisplayName || '');
           formData.append('first_name', this.editFirstName);
           formData.append('last_name', this.editLastName);
           formData.append('birthdate', this.editBirthdate);
@@ -1131,6 +1136,7 @@
                 window.__APP__.userContactNumber = data.contact_number;
                 window.__APP__.userHomeAddress = data.home_address;
 
+                this.editDisplayName = data.name;
                 this.editFirstName = data.first_name;
                 this.editLastName = data.last_name;
                 this.editBirthdate = data.birthdate;
@@ -1304,7 +1310,7 @@
           return { bg: '#fef2f2', color: '#dc2626' }; // Red
         }
         if (icon === 'activity') {
-          return { bg: '#fff5f5', color: '#dc2626' }; // Soft red matching CitiLife brand!
+          return { bg: '#fff5f5', color: '#dc2626' }; // Soft red matching Citilife brand!
         }
         return { bg: '#eff6ff', color: '#3b82f6' }; // Blue
       },
@@ -1360,6 +1366,10 @@
       },
 
       markAllRead() {
+        this.notificationCount = 0;
+        if (Array.isArray(this.notifications)) {
+          this.notifications.forEach(n => { n.is_read = 1; });
+        }
         fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
@@ -1527,7 +1537,7 @@
           const _currentPageParam = currentUrl.searchParams.get('page');
           let _currentPathSeg = currentUrl.pathname.replace(/\/$/, '').split('/').pop();
           // Treat index.php as dashboard if no page param is set
-          if (!_currentPageParam && (_currentPathSeg === 'index.php' || _currentPathSeg === 'CitiLife-System' || _currentPathSeg === '')) {
+          if (!_currentPageParam && (_currentPathSeg === 'index.php' || _currentPathSeg === 'Citilife-System' || _currentPathSeg === '')) {
             _currentPathSeg = 'dashboard';
           }
           const currentPage = _currentPageParam || _currentPathSeg || 'dashboard';

@@ -6,8 +6,8 @@
     <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg hover:bg-gray-100 transition">
       <i data-lucide="menu" class="w-5 h-5 text-gray-700"></i>
     </button>
-    <img src="<?= htmlspecialchars($logoPath) ?>" alt="CitiLife Diagnostic Portal Logo" class="h-8 w-auto" />
-    <span class="font-bold text-gray-900 text-sm">CitiLife Diagnostic Portal</span>
+    <img src="<?= htmlspecialchars($logoPath) ?>" alt="Citilife Diagnostic Portal Logo" class="h-8 w-auto" />
+    <span class="font-bold text-gray-900 text-sm">Citilife Diagnostic Portal</span>
   </div>
   <div class="flex items-center gap-1" v-show="!mobileMenuOpen">
     <!-- Mobile notification bell for patient -->
@@ -16,8 +16,8 @@
         class="relative p-2 rounded-lg hover:bg-gray-100 transition text-gray-600 hover:text-gray-900">
         <i data-lucide="bell" class="w-5 h-5"></i>
         <span v-if="notificationCount > 0"
-          class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
-          {{ notificationCount > 9 ? '9+' : notificationCount }}
+          class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
+          {{ notificationCount > 99 ? '99+' : notificationCount }}
         </span>
       </button>
       <!-- Mobile backdrop for notifications -->
@@ -31,7 +31,7 @@
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
           <span class="font-semibold text-sm text-gray-800">Notifications</span>
           <div class="flex items-center gap-2">
-            <span v-if="notificationCount > 0" class="text-xs text-gray-500">{{ notificationCount }} unread</span>
+            <span v-if="notificationCount > 0" class="text-xs text-gray-500">{{ notificationCount > 99 ? '99+' : notificationCount }} unread</span>
             <button @click="notificationMenuOpen = false"
               class="p-1 rounded-lg hover:bg-gray-200 transition text-gray-400 hover:text-gray-600">
               <i data-lucide="x" class="w-4 h-4"></i>
@@ -100,8 +100,8 @@
   :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'">
   <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
     <div class="flex items-center gap-2">
-      <img src="<?= htmlspecialchars($logoPath) ?>" alt="CitiLife Diagnostic Portal Logo" class="h-7 w-auto" />
-      <span class="font-bold text-gray-900 text-sm">CitiLife Diagnostic Portal</span>
+      <img src="<?= htmlspecialchars($logoPath) ?>" alt="Citilife Diagnostic Portal Logo" class="h-7 w-auto" />
+      <span class="font-bold text-gray-900 text-sm">Citilife Diagnostic Portal</span>
     </div>
     <button @click="mobileMenuOpen = false" class="p-1 rounded-lg hover:bg-gray-100">
       <i data-lucide="x" class="w-5 h-5"></i>
@@ -186,8 +186,8 @@
     </svg>
   </button>
   <div class="mb-6 flex items-center border-b border-gray-200 pb-4">
-    <img src="<?= htmlspecialchars($logoPath) ?>" alt="CitiLife Diagnostic Portal Logo" class="h-10 w-auto" />
-    <span v-if="isOpen" class="text-sm font-semibold text-gray-600 ml-2 truncate">CitiLife Diagnostic Portal</span>
+    <img src="<?= htmlspecialchars($logoPath) ?>" alt="Citilife Diagnostic Portal Logo" class="h-10 w-auto" />
+    <span v-if="isOpen" class="text-sm font-semibold text-gray-600 ml-2 truncate">Citilife Diagnostic Portal</span>
   </div>
   <nav class="flex-1 space-y-1">
     <a v-for="item in menuItems" :key="item.href" :href="basePath + item.href"

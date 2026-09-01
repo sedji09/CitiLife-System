@@ -31,8 +31,8 @@ $xrayCategories = array_keys($groupedRates);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="CitiLife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports through the Patient Portal.">
-    <title>CitiLife Diagnostic Center — Radiology Patient Portal</title>
+        content="Citilife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports through the Patient Portal.">
+    <title>Citilife Diagnostic Center — Radiology Patient Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -47,10 +47,10 @@ $xrayCategories = array_keys($groupedRates);
     <nav class="landing-nav" id="landing-nav">
         <div class="nav-inner">
             <a href="#home" class="nav-brand">
-                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
                     onerror="this.style.display='none'">
                 <div class="nav-brand-text">
-                    <span class="nav-brand-name">CitiLife</span>
+                    <span class="nav-brand-name">Citilife</span>
                     <span class="nav-brand-sub">Diagnostic Center</span>
                 </div>
             </a>
@@ -71,13 +71,13 @@ $xrayCategories = array_keys($groupedRates);
     <!-- ===== HERO ===== -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo" class="hero-logo" onerror="this.style.display='none'">
+            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo" class="hero-logo" onerror="this.style.display='none'">
             <h1>
-                CitiLife Diagnostic Center<br>
+                Citilife Diagnostic Center<br>
                 <span>Radiology Patient Portal</span>
             </h1>
             <p class="hero-desc">
-                Check your examination status, receive updates, and securely access your available radiology reports through the CitiLife
+                Check your examination status, receive updates, and securely access your available radiology reports through the Citilife
                 Patient Portal.
             </p>
             <div class="hero-actions">
@@ -99,7 +99,7 @@ $xrayCategories = array_keys($groupedRates);
             <div class="about-header">
                 <div class="about-label">About The System</div>
                 <p class="about-desc">
-                    CitiLife Radiology Patient Portal connects you to our expansive network of diagnostic centers,
+                    Citilife Radiology Patient Portal connects you to our expansive network of diagnostic centers,
                     providing secure, real-time access to your radiology examinations and reports anytime, anywhere.
                 </p>
             </div>
@@ -123,7 +123,7 @@ $xrayCategories = array_keys($groupedRates);
                 <div class="about-stat-card">
                     <div class="stat-value">7</div>
                     <div class="stat-title">Interconnected Branches</div>
-                    <div class="stat-desc">Request and take your examinations at your most convenient CitiLife branch
+                    <div class="stat-desc">Request and take your examinations at your most convenient Citilife branch
                     </div>
                 </div>
             </div>
@@ -192,7 +192,7 @@ $xrayCategories = array_keys($groupedRates);
                 <div class="hiw-step">
                     <div class="hiw-num">1</div>
                     <h3>Register or Login</h3>
-                    <p>Access the CitiLife Patient Portal using your credentials.</p>
+                    <p>Access the Citilife Patient Portal using your credentials.</p>
                 </div>
                 <div class="hiw-step">
                     <div class="hiw-num">2</div>
@@ -258,7 +258,7 @@ $xrayCategories = array_keys($groupedRates);
     <section class="cta-section">
         <div class="cta-card">
             <h2>Ready to access your radiology information?</h2>
-            <p>Log in to the CitiLife Patient Portal to view your examination status and available reports.</p>
+            <p>Log in to the Citilife Patient Portal to view your examination status and available reports.</p>
             <a href="#" onclick="openLoginModal(event)" class="cta-btn">
                 Access Patient Portal
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +272,7 @@ $xrayCategories = array_keys($groupedRates);
     <!-- ===== FOOTER ===== -->
     <footer class="landing-footer">
         <div class="footer-inner" style="justify-content: center;">
-            <div class="footer-copy">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.</div>
+            <div class="footer-copy">&copy; <?= date('Y') ?> Citilife Diagnostic Center. All rights reserved.</div>
         </div>
     </footer>
 
@@ -506,13 +506,16 @@ $xrayCategories = array_keys($groupedRates);
             <button class="modal-close" onclick="closeLoginModal()">&times;</button>
             <div class="modal-header">
                 <div class="modal-logo-wrapper">
-                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo" class="modal-logo" onerror="this.style.display='none'">
+                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo" class="modal-logo" onerror="this.style.display='none'">
                 </div>
                 <h2>Patient Portal</h2>
                 <p>Welcome! Access your X-ray records.</p>
             </div>
             
             <form action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-login" method="POST" class="modal-form">
+                <?php if (!empty($_GET['redirect']) || !empty($_SESSION['redirect_url'])): ?>
+                    <input type="hidden" name="redirect" value="<?= htmlspecialchars($_GET['redirect'] ?? $_SESSION['redirect_url']) ?>">
+                <?php endif; ?>
                 <?php if (isset($_GET['error'])): ?>
                     <div style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
                         <?= htmlspecialchars($_GET['error']) ?>

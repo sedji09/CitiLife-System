@@ -130,11 +130,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // For returning patients, the POST might not have first/last name. Fetch them for the log.
             $logFirstName = $regData['first_name'];
             $logLastName = $regData['last_name'];
+            $patientEmail = $regData['email'] ?? '';
+            $patientId = $result['patient_id'] ?? null;
+
             if ($regData['form_mode'] === 'existing-patient' && $regData['patient_id']) {
                 $p = $patientModel->getPatientById($regData['patient_id']);
                 if ($p) {
                     $logFirstName = $p['first_name'];
                     $logLastName = $p['last_name'];
+                    if (empty($patientEmail) && !empty($p['email'])) {
+                        $patientEmail = $p['email'];
+                    }
+                }
+            }
+
+            // Send Account Setup & Verification Email if email is present and patient does not have a user account yet
+            if ($patientId && !empty($patientEmail) && filter_var($patientEmail, FILTER_VALIDATE_EMAIL)) {
+                // Check if user already exists for this patient
+                $stmtCheckUser = $pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
+                $stmtCheckUser->execute([$patientId]);
+                $userExists = $stmtCheckUser->fetch();
+
+                if (!$userExists) {
+                    try {
+                        // Clean any previous verification tokens for this patient/email
+                        $pdo->prepare("DELETE FROM account_verifications WHERE patient_id = ? OR email = ?")->execute([$patientId, $patientEmail]);
+
+                        // Generate secure verification token
+                        $verificationToken = bin2hex(random_bytes(32));
+                        $stmtInsertToken = $pdo->prepare("
+                            INSERT INTO account_verifications (token, patient_id, email, expires_at)
+                            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
+                        ");
+                        $stmtInsertToken->execute([$verificationToken, $patientId, $patientEmail]);
+
+                        // Construct verification link
+                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+                        $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
+
+                        require_once basePath('app/Helpers/mailer_helper.php');
+                        require_once basePath('app/Helpers/email_template_helper.php');
+
+                        $recipientName = trim($logFirstName . ' ' . $logLastName);
+                        $emailBody = renderActionEmail(
+                            $logFirstName ?: 'Valued Patient',
+                            "Complete Your Patient Portal Registration",
+                            "Your patient record has been successfully registered at <strong>Citilife Diagnostic Center</strong>. To securely view your diagnostic results, download official reports, and manage your medical records online, please click the button below to verify your email and create your account password.",
+                            "Verify & Set Password",
+                            $verifyLink,
+                            "This verification link is valid for <strong>24 hours</strong>.",
+                            "<strong>Security Notice:</strong> If you did not visit or register at Citilife Diagnostic Center, please ignore this email.",
+                            "You received this email because you were registered as a patient at Citilife Diagnostic Center.",
+                            "#dc2626"
+                        );
+
+                        sendEmail($patientEmail, $recipientName ?: 'Patient', 'Verify Your Email & Set Password - Citilife System', $emailBody);
+                    } catch (\Throwable $mailEx) {
+                        error_log("Failed to send patient registration email: " . $mailEx->getMessage());
+                    }
                 }
             }
 

@@ -285,7 +285,7 @@ if (isset($_GET['export_pdf'])) {
                         <?php endif; ?>
                     </td>
                     <td class="clinic-info">
-                        <h1>CitiLife</h1>
+                        <h1>Citilife</h1>
                         <p>Diagnostic Center</p>
                     </td>
                     <td class="branch-info">
@@ -490,7 +490,7 @@ if (isset($_GET['export_excel'])) {
     ];
 
     $titleStyle = [
-        'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'C0392B']], // CitiLife Red
+        'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'C0392B']], // Citilife Red
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
     ];
 

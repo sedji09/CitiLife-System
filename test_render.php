@@ -1,6 +1,6 @@
 <?php
 session_start();
-define('PROJECT_DIR', 'CitiLife-System');
+define('PROJECT_DIR', 'Citilife-System');
 $_SESSION['role']='patient';
 $_SESSION['user_id']=1;
 $_SESSION['email']='test@example.com';

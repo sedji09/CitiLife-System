@@ -62,14 +62,14 @@ $id = 0;
 
 if (!empty($refToken)) {
     $decoded = base64_decode($refToken);
-    if (strpos($decoded, 'CitiLife_Case_') === 0) {
-        $id = (int) str_replace('CitiLife_Case_', '', $decoded);
+    if (strpos($decoded, 'Citilife_Case_') === 0) {
+        $id = (int) str_replace('Citilife_Case_', '', $decoded);
     }
 } else {
     // Fallback if someone uses raw ?id= somehow (e.g. older versions)
     $id = (int) ($_GET['id'] ?? 0);
     if ($id > 0) {
-        $_SESSION['active_report_ref'] = base64_encode('CitiLife_Case_' . $id);
+        $_SESSION['active_report_ref'] = base64_encode('Citilife_Case_' . $id);
         header("Location: /" . PROJECT_DIR . "/view-report");
         exit;
     }
@@ -1046,7 +1046,7 @@ if (!$isMultiExam) {
                             &bull; PANTABANGAN &bull; BONGABON
                         </div>
                         <div class="report-footer">
-                            <span>CitiLife Diagnostic — <?= $branch ?> Branch</span>
+                            <span>Citilife Diagnostic — <?= $branch ?> Branch</span>
                             <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
                         </div>
                     </div>
@@ -1080,7 +1080,7 @@ if (!$isMultiExam) {
                     </div>
 
                     <div class="report-footer" style="margin-top: auto;">
-                        <span>CitiLife Diagnostic &mdash; <?= $branch ?> Branch</span>
+                        <span>Citilife Diagnostic &mdash; <?= $branch ?> Branch</span>
                         <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
                     </div>
                 </div>

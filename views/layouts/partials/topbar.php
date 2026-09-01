@@ -2,10 +2,7 @@
 <div class="bg-white border-b px-6 py-4 relative <?= $isPatient ? 'hidden md:block' : '' ?>">
   <div class="flex items-center justify-between gap-4">
     <div>
-      <?php if ($role === 'patient'): ?>
-        <h1 class="text-xl font-semibold text-gray-800" v-text="userDisplayName"></h1>
-        <p class="text-sm text-gray-500">Patient ID: <?= htmlspecialchars($userPatientNumber ?? '') ?></p>
-      <?php else: ?>
+      <?php if ($role !== 'patient'): ?>
         <h1 class="text-xl font-semibold text-gray-800"><?= htmlspecialchars($appName) ?></h1>
         <?php if ($role !== 'radiologist'): ?>
           <p class="text-sm text-gray-500"><?= $branchNameDisplay ?></p>
@@ -233,7 +230,7 @@
           <i data-lucide="bell" class="w-5 h-5"></i>
           <span v-if="notificationCount > 0"
             class="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-            {{ notificationCount }}
+            {{ notificationCount > 99 ? '99+' : notificationCount }}
           </span>
         </button>
         <div v-if="notificationMenuOpen" ref="notificationMenuRef"

@@ -34,11 +34,9 @@
         <a href="javascript:void(0)" onclick="switchTab('pending')" id="tab-pending"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $activeTab === 'pending' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300' ?>">
             Pending Verification
-            <?php if (count($pendingPayments) > 0): ?>
-                <span class="inline-flex items-center justify-center bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                    <?= count($pendingPayments) ?>
-                </span>
-            <?php endif; ?>
+            <span id="pendingBadgeCount" class="<?= count($pendingPayments) > 0 ? '' : 'hidden' ?> inline-flex items-center justify-center bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                <?= count($pendingPayments) ?>
+            </span>
         </a>
         <a href="javascript:void(0)" onclick="switchTab('history')" id="tab-history"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $activeTab === 'history' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300' ?>">
@@ -345,6 +343,133 @@
         window.history.replaceState({}, '', url);
     }
 
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatCurrency(amount) {
+        return Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function createPendingRowElement(payment) {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50 transition pending-row';
+        tr.dataset.search = ((payment.request_number || '') + ' ' + (payment.first_name || '') + ' ' + (payment.last_name || '')).toLowerCase();
+        tr.dataset.date = payment.timestamp || 0;
+
+        const philhealthHtml = (!payment.philhealth_status || payment.philhealth_status !== 'With PhilHealth Card')
+            ? '<span class="text-xs text-gray-400 italic">None</span>'
+            : `<div class="text-sm font-medium text-gray-900">${escapeHtml(payment.philhealth_id || 'Card Holder')}</div>`;
+
+        const gcashRefHtml = (payment.payment_method === 'GCash' && payment.reference_number)
+            ? `<div class="text-xs text-gray-500 font-mono mt-1">Ref: ${escapeHtml(payment.reference_number)}</div>`
+            : '';
+
+        let gcashBtnHtml = '';
+        if (payment.payment_method === 'GCash') {
+            const proof = escapeHtml(payment.proof_of_payment_path || '');
+            const ref = escapeHtml(payment.reference_number || 'N/A');
+            const orig = parseFloat(payment.original_amount || payment.amount || 0);
+            const disc = parseFloat(payment.discount_amount || 0);
+            const net = parseFloat(payment.amount || 0);
+            const exam = escapeHtml(payment.exam_type || 'Exam');
+            gcashBtnHtml = `<button type="button" title="View Receipt" onclick="viewReceipt('${proof}', '${ref}', ${orig}, ${disc}, ${net}, '${exam}')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-700 transition">
+                <i data-lucide="image" class="w-4 h-4"></i>
+            </button>`;
+        }
+
+        tr.innerHTML = `
+            <td class="px-6 py-4">
+                <div class="font-bold text-gray-900">${escapeHtml(payment.request_number)}</div>
+                <div class="text-xs text-gray-500">${escapeHtml((payment.first_name || '') + ' ' + (payment.last_name || ''))}</div>
+            </td>
+            <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-700">${escapeHtml(payment.exam_type)}</div>
+            </td>
+            <td class="px-6 py-4">
+                ${philhealthHtml}
+            </td>
+            <td class="px-6 py-4">
+                <div class="font-bold text-red-600 font-mono">₱${formatCurrency(payment.amount)}</div>
+                <div class="text-xs text-gray-500 font-mono mt-1">Method: ${escapeHtml(payment.payment_method)}</div>
+                ${gcashRefHtml}
+            </td>
+            <td class="px-6 py-4 text-gray-500">
+                ${escapeHtml(payment.created_at_formatted)}
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                    ${gcashBtnHtml}
+                    <form method="POST" class="inline-block m-0">
+                        <input type="hidden" name="payment_id" value="${payment.id}">
+                        <input type="hidden" name="action" value="verify">
+                        <button type="button" title="Verify Payment" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 transition">
+                            <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
+                        </button>
+                    </form>
+                    <form method="POST" class="inline-block m-0">
+                        <input type="hidden" name="payment_id" value="${payment.id}">
+                        <input type="hidden" name="action" value="reject">
+                        <button type="button" title="Reject Payment" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
+                            <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
+                        </button>
+                    </form>
+                </div>
+            </td>
+        `;
+        return tr;
+    }
+
+    function createHistoryRowElement(payment) {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50 transition history-row';
+        tr.dataset.search = ((payment.request_number || '') + ' ' + (payment.first_name || '') + ' ' + (payment.last_name || '')).toLowerCase();
+        tr.dataset.date = payment.timestamp || 0;
+
+        const philhealthHtml = (!payment.philhealth_status || payment.philhealth_status !== 'With PhilHealth Card')
+            ? '<span class="text-xs text-gray-400 italic">None</span>'
+            : `<div class="text-sm font-medium text-gray-900">${escapeHtml(payment.philhealth_id || 'Card Holder')}</div>`;
+
+        const gcashRefHtml = (payment.payment_method === 'GCash' && payment.reference_number)
+            ? `<div class="text-xs text-gray-500 font-mono mt-1">Ref: ${escapeHtml(payment.reference_number)}</div>`
+            : '';
+
+        const statusBadge = (payment.status === 'Verified')
+            ? `<span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verified</span>`
+            : `<span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected</span>`;
+
+        tr.innerHTML = `
+            <td class="px-6 py-4">
+                <div class="font-bold text-gray-900">${escapeHtml(payment.request_number)}</div>
+                <div class="text-xs text-gray-500">${escapeHtml((payment.first_name || '') + ' ' + (payment.last_name || ''))}</div>
+            </td>
+            <td class="px-6 py-4">
+                <div class="text-sm font-medium text-gray-700">${escapeHtml(payment.exam_type)}</div>
+            </td>
+            <td class="px-6 py-4">
+                ${philhealthHtml}
+            </td>
+            <td class="px-6 py-4">
+                <div class="font-bold text-gray-900 font-mono">₱${formatCurrency(payment.amount)}</div>
+                <div class="text-xs text-gray-500 font-mono mt-1">Method: ${escapeHtml(payment.payment_method)}</div>
+                ${gcashRefHtml}
+            </td>
+            <td class="px-6 py-4">
+                ${statusBadge}
+            </td>
+            <td class="px-6 py-4 text-gray-500">
+                ${escapeHtml(payment.updated_at_formatted)}
+            </td>
+        `;
+        return tr;
+    }
+
     // ── Search, Sort & JS Pagination Logic ──
     document.addEventListener('DOMContentLoaded', () => {
         function initTable(prefix, rowClass) {
@@ -355,25 +480,26 @@
             const paginationControls = document.getElementById(prefix + '-pagination-controls');
             const paginationInfo = document.getElementById(prefix + '-pagination-info');
 
-            if (!tableBody) return;
+            if (!tableBody) return null;
 
             // Exclude static PHP empty-state rows from JS management
             let allRows = Array.from(tableBody.querySelectorAll('.' + rowClass));
-            const hasNoData = allRows.length === 0; // truly no records in DB
+            let hasNoData = allRows.length === 0; // truly no records in DB
             let filteredRows = [];
             let currentPage = 1;
             const itemsPerPage = 5;
 
             function updateTable() {
                 // If there are no rows at all, leave the static empty state and show pagination as disabled
-                if (hasNoData) {
+                if (hasNoData || allRows.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-gray-500">${prefix === 'pending' ? 'No pending payments to verify.' : 'No payment history found.'}</td></tr>`;
                     if (paginationContainer) paginationContainer.style.display = 'flex';
                     if (paginationInfo) paginationInfo.innerHTML = 'No records';
                     renderPagination(1);
                     return;
                 }
 
-                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
                 const sortOrder = sortSelect ? sortSelect.value : 'new';
 
                 // Filter
@@ -412,6 +538,10 @@
                 currentRows.forEach(row => {
                     tableBody.appendChild(row);
                 });
+
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
 
                 // Update Pagination Info
                 if (paginationContainer) paginationContainer.style.display = 'flex';
@@ -490,6 +620,12 @@
                 paginationControls.appendChild(createBtn('Last &raquo;', totalPages, currentPage >= totalPages));
             }
 
+            function setRows(newRows) {
+                allRows = newRows;
+                hasNoData = allRows.length === 0;
+                updateTable();
+            }
+
             if (searchInput) searchInput.addEventListener('input', () => {
                 currentPage = 1;
                 updateTable();
@@ -502,10 +638,74 @@
 
             // Initial setup
             updateTable();
+
+            return {
+                updateTable,
+                setRows
+            };
         }
 
-        initTable('history', 'history-row');
-        initTable('pending', 'pending-row');
+        const historyTable = initTable('history', 'history-row');
+        const pendingTable = initTable('pending', 'pending-row');
+
+        // ── Real-Time Polling (Every 3 seconds) ──
+        let lastPendingHash = '';
+        let lastHistoryHash = '';
+        let isPolling = false;
+
+        async function pollPayments() {
+            if (isPolling) return;
+            isPolling = true;
+            try {
+                const fetchUrl = '<?= "/" . (defined("PROJECT_DIR") ? trim(PROJECT_DIR, "/") . "/" : "") ?>index.php?role=branch_admin&page=payment-verifications&ajax=1&t=' + Date.now();
+                const res = await fetch(fetchUrl, { cache: 'no-store' });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data || !data.success) return;
+
+                // Check pending updates
+                const pendingHash = JSON.stringify(data.pending);
+                if (lastPendingHash === '') {
+                    lastPendingHash = pendingHash;
+                } else if (pendingHash !== lastPendingHash) {
+                    lastPendingHash = pendingHash;
+                    if (pendingTable) {
+                        const newPendingRows = (data.pending || []).map(createPendingRowElement);
+                        pendingTable.setRows(newPendingRows);
+                    }
+                }
+
+                // Check history updates
+                const historyHash = JSON.stringify(data.history);
+                if (lastHistoryHash === '') {
+                    lastHistoryHash = historyHash;
+                } else if (historyHash !== lastHistoryHash) {
+                    lastHistoryHash = historyHash;
+                    if (historyTable) {
+                        const newHistoryRows = (data.history || []).map(createHistoryRowElement);
+                        historyTable.setRows(newHistoryRows);
+                    }
+                }
+
+                // Update tab badge count
+                const badge = document.getElementById('pendingBadgeCount');
+                if (badge) {
+                    const count = parseInt(data.pendingCount) || 0;
+                    badge.textContent = count;
+                    if (count > 0) {
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (err) {
+                console.error('Error polling payments:', err);
+            } finally {
+                isPolling = false;
+            }
+        }
+
+        setInterval(pollPayments, 3000);
     });
 
     function viewReceipt(path, refNumber, origAmount, discAmount, netAmount, examType) {
@@ -514,7 +714,9 @@
             return;
         }
         
-        let imageSrc = '<?= "/" . PROJECT_DIR . "/" ?>' + (path.startsWith('/') ? path.substring(1) : path);
+        let base = '<?= "/" . (defined("PROJECT_DIR") ? trim(PROJECT_DIR, "/") . "/" : "") ?>';
+        let cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        let imageSrc = base + cleanPath;
         document.getElementById('modal-receipt-img').src = imageSrc;
         document.getElementById('modal-ref-number').textContent = refNumber;
         document.getElementById('receiptModalExamType').textContent = examType;

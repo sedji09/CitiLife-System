@@ -1,5 +1,5 @@
 /**
- * CitiLife System - Premium Alert Utilities
+ * Citilife System - Premium Alert Utilities
  * Provides standardized SweetAlert2 wrappers for the system.
  */
 

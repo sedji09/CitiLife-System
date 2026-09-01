@@ -241,7 +241,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ROWS_PER_PAGE = 6;
-        let currentPage = parseInt(sessionStorage.getItem('CitiLife_branchXray_page_<?= $currentTab ?>')) || 1;
+        let currentPage = parseInt(sessionStorage.getItem('Citilife_branchXray_page_<?= $currentTab ?>')) || 1;
 
         const searchInput = document.getElementById('search-input');
         const sortDate = document.getElementById('sort-date');
@@ -383,7 +383,7 @@
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
 
-            sessionStorage.setItem('CitiLife_branchXray_page_<?= $currentTab ?>', currentPage);
+            sessionStorage.setItem('Citilife_branchXray_page_<?= $currentTab ?>', currentPage);
 
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
             const endIdx = startIdx + ROWS_PER_PAGE;
@@ -426,19 +426,19 @@
             currentPage = 1;
             
             // Save state to sessionStorage
-            sessionStorage.setItem('CitiLife_branchXray_search_<?= $currentTab ?>', searchInput.value);
-            sessionStorage.setItem('CitiLife_branchXray_sort_<?= $currentTab ?>', sortDate.value);
-            if (filterDate) sessionStorage.setItem('CitiLife_branchXray_date_<?= $currentTab ?>', filterDate.value);
-            if (filterPriority) sessionStorage.setItem('CitiLife_branchXray_priority_<?= $currentTab ?>', filterPriority.value);
+            sessionStorage.setItem('Citilife_branchXray_search_<?= $currentTab ?>', searchInput.value);
+            sessionStorage.setItem('Citilife_branchXray_sort_<?= $currentTab ?>', sortDate.value);
+            if (filterDate) sessionStorage.setItem('Citilife_branchXray_date_<?= $currentTab ?>', filterDate.value);
+            if (filterPriority) sessionStorage.setItem('Citilife_branchXray_priority_<?= $currentTab ?>', filterPriority.value);
 
             renderPage();
         }
 
         // Restore state IF NOT SET via URL
-        const savedSearch = sessionStorage.getItem('CitiLife_branchXray_search_<?= $currentTab ?>');
-        const savedSort = sessionStorage.getItem('CitiLife_branchXray_sort_<?= $currentTab ?>');
-        const savedDate = sessionStorage.getItem('CitiLife_branchXray_date_<?= $currentTab ?>');
-        const savedPriority = sessionStorage.getItem('CitiLife_branchXray_priority_<?= $currentTab ?>');
+        const savedSearch = sessionStorage.getItem('Citilife_branchXray_search_<?= $currentTab ?>');
+        const savedSort = sessionStorage.getItem('Citilife_branchXray_sort_<?= $currentTab ?>');
+        const savedDate = sessionStorage.getItem('Citilife_branchXray_date_<?= $currentTab ?>');
+        const savedPriority = sessionStorage.getItem('Citilife_branchXray_priority_<?= $currentTab ?>');
 
         if (savedSearch) searchInput.value = savedSearch;
         if (savedSort) sortDate.value = savedSort;

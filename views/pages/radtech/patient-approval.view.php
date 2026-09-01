@@ -466,6 +466,16 @@ foreach ($allServices as $service) {
         const highlightId = params.get('highlight');
         if (!highlightId) return;
 
+        // Clean up URL to prevent polling duplication
+        try {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('highlight');
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+            if (window.__APP__) {
+                window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
+            }
+        } catch (e) {}
+
         setTimeout(() => {
             const rows = document.querySelectorAll('#table-body tr.record-row');
             let targetRow = null;
@@ -502,8 +512,13 @@ foreach ($allServices as $service) {
                     }, 300);
                 }, 200);
 
+                // Remove existing banner if present
+                const existingBanner = document.getElementById('highlight-banner');
+                if (existingBanner) existingBanner.remove();
+
                 // Info banner
                 const banner = document.createElement('div');
+                banner.id = 'highlight-banner';
                 banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
                 banner.style.cssText = 'margin-left:auto;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
                 const header = document.querySelector('h2');

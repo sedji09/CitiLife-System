@@ -62,18 +62,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $auditLogModel->addLog($currentAdminId, "Created $inputRole account: $email", 'User Management', 'User', $pdo->lastInsertId(), "Email: $email, Role: $inputRole, Branch: $branchId", $currentBranchId);
                 
                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
-                $subject = "Your New Account Credentials - CitiLife Diagnostic Center";
+                $subject = "Your New Account Credentials - Citilife Diagnostic Center";
                 $roleName = ucwords(str_replace('_', ' ', $inputRole));
-                $body = "
-                    <h3>Welcome to CitiLife Diagnostic Center!</h3>
-                    <p>An account has been created for you with the role of <b>{$roleName}</b>.</p>
-                    <p>Here are your login credentials:</p>
-                    <ul>
-                        <li><b>Email/Username:</b> {$email}</li>
-                        <li><b>Password:</b> {$password}</li>
-                    </ul>
-                    <p>Please log in and change your password immediately.</p>
-                ";
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                $loginUrl = "http://{$host}/" . PROJECT_DIR . "/login.php";
+                
+                $body = renderNotificationEmail(
+                    "Staff Member",
+                    "Welcome to Citilife Diagnostic Center",
+                    "A new staff account has been created for you with the role of <strong>{$roleName}</strong>. Please find your temporary login credentials below:",
+                    [
+                        'Role' => htmlspecialchars($roleName),
+                        'Email / Username' => htmlspecialchars($email),
+                        'Temporary Password' => '<code style="background-color: #f6f8fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 14px;">' . htmlspecialchars($password) . '</code>',
+                    ],
+                    "Log in to Staff Portal",
+                    $loginUrl,
+                    "You're receiving this email because a staff account was provisioned for you by the Citilife administrator.",
+                    "#dc2626"
+                );
                 sendEmail($email, "Staff", $subject, $body);
             } else {
                 $error = "Failed to create user account.";

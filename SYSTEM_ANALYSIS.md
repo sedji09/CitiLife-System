@@ -1,4 +1,4 @@
-# CitiLife-System: Comprehensive Documentation
+# Citilife-System: Comprehensive Documentation
 
 **Document Version:** 1.0  
 **Generated:** June 30, 2026  
@@ -9,7 +9,7 @@
 ## 1. System Overview
 
 ### Purpose
-CitiLife-System is a **multi-branch radiology and medical imaging management platform** designed to centralize patient care, radiological examinations, and professional report generation across multiple healthcare facilities. The system streamlines patient registration, case management, radiological technician workflows, radiologist assessments, and inter-branch communication.
+Citilife-System is a **multi-branch radiology and medical imaging management platform** designed to centralize patient care, radiological examinations, and professional report generation across multiple healthcare facilities. The system streamlines patient registration, case management, radiological technician workflows, radiologist assessments, and inter-branch communication.
 
 ### Target Organizations
 - Multi-location healthcare providers operating multiple radiology branches
@@ -234,13 +234,13 @@ graph LR
     External["🏥 External Systems<br/>PhilHealth<br/>Other Branches"]
     AdminUsers["👥 System<br/>Administrators"]
     
-    Patient -->|Register & Track Exams| CitiLife["🔷 CitiLife<br/>System"]
-    External -->|Record Requests| CitiLife
-    AdminUsers -->|Manage System| CitiLife
+    Patient -->|Register & Track Exams| Citilife["🔷 Citilife<br/>System"]
+    External -->|Record Requests| Citilife
+    AdminUsers -->|Manage System| Citilife
     
-    CitiLife -->|Reports & Status| Patient
-    CitiLife -->|Record Responses| External
-    CitiLife -->|Audit Logs & Reports| AdminUsers
+    Citilife -->|Reports & Status| Patient
+    Citilife -->|Record Responses| External
+    Citilife -->|Audit Logs & Reports| AdminUsers
 ```
 
 ---
@@ -255,7 +255,7 @@ graph TB
     Radiologist["👨‍⚕️ Radiologist"]
     OtherBranches["🏥 Other Branches"]
     
-    subgraph CitiLife["CitiLife System"]
+    subgraph Citilife["Citilife System"]
         Auth["Authentication<br/>System"]
         PatientMgmt["Patient<br/>Management"]
         CaseMgmt["Case<br/>Management"]
@@ -270,7 +270,7 @@ graph TB
     
     Patient -->|Login Credentials| Auth
     Patient -->|Register Info| PatientMgmt
-    Patient -->|View Status| CitiLife
+    Patient -->|View Status| Citilife
     
     RadTech -->|Create Cases| CaseMgmt
     RadTech -->|Upload Images| ImageUpload
@@ -301,8 +301,8 @@ graph TB
     Notif -->|Alerts| Patient
     Notif -->|Alerts| AdminUsers
     
-    CitiLife -->|Reports & Data| Patient
-    CitiLife -->|Status Updates| Radiologist
+    Citilife -->|Reports & Data| Patient
+    Citilife -->|Status Updates| Radiologist
 ```
 
 ---
@@ -1038,7 +1038,7 @@ START: User Access
 
 **Project Structure:**
 ```
-CitiLife-System/
+Citilife-System/
 ├── app/
 │   ├── Controllers/
 │   │   ├── AuthController.php (main dispatcher)
@@ -1213,7 +1213,7 @@ POST     /app/config/update_patient.php   - Patient data updates
 
 ## 17. Conclusion
 
-The **CitiLife-System** is a well-structured, multi-tenant radiology management platform serving multiple healthcare branches. The implementation demonstrates:
+The **Citilife-System** is a well-structured, multi-tenant radiology management platform serving multiple healthcare branches. The implementation demonstrates:
 
 ✅ **Strengths:**
 - Complete RBAC implementation with 6 distinct roles

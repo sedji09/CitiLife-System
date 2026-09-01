@@ -10,9 +10,12 @@ class LandingController
         // and redirect them to the new clean URLs mapping to the router.
         if (isset($_GET['page'])) {
             $page = $_GET['page'];
+            if ($page === 'xray-status') {
+                $page = 'dashboard';
+            }
             
             // Build the new URL path
-            $url = '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') . '/' . $page;
+            $url = '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'Citilife-System') . '/' . $page;
             
             // Reconstruct the query string without 'page' and 'role' if needed, or just append everything except 'page'
             $queryParams = $_GET;

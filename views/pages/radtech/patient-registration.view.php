@@ -87,7 +87,8 @@
                             </div>
                         </div>
                         <div>
-                            <label for="sex" class="block text-sm font-medium text-gray-700 mb-2">Sex</label>
+                            <label for="sex" class="block text-sm font-medium text-gray-700 mb-2">Sex <span
+                                    class="text-red-500">*</span></label>
                             <select id="sex" name="sex"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                                 <option value="Male">Male</option>
@@ -105,7 +106,7 @@
                         </div>
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email
-                                Address</label>
+                                Address <span class="text-xs text-gray-400 font-normal">(Optional)</span></label>
                             <input type="email" id="email" name="email" placeholder="patient@example.com"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         </div>
@@ -189,13 +190,13 @@
                     </select>
 
                     <div id="philhealth-id-container" class="hidden">
-                        <label for="id-number" class="block text-sm font-medium text-gray-700 mb-2">PhilHealth ID Number</label>
+                        <label for="id-number" class="block text-sm font-medium text-gray-700 mb-2">PhilHealth ID Number <span class="text-red-500">*</span></label>
                         <input id="id-number" name="id-number" type="text" inputmode="numeric" maxlength="14"
                             oninput="formatPhilHealthInput(this); checkPhilHealthId();" placeholder="XX-XXXXXXXXX-X"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         
                         <div id="philhealth-relation-container" class="mt-3">
-                            <label for="philhealth_relation" class="block text-sm font-medium text-gray-700 mb-2">Patient's Relation to ID</label>
+                            <label for="philhealth_relation" class="block text-sm font-medium text-gray-700 mb-2">Patient's Relation to ID <span class="text-red-500">*</span></label>
                             <select id="philhealth_relation" name="philhealth_relation"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                                 <option value="" disabled selected>Select relation</option>

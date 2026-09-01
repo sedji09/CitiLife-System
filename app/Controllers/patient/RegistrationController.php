@@ -113,7 +113,7 @@ class RegistrationController
                                     $regData['branch_id']
                                 );
                             }
-                            header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&registered=1");
+                            header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=dashboard&registered=1");
                             exit;
                         }
 
@@ -154,7 +154,7 @@ class RegistrationController
                                     $regData['branch_id']
                                 );
                             }
-                            header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&registered=1");
+                            header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=dashboard&registered=1");
                             exit;
                         }
                     }

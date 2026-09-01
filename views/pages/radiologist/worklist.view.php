@@ -178,6 +178,7 @@ sort($priorities);
                             ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                                data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>"
@@ -395,37 +396,6 @@ sort($priorities);
         }).then(() => {
             lucide.createIcons();
         });
-    }
-
-    // Highlight row handling
-    document.addEventListener('DOMContentLoaded', () => {
-        const params = new window.URLSearchParams(window.location.search);
-        const highlightId = params.get('highlight') || params.get('highlight_case');
-        if (highlightId) {
-            setTimeout(() => {
-                const rows = document.querySelectorAll('tr.record-row');
-                let targetRow = null;
-                rows.forEach(row => {
-                    if ((row.dataset.id || '').toLowerCase() === highlightId.toLowerCase()) {
-                        targetRow = row;
-                    }
-                });
-
-                if (targetRow) {
-                    const tableWrapper = targetRow.closest('.overflow-y-auto');
-                    if (tableWrapper) {
-                        tableWrapper.scrollTo({ top: targetRow.offsetTop - tableWrapper.offsetTop - 40, behavior: 'smooth' });
-                    } else {
-                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    targetRow.style.transition = 'background-color 0.4s ease';
-                    targetRow.style.backgroundColor = '#fef08a';
-                    setTimeout(() => targetRow.style.backgroundColor = '', 1500);
-                }
-            }, 150);
-        }
-    });
-
     // Search, Filter, Sort Logic
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('searchInput');
@@ -819,26 +789,31 @@ sort($priorities);
             if (disputeCase) {
                 if (typeof switchRadTab === 'function') switchRadTab('disputes');
                 const dispRows = document.querySelectorAll('.dispute-row');
-                const row = Array.from(dispRows).find(r => r.dataset.id === disputeCase);
+                const row = Array.from(dispRows).find(r => (r.dataset.id || '').toLowerCase() === disputeCase.toLowerCase());
                 if (row) {
+                    const dispIndex = Array.from(dispRows).indexOf(row);
+                    currentDisputesPage = Math.floor(dispIndex / DISPUTES_PER_PAGE) + 1;
+                    updateDisputesTable();
+
                     setTimeout(() => {
+                        row.style.display = '';
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        const isNew = urlParams.get('is_new') === '1';
-                        if (isNew) {
+                        row.classList.add('transition-all', 'duration-300');
+                        row.style.backgroundColor = '#fef08a';
+                        setTimeout(() => {
+                            row.style.backgroundColor = '#fde047';
                             setTimeout(() => {
-                                row.classList.add('transition-all', 'duration-300');
                                 row.style.backgroundColor = '#fef08a';
                                 setTimeout(() => {
                                     row.style.backgroundColor = '#fde047';
                                     setTimeout(() => {
-                                        row.style.backgroundColor = '#fef08a';
-                                        setTimeout(() => {
-                                            row.style.backgroundColor = '';
-                                        }, 400);
+                                        row.style.transition = 'background-color 1.5s ease';
+                                        row.style.backgroundColor = '';
                                     }, 400);
                                 }, 400);
-                            }, 600);
-                        }
+                            }, 400);
+                        }, 200);
+
                         const newUrl = new URL(window.location);
                         newUrl.searchParams.delete('highlight_dispute_case');
                         newUrl.searchParams.delete('is_new');
@@ -848,11 +823,14 @@ sort($priorities);
             }
 
             // Handle Main Worklist
-            const highlightCase = urlParams.get('highlight_case');
+            const highlightCase = urlParams.get('highlight_case') || urlParams.get('highlight') || urlParams.get('case_id');
             if (highlightCase) {
                 if (typeof switchRadTab === 'function') switchRadTab('worklist');
                 const mainRows = document.querySelectorAll('.record-row');
-                const row = Array.from(mainRows).find(r => r.dataset.id === highlightCase);
+                const row = Array.from(mainRows).find(r => 
+                    (r.dataset.id || '').toLowerCase() === highlightCase.toLowerCase() ||
+                    (r.dataset.caseId || '').toLowerCase() === highlightCase.toLowerCase()
+                );
                 if (row) {
                     const index = Array.from(mainRows).indexOf(row);
                     currentPage = Math.floor(index / ROWS_PER_PAGE) + 1;
@@ -860,25 +838,51 @@ sort($priorities);
 
                     setTimeout(() => {
                         row.style.display = '';
-                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        const isNew = urlParams.get('is_new') === '1';
-                        if (isNew) {
+                        const tableWrapper = row.closest('.overflow-y-auto');
+                        if (tableWrapper) {
+                            tableWrapper.scrollTo({ top: row.offsetTop - tableWrapper.offsetTop - 40, behavior: 'smooth' });
+                        } else {
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+
+                        row.style.transition = 'background-color 0.3s ease';
+                        row.style.backgroundColor = '#fef08a';
+                        setTimeout(() => {
+                            row.style.backgroundColor = '#fde047';
                             setTimeout(() => {
-                                row.classList.add('transition-all', 'duration-300');
                                 row.style.backgroundColor = '#fef08a';
                                 setTimeout(() => {
                                     row.style.backgroundColor = '#fde047';
                                     setTimeout(() => {
-                                        row.style.backgroundColor = '#fef08a';
-                                        setTimeout(() => {
-                                            row.style.backgroundColor = '';
-                                        }, 400);
+                                        row.style.transition = 'background-color 1.5s ease';
+                                        row.style.backgroundColor = '';
                                     }, 400);
                                 }, 400);
-                            }, 600);
+                            }, 400);
+                        }, 200);
+
+                        // Banner feedback
+                        const existingBanner = document.getElementById('highlight-banner');
+                        if (existingBanner) existingBanner.remove();
+
+                        const banner = document.createElement('div');
+                        banner.id = 'highlight-banner';
+                        banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightCase}</strong> is highlighted below.</span></div>`;
+                        banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                        const header = document.querySelector('h2');
+                        if (header && header.parentElement) {
+                            header.parentElement.insertAdjacentElement('afterend', banner);
                         }
+                        setTimeout(() => {
+                            banner.style.transition = 'opacity 0.5s';
+                            banner.style.opacity = '0';
+                            setTimeout(() => banner.remove(), 500);
+                        }, 6000);
+
                         const newUrl = new URL(window.location);
                         newUrl.searchParams.delete('highlight_case');
+                        newUrl.searchParams.delete('highlight');
+                        newUrl.searchParams.delete('case_id');
                         newUrl.searchParams.delete('is_new');
                         window.history.replaceState({}, document.title, newUrl.toString());
                     }, 200);

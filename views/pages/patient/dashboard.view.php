@@ -1,10 +1,17 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
 
-
 $userModel = new \UserModel($pdo);
 $patientModel = new \PatientModel($pdo);
 $caseModel = new \CaseModel($pdo);
+
+require_once __DIR__ . '/../../../app/Models/FeedbackModel.php';
+require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
+require_once __DIR__ . '/../../../app/Models/ServiceModel.php';
+
+$feedbackModel = new \FeedbackModel($pdo);
+$disputeModel = new \ResultDisputeModel($pdo);
+$serviceModel = new \ServiceModel($pdo);
 
 $userId = $_SESSION['user_id'] ?? 0;
 $sessionEmail = $_SESSION['email'] ?? '';
@@ -25,14 +32,42 @@ $stmtU->execute([$userId]);
 $userPatientRow = $stmtU->fetch();
 
 $patientRow = $userPatientRow; // For compatibility
+$patientFullName = trim(($patientRow['first_name'] ?? '') . ' ' . ($patientRow['last_name'] ?? ''));
 $userAccountStatus = $userPatientRow['user_status'] ?? 'Pending';
 $patientId = $patientRow['id'] ?? null;
 
 // 3. Get Patient Latest Case
 $latestCase = null;
+$feedbackCaseIds = [];
+$disputedCaseIds = [];
+
 if ($patientId) {
     $latestCase = $caseModel->getLatestCaseByPatient($patientId);
+    $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
+    $patientDisputes = $disputeModel->getDisputesByPatient($patientId);
+    $disputedCaseIds = array_column($patientDisputes, 'case_id');
 }
+
+// 4. Fetch RadTech name if assigned
+$radtechName = '';
+if ($latestCase && !empty($latestCase['radtech_id'])) {
+    $stmtR = $pdo->prepare("SELECT name FROM users WHERE id = ?");
+    $stmtR->execute([$latestCase['radtech_id']]);
+    $radtechName = $stmtR->fetchColumn() ?: '';
+}
+
+// 5. Exam Prices for Payment Modal
+$examPrices = [];
+foreach ($serviceModel->getActiveServices() as $srv) {
+    $serviceName = $srv['exam_type'] ?? ($srv['name'] ?? '');
+    if (!empty($serviceName)) {
+        $examPrices[strtolower(trim($serviceName))] = [
+            'price' => (float)($srv['price'] ?? 0),
+            'discount' => (float)($srv['philhealth_discount'] ?? 0)
+        ];
+    }
+}
+$examPricesJson = json_encode($examPrices);
 
 // Status step mapping
 $statusSteps = [
@@ -103,7 +138,6 @@ if ($latestCase) {
     }
 }
 
-
 $steps = [
     1 => 'Registration',
     2 => 'Payment',
@@ -119,12 +153,12 @@ $statusColors = [
     'Pending Payment' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'Pending Payment'],
     'Payment Verifying' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'Payment Verifying'],
     'Payment Verified' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Payment Verified'],
-    'Approved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Approved – Awaiting X-ray'],
+    'Approved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Approved – For Examination'],
     'X-ray Taken' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'X-ray Taken'],
     'Under Reading' => ['bg' => '#EFF6FF', 'border' => '#DBEAFE', 'text' => '#1D4ED8', 'label' => 'Under Reading by Radiologist'],
-    'Report Ready' => ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'text' => '#4338CA', 'label' => 'Report Ready'], // Indigo
-    'Released' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Released'], // Green
-    'Completed' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Completed'], // Green
+    'Report Ready' => ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'text' => '#4338CA', 'label' => 'Report Ready'],
+    'Released' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Released'],
+    'Completed' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Completed'],
     'Rejected' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Rejected'],
     'Cancelled' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Cancelled'],
 ];
@@ -151,19 +185,16 @@ $peopleAhead = 0;
 $statAhead = 0;
 
 if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type'] === 'Case') {
-    // Show queue board ONLY if the case is active AND has been submitted to the Radiologist (Uploaded)
     if (in_array($latestCase['status'], ['Pending', 'Under Reading']) && (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded')) {
         $showQueueBoard = true;
 
         $branchId = $latestCase['branch_id'];
         $caseDate = date('Y-m-d', strtotime($latestCase['created_at']));
 
-        // 1. Patient's Queue Number for the day (Global across all branches)
         $stmtNum = $pdo->prepare("SELECT COUNT(*) + 1 FROM cases WHERE DATE(created_at) = ? AND id < ?");
         $stmtNum->execute([$caseDate, $latestCase['id']]);
         $patientQueueNumber = str_pad($stmtNum->fetchColumn(), 2, '0', STR_PAD_LEFT);
 
-        // 2. People Ahead Logic (from the same day, Global across all branches)
         $stmtQueue = $pdo->prepare("
             SELECT id, priority, status
             FROM cases
@@ -189,14 +220,12 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         }
     }
 
-    // --- ESTIMATED REPORTING TIME LOGIC ---
     $caseStatus = $latestCase['status'];
     $caseImageStatus = $latestCase['image_status'] ?? '';
 
     if (in_array($caseStatus, ['Report Ready', 'Completed', 'Released'])) {
         $estimatedTimeDisplay = 'Completed';
     } elseif ($caseImageStatus === 'Uploaded' && in_array($caseStatus, ['Pending', 'Under Reading'])) {
-        // Calculate estimated time range: 20 mins per person ahead, 1 hour window
         $baseMins = $peopleAhead * 20;
         $startMins = max(0, $baseMins);
         $endMins = $startMins + 60;
@@ -206,11 +235,9 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
         $estimatedTimeDisplay = "$startTime &ndash; $endTime";
     } else {
-        // Not yet submitted to radiologist
         $estimatedTimeDisplay = '&mdash;';
     }
 }
-// --- END QUEUE MANAGEMENT LOGIC ---
 ?>
 
 <style>
@@ -228,67 +255,182 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         color: #fff !important;
     }
 
-    /* ===== QUEUE BOARD ANIMATIONS (keyframes can't be inlined) ===== */
+    /* Custom Alert Overlay */
+    .custom-alert-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .custom-alert-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .custom-alert-box {
+        background: #ffffff;
+        border-radius: 20px;
+        max-width: 400px;
+        width: 100%;
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        transform: scale(0.95);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .custom-alert-overlay.show .custom-alert-box {
+        transform: scale(1);
+    }
+
+    .custom-alert-icon-container {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #FEF2F2;
+        color: #DC2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px auto;
+    }
+
+    .custom-alert-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1E293B;
+        margin-bottom: 8px;
+    }
+
+    .custom-alert-text {
+        font-size: 13px;
+        color: #64748B;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .custom-alert-buttons-container {
+        display: flex;
+        gap: 8px;
+    }
+
+    .custom-alert-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        background: #DC2626;
+        color: #ffffff;
+        border: none;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .custom-alert-btn:hover {
+        background: #B91C1C;
+    }
+
+    .custom-alert-btn-secondary {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        background: #F1F5F9;
+        color: #475569;
+        border: none;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .custom-alert-btn-secondary:hover {
+        background: #E2E8F0;
+    }
+
+    /* ===== QUEUE BOARD ANIMATIONS ===== */
     .qb-live-dot {
         animation: qbLivePulse 1.5s ease-in-out infinite;
     }
 
     @keyframes qbLivePulse {
-
-        0%,
-        100% {
+        0%, 100% {
             opacity: 1;
             box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
         }
-
         50% {
             opacity: 0.6;
             box-shadow: 0 0 0 4px rgba(74, 222, 128, 0);
         }
     }
-
-    .qb-serving-num {
-        animation: qbServingGlow 2s ease-in-out infinite;
-    }
-
-    @keyframes qbServingGlow {
-
-        0%,
-        100% {
-            text-shadow: 0 0 24px rgba(239, 68, 68, 0.3);
-        }
-
-        50% {
-            text-shadow: 0 0 32px rgba(239, 68, 68, 0.5);
-        }
-    }
-
-    .qb-stat-banner {
-        animation: qbStatFlash 2s ease-in-out infinite;
-    }
-
-    @keyframes qbStatFlash {
-
-        0%,
-        100% {
-            border-color: rgba(239, 68, 68, 0.25);
-        }
-
-        50% {
-            border-color: rgba(239, 68, 68, 0.5);
-        }
-    }
-
-    .qb-stat-dot {
-        animation: qbLivePulse 1s ease-in-out infinite;
-    }
 </style>
 
 <div class="pb-8 max-w-3xl mx-auto realtime-update" id="patient-dashboard-main-container">
 
-    <!-- Welcome banner & Queue System -->
-    <div class="mb-5"
-        style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+    <!-- Success banner if newly registered/requested -->
+    <?php if (isset($_GET['registered']) && $_GET['registered'] == 1 && !isset($_GET['ajax_polling'])): ?>
+        <div id="success-banner" class="mb-5 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3 transition-all duration-500 shadow-sm">
+            <div class="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-emerald-900">Request Submitted Successfully!</h4>
+                <p class="text-xs text-emerald-700 mt-0.5">Your X-ray request has been received. Please check your case details below.</p>
+            </div>
+            <button type="button" onclick="dismissSuccessBanner()" class="text-emerald-500 hover:text-emerald-700 p-1 rounded-lg transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <script>
+            (function() {
+                // Check if already dismissed in this session
+                if (sessionStorage.getItem('registered_banner_dismissed') === '1') {
+                    const b = document.getElementById('success-banner');
+                    if (b) b.remove();
+                    return;
+                }
+
+                // Remove ?registered=1 from URL bar and __APP__.currentPath so AJAX polling doesn't keep requesting it
+                if (window.history && window.history.replaceState) {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('registered');
+                    window.history.replaceState(null, '', cleanUrl.toString());
+                }
+                if (window.__APP__ && window.__APP__.currentPath) {
+                    try {
+                        const u = new URL(window.__APP__.currentPath, window.location.origin);
+                        u.searchParams.delete('registered');
+                        window.__APP__.currentPath = u.pathname + u.search;
+                    } catch (e) {}
+                }
+
+                window.dismissSuccessBanner = function() {
+                    sessionStorage.setItem('registered_banner_dismissed', '1');
+                    const banner = document.getElementById('success-banner');
+                    if (banner) {
+                        banner.style.opacity = '0';
+                        banner.style.transform = 'translateY(-10px)';
+                        setTimeout(function () { banner.remove(); }, 500);
+                    }
+                };
+
+                // Auto dismiss after 5 seconds
+                setTimeout(window.dismissSuccessBanner, 5000);
+            })();
+        </script>
+    <?php endif; ?>
+
+    <!-- Welcome banner -->
+    <div class="mb-5" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">Welcome back,
                 <?= htmlspecialchars($displayName) ?>
@@ -310,7 +452,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     </div>
                 <?php endif; ?>
                 <div>
-                    <h2 class="font-bold text-gray-900"><?= htmlspecialchars($displayName) ?></h2>
+                    <h2 class="font-bold text-gray-900"><?= htmlspecialchars($patientFullName ?: $displayName) ?></h2>
                     <p class="text-xs text-red-600 font-mono">#
                         <?= htmlspecialchars($patientRow['patient_number'] ?? 'PAT-UNKNOWN') ?>
                     </p>
@@ -319,7 +461,6 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <?php
             $branch = $patientRow['branch_name'] ?? '—';
             if (empty($branch) || $branch === '—') {
-                // fallback: try from cases
                 if ($latestCase) {
                     $branch = $latestCase['branch_name'] ?? ($latestCase['branch'] ?? '—');
                 }
@@ -358,8 +499,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 <i data-lucide="user-plus" class="w-8 h-8 text-red-600"></i>
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Get Started</h3>
-            <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your
-                results.</p>
+            <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your results.</p>
             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Register as Patient
@@ -406,7 +546,6 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
             <!-- Estimated Reporting Time -->
             <?php if (!empty($estimatedTimeDisplay)): ?>
-                <!-- Horizontal Divider -->
                 <div style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);">
                 </div>
 
@@ -424,12 +563,27 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     <?php endif; ?>
 
     <?php if ($latestCase): ?>
-        <!-- Latest X-ray Status -->
+        <?php
+        $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
+        $sDesc = $statusDescriptions[$displayStatus] ?? '';
+        $contacts = array_filter([$latestCase['branch_contact'] ?? '', $latestCase['branch_contact_2'] ?? '', $latestCase['branch_contact_3'] ?? '']);
+        $caseStatusVal = $latestCase['status'];
+        $canCancel = in_array($displayStatus, ['Pending', 'Pending Payment']);
+        $isPendingPayment = ($caseStatusVal === 'Pending Payment');
+        $isCompletedOrReleased = in_array($caseStatusVal, ['Released', 'Completed']);
+        $isExpired = strtotime($latestCase['created_at']) < strtotime('-3 months');
+        $isExpired30Days = strtotime($latestCase['created_at']) < strtotime('-30 days');
+        ?>
+
+        <!-- Latest X-ray Status Card -->
         <div id="patient-dashboard-latest-status"
             class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 class="font-bold text-gray-900">Latest X-ray Status</h2>
-                <span class="text-xs font-mono text-gray-500"><?= htmlspecialchars($latestCase['case_number']) ?></span>
+                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold"
+                    style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
+                    <?= htmlspecialchars($sInfo['label']) ?>
+                </span>
             </div>
 
             <div class="p-5">
@@ -481,10 +635,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     </div>
                 <?php endif; ?>
 
-                <?php
-                $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
-                $sDesc = $statusDescriptions[$displayStatus] ?? '';
-                ?>
+                <!-- Status Summary Box -->
                 <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
                     <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
@@ -495,32 +646,691 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
                     <?php endif; ?>
                 </div>
+
+                <!-- Separator Divider -->
+                <hr class="border-t border-gray-200" style="margin-top: 24px; margin-bottom: 24px; border-color: #e5e7eb;">
+
+                <!-- Case Information Details Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div class="space-y-4">
+                        <!-- Reference Number -->
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Reference #</p>
+                                <p class="text-sm font-semibold text-red-600 font-mono">
+                                    <?= htmlspecialchars($latestCase['case_number']) ?>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Branch -->
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Branch</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars($latestCase['branch_name'] ?? ($latestCase['branch'] ?? '—')) ?>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Radiologic Technologist (if assigned) -->
+                        <?php if ($radtechName): ?>
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Radiologic Technologist</p>
+                                    <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Examination Type -->
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Examination Type</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars($latestCase['exam_type'] ?? '—') ?>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Branch Contact -->
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="phone-call" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Branch Contact</p>
+                                <?php if (!empty($contacts)): ?>
+                                    <button type="button"
+                                        onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
+                                        class="mt-0.5 inline-flex items-center justify-center px-2.5 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 hover:text-red-600 text-xs font-semibold rounded-lg transition shadow-2xs active:scale-95">
+                                        View Numbers
+                                    </button>
+                                <?php else: ?>
+                                    <p class="text-sm font-semibold text-gray-400">&mdash;</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Date</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    <?= htmlspecialchars(date('F j, Y', strtotime($latestCase['created_at']))) ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- View Full Status button -->
-            <div class="px-5 pb-5">
-                <?php
-                if ($latestCase['status'] === 'Rejected') {
-                    $statusLink = 'my-records?tab=rejected';
-                } elseif ($latestCase['status'] === 'Cancelled') {
-                    $statusLink = 'xray-status?tab=cancelled';
-                } elseif (in_array($latestCase['status'], ['Completed', 'Released'])) {
-                    $statusLink = 'case-status?case_id=' . $latestCase['id'];
-                } else {
-                    $statusLink = 'xray-status';
-                }
-                ?>
-                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= $statusLink ?>"
-                    class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-4 transition shadow-sm">
-                    View Full Status <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </a>
-            </div>
+            <?php if ($canCancel || $isPendingPayment || $isCompletedOrReleased): ?>
+                <!-- Footer / Action Buttons -->
+                <div class="px-5 py-3.5 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center justify-end gap-3" style="gap: 12px;">
+                    <?php if ($canCancel): ?>
+                        <button type="button"
+                            onclick="cancelCase(<?= $latestCase['id'] ?>, '<?= htmlspecialchars($latestCase['case_number']) ?>')"
+                            class="inline-flex items-center justify-center px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-2xs active:scale-95 whitespace-nowrap">
+                            Cancel Request
+                        </button>
+                    <?php endif; ?>
+
+                    <?php if ($isPendingPayment): ?>
+                        <button type="button"
+                            onclick="openPaymentModal(<?= $latestCase['id'] ?>, <?= $latestCase['amount_due'] ?? 0 ?>, <?= $latestCase['original_price'] ?? ($latestCase['amount_due'] ?? 0) ?>, <?= $latestCase['philhealth_discount'] ?? 0 ?>, '<?= htmlspecialchars($latestCase['gcash_qr_path'] ?? '') ?>', '<?= htmlspecialchars(addslashes($latestCase['exam_type'] ?? 'X-ray Exam')) ?>')"
+                            class="inline-flex items-center justify-center px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm hover:shadow active:scale-95 whitespace-nowrap">
+                            Pay Now
+                        </button>
+                    <?php endif; ?>
+
+                    <?php if ($isCompletedOrReleased): ?>
+                        <?php if (!in_array($latestCase['id'], $disputedCaseIds) && !$isExpired30Days): ?>
+                            <button type="button"
+                                onclick="openDisputeModal(<?= $latestCase['id'] ?>, <?= htmlspecialchars(json_encode($latestCase['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($latestCase['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
+                                class="inline-flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                Report an Error
+                            </button>
+                        <?php elseif (in_array($latestCase['id'], $disputedCaseIds)): ?>
+                            <span class="inline-flex items-center justify-center px-4 py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
+                                Error Reported
+                            </span>
+                        <?php endif; ?>
+
+                        <?php if (!in_array($latestCase['id'], $feedbackCaseIds)): ?>
+                            <button type="button"
+                                onclick="openFeedbackModal(<?= $latestCase['id'] ?>, <?= htmlspecialchars(json_encode($latestCase['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($latestCase['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
+                                class="inline-flex items-center justify-center px-4 py-2.5 bg-white border border-yellow-400 hover:bg-yellow-500 hover:text-white text-yellow-600 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                Rate
+                            </button>
+                        <?php endif; ?>
+
+                        <?php
+                        $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
+                        ?>
+                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>case-status?<?= !empty($latestCase['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $latestCase['id'] ?>"
+                            <?= $onClickAttr ?>
+                            class="inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                            View Status
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
 </div>
 
+<!-- Custom Expiry Alert Modal -->
+<div class="custom-alert-overlay" id="expired-alert-modal">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" fill="currentColor" opacity="0.15" />
+                <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z" />
+                <circle cx="12" cy="11" r="3" />
+                <path d="M12 14v4" />
+            </svg>
+        </div>
+        <h3 class="custom-alert-title">Result Access Expired</h3>
+        <p class="custom-alert-text">This result has exceeded the 3-month availability period. Please contact the clinic for assistance.</p>
+        <div class="custom-alert-buttons-container">
+            <a id="expired-alert-contact-btn" href="#" class="custom-alert-btn-secondary"
+                style="text-decoration:none; display:none; justify-content:center; align-items:center;">Contact Us</a>
+            <button class="custom-alert-btn"
+                onclick="document.getElementById('expired-alert-modal').classList.remove('show')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0 py-8">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onclick="closePaymentModal()"></div>
+        
+        <div id="paymentModalContainer" class="relative transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-xl w-full max-w-md p-6 sm:p-8 sm:my-8 transition-none">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Payment Options</h3>
+                <button type="button" onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Itemized Price Breakdown -->
+            <div class="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                <div class="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                    <i data-lucide="receipt" class="w-4 h-4 text-gray-500"></i>
+                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Payment Breakdown</span>
+                </div>
+                <div class="p-5 bg-white space-y-3" id="paymentBreakdownContainer">
+                </div>
+                <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
+                    <span class="text-sm font-bold text-black">Total Amount</span>
+                    <span id="paymentAmountDisplay" class="text-sm font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
+                </div>
+            </div>
+            
+            <form id="paymentForm" method="POST" action="<?php echo rtrim('/' . PROJECT_DIR, '/'); ?>/app/api/submit_payment.php" enctype="multipart/form-data">
+                <input type="hidden" name="case_id" id="paymentCaseId" value="">
+                <input type="hidden" name="amount" id="paymentAmount" value="">
+                
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Select Payment Method</label>
+                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 w-full transition">
+                            <input type="radio" name="payment_method" id="paymentMethodCash" value="Cash" class="form-radio text-red-600 focus:ring-red-500" onchange="togglePaymentMethod('Cash')" required>
+                            <span class="font-medium text-gray-800">Cash</span>
+                        </label>
+                        <label id="gcashOptionWrapper" class="flex items-center gap-2 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 w-full transition">
+                            <input type="radio" name="payment_method" value="GCash" class="form-radio text-red-600 focus:ring-red-500" onchange="togglePaymentMethod('GCash')" required>
+                            <span class="font-medium text-gray-800">Cashless (GCash)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Cash Notice Section -->
+                <div id="cashSection" class="hidden mb-5 p-5 rounded-xl bg-amber-50 border border-amber-200 text-black space-y-2 shadow-sm">
+                    <div class="flex items-center gap-2 font-bold text-amber-900 text-base">
+                        <i data-lucide="info" class="w-5 h-5 text-amber-600"></i> Cash Payment Reminder
+                    </div>
+                    <p class="text-sm leading-relaxed text-gray-800">Please pay the exact amount due at the clinic cashier or front desk before your X-ray exam.</p>
+                    <p id="cashDiscountNotice" class="hidden text-xs italic text-red-600 font-medium mt-2"></p>
+                </div>
+
+                <div id="gcashSection" class="hidden mb-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 bg-blue-50/40 border border-blue-100 rounded-2xl p-5 lg:p-6 mb-2">
+                        <!-- Left Column: QR Code Container -->
+                        <div class="flex flex-col">
+                            <div class="mb-4 text-[#0a2540] flex items-center gap-2">
+                                <i data-lucide="smartphone" class="w-5 h-5 text-blue-600"></i>
+                                <h4 class="font-bold text-base sm:text-lg">Pay via GCash or Any E-Wallet</h4>
+                            </div>
+
+                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1 flex flex-col justify-center items-center">
+                                <img id="qrCodeImage" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg" alt="GCash QR" class="w-full max-w-[220px] rounded-lg shadow-sm border border-gray-100 object-cover mb-6">
+                                <a id="qrCodeDownload" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/images/gcash_qr.jpg" download="Citilife_QR_Code.jpg" class="inline-flex w-full max-w-[220px] justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition text-sm shadow-md hover:shadow-lg mt-auto">
+                                    <i data-lucide="download" class="w-4 h-4"></i> Save QR Code
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Instructions & Submit -->
+                        <div class="flex flex-col justify-between">
+                            <div>
+                                <h5 class="font-bold text-[#0a2540] text-sm mb-4 uppercase tracking-wider">Payment Instructions</h5>
+                                <ol class="text-sm text-gray-700 space-y-4 mb-6 pl-0" style="list-style-type: none;">
+                                    <li class="flex items-start gap-3">
+                                        <span class="font-bold text-blue-600 w-5 flex-shrink-0">1</span>
+                                        <span>Save the QR Code to your device using the button.</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <span class="font-bold text-blue-600 w-5 flex-shrink-0">2</span>
+                                        <span>Open your e-wallet or mobile banking app on your device.</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <span class="font-bold text-blue-600 w-5 flex-shrink-0">3</span>
+                                        <span>Pay via QR code.</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <span class="font-bold text-blue-600 w-5 flex-shrink-0">4</span>
+                                        <span>Take a screenshot of the receipt and note the Reference Number.</span>
+                                    </li>
+                                </ol>
+                            </div>
+
+                            <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mt-auto">
+                                <div class="mb-5 flex items-center gap-2 text-[#0a2540]">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
+                                    <h4 class="font-bold">Submit Payment Details</h4>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm text-[#0a2540] mb-2">Reference Number</label>
+                                    <input type="text" name="reference_number" id="referenceNumber" class="w-full border border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm py-2 sm:py-2.5 px-3" placeholder="e.g. 100023456789">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm text-[#0a2540] mb-2">Upload Receipt Screenshot</label>
+                                    <div class="relative">
+                                        <input type="file" name="payment_proof" id="paymentProof" accept="image/*" 
+                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                            onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file chosen'">
+                                        <div class="w-full flex items-center justify-between border border-gray-200 rounded-lg overflow-hidden bg-white">
+                                            <span id="fileNameDisplay" class="px-3 py-2.5 sm:py-3 text-sm text-gray-400 truncate flex-1">No file chosen</span>
+                                            <span class="bg-blue-50 text-[#0a2540] text-sm font-semibold px-4 py-2.5 sm:py-3 border-l border-gray-200 transition">Choose File</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button type="submit" class="appearance-none w-full flex justify-center items-center px-4 py-3 sm:py-3.5 bg-red-600 text-white text-sm sm:text-base font-bold rounded-xl hover:bg-red-700 shadow-sm transition border-none outline-none focus:ring-4 focus:ring-red-100">
+                        Submit Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div id="feedback-modal"
+    class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity opacity-0">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200"
+        id="feedback-modal-content">
+        <div class="px-6 py-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-red-100 text-red-600 rounded-lg">
+                    <i data-lucide="message-square-plus" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-900">Submit Feedback</h2>
+                    <p class="text-xs text-gray-500">How was your experience with Citilife?</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeFeedbackModal()"
+                class="text-gray-400 hover:text-gray-600 transition p-2 rounded-lg hover:bg-gray-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="bg-red-50 border-b border-red-100 px-6 py-3 flex items-center gap-2 text-sm text-red-800">
+            <i data-lucide="folder-open" class="w-4 h-4 text-red-600"></i>
+            <span class="font-medium">Feedback for Case: <span class="font-bold text-red-700" id="feedback-case-number"></span></span>
+        </div>
+
+        <div class="p-6">
+            <form id="feedback-form" class="space-y-6">
+                <input type="hidden" name="case_id" id="feedback-case-id" value="">
+
+                <!-- Star Rating -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Overall Rating <span class="text-red-500">*</span></label>
+                    <div class="flex items-center gap-2" id="feedback-star-container">
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                            <button type="button"
+                                class="feedback-star-btn p-1 text-gray-300 hover:text-yellow-400 transition transform hover:scale-110"
+                                data-rating="<?= $i ?>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                                    fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round"
+                                    stroke-linejoin="round" class="w-8 h-8 pointer-events-none">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                            </button>
+                        <?php endfor; ?>
+                    </div>
+                    <input type="hidden" name="rating" id="feedback-rating-input" value="" required>
+                    <p class="text-xs text-gray-500 mt-2" id="feedback-rating-text">Select a rating</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional Comments (Optional)</label>
+                    <textarea name="comments" id="feedback-comments" rows="3"
+                        class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 transition outline-none"
+                        placeholder="Tell us more about your experience..."></textarea>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeFeedbackModal()"
+                        class="w-full sm:w-auto px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition text-center">
+                        Cancel
+                    </button>
+                    <button type="button" id="feedback-submit-btn" onclick="submitFeedbackForm()"
+                        class="w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition shadow-sm active:scale-[0.98] flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span class="whitespace-nowrap">Submit Feedback</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Dispute / Report Error Modal -->
+<div id="dispute-modal"
+    class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200 z-[10000] flex flex-col max-h-full"
+        id="dispute-modal-content">
+        <div class="px-6 py-5 border-b border-gray-100 bg-red-50/50 flex flex-shrink-0 items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-red-100 text-red-600 rounded-xl">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-900 text-base">Report an Error / Dispute Result</h2>
+                    <p class="text-xs text-gray-500">Notice an issue with your report or info? Report it to the clinic.</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeDisputeModal()"
+                class="text-gray-400 hover:text-gray-600 transition p-2 rounded-lg hover:bg-gray-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex flex-shrink-0 items-center justify-between text-xs text-gray-700">
+            <div>Case #: <span class="font-bold font-mono text-red-600" id="dispute-case-number"></span></div>
+            <div class="font-medium text-gray-500" id="dispute-exam-type"></div>
+        </div>
+
+        <form id="dispute-form" onsubmit="submitDisputeForm(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+                <input type="hidden" name="case_id" id="dispute-case-id">
+                <input type="hidden" name="action" value="submit_dispute">
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span class="text-red-500">*</span></label>
+                    <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
+                        class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                        <option value="" disabled selected>-- Select Category --</option>
+                        <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
+                        <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist Re-examination)</option>
+                        <option value="both_error">3. Both (Wrong Patient Info & Image Discrepancy)</option>
+                    </select>
+                </div>
+
+                <div id="demographic-options-container" class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                    <label class="block text-xs font-bold text-gray-700">Select what needs correction: <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-first-name" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                            <span class="font-medium">First Name</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-last-name" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                            <span class="font-medium">Last Name</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-age" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                            <span class="font-medium">Age</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
+                            <input type="checkbox" id="chk-sex" class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
+                            <span class="font-medium">Sex</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="general-description-container" class="hidden space-y-1">
+                    <label class="block text-xs font-bold text-gray-700">Details of Findings Discrepancy: <span class="text-red-500">*</span></label>
+                    <textarea name="findings_description" id="dispute-description" rows="3"
+                        class="w-full rounded-xl border border-gray-300 p-3 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="Please describe the discrepancy or issue with the radiologist's findings..."></textarea>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 flex-shrink-0">
+                <button type="button" onclick="closeDisputeModal()"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl text-xs transition">
+                    Cancel
+                </button>
+                <button type="submit" id="dispute-submit-btn"
+                    class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit Error Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    // Auto-hide success banner after 8 seconds
+    const successBanner = document.getElementById('success-banner');
+    if (successBanner) {
+        setTimeout(() => {
+            successBanner.style.opacity = '0';
+            setTimeout(() => successBanner.remove(), 500);
+        }, 8000);
+    }
+
+    // Cancel Case
+    function cancelCase(caseId, caseNumber) {
+        Swal.fire({
+            title: 'Cancel Request?',
+            text: `Are you sure you want to cancel the request for ${caseNumber}? This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, cancel it!',
+            cancelButtonText: 'No, keep it',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Cancelling...',
+                    html: 'Please wait',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/cancel_case.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ case_id: caseId })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Cancelled!', 'Your request has been cancelled.', 'success').then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error', data.message || 'Failed to cancel the request.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                    });
+            }
+        });
+    }
+
+    // Payment Modal Logic
+    const examPrices = <?= $examPricesJson ?>;
+
+    function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath, examType) {
+        document.getElementById('paymentModal').classList.remove('hidden');
+        document.getElementById('paymentCaseId').value = caseId;
+        document.getElementById('paymentAmount').value = amount;
+        
+        const origPrice = parseFloat(originalPrice || amount);
+        const disc = parseFloat(philhealthDiscount || 0);
+        const due = parseFloat(amount || 0);
+
+        document.getElementById('paymentAmountDisplay').innerText = '₱' + due.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        const breakdownContainer = document.getElementById('paymentBreakdownContainer');
+        breakdownContainer.innerHTML = '';
+        
+        if (examType) {
+            const exams = examType.split(',').map(e => e.trim());
+            exams.forEach(exam => {
+                const key = exam.toLowerCase();
+                const examData = examPrices[key] || { price: 0, discount: 0 };
+                const price = examData.price;
+                
+                breakdownContainer.innerHTML += `
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500 font-medium">${exam}</span>
+                        <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                `;
+                
+                if (disc > 0 && examData.discount > 0) {
+                    breakdownContainer.innerHTML += `
+                        <div class="flex items-center justify-between text-sm mt-1 mb-2">
+                            <span class="text-emerald-600 font-medium">PhilHealth Discount</span>
+                            <span class="font-semibold text-emerald-600 font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                    `;
+                }
+            });
+        } else {
+            breakdownContainer.innerHTML += `
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500 font-medium">Regular Procedure Fee</span>
+                    <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${origPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+            `;
+        }
+        
+        const cashDiscNotice = document.getElementById('cashDiscountNotice');
+        if (disc > 0) {
+            if (cashDiscNotice) {
+                cashDiscNotice.classList.remove('hidden');
+                cashDiscNotice.innerHTML = `Note: PhilHealth discounts have been applied. Please present your PhilHealth ID at the clinic counter.`;
+            }
+        } else {
+            if (cashDiscNotice) cashDiscNotice.classList.add('hidden');
+        }
+        
+        const gcashOption = document.getElementById('gcashOptionWrapper');
+        if (gcashQrPath && gcashQrPath.trim() !== '') {
+            if (gcashOption) gcashOption.classList.remove('hidden');
+            document.getElementById('qrCodeImage').src = '<?= "/" . PROJECT_DIR . "/" ?>' + (gcashQrPath.startsWith('/') ? gcashQrPath.substring(1) : gcashQrPath);
+            document.getElementById('qrCodeDownload').href = '<?= "/" . PROJECT_DIR . "/" ?>' + (gcashQrPath.startsWith('/') ? gcashQrPath.substring(1) : gcashQrPath);
+        } else {
+            if (gcashOption) gcashOption.classList.add('hidden');
+            document.getElementById('paymentMethodCash').click();
+        }
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+    
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.add('hidden');
+    }
+    
+    function togglePaymentMethod(method) {
+        const gcashSection = document.getElementById('gcashSection');
+        const cashSection = document.getElementById('cashSection');
+        const proofInput = document.getElementById('paymentProof');
+        const refInput = document.getElementById('referenceNumber');
+        const modalContainer = document.getElementById('paymentModalContainer');
+        
+        if (method === 'GCash') {
+            gcashSection.classList.remove('hidden');
+            if (cashSection) cashSection.classList.add('hidden');
+            proofInput.required = true;
+            if(refInput) refInput.required = true;
+            if (modalContainer) {
+                modalContainer.classList.remove('max-w-md', 'sm:max-w-md');
+                modalContainer.style.maxWidth = '56rem';
+                modalContainer.style.transition = 'none';
+            }
+        } else {
+            gcashSection.classList.add('hidden');
+            if (cashSection) cashSection.classList.remove('hidden');
+            proofInput.required = false;
+            if(refInput) refInput.required = false;
+            if (modalContainer) {
+                modalContainer.style.maxWidth = '28rem';
+            }
+        }
+    }
+
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id === 'paymentForm') {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            Swal.fire({
+                title: 'Uploading...',
+                text: 'Please wait while we process your payment.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processing...';
+            if (window.lucide) lucide.createIcons();
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        document.getElementById('paymentModal').classList.add('hidden');
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message || 'An error occurred.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Failed to connect to the server. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            });
+        }
+    });
+
     // Activity Status Poller (Radiologist Typing Indicator)
     (function () {
         function pollRadiologistActivity() {
@@ -535,15 +1345,13 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 .then(data => {
                     if (data.success) {
                         const baseClass = "absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full z-20 transition-colors";
+                        dot.innerHTML = '';
                         if (data.state === 'active') {
-                            dot.className = baseClass + " bg-green-500 animate-ping";
-                            dot.innerHTML = `<span class="absolute inline-flex h-full w-full rounded-full bg-green-500"></span>`;
+                            dot.className = baseClass + " bg-green-500";
                         } else if (data.state === 'idle') {
                             dot.className = baseClass + " bg-gray-400";
-                            dot.innerHTML = '';
                         } else {
                             dot.className = baseClass + " bg-red-500";
-                            dot.innerHTML = '';
                         }
                     }
                 })

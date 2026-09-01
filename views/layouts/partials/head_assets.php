@@ -252,7 +252,7 @@
     }
 
     body.theme-dark .hover\:bg-gray-100:hover {
-      background-color: #111827 !important;
+      background-color: #1f2937 !important;
     }
 
     body.theme-dark .active\:bg-gray-200:active {
@@ -268,6 +268,13 @@
     body.theme-dark .divide-gray-50> :not([hidden])~ :not([hidden]),
     body.theme-dark .divide-gray-100> :not([hidden])~ :not([hidden]),
     body.theme-dark .divide-gray-200> :not([hidden])~ :not([hidden]) {
+      border-color: #374151 !important;
+    }
+
+    /* Borders */
+    body.theme-dark .border-gray-100,
+    body.theme-dark .border-gray-200,
+    body.theme-dark .border-gray-300 {
       border-color: #374151 !important;
     }
 
@@ -1041,17 +1048,15 @@
   </style>
 
   <!-- ===== THEME BOOTSTRAP: runs synchronously before first paint ===== -->
-  <!-- Supports System / Dark / Light. Runs before first paint to avoid flash. -->
+  <!-- Defaults to Light mode. Supports System / Dark / Light. Runs before first paint to avoid flash. -->
   <script>
     (function () {
       try {
-        var theme = localStorage.getItem('citilife_theme') || 'system';
+        var theme = localStorage.getItem('citilife_theme') || 'light';
         var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         var shouldBeDark = (theme === 'dark') || (theme === 'system' && prefersDark);
-        console.log("Theme Bootstrap - theme:", theme, "shouldBeDark:", shouldBeDark);
 
         function applyTheme(dark) {
-          console.log("Theme Bootstrap - applyTheme:", dark);
           if (dark) {
             document.documentElement.classList.add('theme-dark', 'dark');
             document.documentElement.style.colorScheme = 'dark';
@@ -1075,7 +1080,7 @@
         // Watch OS-level preference changes (only affects 'system' mode)
         if (window.matchMedia) {
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-            var currentTheme = localStorage.getItem('citilife_theme') || 'system';
+            var currentTheme = localStorage.getItem('citilife_theme') || 'light';
             if (currentTheme === 'system') {
               applyTheme(e.matches);
               if (e.matches) {

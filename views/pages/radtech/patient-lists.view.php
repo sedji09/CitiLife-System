@@ -347,11 +347,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
     function saveQueueState() {
         const { searchInput, filterPriority, filterDate, sortDate } = getQueueInputs();
-        if (searchInput) sessionStorage.setItem('CitiLife_radtechQueue_search', searchInput.value);
-        if (filterPriority) sessionStorage.setItem('CitiLife_radtechQueue_priority', filterPriority.value);
-        if (filterDate) sessionStorage.setItem('CitiLife_radtechQueue_date', filterDate.value);
-        if (sortDate) sessionStorage.setItem('CitiLife_radtechQueue_sort', sortDate.value);
-        sessionStorage.setItem('CitiLife_radtechQueue_page', currentMainPage);
+        if (searchInput) sessionStorage.setItem('Citilife_radtechQueue_search', searchInput.value);
+        if (filterPriority) sessionStorage.setItem('Citilife_radtechQueue_priority', filterPriority.value);
+        if (filterDate) sessionStorage.setItem('Citilife_radtechQueue_date', filterDate.value);
+        if (sortDate) sessionStorage.setItem('Citilife_radtechQueue_sort', sortDate.value);
+        sessionStorage.setItem('Citilife_radtechQueue_page', currentMainPage);
     }
 
     function restoreFiltersFromSession() {
@@ -362,7 +362,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         if (urlParams.has('filterPriority')) {
             if (filterPriority) filterPriority.value = urlParams.get('filterPriority');
         } else if (filterPriority) {
-            const savedPriority = sessionStorage.getItem('CitiLife_radtechQueue_priority');
+            const savedPriority = sessionStorage.getItem('Citilife_radtechQueue_priority');
             if (savedPriority) filterPriority.value = savedPriority;
         }
 
@@ -372,7 +372,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         } else if (urlParams.has('highlight')) {
             if (filterDate) filterDate.value = 'All';
         } else if (filterDate) {
-            const savedDate = sessionStorage.getItem('CitiLife_radtechQueue_date');
+            const savedDate = sessionStorage.getItem('Citilife_radtechQueue_date');
             if (savedDate) filterDate.value = savedDate;
         }
 
@@ -380,19 +380,19 @@ $currentTab = $_GET['tab'] ?? 'completed';
         if (urlParams.has('search')) {
             if (searchInput) searchInput.value = urlParams.get('search');
         } else if (searchInput) {
-            const savedSearch = sessionStorage.getItem('CitiLife_radtechQueue_search');
+            const savedSearch = sessionStorage.getItem('Citilife_radtechQueue_search');
             if (savedSearch !== null) searchInput.value = savedSearch;
         }
 
         // Sort date
         if (sortDate) {
-            const savedSort = sessionStorage.getItem('CitiLife_radtechQueue_sort');
+            const savedSort = sessionStorage.getItem('Citilife_radtechQueue_sort');
             if (savedSort) sortDate.value = savedSort;
         }
 
         // Page
         if (!urlParams.has('highlight')) {
-            const savedPage = parseInt(sessionStorage.getItem('CitiLife_radtechQueue_page'));
+            const savedPage = parseInt(sessionStorage.getItem('Citilife_radtechQueue_page'));
             if (savedPage && savedPage > 0) {
                 currentMainPage = savedPage;
             }
@@ -608,6 +608,16 @@ $currentTab = $_GET['tab'] ?? 'completed';
         const params = new window.URLSearchParams(window.location.search);
         const highlightId = params.get('highlight');
         if (highlightId) {
+            // Clean up the URL right away to prevent background polling from re-triggering highlight
+            try {
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('highlight');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
+                if (window.__APP__) {
+                    window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
+                }
+            } catch (e) {}
+
             const rows = document.querySelectorAll('#table-body tr.record-row');
             let targetRow = null;
             
@@ -649,6 +659,10 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         }, 300);
                     }, 300);
                 }, 200);
+
+                // Remove existing banner if present
+                const existingBanner = document.getElementById('highlight-banner');
+                if (existingBanner) existingBanner.remove();
 
                 const banner = document.createElement('div');
                 banner.id = 'highlight-banner';

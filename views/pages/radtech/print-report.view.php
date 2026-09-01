@@ -667,7 +667,7 @@ if (!$isMultiExam) {
         <!-- Header -->
         <div class="report-header">
             <div class="header-left">
-                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
                     class="header-logo">
                 <div class="header-text">
                     <h1>CITILIFE</h1>
@@ -797,7 +797,7 @@ if (!$isMultiExam) {
                 &bull; BONGABON
             </div>
             <div class="report-footer">
-                <span>CitiLife Diagnostic — <?= $branch ?> Branch</span>
+                <span>Citilife Diagnostic — <?= $branch ?> Branch</span>
                 <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
             </div>
         </div>
@@ -895,7 +895,7 @@ if (!$isMultiExam) {
                 </div>
 
                 <div class="report-footer" style="margin-top: auto;">
-                    <span>CitiLife Diagnostic — <?= $branch ?> Branch</span>
+                    <span>Citilife Diagnostic — <?= $branch ?> Branch</span>
                     <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
                 </div>
             </div>

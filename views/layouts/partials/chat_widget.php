@@ -243,7 +243,7 @@
         <!-- Unread badge on +N group button -->
         <div v-if="bubbleChats.slice(5).some(c => c.unreadCount > 0)"
           class="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-[11px] font-bold rounded-full border-2 border-white flex items-center justify-center px-1 pointer-events-none z-20">
-          {{ bubbleChats.slice(5).reduce((sum, c) => sum + (c.unreadCount || 0), 0) }}
+          {{ bubbleChats.slice(5).reduce((sum, c) => sum + (c.unreadCount || 0), 0) > 99 ? '99+' : bubbleChats.slice(5).reduce((sum, c) => sum + (c.unreadCount || 0), 0) }}
         </div>
         <div v-show="isGroupMenuOpen" class="absolute flex items-center"
           style="right: 64px; top: 50%; transform: translateY(-50%); z-index: 9999; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.18));"

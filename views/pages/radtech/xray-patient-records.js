@@ -1,8 +1,8 @@
 (function () {
     const ROWS_PER_PAGE = 8;
     let currentPages = {
-        completed: parseInt(sessionStorage.getItem('CitiLife_radtechXray_page_completed')) || 1,
-        disputes: parseInt(sessionStorage.getItem('CitiLife_radtechXray_page_disputes')) || 1
+        completed: parseInt(sessionStorage.getItem('Citilife_radtechXray_page_completed')) || 1,
+        disputes: parseInt(sessionStorage.getItem('Citilife_radtechXray_page_disputes')) || 1
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@
         if (currentPages[type] > totalPages) currentPages[type] = totalPages;
         if (currentPages[type] < 1)          currentPages[type] = 1;
 
-        sessionStorage.setItem(`CitiLife_radtechXray_page_${type}`, currentPages[type]);
+        sessionStorage.setItem(`Citilife_radtechXray_page_${type}`, currentPages[type]);
 
         const startIdx = (currentPages[type] - 1) * ROWS_PER_PAGE;
         const endIdx   = startIdx + ROWS_PER_PAGE;

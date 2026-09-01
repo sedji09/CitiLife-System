@@ -28,7 +28,7 @@ if ($userId == 0 && isset($_SESSION['email'])) {
 
 if (!defined('PROJECT_DIR')) {
     $parts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
-    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'CitiLife-System');
+    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'Citilife-System');
 }
 
 // Auto-insert overdue case notifications (Pending or Under Reading for 3+ hours)
@@ -82,14 +82,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'mark_read' || $action === 'mark_unread' || $action === 'delete') {
         if ($action === 'delete') {
-            $sql = "DELETE FROM notifications WHERE id = ? AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))";
-            $params = [$notifId, $userId, $role, $branchId];
+            $sql = "DELETE FROM notifications WHERE id = ? AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))";
+            $params = [$notifId, $userId, $role, $role, $branchId];
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
         } else {
             $isReadVal = ($action === 'mark_read') ? 1 : 0;
-            $sql = "UPDATE notifications SET is_read = ? WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR branch_id = ?)))";
-            $params = [$isReadVal, $userId, $role, $branchId];
+            $sql = "UPDATE notifications SET is_read = ? WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))";
+            $params = [$isReadVal, $userId, $role, $role, $branchId];
             
             if ($notifId) {
                 $sql .= " AND id = ?";

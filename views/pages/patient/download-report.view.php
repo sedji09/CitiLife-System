@@ -13,8 +13,8 @@ $branchModel = new \BranchModel($pdo);
 $userId = $_SESSION['user_id'] ?? null;
 if (isset($_GET['ref'])) {
     $decoded = base64_decode($_GET['ref']);
-    if (strpos($decoded, 'CitiLife_Case_') === 0) {
-        $id = (int) str_replace('CitiLife_Case_', '', $decoded);
+    if (strpos($decoded, 'Citilife_Case_') === 0) {
+        $id = (int) str_replace('Citilife_Case_', '', $decoded);
     } else {
         $id = 0;
     }
@@ -23,7 +23,7 @@ if (isset($_GET['ref'])) {
 }
 
 // Redirect back to view-report (with ref token instead of raw id) just to be safe
-$refToken = base64_encode('CitiLife_Case_' . $id);
+$refToken = base64_encode('Citilife_Case_' . $id);
 $patientId = $_SESSION['patient_id'] ?? null;
 
 if (!$id || !$patientId) {
@@ -714,7 +714,7 @@ if (!$isMultiExam) {
         <!-- Header -->
         <div class="report-header">
             <div class="header-left">
-                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
                     class="header-logo">
                 <div class="header-text">
                     <h1>CITILIFE</h1>
@@ -902,7 +902,7 @@ if (!$isMultiExam) {
         </div>
         <!-- Footer -->
         <div class="report-footer">
-            <span>CitiLife Diagnostic — <?= $branch ?> Branch</span>
+            <span>Citilife Diagnostic — <?= $branch ?> Branch</span>
             <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
         </div>
 
@@ -938,7 +938,7 @@ if (!$isMultiExam) {
                 </div>
 
                 <div class="report-footer">
-                    <span>CitiLife Diagnostic — <?= $branch ?> Branch</span>
+                    <span>Citilife Diagnostic — <?= $branch ?> Branch</span>
                     <span>Case: <?= $caseNum ?> &nbsp;|&nbsp; Generated: <?= date('M d, Y h:i A') ?></span>
                 </div>
             </div>

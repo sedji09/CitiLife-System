@@ -38,7 +38,7 @@
             </div>
             <div>
                 <h2 class="font-bold text-gray-900">Submit Feedback</h2>
-                <p class="text-xs text-gray-500">How was your experience with CitiLife?</p>
+                <p class="text-xs text-gray-500">How was your experience with Citilife?</p>
             </div>
         </div>
         

@@ -89,6 +89,7 @@ sort($examTypes);
                     <?php foreach ($records as $row): ?>
                         <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                             data-exam-type="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . ($row['patient_number'] ?? '') . ' ' . $row['first_name'] . ' ' . $row['last_name'])) ?>"
                             data-date="<?= strtotime($row['created_at']) ?>">
@@ -196,63 +197,8 @@ sort($examTypes);
     </div>
 </div>
 
-<script>
-    // ── Highlight row from notification ───────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-        const params = new window.URLSearchParams(window.location.search);
-        const highlightId = params.get('highlight');
-        if (!highlightId) return;
-
-        setTimeout(() => {
-            const rows = document.querySelectorAll('tr.record-row');
-            let targetRow = null;
-            rows.forEach(row => {
-                if ((row.dataset.id || '').toLowerCase() === highlightId.toLowerCase()) {
-                    targetRow = row;
-                }
-            });
-
-            if (targetRow) {
-                const tableWrapper = targetRow.closest('.overflow-y-auto');
-                if (tableWrapper) {
-                    tableWrapper.scrollTo({ top: targetRow.offsetTop - tableWrapper.offsetTop - 40, behavior: 'smooth' });
-                } else {
-                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-
-                targetRow.style.transition = 'background-color 0.4s ease';
-                targetRow.style.backgroundColor = '#fef08a';
-                setTimeout(() => {
-                    targetRow.style.backgroundColor = '#fde047';
-                    setTimeout(() => {
-                        targetRow.style.backgroundColor = '#fef08a';
-                        setTimeout(() => {
-                            targetRow.style.backgroundColor = '#fde047';
-                            setTimeout(() => {
-                                targetRow.style.transition = 'background-color 1.5s ease';
-                                targetRow.style.backgroundColor = '';
-                            }, 300);
-                        }, 300);
-                    }, 300);
-                }, 200);
-
-                const banner = document.createElement('div');
-                banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
-                banner.style.cssText = 'margin-left:auto;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
-                const header = document.querySelector('h2');
-                if (header && header.parentElement) {
-                    header.parentElement.insertAdjacentElement('afterend', banner);
-                }
-                setTimeout(() => {
-                    banner.style.transition = 'opacity 0.5s';
-                    banner.style.opacity = '0';
-                    setTimeout(() => banner.remove(), 500);
-                }, 6000);
-            }
-        }, 150);
-    });
-
-    // ── Search, Filter, Sort Logic ───────────────────────────────────────────────
+<<script>
+    // ── Search, Filter, Sort, Pagination & Highlight Logic ───────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('searchInput');
         const filterExam = document.getElementById('filterExam');
@@ -379,7 +325,7 @@ sort($examTypes);
             container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
             container.appendChild(createButton('&lsaquo; Prev', currentPage - 1, currentPage <= 1));
 
-            if (totalPages <= 5) {
+            if (totalPages <= 7) {
                 for (let i = 1; i <= totalPages; i++) {
                     container.appendChild(createButton(i, i, false, i === currentPage));
                 }
@@ -407,6 +353,80 @@ sort($examTypes);
             container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
+        function handleHighlight() {
+            const params = new URLSearchParams(window.location.search);
+            const highlightId = params.get('highlight') || params.get('highlight_case') || params.get('case_id');
+            if (!highlightId) return;
+
+            const targetRow = allRows.find(r => 
+                (r.dataset.id || '').toLowerCase() === highlightId.toLowerCase() ||
+                (r.dataset.caseId || '').toLowerCase() === highlightId.toLowerCase()
+            );
+
+            if (targetRow) {
+                const targetIndex = allRows.indexOf(targetRow);
+                currentPage = Math.floor(targetIndex / ROWS_PER_PAGE) + 1;
+                updateTable();
+
+                setTimeout(() => {
+                    targetRow.style.display = '';
+                    const tableWrapper = targetRow.closest('.overflow-y-auto');
+                    if (tableWrapper) {
+                        const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
+                        tableWrapper.scrollTo({ top: rowTop - 40, behavior: 'smooth' });
+                    } else {
+                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+
+                    targetRow.style.transition = 'background-color 0.3s ease';
+                    targetRow.style.backgroundColor = '#fef08a';
+                    setTimeout(() => {
+                        targetRow.style.backgroundColor = '#fde047';
+                        setTimeout(() => {
+                            targetRow.style.backgroundColor = '#fef08a';
+                            setTimeout(() => {
+                                targetRow.style.backgroundColor = '#fde047';
+                                setTimeout(() => {
+                                    targetRow.style.transition = 'background-color 1.5s ease';
+                                    targetRow.style.backgroundColor = '';
+                                }, 400);
+                            }, 400);
+                        }, 400);
+                    }, 200);
+
+                    // Remove existing banner if present
+                    const existingBanner = document.getElementById('highlight-banner');
+                    if (existingBanner) existingBanner.remove();
+
+                    const banner = document.createElement('div');
+                    banner.id = 'highlight-banner';
+                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
+                    banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                    const header = document.querySelector('h2');
+                    if (header && header.parentElement) {
+                        header.parentElement.insertAdjacentElement('afterend', banner);
+                    }
+                    setTimeout(() => {
+                        banner.style.transition = 'opacity 0.5s';
+                        banner.style.opacity = '0';
+                        setTimeout(() => banner.remove(), 500);
+                    }, 6000);
+
+                    try {
+                        const cleanUrl = new URL(window.location.href);
+                        cleanUrl.searchParams.delete('highlight');
+                        cleanUrl.searchParams.delete('highlight_case');
+                        cleanUrl.searchParams.delete('case_id');
+                        cleanUrl.searchParams.delete('is_new');
+                        window.history.replaceState({}, document.title, cleanUrl.toString());
+                        if (window.__APP__) {
+                            window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
+                        }
+                    } catch (e) {}
+                }, 200);
+            }
+        }
+
         function onFilterSortChange() {
             currentPage = 1;
             updateTable();
@@ -416,8 +436,9 @@ sort($examTypes);
         if (filterExam) filterExam.addEventListener('change', onFilterSortChange);
         if (sortDate) sortDate.addEventListener('change', onFilterSortChange);
 
-        // Initial pagination
+        // Initial pagination & highlight
         updateTable();
+        handleHighlight();
 
         // ensure lucide icons are created if not already
         if (typeof lucide !== 'undefined') {

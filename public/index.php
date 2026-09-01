@@ -12,10 +12,10 @@ if (file_exists(__DIR__ . '/../env.php')) {
 
 // Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
 if (!defined('PROJECT_DIR')) {
-    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/CitiLife-System/public/index.php';
+    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/Citilife-System/public/index.php';
     $parts = explode('/', $scriptPath);
     // Find the first segment after root, standardizing to project folder name
-    define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'CitiLife-System');
+    define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'Citilife-System');
 }
 
 // I-load muna ang Composer Autoloader
@@ -76,7 +76,7 @@ $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== fal
 // Kung tumatakbo sa production (tulad ng Railway), ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
 if (!$isLocalhost) {
     // Remove the XAMPP project folder only, KEEP the /public/ prefix because DocumentRoot is /app
-    // (e.g., /CitiLife-System/public/assets -> /public/assets)
+    // (e.g., /Citilife-System/public/assets -> /public/assets)
     $output = str_replace('/' . PROJECT_DIR . '/', '/', $output);
 }
 

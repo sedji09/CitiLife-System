@@ -2,7 +2,7 @@
 ob_start(); // Start output buffering to catch any warnings
 session_start();
 if (!defined('PROJECT_DIR')) {
-    define('PROJECT_DIR', 'CitiLife-System');
+    define('PROJECT_DIR', 'Citilife-System');
 }
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../app/Models/AuditLogModel.php';
@@ -121,7 +121,7 @@ try {
         $notifModel->add(
             "New Payment Submitted",
             "A new payment of ₱" . number_format($amount, 2) . " via $paymentMethod has been submitted for request $reqNum.",
-            rtrim('/' . PROJECT_DIR, '/') . "/payment-verifications",
+            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications",
             null,
             'branch_admin',
             $branchId

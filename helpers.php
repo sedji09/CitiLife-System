@@ -149,3 +149,20 @@ if (!function_exists('redirect')) {
         exit();
     }
 }
+
+if (!function_exists('appBaseUrl')) {
+    /**
+     * Get base URL of application with protocol and host
+     * 
+     * @return string
+     */
+    function appBaseUrl()
+    {
+        if (!empty($_ENV['APP_URL'])) return rtrim($_ENV['APP_URL'], '/');
+        if (!empty(getenv('APP_URL'))) return rtrim(getenv('APP_URL'), '/');
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? '') == 443) ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return rtrim($protocol . $host, '/');
+    }
+}
+

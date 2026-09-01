@@ -18,9 +18,9 @@ try {
     }
 
     if (!defined('PROJECT_DIR')) {
-        $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/CitiLife-System/app/api/update_profile.php';
+        $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/Citilife-System/app/api/update_profile.php';
         $parts = explode('/', $scriptPath);
-        define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'CitiLife-System');
+        define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'Citilife-System');
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,6 +40,7 @@ try {
             }
 
             if ($role === 'patient') {
+                $displayNameInput = trim($_POST['display_name'] ?? '');
                 $firstName = trim($_POST['first_name'] ?? '');
                 $lastName = trim($_POST['last_name'] ?? '');
                 $birthdate = trim($_POST['birthdate'] ?? '');
@@ -53,9 +54,10 @@ try {
                     exit;
                 }
 
-                $newName = $firstName . ' ' . $lastName;
+                // If patient provided a custom display name, use it; otherwise default to first name
+                $newName = !empty($displayNameInput) ? $displayNameInput : $firstName;
             } else {
-                $newName = trim($_POST['system_name'] ?? '');
+                $newName = trim($_POST['system_name'] ?? ($_POST['display_name'] ?? ''));
                 $password = $_POST['password'] ?? '';
                 
                 if (empty($newName)) {

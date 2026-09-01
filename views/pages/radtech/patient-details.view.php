@@ -107,8 +107,7 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Examination Details</h3>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-gray-600 text-sm font-medium mb-1.5">Exam Types <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-gray-600 text-sm font-medium mb-1.5">Exam Types</label>
                     <?php
                     $examInputName = 'exam_type';
                     $preSelectedExams = $caseDetails['exam_type'] ?? '';

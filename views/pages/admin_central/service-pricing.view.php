@@ -608,7 +608,7 @@
     }
 
     // Pagination State
-    let currentPage = parseInt(sessionStorage.getItem('CitiLife_servicePricing_page')) || 1;
+    let currentPage = parseInt(sessionStorage.getItem('Citilife_servicePricing_page')) || 1;
     const itemsPerPage = 8;
 
     function filterAndSortServices(resetPage = true) {
@@ -734,7 +734,7 @@
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        sessionStorage.setItem('CitiLife_servicePricing_page', currentPage);
+        sessionStorage.setItem('Citilife_servicePricing_page', currentPage);
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);

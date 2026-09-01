@@ -11,7 +11,7 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 - Server Error | CitiLife System</title>
+    <title>500 - Server Error | Citilife System</title>
     <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');

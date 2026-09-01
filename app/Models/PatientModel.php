@@ -276,6 +276,12 @@ class PatientModel
                 $patientId = (int) ($data['patient_id'] ?? 0);
                 if (!$patientId)
                     throw new Exception("Existing patient ID is required.");
+
+                // If email is provided for existing patient, update email in patients table if non-empty
+                if (!empty($data['email'])) {
+                    $stmtEmailUp = $pdo->prepare("UPDATE patients SET email = ? WHERE id = ?");
+                    $stmtEmailUp->execute([$data['email'], $patientId]);
+                }
             } else {
                 // Register New Patient
                 $patientId = $this->registerPatient([

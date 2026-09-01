@@ -60,7 +60,7 @@
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Branch</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Branch <span class="text-red-500">*</span></label>
                     <select name="branch_id" required
                         class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400">
                         <option value="" disabled selected>Select branch</option>

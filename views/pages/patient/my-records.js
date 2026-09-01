@@ -14,6 +14,7 @@
     const state = {
         completed: { page: 1 },
         rejected: { page: 1 },
+        cancelled: { page: 1 },
         disputes: { page: 1 }
     };
 
@@ -34,11 +35,8 @@
     window.switchPatientTab = function (tabId) {
         currentTab = tabId;
 
-        // Removed persistence of tab to URL to maintain Stealth Mode
-        // (the URL will remain clean when switching tabs)
-
         // Hide all contents
-        ['completed', 'rejected', 'disputes'].forEach(t => {
+        ['completed', 'rejected', 'cancelled', 'disputes'].forEach(t => {
             const el = document.getElementById(`tab-${t}-content`);
             if (el) el.classList.add('hidden');
 
@@ -79,6 +77,9 @@
         } else if (tabId === 'rejected') {
             containerId = 'rejected-cards-container';
             searchId = 'rejected-search-input';
+        } else if (tabId === 'cancelled') {
+            containerId = 'cancelled-cards-container';
+            searchId = 'cancelled-search-input';
         } else if (tabId === 'disputes') {
             containerId = 'disputes-cards-container';
         }
@@ -97,7 +98,8 @@
         // Select items in container based on tab
         const items = Array.from(container.querySelectorAll(
             tabId === 'completed' ? '.completed-card' :
-                tabId === 'rejected' ? '.rejected-card' : '.dispute-card'
+                tabId === 'rejected' ? '.rejected-card' :
+                    tabId === 'cancelled' ? '.cancelled-card' : '.dispute-card'
         ));
 
         // Sorting (only implemented for completed and rejected via data-date if present)
@@ -186,7 +188,7 @@
 
     // Event Listeners
     document.addEventListener('input', (e) => {
-        if (['completed-search-input', 'rejected-search-input'].includes(e.target.id)) {
+        if (['completed-search-input', 'rejected-search-input', 'cancelled-search-input'].includes(e.target.id)) {
             state[currentTab].page = 1;
             renderTab(currentTab);
         }
@@ -203,7 +205,7 @@
         const btn = e.target.closest('button');
         if (!btn) return;
 
-        const match = btn.id.match(/^(completed|rejected|disputes)-(prev|next)-btn$/);
+        const match = btn.id.match(/^(completed|rejected|cancelled|disputes)-(prev|next)-btn$/);
         if (match) {
             const tabId = match[1];
             const action = match[2];
@@ -223,6 +225,7 @@
     function init() {
         renderTab('completed');
         renderTab('rejected');
+        renderTab('cancelled');
         renderTab('disputes');
         // By default switch to currentTab from URL
         window.switchPatientTab(currentTab);
@@ -258,7 +261,7 @@
         // Determine which tab has the case
         let foundTab = null;
         let foundItem = null;
-        ['completed', 'rejected', 'disputes'].forEach(tabId => {
+        ['completed', 'rejected', 'cancelled', 'disputes'].forEach(tabId => {
             if (foundTab) return;
             const container = document.getElementById(`${tabId}-cards-container`);
             if (container) {

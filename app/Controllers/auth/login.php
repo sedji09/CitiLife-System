@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     // $firstName = $user['name'] ?? 'Staff Member';
                     // $emailBody = "
                     //     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                    //         <h2 style='color: #1f2937;'>CitiLife System - Staff Login Verification</h2>
+                    //         <h2 style='color: #1f2937;'>Citilife System - Staff Login Verification</h2>
                     //         <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
                     //         <p style='color: #4b5563; font-size: 16px;'>Please use the following OTP to complete your login:</p>
                     //         <div style='text-align: center; margin: 30px 0;'>
@@ -142,14 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     //         </div>
                     //         <p style='color: #6b7280; font-size: 14px;'>This code will expire in 5 minutes.</p>
                     //         <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
-                    //         <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
+                    //         <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " Citilife Diagnostic Center. All rights reserved.</p>
                     //     </div>
                     // ";
                     
                     // if (!function_exists('sendEmail')) {
                     //     require_once basePath('app/Helpers/mailer_helper.php');
                     // }
-                    // sendEmail($user['email'], $firstName, 'Staff Login Verification Code - CitiLife System', $emailBody);
+                    // sendEmail($user['email'], $firstName, 'Staff Login Verification Code - Citilife System', $emailBody);
 
                     // // Password is correct, start temporary session for OTP
                     // unset($_SESSION['staff_login_attempts']);
@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - CitiLife System</title>
+    <title>Login - Citilife System</title>
     <!-- Use generated Tailwind CSS -->
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/security.js?v=<?= time() ?>"></script>
@@ -256,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 <!-- Fallback to a styled text if logo image is missing -->
                 <div
                     class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-sm">
-                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
                         class="h-10 w-10 sm:h-12 sm:w-12 object-contain"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24"
@@ -374,7 +374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             </form>
         </div>
         <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">
-            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.
+            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> Citilife Diagnostic Center. All rights reserved.
             </p>
         </div>
     </div>

@@ -41,25 +41,52 @@ class UserModel {
      * Get display info (initials, formatted name, avatar) for sidebar/layout.
      */
     public function getDisplayInfo($userId, $sessionName = '', $sessionEmail = '') {
-        // 1. Fetch Avatar
-        $stmt = $this->pdo->prepare("SELECT avatar FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $avatar = $stmt->fetchColumn();
+        // 1. Fetch Avatar & User/Patient Info
+        $avatar = null;
+        $dbName = null;
+        $patientFirstName = null;
+        $patientFullName = null;
+        $isPatient = false;
+        if ($userId) {
+            $stmt = $this->pdo->prepare("SELECT u.avatar, u.name, u.role, p.first_name, p.last_name FROM users u LEFT JOIN patients p ON u.patient_id = p.id WHERE u.id = ? LIMIT 1");
+            $stmt->execute([$userId]);
+            $userRow = $stmt->fetch();
+            if ($userRow) {
+                $avatar = $userRow['avatar'];
+                $dbName = $userRow['name'];
+                $patientFirstName = $userRow['first_name'];
+                $patientFullName = trim(($userRow['first_name'] ?? '') . ' ' . ($userRow['last_name'] ?? ''));
+                $isPatient = ($userRow['role'] === 'patient');
+            }
+        }
 
         // 2. Generate Display Name and Initials
         $displayName = '';
-        $initials = '';
 
-        if ($sessionName) {
-            $nameParts = explode(' ', $sessionName);
-            $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
-            $displayName = $sessionName;
+        if ($isPatient) {
+            if (!empty($dbName) && $dbName !== $patientFullName) {
+                $displayName = $dbName;
+            } elseif (!empty($patientFirstName)) {
+                $displayName = $patientFirstName;
+            } elseif (!empty($sessionName) && $sessionName !== $patientFullName) {
+                $displayName = $sessionName;
+            } else {
+                $displayName = $patientFullName ?: ($sessionName ?: 'Patient');
+            }
         } else {
-            $emailParts = explode('@', $sessionEmail);
-            $nameParts = explode('.', $emailParts[0]);
-            $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : substr($nameParts[0], 1, 1)));
-            $displayName = implode(' ', array_map('ucfirst', $nameParts));
+            if (!empty($sessionName)) {
+                $displayName = $sessionName;
+            } elseif (!empty($dbName)) {
+                $displayName = $dbName;
+            } else {
+                $emailParts = explode('@', $sessionEmail);
+                $nameParts = explode('.', $emailParts[0]);
+                $displayName = implode(' ', array_map('ucfirst', $nameParts));
+            }
         }
+
+        $nameParts = explode(' ', trim($displayName));
+        $initials = strtoupper(substr($nameParts[0] ?? 'U', 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
 
         return [
             'avatar'      => $avatar,

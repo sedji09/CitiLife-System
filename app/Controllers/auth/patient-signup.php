@@ -115,18 +115,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
                     $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
 
-                    $emailBody = "
-                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                            <h2 style='color: #1f2937;'>Welcome to CitiLife System!</h2>
-                            <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
-                            <p style='color: #4b5563; font-size: 16px;'>Thank you for registering. Please click the button below to verify your email address. You will be able to create your password and access your records afterwards.</p>
-                            <div style='text-align: center; margin: 30px 0;'>
-                                <a href='{$verifyLink}' style='display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;'>Verify Email Address</a>
-                            </div>
-                            <p style='color: #6b7280; font-size: 14px;'>If the button doesn't work, copy and paste this link into your browser:<br><a href='{$verifyLink}' style='color: #2563eb;'>{$verifyLink}</a></p>
-                        </div>
-                    ";
-                    sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - CitiLife System', $emailBody);
+                    $emailBody = renderActionEmail(
+                        $firstName,
+                        "Verify your email address, <strong>" . htmlspecialchars($firstName) . "</strong>",
+                        "Thank you for registering with Citilife Diagnostic Center. Please click the button below to verify your email address. You will be able to set your password and access your diagnostic records afterwards.",
+                        "Verify Email Address",
+                        $verifyLink,
+                        "This verification link is valid for <strong>24 hours</strong>.",
+                        "<strong>Security Notice:</strong> If you did not create a Citilife account, please ignore this email.",
+                        "You're receiving this email because an account was registered with this email address on Citilife System.",
+                        "#dc2626"
+                    );
+                    sendEmail($email, $firstName . ' ' . $lastName, 'Verify your Email Address - Citilife System', $emailBody);
 
                     $pdo->commit();
 
@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Patient Registration - CitiLife System</title>
+    <title>Patient Registration - Citilife System</title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
     <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
@@ -337,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="text-center mb-8">
                     <div
                         class="mx-auto w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4 border border-blue-100 shadow-sm">
-                        <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                        <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
                             class="h-12 w-12 object-contain"
                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <svg class="h-10 w-10 text-blue-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -432,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Home Address -->
                         <div class="col-span-2">
                             <label for="d_home_address" class="block text-sm font-semibold text-gray-700 mb-1">Home
-                                Address</label>
+                                Address <span class="text-xs text-gray-400 font-normal">(Optional)</span></label>
                             <input id="d_home_address" name="home_address" type="text"
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="123 Main St, Brgy, City" value="<?= htmlspecialchars($homeAddress ?? '') ?>">
@@ -441,7 +441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Contact Number -->
                         <div>
                             <label for="d_contact_number" class="block text-sm font-semibold text-gray-700 mb-1">Contact
-                                Number</label>
+                                Number <span class="text-red-500">*</span></label>
                             <input id="d_contact_number" name="contact_number" type="text" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="Ex: 09123456789" value="<?= htmlspecialchars($contactNumber ?? '') ?>"
@@ -507,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
             <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex justify-center">
-                <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.
+                <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> Citilife Diagnostic Center. All rights reserved.
                 </p>
             </div>
         </div>
@@ -559,7 +559,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     placeholder=" " value="<?= htmlspecialchars($patientNumber ?? '') ?>" />
                                 <label for="m_patient_number"
                                     class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Patient
-                                    ID (e.g. PAT-GAP-2026-001)</label>
+                                    ID (e.g. PAT-GAP-2026-001) <span class="text-red-500">*</span></label>
                             </div>
 
                             <div class="grid grid-cols-2 gap-3 mb-6">
@@ -569,7 +569,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         placeholder=" " value="<?= htmlspecialchars($firstName ?? '') ?>" />
                                     <label for="m_first_name"
                                         class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">First
-                                        name</label>
+                                        name <span class="text-red-500">*</span></label>
                                 </div>
                                 <div class="relative">
                                     <input type="text" id="m_last_name" name="last_name" required
@@ -577,7 +577,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         placeholder=" " value="<?= htmlspecialchars($lastName ?? '') ?>" />
                                     <label for="m_last_name"
                                         class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Last
-                                        name</label>
+                                        name <span class="text-red-500">*</span></label>
                                 </div>
                             </div>
                             <button type="button" onclick="nextStep(1)"
@@ -596,7 +596,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i data-lucide="calendar"
                                     class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Birthdate</label>
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Birthdate <span class="text-red-500">*</span></label>
                             </div>
                             <button type="button" onclick="nextStep(2)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -636,7 +636,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     placeholder=" " value="<?= htmlspecialchars($homeAddress ?? '') ?>" />
                                 <label for="m_home_address"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Home
-                                    Address</label>
+                                    Address <span class="text-xs text-gray-400 font-normal">(Optional)</span></label>
                             </div>
                             <button type="button" onclick="nextStep(4)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -657,7 +657,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                                 <label for="m_contact_number"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Mobile
-                                    number</label>
+                                    number <span class="text-red-500">*</span></label>
                             </div>
                             <button type="button" onclick="nextStep(5)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -681,7 +681,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if (!empty($branchId)) {
                                     foreach ($branches as $b) {
                                         if ($b['id'] == $branchId)
-                                            $selectedBranchName = $b['name'];
+                                             $selectedBranchName = $b['name'];
                                     }
                                 }
                                 ?>
@@ -691,7 +691,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 <label for="m_branch_display"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all cursor-pointer">Validating
-                                    Branch</label>
+                                    Branch <span class="text-red-500">*</span></label>
 
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">
@@ -732,7 +732,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         placeholder=" " value="<?= htmlspecialchars($email ?? '') ?>" />
                                     <label for="m_email"
                                         class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Email
-                                        Address</label>
+                                        Address <span class="text-red-500">*</span></label>
                                 </div>
 
                                 <button type="submit"

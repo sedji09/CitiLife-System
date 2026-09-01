@@ -237,22 +237,26 @@ try {
             require_once __DIR__ . '/../../app/Helpers/mailer_helper.php';
             $patientName = htmlspecialchars($disputeInfo['first_name']);
             $caseNum = htmlspecialchars($disputeInfo['case_number']);
-            $loginUrl = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/" . PROJECT_DIR . "/patient-login.php";
+            $refToken = !empty($disputeInfo['case_id']) ? base64_encode('Citilife_Case_' . $disputeInfo['case_id']) : '';
+            $reportUrl = !empty($refToken) 
+                ? (appBaseUrl() . "/" . PROJECT_DIR . "/view-report?ref=" . $refToken)
+                : (appBaseUrl() . "/" . PROJECT_DIR . "/dashboard");
 
-            $emailSubject = "Error Report Resolved - CitiLife Diagnostic Center";
-            $emailBody = "
-                <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
-                    <h2 style='color: #16a34a; margin-top: 0;'>Error Report Resolved</h2>
-                    <p>Dear <strong>{$patientName}</strong>,</p>
-                    <p>We have successfully reviewed and resolved your error report for Case <strong>{$caseNum}</strong>.</p>
-                    <p>Your updated records and X-ray report are now available in your CitiLife patient portal.</p>
-                    <div style='margin: 25px 0;'>
-                        <a href='{$loginUrl}' style='display: inline-block; padding: 12px 20px; background-color: #16a34a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;'>Log in to View Updated Records</a>
-                    </div>
-                    <br>
-                    <p>Thank you for choosing CitiLife Diagnostic Center.</p>
-                </div>
-            ";
+            $emailSubject = "Error Report Resolved - Citilife Diagnostic Center";
+            $emailBody = renderNotificationEmail(
+                $patientName,
+                "Error Report Resolved - Case #{$caseNum}",
+                "We have successfully reviewed and resolved your error report for Case <strong>{$caseNum}</strong>. Your updated patient records and X-ray report are now available in your Citilife patient portal.",
+                [
+                    'Case Number' => htmlspecialchars($caseNum),
+                    'Patient' => htmlspecialchars($patientName),
+                    'Status' => '<span style="color: #1a7f37; font-weight: 600;">Resolved &amp; Updated</span>'
+                ],
+                "View Updated Report",
+                $reportUrl,
+                "You're receiving this notification because an error report for your case was resolved.",
+                "#1f883d"
+            );
             sendEmail($disputeInfo['email'], $disputeInfo['first_name'], $emailSubject, $emailBody);
         }
 

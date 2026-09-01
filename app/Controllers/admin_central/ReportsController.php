@@ -303,7 +303,7 @@ if (isset($_GET['export_pdf'])) {
                         <?php endif; ?>
                     </td>
                     <td class="clinic-info">
-                        <h1>CitiLife</h1>
+                        <h1>Citilife</h1>
                         <p>Diagnostic Center</p>
                     </td>
                     <td class="branch-info">

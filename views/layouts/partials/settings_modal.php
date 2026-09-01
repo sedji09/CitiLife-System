@@ -58,7 +58,7 @@
       <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--modal-border, #e5e7eb);padding-top:16px;">
         <div style="padding:0 10px;">
           <div style="font-size:10px;color:#d1d5db;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">
-            CitiLife System</div>
+            Citilife System</div>
           <div style="font-size:10px;color:#d1d5db;margin-top:2px;">Radiology Information System</div>
         </div>
       </div>
@@ -233,17 +233,17 @@
           </div>
         </div>
 
-        <!-- Non-Patient Name Fields -->
-        <div v-if="role !== 'patient'"
+        <!-- Display Name Field -->
+        <div
           style="border:1px solid var(--modal-border, #e5e7eb);border-radius:10px;background-color: var(--modal-bg-alt, #f9fafb);padding:10px 14px;margin-bottom:12px;">
           <label
             style="display:block;font-size:10px;color: var(--modal-text-light, #9ca3af);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Display
             Name</label>
-          <input type="text" v-model="editDisplayName"
+          <input type="text" v-model="editDisplayName" placeholder="Enter your display name"
             style="width:100%;background:transparent;border:none;outline:none;font-size:14px;color: var(--modal-text, #111827);" />
         </div>
 
-        <!-- Patient Name Fields -->
+        <!-- Patient Legal Name Fields -->
         <div v-if="role === 'patient'" class="settings-grid-cols-2" style="margin-bottom:12px;">
           <div
             style="border:1px solid var(--modal-border, #e5e7eb);border-radius:10px;background-color: var(--modal-bg-alt, #f9fafb);padding:10px 14px;">

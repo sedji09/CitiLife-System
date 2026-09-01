@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 if (!defined('PROJECT_DIR')) {
     $parts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
-    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'CitiLife-System');
+    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'Citilife-System');
 }
 
 require_once __DIR__ . '/../../config/database.php';

@@ -149,7 +149,7 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
 <script>
     (function () {
         const ROWS_PER_PAGE = 8;
-        let currentPage = parseInt(sessionStorage.getItem('CitiLife_radHistory_page')) || 1;
+        let currentPage = parseInt(sessionStorage.getItem('Citilife_radHistory_page')) || 1;
 
         function getFilteredRows() {
             const search = (document.getElementById('search-input')?.value || '').toLowerCase();
@@ -195,7 +195,7 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
 
-            sessionStorage.setItem('CitiLife_radHistory_page', currentPage);
+            sessionStorage.setItem('Citilife_radHistory_page', currentPage);
 
             const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
             const endIdx = startIdx + ROWS_PER_PAGE;

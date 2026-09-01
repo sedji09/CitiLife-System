@@ -8,6 +8,8 @@ if (file_exists($autoloader_path)) {
     require_once $autoloader_path;
 }
 
+require_once __DIR__ . '/email_template_helper.php';
+
 /**
  * Send an email using PHPMailer
  *
@@ -28,7 +30,51 @@ if (!function_exists('sendEmail')) {
     
     $config = require $config_path;
 
-    // Use Brevo API if configured
+    $logoPath = __DIR__ . '/../../public/assets/img/logo/citilife-logo.png';
+
+    // 1. Try Direct Gmail SMTP first (ensures official Google Profile Avatar is shown to patients)
+    if (!empty($config['username']) && !empty($config['password'])) {
+        $mail = new PHPMailer(true);
+
+        try {
+            $mail->isSMTP();
+            $mail->Host       = $config['host'] ?: 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $config['username'];
+            $mail->Password   = $config['password'];
+            $mail->SMTPSecure = ($config['encryption'] === 'ssl' || $config['port'] == 465) 
+                ? PHPMailer::ENCRYPTION_SMTPS 
+                : PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = $config['port'] ?: 587;
+            $mail->Timeout    = 10;
+
+            // SMTPOptions for local/self-signed cert compatibility
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+
+            // Recipients
+            $mail->setFrom($config['from_email'], $config['from_name']);
+            $mail->addAddress($toEmail, $toName);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
+            $mail->AltBody = $altBody ?: strip_tags($body);
+
+            $mail->send();
+            return true;
+        } catch (Exception $e) {
+            error_log("Gmail SMTP failed: {$mail->ErrorInfo}. Trying Brevo fallback if available...");
+        }
+    }
+
+    // 2. Brevo API fallback (if Gmail SMTP fails or not configured)
     if (!empty($config['brevo_api_key'])) {
         $data = [
             'sender' => ['name' => $config['from_name'], 'email' => $config['from_email']],
@@ -37,9 +83,10 @@ if (!function_exists('sendEmail')) {
             'htmlContent' => $body,
             'textContent' => $altBody ?: strip_tags($body)
         ];
-        
+
+        $apiUrl = 'https://api.brevo.com/v3/smtp/email';
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://api.brevo.com/v3/smtp/email');
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -62,44 +109,7 @@ if (!function_exists('sendEmail')) {
         }
     }
 
-    $mail = new PHPMailer(true);
-
-    try {
-        // Server settings
-        $mail->isSMTP();
-        $mail->Host       = gethostbyname($config['host']); // Force IPv4
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $config['username'];
-        $mail->Password   = $config['password'];
-        $mail->SMTPSecure = $config['encryption'] === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port       = $config['port'];
-        $mail->Timeout    = 10;
-        
-        // Disable SSL verification for forced IP
-        $mail->SMTPOptions = array(
-            'ssl' => array(
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            )
-        );
-
-        // Recipients
-        $mail->setFrom($config['from_email'], $config['from_name']);
-        $mail->addAddress($toEmail, $toName);
-
-        // Content
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = $body;
-        $mail->AltBody = $altBody ?: strip_tags($body);
-
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        error_log("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
-        return false;
-    }
+    return false;
 }
 }
 

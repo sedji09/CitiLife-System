@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Route declarations for CitiLife-System
+ * Route declarations for Citilife-System
  */
 
 // Root URL (Redirects to dashboard or login via middleware)
@@ -71,7 +71,6 @@ $dashboardPages = [
     'case-review',
     'patient-history',
     'patient-records-history',
-    'xray-status',
     'case-status',
     'my-records',
     'registration',
@@ -100,6 +99,12 @@ foreach ($dashboardPages as $page) {
     $router->get('/' . $page, 'App\Controllers\PageController@dispatch', ['auth']);
     $router->post('/' . $page, 'App\Controllers\PageController@dispatch', ['auth']);
 }
+
+// Redirect legacy /xray-status to dashboard
+$router->get('/xray-status', function() {
+    header("Location: /" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'Citilife-System') . "/dashboard");
+    exit;
+}, ['auth']);
 
 // Legacy API Endpoints (mapped to app/api for absolute JS compatibility)
 $router->get('/app/api/case_activity.php', 'app/Api/case_activity.php');

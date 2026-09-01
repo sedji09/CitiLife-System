@@ -47,23 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateStmt->execute([$otpCode, $expiresAt, $newResendCount, $lockedUntil, $_SESSION['temp_user_id']]);
 
                                 $firstName = $_SESSION['temp_name'] ?: 'User';
-                $emailBody = "
-                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                        <h2 style='color: #1f2937;'>CitiLife System - New Login Code</h2>
-                        <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
-                        <p style='color: #4b5563; font-size: 16px;'>Here is your new verification code:</p>
-                        <div style='text-align: center; margin: 30px 0;'>
-                            <span style='display: inline-block; padding: 15px 30px; background-color: #f3f4f6; color: #1f2937; letter-spacing: 8px; border-radius: 8px; font-weight: bold; font-size: 32px;'>{$otpCode}</span>
-                        </div>
-                        <p style='color: #6b7280; font-size: 14px;'>This code will expire in 5 minutes.</p>
-                        <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
-                        <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
-                    </div>
-                ";
                 if (!function_exists('sendEmail')) {
                     require_once basePath('app/Helpers/mailer_helper.php');
                 }
-                sendEmail($email, $firstName, 'Your New Login Code - CitiLife System', $emailBody);
+                $emailBody = renderOtpEmail($firstName, $otpCode, 'login verification', 5, 'Your New Login Code');
+                sendEmail($email, $firstName, 'Your New Login Code - Citilife System', $emailBody);
                 $success = "A new verification code has been sent to your email.";
                 if ($lockedUntil) $success .= " <br><b>Note:</b> You have reached the resend limit. Please wait 10 minutes for next try.";
                 
@@ -138,7 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                     }
 
-                    header("Location: /" . PROJECT_DIR . "/dashboard");
+                    $redirectTarget = $_SESSION['temp_redirect_url'] ?? ('/' . PROJECT_DIR . '/dashboard');
+                    unset($_SESSION['temp_redirect_url'], $_SESSION['redirect_url']);
+                    header("Location: " . $redirectTarget);
                     exit;
                 } else {
                     $error = "The verification code has expired. Please request a new one.";
@@ -185,7 +175,7 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Security - CitiLife System</title>
+    <title>Login Security - Citilife System</title>
     <!-- Use generated Tailwind CSS -->
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>

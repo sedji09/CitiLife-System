@@ -352,19 +352,22 @@ class CaseModel
                         if (!empty($patientEmail)) {
                             require_once __DIR__ . '/../Helpers/mailer_helper.php';
                             $patientName = $cData['first_name'] . ' ' . $cData['last_name'];
-                            $subject = "Reading Completed - CitiLife System";
-                            $loginUrl = "http://" . $_SERVER['HTTP_HOST'] . "/" . PROJECT_DIR . "/patient-login.php";
-                            $body = "
-                                <div style='font-family: Arial, sans-serif; color: #333;'>
-                                    <h2>Hello {$patientName},</h2>
-                                    <p>Your X-ray for Case <strong>{$cData['case_number']}</strong> has been read by our radiologist.</p>
-                                    <p>The status is now <strong>Report Ready</strong>. It will be officially released to your account shortly by our staff.</p>
-                                    <p>You can monitor your status by logging into your patient portal:</p>
-                                    <p><a href='{$loginUrl}' style='display: inline-block; padding: 10px 15px; background-color: #ff0000d3; color: #fff; text-decoration: none; border-radius: 5px;'>Log in to Patient Portal</a></p>
-                                    <br>
-                                    <p>Thank you for choosing CitiLife.</p>
-                                </div>
-                            ";
+                            $subject = "Your X-ray Report is Ready - Citilife System";
+                            $dashboardUrl = appBaseUrl() . "/" . PROJECT_DIR . "/dashboard";
+                            $body = renderNotificationEmail(
+                                $patientName,
+                                "Your X-ray Report is Ready",
+                                "Good news! Your X-ray examination for Case <strong>{$cData['case_number']}</strong> has been evaluated and read by our radiologist. The status is now <strong>Report Ready</strong> and awaiting final release. You may view and track your case status on your dashboard.",
+                                [
+                                    'Case Number' => htmlspecialchars($cData['case_number']),
+                                    'Patient' => htmlspecialchars($patientName),
+                                    'Status' => '<span style="color: #4338ca; font-weight: 600;">Report Ready</span>'
+                                ],
+                                "Log in to Patient Portal",
+                                $dashboardUrl,
+                                "You're receiving this notification because your diagnostic imaging reading was finalized.",
+                                "#dc2626"
+                            );
                             sendEmailAsync($patientEmail, $patientName, $subject, $body);
                         }
                     }

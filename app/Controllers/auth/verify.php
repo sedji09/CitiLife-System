@@ -38,9 +38,31 @@ if (empty($token)) {
                     $pdo->beginTransaction();
 
                     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status, patient_id, is_email_verified) VALUES (?, ?, 'patient', 'Active', ?, 1)");
-                    $stmt->execute([$email, $hashedPassword, $patientId]);
-                    $userId = $pdo->lastInsertId();
+
+                    // Fetch patient details to properly populate user attributes
+                    $stmtP = $pdo->prepare("SELECT first_name, middle_name, last_name, branch_id FROM patients WHERE id = ?");
+                    $stmtP->execute([$patientId]);
+                    $pInfo = $stmtP->fetch(PDO::FETCH_ASSOC);
+                    $firstName = trim($pInfo['first_name'] ?? '');
+                    $defaultDisplayName = !empty($firstName) ? $firstName : trim(($pInfo['first_name'] ?? '') . ' ' . ($pInfo['last_name'] ?? ''));
+                    $branchId = $pInfo['branch_id'] ?? null;
+
+                    // Check if a user record already exists for this patient or email
+                    $stmtCheck = $pdo->prepare("SELECT id, name FROM users WHERE patient_id = ? OR email = ? LIMIT 1");
+                    $stmtCheck->execute([$patientId, $email]);
+                    $existingUser = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+                    if ($existingUser) {
+                        $userId = $existingUser['id'];
+                        $userName = !empty($existingUser['name']) ? $existingUser['name'] : $defaultDisplayName;
+                        $stmtUpdate = $pdo->prepare("UPDATE users SET password = ?, role = 'patient', status = 'Active', patient_id = ?, is_email_verified = 1, name = ?, branch_id = ? WHERE id = ?");
+                        $stmtUpdate->execute([$hashedPassword, $patientId, $userName, $branchId, $userId]);
+                    } else {
+                        $userName = $defaultDisplayName;
+                        $stmt = $pdo->prepare("INSERT INTO users (email, password, role, status, patient_id, is_email_verified, name, branch_id) VALUES (?, ?, 'patient', 'Active', ?, 1, ?, ?)");
+                        $stmt->execute([$email, $hashedPassword, $patientId, $userName, $branchId]);
+                        $userId = $pdo->lastInsertId();
+                    }
 
                     $pdo->prepare("DELETE FROM account_verifications WHERE token = ?")->execute([$token]);
 
@@ -50,6 +72,24 @@ if (empty($token)) {
                     $_SESSION['email'] = $email;
                     $_SESSION['role'] = 'patient';
                     $_SESSION['patient_id'] = $patientId;
+                    $_SESSION['name'] = $userName;
+                    $_SESSION['branch_id'] = $branchId;
+
+                    require_once basePath('app/Models/AuditLogModel.php');
+                    $auditLogModel = new \AuditLogModel($pdo);
+                    try {
+                        $auditLogModel->addLog(
+                            $userId,
+                            'Patient Account Created',
+                            'Patient Portal',
+                            'User',
+                            $userId,
+                            "Patient verified email and created portal password",
+                            $branchId
+                        );
+                    } catch (\Throwable $logEx) {
+                        // Audit log is best-effort
+                    }
 
                     header("Location: /" . PROJECT_DIR . "/dashboard");
                     exit;
@@ -71,7 +111,7 @@ if (empty($token)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Password - CitiLife System</title>
+    <title>Create Password - Citilife System</title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>
         .glass-panel {
@@ -99,9 +139,9 @@ if (empty($token)) {
     <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
         <div class="p-5 sm:p-8">
             <div class="text-center mb-5 sm:mb-8">
-                <!-- CitiLife Logo -->
+                <!-- Citilife Logo -->
                 <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-sm">
-                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="CitiLife Logo"
+                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
                         class="h-10 w-10 sm:h-12 sm:w-12 object-contain"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -232,7 +272,7 @@ if (empty($token)) {
         </div>
 
         <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">
-            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> CitiLife Diagnostic Center. All rights reserved.</p>
+            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> Citilife Diagnostic Center. All rights reserved.</p>
         </div>
     </div>
 

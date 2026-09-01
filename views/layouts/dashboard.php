@@ -73,11 +73,18 @@ if ($isPatient) {
     $userHomeAddress = $patientData['home_address'] ?? '';
     $userPatientNumber = $patientData['patient_number'] ?? '';
 
-    // Override display name with actual patient name (not email-derived)
-    if ($userFirstName || $userLastName) {
-      $fullName = trim($userFirstName . ' ' . $userLastName);
-      $userDisplayName = $fullName;
-      $nameParts = explode(' ', $fullName);
+    // Resolve display name: if empty or equals legal full name, default to first name
+    $fullName = trim($userFirstName . ' ' . $userLastName);
+    if (empty($currentUser['name']) || $currentUser['name'] === $fullName) {
+      $patientDisplayName = $userFirstName ?: $fullName;
+    } else {
+      $patientDisplayName = $currentUser['name'];
+    }
+
+    if (!empty($patientDisplayName)) {
+      $userDisplayName = $patientDisplayName;
+      $_SESSION['name'] = $patientDisplayName;
+      $nameParts = explode(' ', trim($userDisplayName));
       $initials = strtoupper(
         substr($nameParts[0], 0, 1) .
         (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : '')
@@ -127,7 +134,7 @@ $currentPath = $_SERVER['REQUEST_URI']; // includes query string
 $basePath = "/" . PROJECT_DIR;
 
 $logoPath = "/" . PROJECT_DIR . "/public/assets/img/logo/citilife-logo.png";
-$appName = 'CitiLife';
+$appName = 'Citilife';
 
 $autoLogoutMinutes = 0;
 try {

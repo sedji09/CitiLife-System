@@ -46,21 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $displayName = ($user['role'] === 'patient') ? $user['first_name'] : $user['name'];
-            $emailBody = "
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                    <h2 style='color: #1f2937;'>CitiLife System - Password Reset</h2>
-                    <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
-                    <p style='color: #4b5563; font-size: 16px;'>We received a request to reset your password. Click the button below to proceed:</p>
-                    <div style='text-align: center; margin: 30px 0;'>
-                        <a href='{$resetLink}' style='display: inline-block; padding: 14px 28px; background-color: #ef4444; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;'>Reset Password</a>
-                    </div>
-                    <p style='color: #6b7280; font-size: 14px;'>This link will expire in 30 minutes. If you did not request this, please ignore this email.</p>
-                    <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
-                    <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
-                </div>
-            ";
+            $emailBody = renderActionEmail(
+                $firstName,
+                "Reset your password, <strong>" . htmlspecialchars($firstName) . "</strong>",
+                "We received a request to reset the password for your Citilife account. Click the button below to choose a new password:",
+                "Reset Password",
+                $resetLink,
+                "This reset link is valid for <strong>30 minutes</strong> and can only be used once.",
+                "<strong>Security Notice:</strong> If you did not request a password reset, please ignore this email or change your password if you suspect unauthorized activity.",
+                "You're receiving this email because a password reset was requested for your account.",
+                "#dc2626"
+            );
             
-            if (sendEmail($email, $displayName ?: 'User', 'Reset Your Password - CitiLife System', $emailBody)) {
+            if (sendEmail($email, $displayName ?: 'User', 'Reset Your Password - Citilife System', $emailBody)) {
                 $success = "A password reset link has been sent to your email.";
             } else {
                 $error = "Failed to send the reset email. Please try again later.";
@@ -77,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - CitiLife System</title>
+    <title>Forgot Password - Citilife System</title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>
         .glass-panel {

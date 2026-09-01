@@ -18,11 +18,20 @@ echo "Starting Mail Test...\n";
 echo "Sender Email: " . $config['from_email'] . "\n";
 echo "Brevo API Key Exists: " . (!empty($config['brevo_api_key']) ? 'YES' : 'NO') . "\n";
 
+$testBody = renderOtpEmail(
+    'Admin User',
+    '569209',
+    'authentication',
+    15,
+    'Please verify your identity, <strong>Admin User</strong>',
+    "You're receiving this email because a verification code was requested for your Citilife account."
+);
+
 $result = sendEmail(
     $config['from_email'], 
     'Test Recipient', 
-    'Brevo API Test', 
-    '<h1>Success!</h1><p>Your email system is now working via Brevo API!</p>'
+    'Citilife Email System Test', 
+    $testBody
 );
 
 if ($result) {

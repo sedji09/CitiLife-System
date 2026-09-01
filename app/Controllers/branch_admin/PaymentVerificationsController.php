@@ -72,7 +72,7 @@ class PaymentVerificationsController
                                 $notifModel->add(
                                     "Payment Verified",
                                     "Your payment for request {$patData['request_number']} has been successfully verified. Please wait for RadTech approval.",
-                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status",
+                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=dashboard",
                                     $patData['user_id'],
                                     'patient'
                                 );
@@ -105,6 +105,29 @@ class PaymentVerificationsController
                         if ($reqId) {
                             $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = 'Payment Rejected' WHERE id = ?");
                             $stmtCase->execute([$reqId]);
+
+                            // Send notification to patient
+                            require_once __DIR__ . '/../../Models/NotificationModel.php';
+                            $notifModel = new \NotificationModel($pdo);
+                            
+                            $stmtPat = $pdo->prepare("
+                                SELECT u.id as user_id, r.request_number 
+                                FROM requests r 
+                                JOIN users u ON r.patient_id = u.patient_id 
+                                WHERE r.id = ? AND u.role = 'patient'
+                            ");
+                            $stmtPat->execute([$reqId]);
+                            $patData = $stmtPat->fetch();
+                            
+                            if ($patData) {
+                                $notifModel->add(
+                                    "Payment Rejected",
+                                    "Your payment for request {$patData['request_number']} was rejected. Please re-upload proof of payment or contact the clinic.",
+                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=dashboard",
+                                    $patData['user_id'],
+                                    'patient'
+                                );
+                            }
                         }
                         
                         $details = "Rejected payment ID: {$paymentId} for Request ID: " . ($reqId ?? 'Unknown');
@@ -149,6 +172,54 @@ class PaymentVerificationsController
         ");
         $stmtHistory->execute([$branchId]);
         $paymentHistory = $stmtHistory->fetchAll();
+
+        // AJAX response for live polling
+        if (isset($_GET['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'pending' => array_map(function($p) {
+                    return [
+                        'id' => (int)$p['id'],
+                        'request_number' => $p['request_number'],
+                        'first_name' => $p['first_name'],
+                        'last_name' => $p['last_name'],
+                        'exam_type' => $p['exam_type'],
+                        'philhealth_status' => $p['philhealth_status'],
+                        'philhealth_id' => $p['philhealth_id'],
+                        'amount' => (float)$p['amount'],
+                        'original_amount' => (float)($p['original_amount'] ?? $p['amount']),
+                        'discount_amount' => (float)($p['discount_amount'] ?? 0),
+                        'payment_method' => $p['payment_method'],
+                        'reference_number' => $p['reference_number'],
+                        'proof_of_payment_path' => $p['proof_of_payment_path'],
+                        'created_at' => $p['created_at'],
+                        'created_at_formatted' => date('M d, Y h:i A', strtotime($p['created_at'])),
+                        'timestamp' => strtotime($p['created_at'])
+                    ];
+                }, $pendingPayments),
+                'history' => array_map(function($p) {
+                    return [
+                        'id' => (int)$p['id'],
+                        'request_number' => $p['request_number'],
+                        'first_name' => $p['first_name'],
+                        'last_name' => $p['last_name'],
+                        'exam_type' => $p['exam_type'],
+                        'philhealth_status' => $p['philhealth_status'],
+                        'philhealth_id' => $p['philhealth_id'],
+                        'amount' => (float)$p['amount'],
+                        'payment_method' => $p['payment_method'],
+                        'reference_number' => $p['reference_number'],
+                        'status' => $p['status'],
+                        'updated_at' => $p['updated_at'],
+                        'updated_at_formatted' => date('M d, Y h:i A', strtotime($p['updated_at'])),
+                        'timestamp' => strtotime($p['updated_at'])
+                    ];
+                }, $paymentHistory),
+                'pendingCount' => count($pendingPayments)
+            ]);
+            exit;
+        }
 
         // Check if we are currently on the history tab (if tab is set to history)
         $activeTab = (isset($_GET['tab']) && $_GET['tab'] === 'history') ? 'history' : 'pending';

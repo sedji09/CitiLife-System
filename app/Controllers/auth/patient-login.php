@@ -5,8 +5,19 @@ if (session_status() === PHP_SESSION_NONE) {
 
 global $pdo;
 
-// If already logged in, redirect to dashboard
+// Capture and preserve redirect parameter
+$redirectUrl = $_POST['redirect'] ?? $_GET['redirect'] ?? ($_SESSION['redirect_url'] ?? null);
+if (!empty($redirectUrl)) {
+    $_SESSION['redirect_url'] = $redirectUrl;
+}
+
+// If already logged in, redirect to intended target or dashboard
 if (isset($_SESSION['role'])) {
+    if ($_SESSION['role'] === 'patient' && !empty($redirectUrl)) {
+        unset($_SESSION['redirect_url']);
+        header("Location: " . $redirectUrl);
+        exit;
+    }
     header("Location: /" . PROJECT_DIR . "/dashboard");
     exit;
 }
@@ -68,11 +79,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         $stmtDevice->execute([$user['id'], $rememberToken]);
                         if ($stmtDevice->fetch()) {
                             // Device remembered, skip OTP and start full session
+                            $patientDisplayName = !empty($user['name']) ? $user['name'] : (!empty($user['first_name']) ? $user['first_name'] : trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
                             $_SESSION['user_id'] = $user['id'];
                             $_SESSION['role'] = $user['role'];
                             $_SESSION['email'] = $user['email'];
                             $_SESSION['patient_id'] = $user['patient_id'];
-                            $_SESSION['name'] = ($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '');
+                            $_SESSION['name'] = $patientDisplayName;
                             $_SESSION['branch_id'] = $user['branch_id'];
 
                             require_once basePath('app/Models/AuditLogModel.php');
@@ -87,7 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                                 $user['branch_id']
                             );
 
-                            header("Location: /" . PROJECT_DIR . "/dashboard");
+                            $dest = $redirectUrl ?: ('/' . PROJECT_DIR . '/dashboard');
+                            unset($_SESSION['redirect_url']);
+                            header("Location: " . $dest);
                             exit;
                         }
                     }
@@ -101,33 +115,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
                     // Send email
                     $firstName = $user['first_name'] ?? 'Patient';
-                    $emailBody = "
-                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
-                            <h2 style='color: #1f2937;'>CitiLife System - Login Verification</h2>
-                            <p style='color: #4b5563; font-size: 16px;'>Hi {$firstName},</p>
-                            <p style='color: #4b5563; font-size: 16px;'>Please use the following OTP to complete your login:</p>
-                            <div style='text-align: center; margin: 30px 0;'>
-                                <span style='display: inline-block; padding: 15px 30px; background-color: #f3f4f6; color: #1f2937; letter-spacing: 8px; border-radius: 8px; font-weight: bold; font-size: 32px;'>{$otpCode}</span>
-                            </div>
-                            <p style='color: #6b7280; font-size: 14px;'>This code will expire in 5 minutes.</p>
-                            <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;'>
-                            <p style='color: #9ca3af; font-size: 12px; text-align: center;'>&copy; " . date('Y') . " CitiLife Diagnostic Center. All rights reserved.</p>
-                        </div>
-                    ";
                     if (!function_exists('sendEmail')) {
                         require_once basePath('app/Helpers/mailer_helper.php');
                     }
-                    sendEmail($user['email'], $firstName, 'Login Verification Code - CitiLife System', $emailBody);
+                    $emailBody = renderOtpEmail($firstName, $otpCode, 'login verification', 5);
+                    sendEmail($user['email'], $firstName, 'Login Verification Code - Citilife System', $emailBody);
 
                     // Password is correct, start temporary session for OTP
                     unset($_SESSION['login_attempts']);
+                    $patientDisplayName = !empty($user['name']) ? $user['name'] : (!empty($user['first_name']) ? $user['first_name'] : trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
                     $_SESSION['temp_user_id'] = $user['id'];
                     $_SESSION['temp_role'] = $user['role'];
                     $_SESSION['temp_email'] = $user['email'];
                     $_SESSION['temp_branch_id'] = $user['branch_id'];
                     $_SESSION['temp_patient_id'] = $user['patient_id'];
-                    $_SESSION['temp_name'] = !empty($user['first_name']) ? $user['first_name'] . ' ' . $user['last_name'] : '';
+                    $_SESSION['temp_name'] = $patientDisplayName;
                     $_SESSION['temp_portal'] = 'patient';
+                    $_SESSION['temp_redirect_url'] = $redirectUrl;
 
                     header("Location: /" . PROJECT_DIR . "/otp-login");
                     exit;
@@ -136,19 +140,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 $attempts['attempts']++;
                 if ($attempts['attempts'] >= 8) {
                     $attempts['locked_until'] = time() + 900; // 15 minutes
-                    header("Location: /" . PROJECT_DIR . "/patient-login");
+                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
                     exit;
                 } elseif ($attempts['attempts'] == 7) {
                     $attempts['locked_until'] = time() + 300; // 5 minutes
-                    header("Location: /" . PROJECT_DIR . "/patient-login");
+                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
                     exit;
                 } elseif ($attempts['attempts'] == 6) {
                     $attempts['locked_until'] = time() + 60; // 1 minute
-                    header("Location: /" . PROJECT_DIR . "/patient-login");
+                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
                     exit;
                 } elseif ($attempts['attempts'] == 5) {
                     $attempts['locked_until'] = time() + 30; // 30 seconds
-                    header("Location: /" . PROJECT_DIR . "/patient-login");
+                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
                     exit;
                 } else {
                     $error = 'Invalid email or password.';
@@ -181,6 +185,7 @@ $params = ['login' => 1];
 if (!empty($error)) $params['error'] = $error;
 if (!empty($warning)) $params['warning'] = $warning;
 if ($is_locked) $params['locked'] = $lock_message;
+if (!empty($redirectUrl)) $params['redirect'] = $redirectUrl;
 
 $qs = http_build_query($params);
 header("Location: /" . PROJECT_DIR . "/?" . $qs);

@@ -106,18 +106,25 @@ class FeedbackController
                             }
                             
                             $emailSubject = "(URGENT) Critical Patient Feedback - {$branchName}";
-                            $emailBody = "
-                                <h2>Critical Patient Feedback Received</h2>
-                                <p>A patient has submitted a <strong>{$rating}-Star</strong> feedback rating.</p>
-                                <ul>
-                                    <li><strong>Patient Name:</strong> {$patientNameForEmail}</li>
-                                    <li><strong>Branch:</strong> {$branchName}</li>
-                                    <li><strong>Case Number:</strong> " . ($postCaseId ?: 'N/A') . "</li>
-                                    <li><strong>Rating:</strong> {$rating} / 5</li>
-                                    <li><strong>Comments:</strong><br><em>" . nl2br(htmlspecialchars($comments)) . "</em></li>
-                                </ul>
-                                <p>Please log in to the dashboard to review and address this feedback immediately.</p>
-                            ";
+                            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                            $dashboardUrl = "http://{$host}/" . PROJECT_DIR . "/index.php?role=admin_central&page=feedbacks";
+                            
+                            $emailBody = renderNotificationEmail(
+                                "Administrator",
+                                "Critical Patient Feedback Received",
+                                "A patient has submitted a <strong>{$rating}-Star</strong> feedback rating requiring immediate administrative attention.",
+                                [
+                                    'Patient' => htmlspecialchars($patientNameForEmail),
+                                    'Branch' => htmlspecialchars($branchName),
+                                    'Case Number' => htmlspecialchars($postCaseId ?: 'N/A'),
+                                    'Rating' => '<span style="color: #cf222e; font-weight: 700;">' . htmlspecialchars($rating) . ' / 5 Stars</span>',
+                                    'Comments' => '<em>"' . nl2br(htmlspecialchars($comments)) . '"</em>',
+                                ],
+                                "View Feedbacks Dashboard",
+                                $dashboardUrl,
+                                "You're receiving this administrative alert because low patient satisfaction feedback requires prompt review.",
+                                "#cf222e"
+                            );
 
                             $emailsToNotify = [];
                             
@@ -147,12 +154,9 @@ class FeedbackController
                     } catch (\Exception $e) {
                         $errorMsg = "An error occurred while submitting your feedback. Please try again later.";
                     }
-                } // Close inner else
-            } // Close outer else
-        } // Close if POST
-
-        // Render view (feedbacks array is no longer passed as past feedback is hidden)
-
+                } 
+            }
+        }
         return get_defined_vars();
     }
 }

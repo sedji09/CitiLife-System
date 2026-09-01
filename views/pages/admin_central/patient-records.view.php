@@ -288,7 +288,7 @@
 
 <script>
     // Pagination State
-    let currentPage = parseInt(sessionStorage.getItem('CitiLife_adminPatients_page')) || 1;
+    let currentPage = parseInt(sessionStorage.getItem('Citilife_adminPatients_page')) || 1;
     const itemsPerPage = 8;
     let editDatePicker = null;
 
@@ -460,7 +460,7 @@
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        sessionStorage.setItem('CitiLife_adminPatients_page', currentPage);
+        sessionStorage.setItem('Citilife_adminPatients_page', currentPage);
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);

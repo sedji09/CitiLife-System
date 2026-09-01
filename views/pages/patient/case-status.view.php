@@ -72,7 +72,7 @@ $isRejectedGlobal = ($userAccountStatus === 'Rejected');
 
 $statusColors = [
     'Pending' => ['bg' => '#FFF7ED', 'border' => '#FED7AA', 'text' => '#C2410C', 'label' => 'Pending Review'],
-    'Approved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Approved – Awaiting X-ray'],
+    'Approved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Approved – For Examination'],
     'X-ray Taken' => ['bg' => '#EFF6FF', 'border' => '#BFDBFE', 'text' => '#1D4ED8', 'label' => 'X-ray Taken'],
     'Under Reading' => ['bg' => '#EFF6FF', 'border' => '#DBEAFE', 'text' => '#1D4ED8', 'label' => 'Under Reading by Radiologist'],
     'Report Ready' => ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'text' => '#4338CA', 'label' => 'Report Ready'],
@@ -205,7 +205,7 @@ $statusDescriptions = [
                     has been released. You may view your result below.</p>
                 <?php
                 $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
-                $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('CitiLife_Case_' . $caseRow['id']);
+                $reportUrl = $isExpired ? 'javascript:void(0)' : '/' . PROJECT_DIR . '/view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event)"' : '';
                 ?>
                 <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>

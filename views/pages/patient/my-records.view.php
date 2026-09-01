@@ -11,6 +11,7 @@ $feedbackModel = new \FeedbackModel($pdo);
 $userId = $_SESSION['user_id'] ?? 0;
 $completedCases = [];
 $rejectedCases = [];
+$cancelledCases = [];
 $feedbackCaseIds = [];
 
 // 1. Fetch Patient Info (Backend logic)
@@ -35,8 +36,11 @@ if ($patientRow && isset($patientRow['patient_number'])) {
     $rawCases = $caseModel->getPatientHistory($patientRow['patient_number']);
     foreach ($rawCases as $c) {
         $isRejected = (isset($c['approval_status']) && $c['approval_status'] === 'Rejected') || (isset($c['status']) && $c['status'] === 'Rejected');
+        $isCancelled = (isset($c['status']) && $c['status'] === 'Cancelled');
         if ($isRejected) {
             $rejectedCases[] = $c;
+        } elseif ($isCancelled) {
+            $cancelledCases[] = $c;
         } elseif (in_array($c['status'], ['Completed', 'Released'])) {
             $completedCases[] = $c;
         }
@@ -48,14 +52,18 @@ if ($patientRow && isset($patientRow['patient_number'])) {
                                      b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
                               FROM requests r 
                               LEFT JOIN branches b ON r.branch_id = b.id 
-                              WHERE r.patient_id = ? AND r.status = 'Rejected'");
+                              WHERE r.patient_id = ? AND r.status IN ('Rejected', 'Cancelled')");
     $stmtReq->execute([$patientId]);
-    $rejectedRequests = $stmtReq->fetchAll(PDO::FETCH_ASSOC);
+    $inactiveRequests = $stmtReq->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($rejectedRequests as $req) {
+    foreach ($inactiveRequests as $req) {
         $req['is_request_only'] = true;
-        $req['approval_status'] = 'Rejected';
-        $rejectedCases[] = $req;
+        if ($req['status'] === 'Rejected') {
+            $req['approval_status'] = 'Rejected';
+            $rejectedCases[] = $req;
+        } elseif ($req['status'] === 'Cancelled') {
+            $cancelledCases[] = $req;
+        }
     }
 
     $sortByDateDesc = function ($a, $b) {
@@ -63,6 +71,7 @@ if ($patientRow && isset($patientRow['patient_number'])) {
     };
     usort($completedCases, $sortByDateDesc);
     usort($rejectedCases, $sortByDateDesc);
+    usort($cancelledCases, $sortByDateDesc);
 }
 
 $statusBadge = [
@@ -124,6 +133,10 @@ $statusBadge = [
             <button type="button" id="tab-patient-rejected-btn" onclick="switchPatientTab('rejected')"
                 class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
                 Rejected Records
+            </button>
+            <button type="button" id="tab-patient-cancelled-btn" onclick="switchPatientTab('cancelled')"
+                class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
+                Cancelled Requests
             </button>
             <button type="button" id="tab-patient-disputes-btn" onclick="switchPatientTab('disputes')"
                 class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
@@ -244,19 +257,19 @@ $statusBadge = [
                                 ?>
                                     <button type="button"
                                         onclick="openDisputeModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
-                                        class="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                        class="inline-flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                         Report an Error
                                     </button>
                                 <?php elseif (in_array($c['id'], $disputedCaseIds)): ?>
-                                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 border border-orange-200 rounded-lg text-xs sm:text-sm font-medium text-orange-600 bg-orange-50 flex items-center gap-1.5">
-                                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Error Reported
+                                    <span class="inline-flex items-center justify-center px-4 py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
+                                        Error Reported
                                     </span>
                                 <?php endif; ?>
 
                                 <?php if (!in_array($c['id'], $feedbackCaseIds)): ?>
                                     <button type="button"
                                         onclick="openFeedbackModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
-                                        class="px-3 sm:px-4 py-1.5 sm:py-2 border border-yellow-500 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-yellow-500 hover:text-white transition-colors">
+                                        class="inline-flex items-center justify-center px-4 py-2.5 bg-white border border-yellow-400 hover:bg-yellow-500 hover:text-white text-yellow-600 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                         Rate
                                     </button>
                                 <?php endif; ?>
@@ -268,7 +281,7 @@ $statusBadge = [
                                 ?>
                                 <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
                                     <?= $onClickAttr ?>
-                                    class="px-3 sm:px-4 py-1.5 sm:py-2 border border-green-600 rounded-lg text-xs sm:text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-colors">
+                                    class="inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                     View Status
                                 </a>
                             </div>
@@ -329,15 +342,15 @@ $statusBadge = [
                             data-id="<?= htmlspecialchars($c['case_number']) ?>" data-case-id="<?= $c['id'] ?>"
                             data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>">
 
-                            <div class="px-4 py-3 bg-red-50 border-b border-red-100 flex justify-between items-center">
+                            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/60 border-b border-gray-100 dark:border-gray-700/80 flex justify-between items-center">
                                 <div class="flex items-center gap-2">
                                     <span
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Request
                                         No.</span>
                                     <span
-                                        class="font-mono text-sm font-bold text-red-900"><?= htmlspecialchars($c['case_number']) ?></span>
+                                        class="font-mono text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
-                                <span class="text-red-600 font-bold text-xs uppercase tracking-wider">Rejected</span>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40 uppercase tracking-wider">Rejected</span>
                             </div>
 
                             <div class="p-4 sm:p-5 flex gap-4 sm:gap-6 items-start">
@@ -366,8 +379,8 @@ $statusBadge = [
                                 class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
                                 <button type="button"
                                     onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
-                                    class="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                                    Contact Clinic
+                                    class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                    <i data-lucide="phone" class="w-4 h-4 text-gray-500 shrink-0"></i> <span>Contact Clinic</span>
                                 </button>
                             </div>
                         </div>
@@ -387,6 +400,106 @@ $statusBadge = [
                         <span id="rejected-page-info"
                             class="text-sm font-bold text-gray-700 min-w-[80px] text-center"></span>
                         <button id="rejected-next-btn"
+                            class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- CANCELLED REQUESTS TAB -->
+        <div id="tab-cancelled-content" class="hidden">
+            <?php if (empty($cancelledCases)): ?>
+                <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-6 sm:p-10 text-center">
+                    <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">No Cancelled Requests</h3>
+                    <p class="text-sm text-gray-500">You do not have any cancelled requests.</p>
+                </div>
+            <?php else: ?>
+                <!-- Search & Filters -->
+                <div class="mb-4 sm:mb-6 flex flex-col md:flex-row gap-2 sm:gap-3 md:items-center">
+                    <div class="relative flex-1">
+                        <input type="text" id="cancelled-search-input" placeholder="Search cancelled requests..."
+                            class="w-full rounded-lg sm:rounded-xl border border-gray-200 bg-white pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="search" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cancelled-cards-container" class="space-y-4">
+                    <?php foreach ($cancelledCases as $c): ?>
+                        <?php
+                        $branchName = $c['branch_name'] ?? $c['branch'] ?? '—';
+                        $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
+                        ?>
+                        <div class="cancelled-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                            data-id="<?= htmlspecialchars($c['case_number']) ?>" data-case-id="<?= $c['id'] ?>"
+                            data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>">
+
+                            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/60 border-b border-gray-100 dark:border-gray-700/80 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Request
+                                        No.</span>
+                                    <span
+                                        class="font-mono text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
+                                </div>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 uppercase tracking-wider">Cancelled</span>
+                            </div>
+
+                            <div class="p-4 sm:p-5 flex gap-4 sm:gap-6 items-start">
+                                <div
+                                    class="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center border border-gray-200">
+                                    <i data-lucide="ban" class="w-8 h-8 text-red-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-base sm:text-lg font-bold text-gray-900 leading-tight mb-1">
+                                        <?= htmlspecialchars($c['exam_type'] ?? '—') ?>
+                                    </h4>
+                                    <div
+                                        class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                                        <span class="flex items-center gap-1.5">
+                                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                                            <?= htmlspecialchars(date('M j, Y - h:i A', strtotime($c['created_at']))) ?>
+                                        </span>
+                                        <span class="flex items-center gap-1.5">
+                                            <i data-lucide="map-pin" class="w-4 h-4"></i> <?= htmlspecialchars($branchName) ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <?php if (!empty($contacts)): ?>
+                            <div
+                                class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
+                                <button type="button"
+                                    onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
+                                    class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                    <i data-lucide="phone" class="w-4 h-4 text-gray-500 shrink-0"></i> <span>Contact Clinic</span>
+                                </button>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Pagination -->
+                <div id="cancelled-pagination"
+                    class="mt-6 flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm gap-4">
+                    <span id="cancelled-count-info"
+                        class="text-xs sm:text-sm text-gray-500 font-medium order-2 sm:order-1"></span>
+                    <div class="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
+                        <button id="cancelled-prev-btn"
+                            class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+                        <span id="cancelled-page-info"
+                            class="text-sm font-bold text-gray-700 min-w-[80px] text-center"></span>
+                        <button id="cancelled-next-btn"
                             class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                             <i data-lucide="chevron-right" class="w-5 h-5"></i>
                         </button>
@@ -541,7 +654,7 @@ $statusBadge = [
                     </div>
                     <div>
                         <h2 class="font-bold text-gray-900">Submit Feedback</h2>
-                        <p class="text-xs text-gray-500">How was your experience with CitiLife?</p>
+                        <p class="text-xs text-gray-500">How was your experience with Citilife?</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeFeedbackModal()"
