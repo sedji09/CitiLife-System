@@ -20,62 +20,8 @@ require_once __DIR__ . '/email_template_helper.php';
  * @param string $altBody Plain text alternative body
  * @return bool True if sent, false on error
  */
-if (!function_exists('sendEmail')) {
-    function sendEmail($toEmail, $toName, $subject, $body, $altBody = '') {
-    $config_path = __DIR__ . '/../../config/smtp.php';
-    if (!file_exists($config_path)) {
-        error_log("SMTP config not found at {$config_path}");
-        return false;
-    }
-    
-    $config = require $config_path;
-
-    $logoPath = __DIR__ . '/../../public/assets/img/logo/citilife-logo.png';
-
-    // 1. Try Direct Gmail SMTP first (ensures official Google Profile Avatar is shown to patients)
-    if (!empty($config['username']) && !empty($config['password'])) {
-        $mail = new PHPMailer(true);
-
-        try {
-            $mail->isSMTP();
-            $mail->Host       = $config['host'] ?: 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = $config['username'];
-            $mail->Password   = $config['password'];
-            $mail->SMTPSecure = ($config['encryption'] === 'ssl' || $config['port'] == 465) 
-                ? PHPMailer::ENCRYPTION_SMTPS 
-                : PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = $config['port'] ?: 587;
-            $mail->Timeout    = 10;
-
-            // SMTPOptions for local/self-signed cert compatibility
-            $mail->SMTPOptions = array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                )
-            );
-
-            // Recipients
-            $mail->setFrom($config['from_email'], $config['from_name']);
-            $mail->addAddress($toEmail, $toName);
-
-            // Content
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body    = $body;
-            $mail->AltBody = $altBody ?: strip_tags($body);
-
-            $mail->send();
-            return true;
-        } catch (Exception $e) {
-            error_log("Gmail SMTP failed: {$mail->ErrorInfo}. Trying Brevo fallback if available...");
-        }
-    }
-
-    // 2. Brevo API fallback (if Gmail SMTP fails or not configured)
-    if (!empty($config['brevo_api_key'])) {
+if (!function_exists('sendViaBrevo')) {
+    function sendViaBrevo($apiKey, $config, $toEmail, $toName, $subject, $body, $altBody = '') {
         $data = [
             'sender' => ['name' => $config['from_name'], 'email' => $config['from_email']],
             'to' => [['email' => $toEmail, 'name' => $toName]],
@@ -90,27 +36,102 @@ if (!function_exists('sendEmail')) {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         
         $headers = [
             'accept: application/json',
-            'api-key: ' . $config['brevo_api_key'],
+            'api-key: ' . $apiKey,
             'content-type: application/json'
         ];
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $result = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
         
         $response = json_decode($result, true);
-        if (isset($response['messageId'])) {
+        if ($httpCode >= 200 && $httpCode < 300 && isset($response['messageId'])) {
             return true;
         } else {
-            error_log("Brevo API Error: " . $result);
+            error_log("Brevo API Error (HTTP {$httpCode}): " . $result);
             return false;
         }
     }
-
-    return false;
 }
+
+if (!function_exists('sendEmail')) {
+    function sendEmail($toEmail, $toName, $subject, $body, $altBody = '') {
+        $config_path = __DIR__ . '/../../config/smtp.php';
+        if (!file_exists($config_path)) {
+            error_log("SMTP config not found at {$config_path}");
+            return false;
+        }
+        
+        $config = require $config_path;
+
+        $brevoKey = !empty($config['brevo_api_key']) 
+            ? $config['brevo_api_key'] 
+            : ($_SERVER['BREVO_API_KEY'] ?? $_ENV['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?: '');
+
+        $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+
+        // 1. On Production (Railway/Cloud), use Brevo API FIRST for instant delivery (<1s) and zero port-blocking issues
+        if (!$isLocalhost && !empty($brevoKey)) {
+            $sent = sendViaBrevo($brevoKey, $config, $toEmail, $toName, $subject, $body, $altBody);
+            if ($sent) {
+                return true;
+            }
+        }
+
+        // 2. Try Direct Gmail SMTP (with fast 3s timeout to prevent hanging)
+        if (!empty($config['username']) && !empty($config['password'])) {
+            $mail = new PHPMailer(true);
+
+            try {
+                $mail->isSMTP();
+                $mail->Host       = $config['host'] ?: 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = $config['username'];
+                $mail->Password   = $config['password'];
+                $mail->SMTPSecure = ($config['encryption'] === 'ssl' || $config['port'] == 465) 
+                    ? PHPMailer::ENCRYPTION_SMTPS 
+                    : PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = $config['port'] ?: 465;
+                $mail->Timeout    = 3; // Fast 3-second timeout
+
+                // SMTPOptions for local/self-signed cert compatibility
+                $mail->SMTPOptions = array(
+                    'ssl' => array(
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true
+                    )
+                );
+
+                // Recipients
+                $mail->setFrom($config['from_email'], $config['from_name']);
+                $mail->addAddress($toEmail, $toName);
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = $subject;
+                $mail->Body    = $body;
+                $mail->AltBody = $altBody ?: strip_tags($body);
+
+                $mail->send();
+                return true;
+            } catch (Exception $e) {
+                error_log("Gmail SMTP failed: {$mail->ErrorInfo}. Trying Brevo fallback...");
+            }
+        }
+
+        // 3. Brevo API fallback (if Gmail SMTP failed or on localhost)
+        if (!empty($brevoKey)) {
+            return sendViaBrevo($brevoKey, $config, $toEmail, $toName, $subject, $body, $altBody);
+        }
+
+        return false;
+    }
 }
 
 if (!function_exists('sendEmailAsync')) {

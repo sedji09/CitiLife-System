@@ -112,8 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $insertStmt->execute([$verificationToken, $patientId, $email]);
 
-                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-                    $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
+                    $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+                    $prefix = $isLocalhost && defined('PROJECT_DIR') ? '/' . PROJECT_DIR : '';
+                    $verifyLink = appBaseUrl() . $prefix . '/verify?token=' . $verificationToken;
 
                     $emailBody = renderActionEmail(
                         $firstName,
@@ -840,9 +841,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return isValid;
         }
 
-        // Handle Enter key for seamless steps on Mobile only
+        // Handle submit loading state
         const mobileForm = document.getElementById('signupFormMobile');
         if (mobileForm) {
+            mobileForm.addEventListener('submit', function (e) {
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-75', 'cursor-not-allowed');
+                    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating Account...';
+                }
+            });
+
             mobileForm.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -850,9 +860,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         nextStep(currentStep);
                     } else {
                         if (validateStep(7)) {
-                            this.submit();
+                            this.requestSubmit();
                         }
                     }
+                }
+            });
+        }
+
+        const desktopForm = document.getElementById('signupFormDesktop');
+        if (desktopForm) {
+            desktopForm.addEventListener('submit', function (e) {
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-75', 'cursor-not-allowed');
+                    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating Account...';
                 }
             });
         }
