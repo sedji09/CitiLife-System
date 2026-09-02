@@ -4,6 +4,8 @@
  */
 global $pdo;
 
+require_once __DIR__ . '/session.php';
+
 if (!isset($pdo)) {
     $dbConfig = require __DIR__ . '/db.php';
     try {

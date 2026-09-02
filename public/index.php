@@ -1,16 +1,5 @@
 <?php
-// Use persistent volume for sessions on Railway to prevent logouts on redeploy
-$isRailway = getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST']);
-if ($isRailway) {
-    $sessionPath = __DIR__ . '/uploads/sessions';
-    if (!file_exists($sessionPath)) {
-        @mkdir($sessionPath, 0777, true);
-        @file_put_contents($sessionPath . '/.htaccess', 'Require all denied');
-    }
-    session_save_path($sessionPath);
-}
-
-session_start();
+require_once __DIR__ . '/../config/session.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);

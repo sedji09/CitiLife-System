@@ -1,4 +1,4 @@
-﻿
+
 
 
 DROP TABLE IF EXISTS `account_verifications`;
@@ -282,10 +282,15 @@ CREATE TABLE `requests` (
   `patient_id` int(11) NOT NULL,
   `branch_id` int(11) NOT NULL,
   `exam_type` varchar(100) NOT NULL,
+  `original_price` decimal(10,2) DEFAULT NULL,
+  `philhealth_discount` decimal(10,2) DEFAULT NULL,
+  `amount_due` decimal(10,2) DEFAULT NULL,
   `priority` enum('Normal','Priority','STAT','Urgent','Routine') NOT NULL DEFAULT 'Normal',
   `philhealth_status` enum('With PhilHealth Card','Without PhilHealth Card') NOT NULL,
   `philhealth_id` varchar(50) DEFAULT NULL,
-  `status` enum('Pending Approval','Approved','Rejected') NOT NULL DEFAULT 'Pending Approval',
+  `philhealth_relation` enum('Principal Member','Qualified Dependent') DEFAULT NULL,
+  `is_verified` tinyint(1) DEFAULT 0,
+  `status` enum('Pending Approval','Pending Payment','Payment Verifying','Payment Verified','Approved','Rejected','Cancelled') NOT NULL DEFAULT 'Pending Approval',
   `rejection_reason` text DEFAULT NULL,
   `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `approved_at` timestamp NULL DEFAULT NULL,
@@ -297,10 +302,37 @@ CREATE TABLE `requests` (
   KEY `branch_id` (`branch_id`),
   CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`id`) ON DELETE CASCADE,
   CONSTRAINT `requests_ibfk_2` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 LOCK TABLES `requests` WRITE;
+UNLOCK TABLES;
+
+DROP TABLE IF EXISTS `result_disputes`;
+CREATE TABLE `result_disputes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `case_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `branch_id` int(11) NOT NULL,
+  `dispute_category` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `old_findings` text DEFAULT NULL,
+  `old_impression` text DEFAULT NULL,
+  `status` varchar(50) NOT NULL DEFAULT 'Pending RadTech Review',
+  `assigned_role` varchar(50) NOT NULL DEFAULT 'radtech',
+  `radtech_notes` text DEFAULT NULL,
+  `resolution_notes` text DEFAULT NULL,
+  `demographics_fixed` tinyint(1) NOT NULL DEFAULT 0,
+  `radiologist_amended` tinyint(1) NOT NULL DEFAULT 0,
+  `resolved_by` int(11) DEFAULT NULL,
+  `resolved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_case_id` (`case_id`),
+  KEY `idx_patient_id` (`patient_id`),
+  KEY `idx_branch_id` (`branch_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+LOCK TABLES `result_disputes` WRITE;
 UNLOCK TABLES;
 
 

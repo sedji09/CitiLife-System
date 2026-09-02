@@ -17,6 +17,7 @@ $redirectBase = $isLocal ? ('/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'Citil
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $patientModel = new PatientModel($pdo);
     $caseModel = new CaseModel($pdo);
+    $caseModel->ensureSchema();
 
     $caseId       = isset($_POST['id'])           ? (int)$_POST['id']              : 0;
     $name         = isset($_POST['name'])          ? trim($_POST['name'])           : '';

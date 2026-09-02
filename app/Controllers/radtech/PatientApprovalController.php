@@ -13,6 +13,7 @@ class PatientApprovalController
         require_once __DIR__ . '/../../Models/AuditLogModel.php';
 
         $caseModel = new \CaseModel($pdo);
+        $caseModel->ensureSchema();
         $notificationModel = new \NotificationModel($pdo);
         $auditLogModel = new \AuditLogModel($pdo);
 
