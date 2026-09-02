@@ -219,7 +219,7 @@ function buildPartSection(part, allowedExams, preSelected, idx) {
     chipsWrap.className = 'assign-part-chips flex flex-wrap gap-1.5 mb-2';
     section.appendChild(chipsWrap);
 
-    // Search input wrapper (relative so dropdown can be absolute)
+    // Search input wrapper
     const inputWrap = document.createElement('div');
     inputWrap.className = 'relative';
     const searchInput = document.createElement('input');
@@ -230,16 +230,17 @@ function buildPartSection(part, allowedExams, preSelected, idx) {
     inputWrap.appendChild(searchInput);
     section.appendChild(inputWrap);
 
-    // Dropdown list (absolute positioned inside inputWrap)
+    // Dropdown is appended to <body> with position:fixed to escape overflow:auto parent
     const dropdown = document.createElement('div');
-    dropdown.className = 'assign-part-dropdown hidden absolute left-0 right-0 z-[70] bg-white border border-gray-300 rounded shadow-lg max-h-44 overflow-y-auto mt-1 text-sm';
-    inputWrap.appendChild(dropdown);
+    dropdown.className = 'assign-part-dropdown hidden fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto text-sm';
+    dropdown.style.cssText = 'min-width:200px;';
+    document.body.appendChild(dropdown);
 
     const ul = document.createElement('ul');
     ul.className = 'py-1 m-0 list-none text-gray-800';
     allowedExams.forEach(exam => {
         const li = document.createElement('li');
-        li.className = 'assign-part-option px-3 py-1.5 cursor-pointer hover:bg-indigo-600 hover:text-white transition-colors';
+        li.className = 'assign-part-option px-3 py-2 cursor-pointer hover:bg-indigo-600 hover:text-white transition-colors text-sm';
         li.setAttribute('data-value', exam);
         li.textContent = exam;
         ul.appendChild(li);
@@ -272,6 +273,23 @@ function buildPartSection(part, allowedExams, preSelected, idx) {
         }
     }
 
+    // Position the fixed dropdown directly under the search input
+    function repositionDropdown() {
+        const rect = searchInput.getBoundingClientRect();
+        dropdown.style.top  = (rect.bottom + 4) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+    }
+
+    function showDropdown() {
+        repositionDropdown();
+        dropdown.classList.remove('hidden');
+    }
+
+    function hideDropdown() {
+        dropdown.classList.add('hidden');
+    }
+
     function renderPartChips() {
         const vals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
         chipsWrap.innerHTML = '';
@@ -281,7 +299,6 @@ function buildPartSection(part, allowedExams, preSelected, idx) {
             chip.innerHTML = `${_escHtml(v)} <button type="button" class="assign-part-remove-chip ml-0.5 text-indigo-400 hover:text-red-600 font-bold" data-value="${_escHtml(v)}" data-part="${_escHtml(part)}">&times;</button>`;
             chipsWrap.appendChild(chip);
         });
-        // Hide already-selected options in dropdown
         ul.querySelectorAll('.assign-part-option').forEach(opt => {
             opt.classList.toggle('hidden', vals.includes(opt.getAttribute('data-value')));
         });
@@ -302,16 +319,24 @@ function buildPartSection(part, allowedExams, preSelected, idx) {
     }
 
     searchInput.addEventListener('focus', () => {
-        dropdown.classList.remove('hidden');
         filterDropdown(searchInput.value);
+        showDropdown();
     });
     searchInput.addEventListener('input', () => {
-        dropdown.classList.remove('hidden');
         filterDropdown(searchInput.value);
+        showDropdown();
     });
     searchInput.addEventListener('blur', () => {
-        setTimeout(() => dropdown.classList.add('hidden'), 200);
+        setTimeout(() => hideDropdown(), 180);
     });
+
+    // Reposition on scroll inside the modal scroll container
+    const scrollParent = document.getElementById('assignPerPartSections');
+    if (scrollParent) {
+        scrollParent.addEventListener('scroll', () => {
+            if (!dropdown.classList.contains('hidden')) repositionDropdown();
+        });
+    }
 
     ul.addEventListener('mousedown', (e) => {
         const opt = e.target.closest('.assign-part-option');
@@ -325,11 +350,15 @@ function buildPartSection(part, allowedExams, preSelected, idx) {
         }
         searchInput.value = '';
         renderPartChips();
-        dropdown.classList.add('hidden');
+        hideDropdown();
     });
 
     renderPartChips();
     section._renderChips = renderPartChips;
+    // Clean up body-appended dropdown when modal closes
+    section._destroyDropdown = () => {
+        if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
+    };
     return section;
 }
 
@@ -379,8 +408,13 @@ function openAssignModal(id, requestedBodyPart, assignedExam) {
     const warningBox = document.getElementById('assignExamWarning');
     if (warningBox) warningBox.classList.add('hidden');
 
-    // Build per-body-part sections
+    // Build per-body-part sections — destroy any existing body-appended dropdowns first
     const sectionsContainer = document.getElementById('assignPerPartSections');
+    sectionsContainer.querySelectorAll('.assign-part-section').forEach(s => {
+        if (s._destroyDropdown) s._destroyDropdown();
+    });
+    // Also remove any orphaned fixed dropdowns from body
+    document.querySelectorAll('body > .assign-part-dropdown').forEach(d => d.remove());
     sectionsContainer.innerHTML = '';
 
     const preSelected = assignedExam ? assignedExam.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -480,6 +514,14 @@ function validateAssignForm(e) {
 }
 
 function closeAssignModal() {
+    // Destroy all body-appended dropdowns before hiding modal
+    const sectionsContainer = document.getElementById('assignPerPartSections');
+    if (sectionsContainer) {
+        sectionsContainer.querySelectorAll('.assign-part-section').forEach(s => {
+            if (s._destroyDropdown) s._destroyDropdown();
+        });
+    }
+    document.querySelectorAll('body > .assign-part-dropdown').forEach(d => d.remove());
     document.getElementById('assignModal').classList.add('hidden');
 }
 
