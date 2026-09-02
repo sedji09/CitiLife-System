@@ -165,13 +165,25 @@ if (isset($caseNotFound) && $caseNotFound) {
         }
         ?>
         <?php if (!empty($savedPaths)): ?>
-            <div class="flex flex-wrap gap-3">
+            <div class="flex flex-wrap gap-4">
                 <?php foreach ($savedPaths as $idx => $sPath): ?>
-                    <div class="group relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-black cursor-pointer hover:border-red-400 transition-all shadow-sm">
+                    <div onclick="openXrayLightbox('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>')"
+                        style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
+                        class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
+                        title="Click to view image fullscreen">
                         <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" 
                              alt="X-ray <?= $idx + 1 ?>"
-                             class="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
-                        <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] font-bold text-white py-1 text-center uppercase tracking-tighter">
+                             class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
+                        
+                        <!-- Center Expand Icon on Hover -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <div class="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
+                                <i data-lucide="maximize-2" class="w-5 h-5 text-white stroke-[2.5]"></i>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Label -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] font-bold text-white py-1 text-center uppercase tracking-wider z-10 pointer-events-none">
                             IMG <?= $idx + 1 ?>
                         </div>
                     </div>

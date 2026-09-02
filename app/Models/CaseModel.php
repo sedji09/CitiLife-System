@@ -1031,36 +1031,52 @@ class CaseModel
         if (empty($data['report_template']))
             return ['success' => false, 'message' => "Please select a Report Template before submitting."];
 
-        $files = $data['files'];
-        $hasFiles = isset($files) && is_array($files['name']) && !empty(array_filter($files['name']));
-        if (!$hasFiles)
-            return ['success' => false, 'message' => "Please upload at least one diagnostic image before submitting."];
+        $oldCase = $this->getCaseById($caseId);
+        $keepExisting = !empty($data['keep_existing_image']);
 
-        // File Processing
-        $uploadDir = __DIR__ . '/../../public/uploads/cases/';
-        if (!is_dir($uploadDir))
-            mkdir($uploadDir, 0777, true);
+        $files = $data['files'] ?? null;
+        $hasFiles = isset($files) && is_array($files['name']) && !empty(array_filter($files['name']));
+
+        if (!$hasFiles && !$keepExisting) {
+            return ['success' => false, 'message' => "Please upload at least one diagnostic image before submitting."];
+        }
 
         $uploadedPaths = [];
-        $count = count($files['name']);
-        for ($i = 0; $i < $count; $i++) {
-            if ($files['error'][$i] !== UPLOAD_ERR_OK)
-                continue;
-            $fileName = $files['name'][$i];
-            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
-            // Validate allowed extensions
-            $allowedExts = ['jpg', 'jpeg', 'png', 'dcm', 'dicom'];
-            if (!in_array($fileExt, $allowedExts)) {
-                return ['success' => false, 'message' => "Invalid file format for \"$fileName\". Only JPG, PNG, and DICOM formats are allowed."];
+        if ($keepExisting && !$hasFiles) {
+            if ($oldCase && !empty($oldCase['image_path'])) {
+                $decoded = json_decode($oldCase['image_path'], true);
+                $uploadedPaths = is_array($decoded) ? $decoded : [$oldCase['image_path']];
             }
+            if (empty($uploadedPaths)) {
+                return ['success' => false, 'message' => "No existing image found. Please upload a new image."];
+            }
+        } else {
+            // File Processing
+            $uploadDir = __DIR__ . '/../../public/uploads/cases/';
+            if (!is_dir($uploadDir))
+                mkdir($uploadDir, 0777, true);
 
-            $newFileName = 'case_' . $caseId . '_' . time() . '_' . $i . '.' . $fileExt;
+            $count = count($files['name']);
+            for ($i = 0; $i < $count; $i++) {
+                if ($files['error'][$i] !== UPLOAD_ERR_OK)
+                    continue;
+                $fileName = $files['name'][$i];
+                $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
-            if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $newFileName)) {
-                $uploadedPaths[] = 'public/uploads/cases/' . $newFileName;
-            } else {
-                return ['success' => false, 'message' => "Error saving \"$fileName\"."];
+                // Validate allowed extensions
+                $allowedExts = ['jpg', 'jpeg', 'png', 'dcm', 'dicom'];
+                if (!in_array($fileExt, $allowedExts)) {
+                    return ['success' => false, 'message' => "Invalid file format for \"$fileName\". Only JPG, PNG, and DICOM formats are allowed."];
+                }
+
+                $newFileName = 'case_' . $caseId . '_' . time() . '_' . $i . '.' . $fileExt;
+
+                if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $newFileName)) {
+                    $uploadedPaths[] = 'public/uploads/cases/' . $newFileName;
+                } else {
+                    return ['success' => false, 'message' => "Error saving \"$fileName\"."];
+                }
             }
         }
 
@@ -1081,16 +1097,28 @@ class CaseModel
         ];
 
         if ($this->submitToRadiologist($caseId, $submitData)) {
-            // Notifications
-            $cData = $this->getCaseById($caseId);
-            if ($cData && !empty($cData['branch_id'])) {
-                $notificationModel->add(
-                    "New X-ray Uploaded",
-                    "X-ray image uploaded for Case {$cData['case_number']} and is ready for reading.",
-                    "/" . PROJECT_DIR . "/index.php?role=radiologist&page=patient-queue&branch_id={$cData['branch_id']}&highlight=" . urlencode($cData['case_number']),
-                    $data['radiologist_id'] ?? null,
-                    'radiologist'
-                );
+            // Check if this submission is part of an active dispute resolution
+            $hasDispute = false;
+            try {
+                $stmtChk = $this->pdo->prepare("SELECT 1 FROM result_disputes WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected') LIMIT 1");
+                $stmtChk->execute([$caseId]);
+                $hasDispute = (bool)$stmtChk->fetchColumn();
+            } catch (\Exception $e) {
+                $hasDispute = false;
+            }
+
+            // Only notify generic "New X-ray Uploaded" if this is a fresh new case, not a dispute escalation
+            if (!$hasDispute) {
+                $cData = $this->getCaseById($caseId);
+                if ($cData && !empty($cData['branch_id'])) {
+                    $notificationModel->add(
+                        "New X-ray Uploaded",
+                        "X-ray image uploaded for Case {$cData['case_number']} and is ready for reading.",
+                        "/" . PROJECT_DIR . "/index.php?role=radiologist&page=patient-queue&branch_id={$cData['branch_id']}&highlight=" . urlencode($cData['case_number']),
+                        $data['radiologist_id'] ?? null,
+                        'radiologist'
+                    );
+                }
             }
             return ['success' => true, 'message' => "Image processing and case submission successful!"];
         }

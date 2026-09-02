@@ -280,7 +280,8 @@
   <!-- ── Image Lightbox Gallery ── -->
   <div v-if="lightboxOpen && lightboxImages.length > 0"
     class="fixed inset-0 z-[9999] flex flex-col items-center justify-center select-none"
-    style="background-color: rgba(30, 30, 30, 0.98);">
+    style="background-color: rgba(30, 30, 30, 0.98); display: none;"
+    :style="{ display: (lightboxOpen && lightboxImages.length > 0) ? 'flex' : 'none', backgroundColor: 'rgba(30, 30, 30, 0.98)' }">
 
     <!-- Top Right Actions -->
     <div class="absolute top-4 right-4 flex items-center gap-4 z-10">

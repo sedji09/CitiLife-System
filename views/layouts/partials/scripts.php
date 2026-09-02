@@ -232,7 +232,7 @@
       window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; });
 
       this.fetchNotifications(true);
-      setInterval(() => this.fetchNotifications(false), 5000); // 5s fetch interval
+      setInterval(() => this.fetchNotifications(false), 3000); // 3s real-time fetch interval
 
       if (this.role !== 'patient') {
         this.pollMessages();
@@ -347,10 +347,12 @@
         return /\.(jpeg|jpg|gif|png)$/i.test(filename);
       },
       openLightbox(chat, clickedMsg) {
+        if (!chat || !chat.messages || !Array.isArray(chat.messages)) return;
         // Get all image messages from the chat
         const images = chat.messages.filter(m => m.attachment && m.attachment.match(/\.(jpeg|jpg|gif|png)$/i));
+        if (images.length === 0) return;
         this.lightboxImages = images.map(m => '/' + '<?= PROJECT_DIR ?>' + '/' + m.attachment);
-        this.lightboxIndex = images.findIndex(m => m.id === clickedMsg.id);
+        this.lightboxIndex = images.findIndex(m => m.id === (clickedMsg && clickedMsg.id));
         if (this.lightboxIndex === -1) this.lightboxIndex = 0;
         this.lightboxOpen = true;
       },

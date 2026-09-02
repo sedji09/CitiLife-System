@@ -314,7 +314,7 @@
           <i data-lucide="users" class="w-4 h-4 text-blue-600"></i>
         </div>
       </div>
-      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
+      <p id="branch-total-patients" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?></p>
     </div>
 
@@ -327,7 +327,7 @@
           <i data-lucide="scan-eye" class="w-4 h-4 text-red-600"></i>
         </div>
       </div>
-      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
+      <p id="branch-cases-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?>
       </p>
     </div>
@@ -341,7 +341,7 @@
           <i data-lucide="hourglass" class="w-4 h-4 text-yellow-600"></i>
         </div>
       </div>
-      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['pending'] ?? 0) ?></p>
+      <p id="branch-pending-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['pending'] ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1">Waiting for action</p>
     </a>
 
@@ -354,7 +354,7 @@
           <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
         </div>
       </div>
-      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['backlog'] ?? 0) ?></p>
+      <p id="branch-backlog-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['backlog'] ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1">Unreleased past cases</p>
     </a>
 
@@ -368,7 +368,7 @@
           <i data-lucide="file-text" class="w-4 h-4 text-amber-600"></i>
         </div>
       </div>
-      <p class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingRequestsCount ?? 0) ?></p>
+      <p id="branch-record-requests-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingRequestsCount ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1">From other branches</p>
     </a>
 
@@ -546,3 +546,57 @@
   </div>
 </div>
 </div>
+
+<script>
+  // ── Real-Time Polling for Branch Admin Dashboard (every 3 seconds) ──
+  let isSyncingBranchDash = false;
+  setInterval(() => {
+    if (isSyncingBranchDash) return;
+    isSyncingBranchDash = true;
+
+    fetch(window.location.href, { cache: 'no-store' })
+      .then(res => {
+        if (!res.ok) throw new Error('Network response not ok');
+        return res.text();
+      })
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // 1. Sync Stat Cards
+        ['branch-total-patients', 'branch-cases-count', 'branch-pending-count', 'branch-backlog-count', 'branch-record-requests-count'].forEach(id => {
+          const newEl = doc.getElementById(id);
+          const curEl = document.getElementById(id);
+          if (newEl && curEl && newEl.textContent.trim() !== curEl.textContent.trim()) {
+            curEl.textContent = newEl.textContent.trim();
+          }
+        });
+
+        // 2. Sync Recent Branch Activity Table
+        const newActivityTbody = doc.querySelector('#branch-recent-activity tbody');
+        const curActivityTbody = document.querySelector('#branch-recent-activity tbody');
+        if (newActivityTbody && curActivityTbody) {
+          if (newActivityTbody.innerHTML.trim() !== curActivityTbody.innerHTML.trim()) {
+            curActivityTbody.innerHTML = newActivityTbody.innerHTML;
+          }
+        }
+
+        // 3. Sync System Audit Logs Table
+        const newLogsTbody = doc.querySelector('#branch-audit-logs tbody');
+        const curLogsTbody = document.querySelector('#branch-audit-logs tbody');
+        if (newLogsTbody && curLogsTbody) {
+          if (newLogsTbody.innerHTML.trim() !== curLogsTbody.innerHTML.trim()) {
+            curLogsTbody.innerHTML = newLogsTbody.innerHTML;
+          }
+        }
+
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      })
+      .catch(err => console.debug('Branch Admin sync error:', err))
+      .finally(() => {
+        isSyncingBranchDash = false;
+      });
+  }, 3000);
+</script>

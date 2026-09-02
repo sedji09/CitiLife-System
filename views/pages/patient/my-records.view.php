@@ -282,12 +282,14 @@ $statusBadge = [
                                 <?php
                                 $isExpired = strtotime($c['created_at']) < strtotime('-3 months');
                                 $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
+                                $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $c['id']);
                                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                                 ?>
-                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>case-status?<?= !empty($c['is_request_only']) ? 'request_id=' : 'case_id=' ?><?= $c['id'] ?>"
+                                <a href="<?= $reportUrl ?>"
                                     <?= $onClickAttr ?>
-                                    class="inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
-                                    View Status
+                                    class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    View Report
                                 </a>
                             </div>
                         </div>

@@ -49,6 +49,11 @@ try {
           AND c.image_status = 'Uploaded'
           AND TIMESTAMPDIFF(HOUR, c.created_at, NOW()) >= 3
           AND NOT EXISTS (
+              SELECT 1 FROM result_disputes rd
+              WHERE rd.case_id = c.id
+                AND rd.status NOT IN ('Resolved', 'Rejected')
+          )
+          AND NOT EXISTS (
               SELECT 1 FROM notifications n
               WHERE n.title = 'Overdue Case Alert'
                 AND n.link LIKE CONCAT('%page=case-review&id=', c.id, '%')

@@ -570,6 +570,25 @@
       border: 1.5px solid #e2e8f0;
     }
 
+    /* Perfect Circle Tab Badges */
+    .tab-circle-badge {
+      width: 26px !important;
+      height: 26px !important;
+      min-width: 26px !important;
+      min-height: 26px !important;
+      border-radius: 9999px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      line-height: 1 !important;
+      padding: 0 !important;
+      flex-shrink: 0 !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
+    }
+
     body.theme-dark .exam-badge {
       background-color: #1e293b !important;
       color: #93c5fd !important;

@@ -36,12 +36,17 @@ class PatientDetailsController
         // 2. Handle Submit to Radiologist
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_radiologist'])) {
             try {
+                $correctionType = $_POST['correction_type'] ?? 'reupload';
+                $radtechDisputeNotes = trim($_POST['radtech_dispute_notes'] ?? '');
+                $keepExistingImage = in_array($correctionType, ['typo', 'reread']);
+
                 $submitData = [
                     'exam_type' => $_POST['exam_type'] ?? '',
                     'priority' => $_POST['priority'] ?? '',
                     'clinical_information' => $_POST['clinical_information'] ?? '',
                     'report_template' => $_POST['exam_type'] ?? '',
                     'files' => $_FILES['xray_image'] ?? null,
+                    'keep_existing_image' => $keepExistingImage,
                     'radtech_id' => $_SESSION['user_id'] ?? null,
                     'radiologist_id' => $_POST['radiologist_id'] ?? null
                 ];
@@ -55,14 +60,19 @@ class PatientDetailsController
                     $disputeMdl = new \ResultDisputeModel($pdo);
                     $actDispute = $disputeMdl->getActiveDisputeByCase($caseId);
                     if ($actDispute) {
-                        $disputeMdl->escalateToRadiologist($actDispute['id'], 'RadTech updated images and exam details based on patient error report.');
+                        $typePrefix = ($correctionType === 'typo') ? '[Typographical Error]' : (($correctionType === 'reread') ? '[Re-reading Request]' : '[New Image Re-uploaded]');
+                        $fullNotes = trim($typePrefix . ($radtechDisputeNotes ? ' ' . $radtechDisputeNotes : ''));
+                        if (empty($fullNotes)) {
+                            $fullNotes = 'RadTech updated and escalated case for Radiologist amendment.';
+                        }
+                        $disputeMdl->escalateToRadiologist($actDispute['id'], $fullNotes);
                         
                         $caseDetailsForNotif = $caseModel->getCaseById($caseId);
                         if ($caseDetailsForNotif) {
                             $notificationModel->add(
                                 "Patient Error Report Escalated",
-                                "RadTech has provided new images and details for Case {$caseDetailsForNotif['case_number']} based on a patient error report. Ready for amendment.",
-                                "/" . PROJECT_DIR . "/index.php?role=radiologist&page=worklist&tab=disputes",
+                                "Case {$caseDetailsForNotif['case_number']} escalated by RadTech ({$typePrefix}) for Radiologist review. " . ($radtechDisputeNotes ? "Notes: {$radtechDisputeNotes}" : ""),
+                                "/" . PROJECT_DIR . "/index.php?role=radiologist&page=worklist&tab=disputes&highlight_dispute_case=" . urlencode($caseDetailsForNotif['case_number']),
                                 $caseDetailsForNotif['radiologist_id'] ?? null,
                                 'radiologist'
                             );
@@ -70,7 +80,11 @@ class PatientDetailsController
                     }
 
                     $_SESSION['flash_success'] = $result['message'];
-                    header("Location: /" . PROJECT_DIR . "/index.php?page=patient-details&id=" . $caseId);
+                    $redirectUrl = "/" . PROJECT_DIR . "/index.php?page=patient-details&id=" . $caseId;
+                    if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
+                        $redirectUrl .= "&from=disputes";
+                    }
+                    header("Location: " . $redirectUrl);
                     exit;
                 } else {
                     $errorMsg = $result['message'];

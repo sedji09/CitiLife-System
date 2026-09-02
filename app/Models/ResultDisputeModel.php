@@ -59,12 +59,15 @@ class ResultDisputeModel {
         $sql = "
             SELECT rd.*, 
                    c.case_number, c.exam_type, c.findings, c.impression, c.is_amended,
-                   p.first_name, p.last_name, p.patient_number, p.contact_number, p.email,
+                   p.first_name, p.last_name, p.middle_name, p.patient_number, p.contact_number, p.email,
+                   p.sex, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age,
+                   pu.name as user_account_name,
                    b.name as branch_name,
                    u.name as resolver_name
             FROM result_disputes rd
             JOIN cases c ON rd.case_id = c.id
             JOIN patients p ON rd.patient_id = p.id
+            LEFT JOIN users pu ON p.id = pu.patient_id AND pu.role = 'patient'
             LEFT JOIN branches b ON rd.branch_id = b.id
             LEFT JOIN users u ON rd.resolved_by = u.id
             WHERE 1=1
@@ -140,28 +143,45 @@ class ResultDisputeModel {
      * Update active dispute status for a case
      */
     public function updateDisputeStatusForCase($caseId, $status, $assignedRole = null, $oldFindings = null, $oldImpression = null) {
-        $sql = "UPDATE result_disputes SET status = ?";
-        $params = [$status];
+        $stmt = $this->pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? AND status != 'Resolved' AND status != 'Rejected' ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$caseId]);
+        $active = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($assignedRole !== null) {
-            $sql .= ", assigned_role = ?";
-            $params[] = $assignedRole;
+        if ($active) {
+            $cat = $active['dispute_category'] ?? '';
+            $isBoth = ($cat === 'both_error');
+            $demoFixed = (int)($active['demographics_fixed'] ?? 0);
+
+            // If both_error and demographics not fixed yet, status remains Pending RadTech Review
+            $newStatus = $status;
+            if ($isBoth && !$demoFixed) {
+                $newStatus = 'Pending RadTech Review';
+            }
+
+            $sql = "UPDATE result_disputes SET status = ?, radiologist_amended = 1";
+            $params = [$newStatus];
+
+            if ($assignedRole !== null) {
+                $sql .= ", assigned_role = ?";
+                $params[] = $assignedRole;
+            }
+
+            if ($oldFindings !== null) {
+                $sql .= ", old_findings = ?";
+                $params[] = $oldFindings;
+            }
+            
+            if ($oldImpression !== null) {
+                $sql .= ", old_impression = ?";
+                $params[] = $oldImpression;
+            }
+
+            $sql .= " WHERE id = ?";
+            $params[] = $active['id'];
+
+            $stmtUpdate = $this->pdo->prepare($sql);
+            return $stmtUpdate->execute($params);
         }
-
-        if ($oldFindings !== null) {
-            $sql .= ", old_findings = ?";
-            $params[] = $oldFindings;
-        }
-        
-        if ($oldImpression !== null) {
-            $sql .= ", old_impression = ?";
-            $params[] = $oldImpression;
-        }
-
-        $sql .= " WHERE case_id = ? AND status != 'Resolved'";
-        $params[] = $caseId;
-
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($params);
+        return false;
     }
 }

@@ -465,9 +465,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                             const month = monthYear + '-' + monthNum;
                             const year = document.getElementById('yearPickerValue').value;
 
-                            let url = '?role=radiologist&page=dashboard&priority=' + priority + '&filter=' + filter + '&ajax=1';
-                            if (filter === 'monthly' && month) url += '&month=' + month;
-                            if (filter === 'yearly' && year) url += '&year=' + year;
+                            const currentPath = window.location.pathname;
+                            let url = currentPath + '?priority=' + encodeURIComponent(priority) + '&filter=' + encodeURIComponent(filter) + '&ajax=1';
+                            if (filter === 'monthly' && month) url += '&month=' + encodeURIComponent(month);
+                            if (filter === 'yearly' && year) url += '&year=' + encodeURIComponent(year);
 
                             fetch(url, { cache: 'no-store' })
                                 .then(res => {
@@ -475,13 +476,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     return res.json();
                                 })
                                 .then(data => {
-                                    // NOTE: stat-count and pending-count are global (not date-filtered),
-                                    // so they are intentionally NOT updated here.
-                                    document.getElementById('period-label').innerText = data.periodLabel;
-                                    document.getElementById('completed-count').innerText = data.completedFiltered;
-                                    document.getElementById('completed-label').innerText = 'Completed ' + data.periodLabel;
+                                    const periodEl = document.getElementById('period-label');
+                                    if (periodEl && data.periodLabel) periodEl.innerText = data.periodLabel;
 
-                                    if (window.priorityChart) {
+                                    const compEl = document.getElementById('completed-count');
+                                    if (compEl && data.completedFiltered !== undefined) compEl.innerText = data.completedFiltered;
+
+                                    const compLabelEl = document.getElementById('completed-label');
+                                    if (compLabelEl && data.periodLabel) compLabelEl.innerText = 'Completed ' + data.periodLabel;
+
+                                    if (window.priorityChart && data.labels) {
                                         window.priorityChart.data.labels = data.labels;
                                         window.priorityChart.data.datasets[0].data = data.emergencyData;
                                         window.priorityChart.data.datasets[1].data = data.urgentData;
@@ -489,14 +493,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                         window.priorityChart.update();
                                     }
 
-                                    if (window.branchPieChart) {
+                                    if (window.branchPieChart && data.labels) {
                                         window.branchPieChart.data.labels = data.labels;
                                         window.branchPieChart.data.datasets[0].data = data.branchTotals;
                                         window.branchPieChart.data.datasets[0].backgroundColor = data.branchColors;
                                         window.branchPieChart.update();
                                     }
                                 })
-                                .catch(err => console.error('Error fetching realtime dashboard data:', err));
+                                .catch(err => console.debug('Error fetching realtime dashboard data:', err));
                         }
 
 
@@ -649,24 +653,64 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             }
         });
 
-        // Poll chart data (date-filtered) every 5 seconds
-        setInterval(fetchDashboardData, 5000);
-
-        // Poll global stat cards separately — always without date filter
+        // Poll global stat cards separately — always without date filter (every 3 seconds)
+        let isSyncingRadioStats = false;
         function refreshGlobalStats() {
-            fetch('?role=radiologist&page=dashboard&filter=all&ajax=1&global_stats=1', { cache: 'no-store' })
+            if (isSyncingRadioStats) return;
+            isSyncingRadioStats = true;
+
+            const currentPath = window.location.pathname;
+            const url = currentPath + '?ajax=1&global_stats=1';
+
+            fetch(url, { cache: 'no-store' })
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
                     if (!data) return;
-                    document.getElementById('stat-count').innerText = data.emergencyCases;
-                    document.getElementById('pending-count').innerText = data.totalPending;
-                    document.getElementById('overdue-count').innerText = data.overdueCases;
-                    document.getElementById('inprogress-count').innerText = data.inProgress;
-                    document.getElementById('revision-count').innerText = data.forRevision;
+                    let hasChanged = false;
+
+                    const scEl = document.getElementById('stat-count');
+                    if (scEl && scEl.innerText !== String(data.emergencyCases)) {
+                        scEl.innerText = data.emergencyCases;
+                        hasChanged = true;
+                    }
+
+                    const pcEl = document.getElementById('pending-count');
+                    if (pcEl && pcEl.innerText !== String(data.totalPending)) {
+                        pcEl.innerText = data.totalPending;
+                        hasChanged = true;
+                    }
+
+                    const ocEl = document.getElementById('overdue-count');
+                    if (ocEl && ocEl.innerText !== String(data.overdueCases)) {
+                        ocEl.innerText = data.overdueCases;
+                        hasChanged = true;
+                    }
+
+                    const ipEl = document.getElementById('inprogress-count');
+                    if (ipEl && ipEl.innerText !== String(data.inProgress)) {
+                        ipEl.innerText = data.inProgress;
+                        hasChanged = true;
+                    }
+
+                    const revEl = document.getElementById('revision-count');
+                    if (revEl && data.forRevision !== undefined) {
+                        revEl.innerText = data.forRevision;
+                    }
+
+                    // If pending numbers changed, refresh charts too!
+                    if (hasChanged && typeof fetchDashboardData === 'function') {
+                        fetchDashboardData();
+                    }
                 })
-                .catch(() => { });
+                .catch(err => console.debug('Radio stats polling error:', err))
+                .finally(() => {
+                    isSyncingRadioStats = false;
+                });
         }
         refreshGlobalStats();
-        setInterval(refreshGlobalStats, 5000);
+        setInterval(refreshGlobalStats, 3000);
+
+        // Also poll chart data every 5 seconds
+        setInterval(fetchDashboardData, 5000);
     });
 </script>

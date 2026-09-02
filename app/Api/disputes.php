@@ -9,6 +9,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if (!defined('PROJECT_DIR')) {
+    $scriptDir = trim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+    $parts = explode('/', str_replace('\\', '/', $scriptDir));
+    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'CitiLife-System');
+}
+
+require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Models/ResultDisputeModel.php';
 require_once __DIR__ . '/../Models/CaseModel.php';
@@ -66,7 +73,7 @@ try {
         ");
         $notifTitle = "New Error Report (" . $case['case_number'] . ")";
         $notifMsg = "A new patient error report requires RadTech review.";
-        $notifLink = "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId;
+        $notifLink = "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId . "&highlight_case=" . urlencode($case['case_number']);
         $notifStmt->execute([$case['branch_id'], $notifTitle, $notifMsg, $notifLink]);
 
         $auditLog->addLog($userId, 'Dispute Submitted', 'Patient Portal', 'Case', $caseId, "Submitted result dispute (ID: {$disputeId}, Category: {$category})", $case['branch_id']);
@@ -130,6 +137,93 @@ try {
         $auditLog->addLog($userId, 'Dispute Escalated', 'Clinic Management', 'Dispute', $disputeId, "Escalated dispute to Radiologist. Notes: {$radtechNotes}");
 
         echo json_encode(['success' => true, 'message' => 'Dispute ticket successfully escalated to the Radiologist.']);
+        exit;
+
+    } elseif ($action === 'update_patient_demographics') {
+        // Step: RadTech applies correction to patient demographics (Name)
+        $userId = $_SESSION['user_id'] ?? null;
+        $role = $_SESSION['role'] ?? '';
+
+        if (!in_array($role, ['radtech', 'branch_admin', 'admin_central'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized action.']);
+            exit;
+        }
+
+        $disputeId = intval($_POST['dispute_id'] ?? 0);
+        $firstName = trim($_POST['first_name'] ?? '');
+        $lastName = trim($_POST['last_name'] ?? '');
+        $middleName = trim($_POST['middle_name'] ?? '');
+
+        if (!$disputeId || !$firstName || !$lastName) {
+            echo json_encode(['success' => false, 'message' => 'Please provide valid First Name and Last Name.']);
+            exit;
+        }
+
+        $stmtDisp = $pdo->prepare("
+            SELECT rd.*, c.patient_id, c.case_number, c.branch_id 
+            FROM result_disputes rd 
+            JOIN cases c ON rd.case_id = c.id 
+            WHERE rd.id = ?
+        ");
+        $stmtDisp->execute([$disputeId]);
+        $disputeInfo = $stmtDisp->fetch(PDO::FETCH_ASSOC);
+
+        if (!$disputeInfo) {
+            echo json_encode(['success' => false, 'message' => 'Dispute not found.']);
+            exit;
+        }
+
+        if ($role !== 'admin_central') {
+            $sessionBranch = $_SESSION['branch_id'] ?? null;
+            if ($sessionBranch && (int) $disputeInfo['branch_id'] !== (int) $sessionBranch) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized branch.']);
+                exit;
+            }
+        }
+
+        $patientId = $disputeInfo['patient_id'];
+
+        // Update patient demographics
+        $stmtP = $pdo->prepare("UPDATE patients SET first_name = ?, last_name = ?, middle_name = ? WHERE id = ?");
+        $stmtP->execute([$firstName, $lastName, $middleName, $patientId]);
+
+        // Also update linked patient user account if exists
+        $fullName = trim($firstName . ' ' . $lastName);
+        $stmtU = $pdo->prepare("UPDATE users SET name = ? WHERE patient_id = ? AND role = 'patient'");
+        $stmtU->execute([$fullName, $patientId]);
+
+        $cat = $disputeInfo['dispute_category'] ?? '';
+        $isBoth = ($cat === 'both_error');
+        $radAmended = (int)($disputeInfo['radiologist_amended'] ?? 0);
+
+        // Determine new dispute status:
+        // If both_error AND Radiologist has NOT amended yet, status remains 'Pending RadTech Review'
+        // If both_error AND Radiologist HAS amended (or if demographic_error), status becomes 'Pending RadTech Verification'
+        if ($isBoth && !$radAmended) {
+            $newStatus = 'Pending RadTech Review';
+            $msg = 'Patient demographics updated. Please proceed with Re-upload & Escalate to Radiologist for the findings issue.';
+        } else {
+            $newStatus = 'Pending RadTech Verification';
+            $msg = 'Patient information updated. Dispute is ready for Verify & Release.';
+        }
+
+        $stmtD = $pdo->prepare("
+            UPDATE result_disputes 
+            SET status = ?, 
+                assigned_role = 'radtech',
+                demographics_fixed = 1,
+                resolution_notes = CONCAT(COALESCE(resolution_notes, ''), ' Patient demographics updated.')
+            WHERE id = ?
+        ");
+        $stmtD->execute([$newStatus, $disputeId]);
+
+        $auditLog->addLog($userId, 'Demographics Corrected', 'Clinic Management', 'Patient', $patientId, "Corrected patient name to '{$fullName}' under dispute #{$disputeId}");
+
+        echo json_encode([
+            'success' => true, 
+            'message' => $msg, 
+            'both_pending_escalate' => ($isBoth && !$radAmended)
+        ]);
         exit;
 
     } elseif ($action === 'resolve_dispute') {

@@ -34,9 +34,15 @@
         <a href="javascript:void(0)" onclick="switchTab('pending')" id="tab-pending"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 <?= $activeTab === 'pending' ? 'text-red-600 border-b-2 border-red-600 active-tab' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300' ?>">
             Pending Verification
+            <?php
+            $pendingCountVal = count($pendingPayments);
+            $pendingDisplay = $pendingCountVal > 99 ? '99+' : $pendingCountVal;
+            ?>
             <span id="pendingBadgeCount"
-                class="<?= count($pendingPayments) > 0 ? '' : 'hidden' ?> inline-flex items-center justify-center bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                <?= count($pendingPayments) ?>
+                class="<?= $pendingCountVal > 0 ? '' : 'hidden' ?> tab-circle-badge bg-red-100 text-red-600 border border-red-200"
+                style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;"
+                title="<?= $pendingCountVal ?>">
+                <?= $pendingDisplay ?>
             </span>
         </a>
         <a href="javascript:void(0)" onclick="switchTab('history')" id="tab-history"
@@ -730,7 +736,8 @@
                 const badge = document.getElementById('pendingBadgeCount');
                 if (badge) {
                     const count = parseInt(data.pendingCount) || 0;
-                    badge.textContent = count;
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.title = count;
                     if (count > 0) {
                         badge.classList.remove('hidden');
                     } else {

@@ -19,6 +19,28 @@ $currentTab = $_GET['tab'] ?? 'completed';
     html.theme-dark .status-badge {
         background-color: transparent !important;
     }
+    div:where(.swal2-container),
+    .swal2-container {
+        z-index: 999999 !important;
+    }
+    .custom-gray-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+    .custom-gray-scroll::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .custom-gray-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-gray-scroll::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 9999px;
+    }
+    .custom-gray-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8;
+    }
 </style>
 
 
@@ -71,8 +93,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Error Reports
             <?php if ($pendingDisputeCount > 0): ?>
-                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
-                    <?= $pendingDisputeCount ?>
+                <span class="ml-1 tab-circle-badge text-white bg-red-600" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $pendingDisputeCount ?>">
+                    <?= $pendingDisputeCount > 99 ? '99+' : $pendingDisputeCount ?>
                 </span>
             <?php endif; ?>
         </a>
@@ -857,16 +879,52 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </tr>
                 <?php else: ?>
                     <?php foreach ($disputes as $d): ?>
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors dispute-table-row" data-id="<?= htmlspecialchars($d['case_number']) ?>" data-dispute-id="<?= $d['id'] ?>" data-case="<?= htmlspecialchars($d['case_number']) ?>">
                             <td class="py-3 px-4 font-medium"><?= htmlspecialchars($d['case_number']) ?></td>
                             <td class="py-3 px-4">
                                 <div class="font-medium"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
                                 <div class="text-xs text-gray-500"><?= htmlspecialchars($d['patient_number'] ?? '') ?></div>
                             </td>
-                            <td class="py-3 px-4 max-w-[260px] align-middle">
+                            <td class="py-3 px-4 max-w-[220px] align-middle">
                                 <?php
                                 $fullText = $d['description'] ?? '';
-                                $cleanPreview = mb_strimwidth(strip_tags($fullText), 0, 36, '...');
+                                $cat = $d['dispute_category'] ?? '';
+                                $catLabel = 'Correction Request';
+                                $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
+                                $catIcon = 'alert-circle';
+
+                                if ($cat === 'findings_error') {
+                                    $catLabel = 'Findings Error';
+                                    $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                                    $catIcon = 'file-text';
+                                } elseif ($cat === 'demographic_error') {
+                                    $catLabel = 'Patient Info Error';
+                                    $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
+                                    $catIcon = 'user';
+                                } elseif ($cat === 'both_error') {
+                                    $catLabel = 'Findings & Info';
+                                    $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
+                                    $catIcon = 'alert-triangle';
+                                } elseif ($cat === 'exam_details_error') {
+                                    $catLabel = 'Exam Details Error';
+                                    $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
+                                    $catIcon = 'clipboard';
+                                } else {
+                                    $descLower = strtolower($fullText);
+                                    if (strpos($descLower, 'findings') !== false && strpos($descLower, 'patient info') !== false) {
+                                        $catLabel = 'Findings & Info';
+                                        $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
+                                    } elseif (strpos($descLower, 'findings') !== false) {
+                                        $catLabel = 'Findings Error';
+                                        $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                                        $catIcon = 'file-text';
+                                    } elseif (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false) {
+                                        $catLabel = 'Patient Info Error';
+                                        $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
+                                        $catIcon = 'user';
+                                    }
+                                }
+
                                 $disputePayload = [
                                     'id' => $d['id'],
                                     'case_number' => $d['case_number'],
@@ -878,8 +936,16 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 ];
                                 $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
                                 ?>
-                                <div class="text-xs font-medium text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200 shadow-xs truncate" title="<?= htmlspecialchars($fullText) ?>">
-                                    <?= htmlspecialchars($cleanPreview) ?>
+                                <div class="flex flex-col items-start gap-1">
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border <?= $catBadgeClass ?> shadow-2xs">
+                                        <i data-lucide="<?= $catIcon ?>" class="w-3 h-3"></i>
+                                        <?= htmlspecialchars($catLabel) ?>
+                                    </span>
+                                    <button type="button" 
+                                            onclick='openDisputeDetailsModal(<?= $jsonPayload ?>)'
+                                            class="text-xs text-amber-700 hover:text-amber-900 font-semibold hover:underline cursor-pointer select-none">
+                                        See error
+                                    </button>
                                 </div>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
@@ -906,37 +972,139 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 <?= date('M d, Y h:i A', strtotime($d['created_at'])) ?>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
-                                <div class="flex items-center justify-start gap-1.5">
-                                    <button type="button" 
-                                            onclick='openDisputeDetailsModal(<?= $jsonPayload ?>)'
-                                            class="text-amber-700 hover:text-amber-900 transition cursor-pointer" 
-                                            title="View Correction Details">
-                                        <i data-lucide="eye" class="w-6 h-6 mr-1 bg-amber-100 px-1 py-1 rounded-md border border-amber-400"></i>
-                                    </button>
+                                <?php
+                                    $cat = $d['dispute_category'] ?? '';
+                                    $currStatus = $d['status'] ?? '';
+                                    $demoFixed = (int)($d['demographics_fixed'] ?? 0);
+                                    $radAmended = (int)($d['radiologist_amended'] ?? 0);
+                                    $isPendingReview = ($currStatus === 'Pending RadTech Review');
+                                    $isPendingVerification = ($currStatus === 'Pending RadTech Verification');
+                                    $isEscalated = ($currStatus === 'Escalated to Radiologist');
+                                    $isResolved = ($currStatus === 'Resolved');
 
-                                    <?php if ($currStatus === 'Pending RadTech Review'): ?>
-                                        <?php
-                                            $cat = $d['dispute_category'] ?? '';
-                                            $showReupload = in_array($cat, ['both_error', 'exam_details_error', 'findings_error']);
-                                            $showEscalate = in_array($cat, ['both_error', 'exam_details_error', 'findings_error']);
-                                            $showResolve  = in_array($cat, ['both_error', 'demographic_error']) || empty($cat); // Empty fallback
-                                        ?>
-                                        <button type="button" <?= $showReupload ? 'onclick="confirmReupload(' . $d['case_id'] . ')"' : 'disabled' ?>
-                                                class="text-blue-500 hover:text-blue-700 transition <?= !$showReupload ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Re-upload & Correct">
-                                            <i data-lucide="image-up" class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
-                                        </button>
+                                    // Classify Category:
+                                    $isDemographicOnly = ($cat === 'demographic_error');
+                                    $isFindingsOnly = in_array($cat, ['findings_error', 'exam_details_error']);
+                                    $isBoth = ($cat === 'both_error');
 
-                                        <button type="button" <?= $showResolve ? 'onclick="openResolveModal(' . $d['id'] . ', \'' . htmlspecialchars($d['case_number']) . '\', \'Fix & Resolve Ticket\', ' . htmlspecialchars(json_encode($d['description']), ENT_QUOTES, 'UTF-8') . ')"' : 'disabled' ?>
-                                                class="text-green-500 hover:text-green-700 transition <?= !$showResolve ? 'opacity-50 cursor-not-allowed grayscale' : '' ?>" title="Fix & Resolve">
-                                            <i data-lucide="clipboard-check" class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
-                                        </button>
-                                    <?php elseif ($currStatus === 'Pending RadTech Verification'): ?>
-                                        <button type="button" onclick="openResolveModal(<?= $d['id'] ?>, '<?= htmlspecialchars($d['case_number']) ?>', 'Final Approve & Release Amended Report', <?= htmlspecialchars(json_encode($d['description']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['old_findings'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['findings'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['old_impression'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['impression'] ?? ''), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($d['exam_type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)"
-                                                class="text-green-500 hover:text-green-700 transition" title="Final Verify & Release">
-                                            <i data-lucide="check-circle-2" class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
+                                    if (!$isDemographicOnly && !$isFindingsOnly && !$isBoth) {
+                                        $descLower = strtolower($d['description'] ?? '');
+                                        $hasF = strpos($descLower, 'findings') !== false || strpos($descLower, 'impression') !== false || strpos($descLower, 'reading') !== false || strpos($descLower, 'image') !== false;
+                                        $hasD = strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false || strpos($descLower, 'age') !== false || strpos($descLower, 'sex') !== false;
+                                        if ($hasF && $hasD) $isBoth = true;
+                                        elseif ($hasF) $isFindingsOnly = true;
+                                        elseif ($hasD) $isDemographicOnly = true;
+                                        else $isBoth = true;
+                                    }
+
+                                    // Button 1 (Re-upload): shows if $isBoth || $isFindingsOnly
+                                    $showReuploadBtn = $isBoth || $isFindingsOnly;
+
+                                    // Button 2 (Fix Demographics): shows if $isBoth || $isDemographicOnly
+                                    $showFixInfoBtn = $isBoth || $isDemographicOnly;
+
+                                    // Button 3 (Final Verify): active when required steps are completed
+                                    $isVerifyActive = false;
+                                    if ($isDemographicOnly) {
+                                        $isVerifyActive = (bool)$demoFixed;
+                                    } elseif ($isFindingsOnly) {
+                                        $isVerifyActive = $isPendingVerification;
+                                    } elseif ($isBoth) {
+                                        $isVerifyActive = $isPendingVerification && (bool)$demoFixed;
+                                    }
+
+                                    // Payloads for Modals
+                                    $dispPayload = [
+                                        'id' => $d['id'],
+                                        'case_number' => $d['case_number'],
+                                        'patient_number' => $d['patient_number'] ?? '',
+                                        'description' => $d['description'],
+                                        'first_name' => $d['first_name'] ?? '',
+                                        'last_name' => $d['last_name'] ?? '',
+                                        'middle_name' => $d['middle_name'] ?? '',
+                                        'age' => $d['age'] ?? '',
+                                        'sex' => $d['sex'] ?? '',
+                                        'user_account_name' => $d['user_account_name'] ?? '',
+                                        'category' => $d['dispute_category'] ?? ''
+                                    ];
+                                    $dispJson = htmlspecialchars(json_encode($dispPayload), ENT_QUOTES, 'UTF-8');
+
+                                    $verifPayload = [
+                                        'id' => $d['id'],
+                                        'case_number' => $d['case_number'],
+                                        'patient_number' => $d['patient_number'] ?? '',
+                                        'description' => $d['description'],
+                                        'category' => $d['dispute_category'] ?? '',
+                                        'first_name' => $d['first_name'] ?? '',
+                                        'last_name' => $d['last_name'] ?? '',
+                                        'middle_name' => $d['middle_name'] ?? '',
+                                        'age' => $d['age'] ?? '',
+                                        'sex' => $d['sex'] ?? '',
+                                        'user_account_name' => $d['user_account_name'] ?? '',
+                                        'radtech_notes' => $d['radtech_notes'] ?? '',
+                                        'resolution_notes' => $d['resolution_notes'] ?? '',
+                                        'old_findings' => $d['old_findings'] ?? '',
+                                        'findings' => $d['findings'] ?? '',
+                                        'old_impression' => $d['old_impression'] ?? '',
+                                        'impression' => $d['impression'] ?? '',
+                                        'exam_type' => $d['exam_type'] ?? ''
+                                    ];
+                                    $verifJson = htmlspecialchars(json_encode($verifPayload), ENT_QUOTES, 'UTF-8');
+                                ?>
+
+                                <?php if ($isResolved): ?>
+                                    <span class="text-xs text-gray-400 italic font-normal select-none">No action needed</span>
+                                <?php else: ?>
+                                    <div class="flex items-center justify-start gap-1.5">
+                                        <!-- Button 1: Re-upload / Escalate -->
+                                        <?php if ($showReuploadBtn): ?>
+                                            <?php if ($isPendingReview && !$radAmended): ?>
+                                                <button type="button" onclick="confirmReupload(<?= $d['case_id'] ?>)"
+                                                        class="text-blue-500 hover:text-blue-700 transition cursor-pointer" title="Re-upload &amp; Escalate to Radiologist">
+                                                    <i data-lucide="image-up" class="w-6 h-6 bg-blue-100 text-blue-600 p-1 rounded-md border border-blue-400 hover:bg-blue-200 transition"></i>
+                                                </button>
+                                            <?php elseif ($isEscalated): ?>
+                                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $d['case_id'] ?>&from=disputes"
+                                                   class="text-blue-500 hover:text-blue-700 transition cursor-pointer" title="View Uploaded Details (Escalated to Radiologist)">
+                                                    <i data-lucide="image" class="w-6 h-6 bg-blue-50 text-blue-500 p-1 rounded-md border border-blue-300 hover:bg-blue-100 transition"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <button type="button" disabled
+                                                        class="opacity-40 cursor-not-allowed select-none" title="Already amended by Radiologist">
+                                                    <i data-lucide="image-up" class="w-6 h-6 bg-gray-100 text-gray-400 p-1 rounded-md border border-gray-300"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+
+                                        <!-- Button 2: Fix Information (Demographics) -->
+                                        <?php if ($showFixInfoBtn): ?>
+                                            <?php if (!$demoFixed): ?>
+                                                <button type="button" onclick='openFixDemographicsModal(<?= $dispJson ?>)'
+                                                        class="text-green-500 hover:text-green-700 transition cursor-pointer" title="Fix Patient Demographics">
+                                                    <i data-lucide="clipboard-check" class="w-6 h-6 bg-green-100 text-green-600 p-1 rounded-md border border-green-400 hover:bg-green-200 transition"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" disabled
+                                                        class="opacity-40 cursor-not-allowed select-none" title="Patient demographics already updated">
+                                                    <i data-lucide="clipboard-check" class="w-6 h-6 bg-gray-100 text-gray-400 p-1 rounded-md border border-gray-300"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+
+                                        <!-- Button 3: Verify & Release -->
+                                        <?php if ($isVerifyActive): ?>
+                                            <button type="button" onclick='openVerifyReleaseModal(<?= $verifJson ?>)'
+                                                    class="text-green-600 hover:text-green-800 transition cursor-pointer" title="Final Verify &amp; Release Amended Report">
+                                                <i data-lucide="check-circle-2" class="w-6 h-6 bg-green-100 text-green-700 p-1 rounded-md border border-green-500 hover:bg-green-200 transition"></i>
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" disabled
+                                                    class="opacity-40 cursor-not-allowed select-none" title="Verify &amp; Release (Available after required corrections are completed)">
+                                                <i data-lucide="check-circle-2" class="w-6 h-6 bg-gray-100 text-gray-400 p-1 rounded-md border border-gray-300"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -1061,34 +1229,131 @@ $currentTab = $_GET['tab'] ?? 'completed';
         controls.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
     }
 
+    function handleDisputesHighlight() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('tab') !== 'disputes') return;
+
+        const targetVal = params.get('dispute_id') || params.get('highlight_dispute_id') || params.get('highlight_case') || params.get('highlight');
+        if (!targetVal) return;
+
+        const rows = document.querySelectorAll('#disputes-table-body tr.dispute-table-row');
+        let targetRow = null;
+        rows.forEach(r => {
+            if (
+                (r.dataset.disputeId || '').toLowerCase() === targetVal.toLowerCase() ||
+                (r.dataset.id || '').toLowerCase() === targetVal.toLowerCase() ||
+                (r.dataset.case || '').toLowerCase() === targetVal.toLowerCase() ||
+                r.innerText.toLowerCase().includes(targetVal.toLowerCase())
+            ) {
+                targetRow = r;
+            }
+        });
+
+        if (targetRow) {
+            const rowIndex = Array.from(rows).indexOf(targetRow);
+            currentDisputesPage = Math.floor(rowIndex / disputesItemsPerPage) + 1;
+            paginateDisputes();
+
+            setTimeout(() => {
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400');
+                targetRow.style.backgroundColor = '#fef08a';
+
+                let flashCount = 0;
+                const flashInterval = setInterval(() => {
+                    flashCount++;
+                    targetRow.style.backgroundColor = (flashCount % 2 === 1) ? '#fde047' : '#fef08a';
+                    if (flashCount >= 6) {
+                        clearInterval(flashInterval);
+                        setTimeout(() => {
+                            targetRow.style.transition = 'background-color 2s ease, box-shadow 2s ease';
+                            targetRow.style.backgroundColor = '';
+                            targetRow.classList.remove('ring-2', 'ring-amber-400');
+                        }, 1200);
+                    }
+                }, 250);
+
+                try {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('dispute_id');
+                    cleanUrl.searchParams.delete('highlight_dispute_id');
+                    cleanUrl.searchParams.delete('highlight_case');
+                    cleanUrl.searchParams.delete('highlight');
+                    cleanUrl.searchParams.delete('is_new');
+                    window.history.replaceState({}, document.title, cleanUrl.toString());
+                } catch(e) {}
+            }, 150);
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             paginateDisputes();
+            handleDisputesHighlight();
         }, 100);
     });
+
+    function formatDisputeDescriptionHtml(desc, scope = 'all') {
+        if (!desc) return '<span class="text-xs text-gray-400 italic">No description provided.</span>';
+
+        const clean = desc.replace(/\r\n/g, '\n').trim();
+        let findings = '';
+        let demographics = '';
+        let other = '';
+
+        const findingsMatch = clean.match(/Findings Note:\s*([\s\S]*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|$))/i);
+        if (findingsMatch && findingsMatch[1].trim()) {
+            findings = findingsMatch[1].trim().replace(/^•\s*/gm, '').trim();
+        }
+
+        const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|$))/i);
+        if (demoMatch && demoMatch[1].trim()) {
+            demographics = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
+        }
+
+        if (!findings && !demographics) {
+            other = clean;
+        }
+
+        let html = '<div class="space-y-1.5">';
+
+        if (findings && (scope === 'all' || scope === 'findings')) {
+            html += `
+                <div class="flex items-start gap-2 text-xs py-0.5">
+                    <span class="font-bold text-purple-800 shrink-0 uppercase text-[10px] bg-purple-100 border border-purple-200 px-1.5 py-0.5 rounded">Findings</span>
+                    <span class="text-gray-800 font-medium leading-relaxed">${findings}</span>
+                </div>`;
+        }
+
+        if (demographics && (scope === 'all' || scope === 'demographics')) {
+            const badges = demographics.split(/,|\n/).map(s => s.trim().replace(/^•\s*/, '')).filter(Boolean);
+            html += `
+                <div class="flex items-center gap-2 text-xs py-0.5">
+                    <span class="font-bold text-blue-800 shrink-0 uppercase text-[10px] bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded">Patient Info</span>
+                    <div class="flex flex-wrap gap-1">
+                        ${badges.map(b => `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">${b}</span>`).join('')}
+                    </div>
+                </div>`;
+        }
+
+        if (other && (!findings || scope !== 'demographics') && (!demographics || scope !== 'findings')) {
+            html += `
+                <div class="text-xs text-gray-800 font-medium whitespace-pre-line leading-relaxed py-0.5">
+                    ${other}
+                </div>`;
+        }
+
+        html += '</div>';
+        return html;
+    }
 
     function openDisputeDetailsModal(data) {
         if (!data) return;
         const subEl = document.getElementById('ddm-subtitle');
-        const nameEl = document.getElementById('ddm-patient-name');
-        const numEl = document.getElementById('ddm-patient-number');
-        const dateEl = document.getElementById('ddm-date');
         const textEl = document.getElementById('ddm-full-text');
-        const statusBadge = document.getElementById('ddm-status-badge');
 
-        if (subEl) subEl.innerText = `Case #${data.case_number}`;
-        if (nameEl) nameEl.innerText = data.patient_name || 'Patient';
-        if (numEl) numEl.innerText = data.patient_number || '';
-        if (dateEl) dateEl.innerText = data.created_at || '';
-        if (textEl) textEl.innerText = data.description || 'No description provided.';
-
-        if (statusBadge) {
-            let badgeClass = 'text-green-700 bg-green-50 border-green-200';
-            if (data.status === 'Pending RadTech Review') badgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
-            else if (data.status === 'Escalated to Radiologist') badgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
-            else if (data.status === 'Pending RadTech Verification') badgeClass = 'text-blue-700 bg-blue-50 border-blue-200';
-            statusBadge.innerHTML = `<span class="inline-flex items-center gap-1 text-[11px] font-semibold ${badgeClass} border px-2.5 py-0.5 rounded-lg">${data.status}</span>`;
-        }
+        if (subEl) subEl.innerText = `Case #${data.case_number}` + (data.patient_name ? ` • ${data.patient_name}` : '');
+        if (textEl) textEl.innerHTML = formatDisputeDescriptionHtml(data.description);
 
         const modal = document.getElementById('dispute-details-modal');
         if (modal) {
@@ -1116,58 +1381,32 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </script>
 
 <!-- DISPUTE / CORRECTION DETAILS MODAL -->
-<div id="dispute-details-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+<div id="dispute-details-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" onclick="if(event.target === this) closeDisputeDetailsModal()">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
         <div class="flex items-start justify-between border-b border-gray-100 pb-3.5">
-            <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-amber-100 text-amber-700 rounded-xl border border-amber-200">
-                    <i data-lucide="file-text" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-gray-900 text-base">Correction Request Details</h3>
-                    <p id="ddm-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
-                </div>
+            <div>
+                <h3 class="font-bold text-gray-900 text-base">Correction Request Details</h3>
+                <p id="ddm-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
             </div>
             <button onclick="closeDisputeDetailsModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <!-- Meta Summary Bar -->
-        <div class="grid grid-cols-2 gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-100 text-xs">
-            <div>
-                <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">Patient Info</span>
-                <span id="ddm-patient-name" class="font-bold text-gray-900 text-xs block"></span>
-                <span id="ddm-patient-number" class="text-gray-500 text-[11px] block mt-0.5"></span>
-            </div>
-            <div>
-                <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">Submission & Status</span>
-                <span id="ddm-date" class="font-medium text-gray-700 text-xs block"></span>
-                <div id="ddm-status-badge" class="mt-1.5"></div>
-            </div>
-        </div>
-
         <!-- Full Statement Content -->
         <div class="space-y-1.5">
-            <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="message-square-text" class="w-3.5 h-3.5 text-amber-600"></i> Correction Requested / Notes:
+            <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                Correction Requested / Notes:
             </label>
-            <div class="p-4 bg-amber-50/70 border border-amber-200/90 rounded-xl max-h-80 overflow-y-auto shadow-inner">
-                <div id="ddm-full-text" class="text-xs text-amber-950 font-medium whitespace-pre-wrap leading-relaxed"></div>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl max-h-96 overflow-y-auto">
+                <div id="ddm-full-text" class="text-xs text-gray-800 font-medium whitespace-pre-wrap leading-relaxed"></div>
             </div>
-        </div>
-
-        <div class="flex justify-end pt-2 border-t border-gray-100">
-            <button type="button" onclick="closeDisputeDetailsModal()" 
-                    class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer">
-                Close
-            </button>
         </div>
     </div>
 </div>
 
 <!-- ESCALATE TO RADIOLOGIST MODAL -->
-<div id="escalate-dispute-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/50 p-4">
+<div id="escalate-dispute-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
         <div class="flex items-center justify-between border-b pb-3">
             <h3 class="font-bold text-gray-900 text-base">Escalate to Radiologist</h3>
@@ -1189,79 +1428,533 @@ $currentTab = $_GET['tab'] ?? 'completed';
     </div>
 </div>
 
-<!-- RESOLVE DISPUTE MODAL -->
-<div id="resolve-dispute-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/50 p-4">
+<!-- FIX DEMOGRAPHICS MODAL (Side-by-Side Old vs New Name Comparison) -->
+<div id="fix-demographics-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 p-4">
     <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4 max-h-[95vh] overflow-y-auto">
-        <div class="flex items-center justify-between border-b pb-3">
-            <h3 id="resolve-modal-title" class="font-bold text-gray-900 text-base">Resolve Dispute Ticket</h3>
-            <button onclick="closeResolveModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+            <div>
+                <h3 class="font-bold text-gray-900 text-base flex items-center gap-2">
+                    <i data-lucide="clipboard-check" class="w-5 h-5 text-green-600"></i>
+                    Fix Patient Demographics
+                </h3>
+                <p id="fix-modal-subtitle" class="text-xs text-gray-500 mt-0.5 font-medium"></p>
+            </div>
+            <button onclick="closeFixDemographicsModal()" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
 
         <!-- Patient Requested Corrections Box -->
-        <div id="resolve-modal-patient-details" class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-            <div class="text-[11px] font-bold text-amber-800 flex items-center gap-1.5">
-                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-amber-600"></i>
-                Patient Correction Requested:
+        <div class="px-4 py-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1">
+            <div class="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
+                Reported Incorrect Info:
             </div>
-            <div id="resolve-patient-statement" class="text-xs text-amber-950 font-medium whitespace-pre-line bg-white p-2.5 rounded-lg border border-amber-100 shadow-sm"></div>
+            <div id="fix-patient-statement" class="text-xs text-amber-950 font-medium pl-5 leading-relaxed"></div>
         </div>
 
-        <!-- Findings Comparison Box (Hidden by default) -->
-        <div id="resolve-modal-findings-compare" class="hidden p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <div class="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Old Result</div>
-                    <div id="resolve-old-findings" class="text-xs text-gray-800 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm max-h-72 overflow-y-auto min-h-16"></div>
+        <!-- Side-by-Side Old vs New Demographics Comparison Box -->
+        <div class="space-y-2.5">
+            <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="user-check" class="w-4 h-4 text-gray-600"></i>
+                Demographics Verification &amp; Comparison:
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <!-- Left Box: Old Record -->
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                    <div class="pb-2 border-b border-gray-100">
+                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Old Record (Report)</span>
+                    </div>
+
+                    <div id="row-fix-old-first-name">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">First Name:</div>
+                        <div id="fix-old-first-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-fix-old-last-name">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Last Name:</div>
+                        <div id="fix-old-last-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-fix-old-age" class="hidden">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Age:</div>
+                        <div id="fix-old-age" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-fix-old-sex" class="hidden">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex / Gender:</div>
+                        <div id="fix-old-sex" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
                 </div>
-                <div class="space-y-1">
-                    <div class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New Amended Result</div>
-                    <div id="resolve-new-findings" class="text-xs text-green-900 bg-green-50 p-2.5 rounded-lg border border-green-200 shadow-sm max-h-72 overflow-y-auto min-h-16"></div>
+
+                <!-- Right Box: New / Updated Info -->
+                <div class="bg-green-50/40 border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                    <div class="pb-2 border-b border-green-100">
+                        <span class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New / Updated Info</span>
+                    </div>
+
+                    <div id="row-fix-new-first-name">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">First Name:</div>
+                        <div id="fix-new-first-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-fix-new-last-name">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Last Name:</div>
+                        <div id="fix-new-last-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-fix-new-age" class="hidden">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Age:</div>
+                        <div id="fix-new-age" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-fix-new-sex" class="hidden">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex / Gender:</div>
+                        <div id="fix-new-sex" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Success Alert Banner -->
+            <div id="fix-demo-alert" class="hidden p-3 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 font-semibold flex items-center gap-2 shadow-2xs">
+                <i data-lucide="check-circle" class="w-4 h-4 text-green-600 shrink-0"></i>
+                <span>Patient record successfully updated with new information. You can now confirm and resolve this ticket.</span>
             </div>
         </div>
 
-        <form id="resolve-form" onsubmit="submitResolution(event)" class="space-y-3">
-            <input type="hidden" id="resolve-dispute-id" name="dispute_id">
-            
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeResolveModal()" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
-                <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow">Confirm & Resolve</button>
-            </div>
-        </form>
+        <input type="hidden" id="fix-demo-dispute-id">
+
+        <!-- Footer Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200">
+            <button type="button" onclick="closeFixDemographicsModal()" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition">
+                Cancel
+            </button>
+
+            <!-- Apply & Fix Record Button -->
+            <button type="button" id="btn-apply-fix-demo" onclick="applyFixDemographics()"
+                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                Apply &amp; Fix Record
+            </button>
+        </div>
     </div>
 </div>
 
+<!-- VERIFY & RELEASE MODAL (Comprehensive Amendments Overview) -->
+<div id="verify-release-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4 max-h-[95vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+            <div>
+                <h3 class="font-bold text-gray-900 text-base flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-green-600"></i>
+                    Final Verify &amp; Release Report
+                </h3>
+                <p id="verify-modal-subtitle" class="text-xs text-gray-500 mt-0.5 font-medium"></p>
+            </div>
+            <button onclick="closeVerifyReleaseModal()" class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Section 1: Patient's Reported Issue -->
+        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1.5">
+            <div class="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
+                Patient's Reported Issue:
+            </div>
+            <div id="verify-patient-statement" class="text-xs text-amber-950 font-medium whitespace-pre-line leading-relaxed pl-1"></div>
+        </div>
+
+        <!-- Section 3: Side-by-Side Demographics Comparison (Shown if patient info error reported) -->
+        <div id="verify-demographics-container" class="space-y-2.5 hidden">
+            <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="user-check" class="w-4 h-4 text-gray-600"></i>
+                Demographics Verification &amp; Comparison:
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <!-- Left Box: Old Record -->
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                    <div class="pb-2 border-b border-gray-100">
+                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Old Record (Report)</span>
+                    </div>
+
+                    <div id="row-ver-old-first-name">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">First Name:</div>
+                        <div id="ver-old-first-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-ver-old-last-name">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Last Name:</div>
+                        <div id="ver-old-last-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-ver-old-age" class="hidden">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Age:</div>
+                        <div id="ver-old-age" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-ver-old-sex" class="hidden">
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex / Gender:</div>
+                        <div id="ver-old-sex" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                    </div>
+                </div>
+
+                <!-- Right Box: New / Updated Info -->
+                <div class="bg-green-50/40 border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                    <div class="pb-2 border-b border-green-100">
+                        <span class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New / Updated Info</span>
+                    </div>
+
+                    <div id="row-ver-new-first-name">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">First Name:</div>
+                        <div id="ver-new-first-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-ver-new-last-name">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Last Name:</div>
+                        <div id="ver-new-last-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-ver-new-age" class="hidden">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Age:</div>
+                        <div id="ver-new-age" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+
+                    <div id="row-ver-new-sex" class="hidden">
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex / Gender:</div>
+                        <div id="ver-new-sex" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Side-by-Side Findings Comparison Box -->
+        <div id="verify-findings-container" class="space-y-2.5 hidden">
+            <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
+                Amended Findings &amp; Impression Comparison:
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="space-y-1.5">
+                    <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                        Old Result
+                    </div>
+                    <div id="verify-old-findings" class="text-xs text-gray-800 bg-white p-4 rounded-xl border border-gray-200 shadow-2xs max-h-56 overflow-y-auto overscroll-contain leading-relaxed custom-gray-scroll"></div>
+                </div>
+                <div class="space-y-1.5">
+                    <div class="text-[11px] font-bold text-green-700 uppercase tracking-wider">
+                        New Amended Result
+                    </div>
+                    <div id="verify-new-findings" class="text-xs text-green-950 bg-green-50/50 p-4 rounded-xl border border-green-300 shadow-2xs max-h-56 overflow-y-auto overscroll-contain leading-relaxed custom-gray-scroll"></div>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" id="verify-release-dispute-id">
+
+        <!-- Footer Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200">
+            <button type="button" onclick="closeVerifyReleaseModal()" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition">
+                Cancel
+            </button>
+
+            <button type="button" onclick="submitAmendedRelease()"
+                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                Confirm &amp; Release Amended Report
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
+let currentFixData = null;
+let currentVerifyData = null;
+
 function openEscalateModal(id, caseNo) {
     document.getElementById('escalate-dispute-id').value = id;
     document.getElementById('escalate-notes').value = '';
     document.getElementById('escalate-dispute-modal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
 }
 function closeEscalateModal() {
     document.getElementById('escalate-dispute-modal').classList.add('hidden');
 }
 
-function openResolveModal(id, caseNo, titleText, descriptionText, oldFindings = '', newFindings = '', oldImpression = '', newImpression = '', examType = '') {
-    document.getElementById('resolve-dispute-id').value = id;
-    document.getElementById('resolve-modal-title').innerText = titleText || 'Resolve Dispute Ticket';
+// ── FIX DEMOGRAPHICS MODAL LOGIC ──
+function openFixDemographicsModal(data) {
+    currentFixData = data;
+    document.getElementById('fix-demo-dispute-id').value = data.id || '';
+    document.getElementById('fix-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
+
+    // Statement: Render clean bulleted text directly below the heading
+    const descText = data.description || '';
+    const statementEl = document.getElementById('fix-patient-statement');
     
-    const detailsContainer = document.getElementById('resolve-modal-patient-details');
-    const statementEl = document.getElementById('resolve-patient-statement');
-    if (descriptionText) {
-        statementEl.innerText = descriptionText;
-        detailsContainer.classList.remove('hidden');
+    let demoNote = '';
+    const clean = descText.replace(/\r\n/g, '\n').trim();
+    const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|$))/i);
+    if (demoMatch && demoMatch[1].trim()) {
+        demoNote = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
+    }
+    if (!demoNote) {
+        demoNote = clean;
+    }
+    const items = demoNote.split(/,|\n/).map(s => s.trim().replace(/^•\s*/, '')).filter(Boolean);
+    if (items.length > 0) {
+        statementEl.innerHTML = `• ${items.join(', ')}`;
     } else {
-        statementEl.innerText = '';
-        detailsContainer.classList.add('hidden');
+        statementEl.innerHTML = `<span class="text-xs text-amber-800 italic">No specific fields reported</span>`;
     }
 
-    const compareContainer = document.getElementById('resolve-modal-findings-compare');
-    const oldFindingsEl = document.getElementById('resolve-old-findings');
-    const newFindingsEl = document.getElementById('resolve-new-findings');
-    
-    if (oldFindings || newFindings || oldImpression || newImpression) {
-        function parseToHtml(fJson, iJson, fallbackKey) {
+    // Populate Side-by-Side Old vs New
+    const newFn = data.first_name || '';
+    const newLn = data.last_name || '';
+    const newMn = data.middle_name || '';
+    const ageVal = data.age ? `${data.age} yrs old` : 'N/A';
+    const sexVal = data.sex || 'N/A';
+
+    // Old name fallback
+    let oldFn = newFn;
+    let oldLn = newLn;
+    let oldMn = newMn;
+    if (data.user_account_name && data.user_account_name !== `${newFn} ${newLn}`.trim()) {
+        oldFn = data.user_account_name.split(' ')[0] || newFn;
+    }
+
+    function safeSetText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    }
+
+    safeSetText('fix-old-first-name', oldFn || 'N/A');
+    safeSetText('fix-old-last-name', oldLn || 'N/A');
+    safeSetText('fix-old-age', ageVal);
+    safeSetText('fix-old-sex', sexVal);
+
+    safeSetText('fix-new-first-name', newFn || 'N/A');
+    safeSetText('fix-new-last-name', newLn || 'N/A');
+    safeSetText('fix-new-age', ageVal);
+    safeSetText('fix-new-sex', sexVal);
+
+    // Filter which rows to display based on what the patient reported in the ticket
+    const descLower = descText.toLowerCase();
+    const hasFirstName = descLower.includes('first name');
+    const hasLastName = descLower.includes('last name');
+    const hasAge = descLower.includes('age');
+    const hasSex = descLower.includes('sex') || descLower.includes('gender');
+
+    // Dynamic field filtering based on patient description
+    const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
+
+    function setRowVisibility(id, visible) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (visible) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    }
+
+    setRowVisibility('row-fix-old-first-name', hasFirstName || !hasAnySpecific);
+    setRowVisibility('row-fix-new-first-name', hasFirstName || !hasAnySpecific);
+
+    setRowVisibility('row-fix-old-last-name', hasLastName || !hasAnySpecific);
+    setRowVisibility('row-fix-new-last-name', hasLastName || !hasAnySpecific);
+
+    setRowVisibility('row-fix-old-age', hasAge);
+    setRowVisibility('row-fix-new-age', hasAge);
+
+    setRowVisibility('row-fix-old-sex', hasSex);
+    setRowVisibility('row-fix-new-sex', hasSex);
+
+    // Reset button states
+    const btnApply = document.getElementById('btn-apply-fix-demo');
+    const alertEl = document.getElementById('fix-demo-alert');
+    if (alertEl) alertEl.classList.add('hidden');
+
+    if (btnApply) {
+        btnApply.disabled = false;
+        btnApply.className = "inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer";
+        btnApply.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Apply &amp; Fix Record';
+    }
+
+    document.getElementById('fix-demographics-modal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeFixDemographicsModal() {
+    document.getElementById('fix-demographics-modal').classList.add('hidden');
+}
+
+function applyFixDemographics() {
+    if (!currentFixData) return;
+    const disputeId = currentFixData.id;
+    const firstName = currentFixData.first_name || '';
+    const lastName = currentFixData.last_name || '';
+    const middleName = currentFixData.middle_name || '';
+
+    const btnApply = document.getElementById('btn-apply-fix-demo');
+    if (btnApply) {
+        btnApply.disabled = true;
+        btnApply.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Applying...';
+    }
+    if (window.lucide) lucide.createIcons();
+
+    const fd = new FormData();
+    fd.append('dispute_id', disputeId);
+    fd.append('first_name', firstName);
+    fd.append('last_name', lastName);
+    fd.append('middle_name', middleName);
+
+    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=update_patient_demographics', {
+        method: 'POST',
+        body: fd
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            closeFixDemographicsModal();
+            if (res.both_pending_escalate) {
+                Swal.fire({
+                    title: 'Demographics Corrected!',
+                    text: 'Patient demographic information has been updated. Please proceed to Re-upload & Escalate to Radiologist for the remaining findings issue.',
+                    icon: 'info',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                }).then(() => location.reload());
+            } else {
+                Swal.fire({
+                    title: 'Changes Applied!',
+                    text: 'Patient demographic corrections applied. You can now verify and release the case using the "Verify & Release" action.',
+                    icon: 'success',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                }).then(() => location.reload());
+            }
+        } else {
+            if (btnApply) {
+                btnApply.disabled = false;
+                btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer";
+                btnApply.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Apply &amp; Fix Record';
+            }
+            Swal.fire('Error', res.message || 'Failed to update record.', 'error');
+            if (window.lucide) lucide.createIcons();
+        }
+    })
+    .catch(err => {
+        if (btnApply) {
+            btnApply.disabled = false;
+            btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer";
+            btnApply.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Apply &amp; Fix Record';
+        }
+        Swal.fire('Error', 'Connection error occurred.', 'error');
+        if (window.lucide) lucide.createIcons();
+    });
+}
+
+// ── VERIFY & RELEASE MODAL LOGIC ──
+function openVerifyReleaseModal(data) {
+    currentVerifyData = data;
+    document.getElementById('verify-release-dispute-id').value = data.id || '';
+    document.getElementById('verify-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
+
+    // Statement
+    document.getElementById('verify-patient-statement').innerHTML = formatDisputeDescriptionHtml(data.description);
+
+    // Demographics comparison logic
+    const descText = data.description || '';
+    const descLower = descText.toLowerCase();
+    const cat = data.category || '';
+
+    const hasFirstName = descLower.includes('first name');
+    const hasLastName = descLower.includes('last name');
+    const hasMiddleName = descLower.includes('middle name');
+    const hasAge = descLower.includes('age');
+    const hasSex = descLower.includes('sex') || descLower.includes('gender');
+    const hasWrongInfoHeading = descLower.includes('wrong patient info');
+
+    const hasDemoChanges = (cat === 'demographic_error' || cat === 'both_error' || hasFirstName || hasLastName || hasMiddleName || hasAge || hasSex || hasWrongInfoHeading);
+
+    const demoCont = document.getElementById('verify-demographics-container');
+    if (hasDemoChanges) {
+        const newFn = data.first_name || '';
+        const newLn = data.last_name || '';
+        const newMn = data.middle_name || '';
+        const ageVal = data.age ? `${data.age} yrs old` : 'N/A';
+        const sexVal = data.sex || 'N/A';
+
+        let oldFn = newFn;
+        let oldLn = newLn;
+        let oldMn = newMn;
+        if (data.user_account_name && data.user_account_name !== `${newFn} ${newLn}`.trim()) {
+            oldFn = data.user_account_name.split(' ')[0] || newFn;
+        }
+
+        function safeSetVer(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        }
+
+        safeSetVer('ver-old-first-name', oldFn || 'N/A');
+        safeSetVer('ver-old-last-name', oldLn || 'N/A');
+        safeSetVer('ver-old-age', ageVal);
+        safeSetVer('ver-old-sex', sexVal);
+
+        safeSetVer('ver-new-first-name', newFn || 'N/A');
+        safeSetVer('ver-new-last-name', newLn || 'N/A');
+        safeSetVer('ver-new-age', ageVal);
+        safeSetVer('ver-new-sex', sexVal);
+
+        // Dynamic field row filtering
+        const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
+
+        function setVerRow(id, visible) {
+            const el = document.getElementById(id);
+            if (el) {
+                if (visible) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        }
+
+        setVerRow('row-ver-old-first-name', hasFirstName || !hasAnySpecific);
+        setVerRow('row-ver-new-first-name', hasFirstName || !hasAnySpecific);
+
+        setVerRow('row-ver-old-last-name', hasLastName || !hasAnySpecific);
+        setVerRow('row-ver-new-last-name', hasLastName || !hasAnySpecific);
+
+        setVerRow('row-ver-old-age', hasAge);
+        setVerRow('row-ver-new-age', hasAge);
+
+        setVerRow('row-ver-old-sex', hasSex);
+        setVerRow('row-ver-new-sex', hasSex);
+
+        demoCont.classList.remove('hidden');
+    } else {
+        demoCont.classList.add('hidden');
+    }
+
+    // Findings comparison
+    const findingsCont = document.getElementById('verify-findings-container');
+    const oldFindings = data.old_findings || '';
+    const newFindings = data.findings || '';
+    const oldImpression = data.old_impression || '';
+    const newImpression = data.impression || '';
+    const examType = data.exam_type || '';
+
+    // If only patient info/demographics was reported, do NOT show findings comparison
+    const isPureDemographicError = (cat === 'demographic_error') || 
+        (hasDemoChanges && !oldFindings && !descLower.includes('findings') && !descLower.includes('impression') && !descLower.includes('reading') && cat !== 'both_error');
+
+    const hasFindings = !isPureDemographicError && (cat === 'findings_error' || cat === 'exam_details_error' || cat === 'both_error' || Boolean(oldFindings));
+
+    if (hasFindings && (oldFindings || newFindings)) {
+        function parseToHtml(fJson, iJson, fallbackKey, isNew = false) {
             let fObj = {}, iObj = {};
             try { fObj = JSON.parse(fJson || "{}"); } catch(e) { if(fJson) fObj[fallbackKey || "RESULT"] = fJson; }
             try { iObj = JSON.parse(iJson || "{}"); } catch(e) { if(iJson) iObj[fallbackKey || "RESULT"] = iJson; }
@@ -1270,8 +1963,13 @@ function openResolveModal(id, caseNo, titleText, descriptionText, oldFindings = 
             let keys = Array.from(new Set([...Object.keys(fObj), ...Object.keys(iObj)]));
             
             keys.forEach((key, index) => {
-                html += `<div class="${index > 0 ? 'mt-4 pt-4 border-t border-gray-200' : ''}">`;
-                if (key) html += `<div class="font-bold text-xs text-blue-700 uppercase mb-3 pb-2 border-b border-blue-100">${key}</div>`;
+                html += `<div class="${index > 0 ? 'mt-3.5 pt-3.5 border-t border-gray-200' : ''}">`;
+                if (key) {
+                    const headerClass = isNew 
+                        ? 'font-bold text-xs text-green-700 uppercase mb-2.5 pb-1.5 border-b border-green-200' 
+                        : 'font-bold text-xs text-gray-700 uppercase mb-2.5 pb-1.5 border-b border-gray-200';
+                    html += `<div class="${headerClass}">${key}</div>`;
+                }
                 
                 let findingsText = "";
                 let impressionText = "";
@@ -1293,25 +1991,114 @@ function openResolveModal(id, caseNo, titleText, descriptionText, oldFindings = 
                     }
                 }
 
-                if (findingsText) html += `<div class="mb-3"><div class="font-bold text-gray-600 text-[11px] uppercase">FINDINGS:</div><p class="mt-1 text-gray-700 whitespace-pre-line">${findingsText}</p></div>`;
-                if (impressionText) html += `<div class="mb-1"><div class="font-bold text-gray-600 text-[11px] uppercase">IMPRESSION:</div><p class="mt-1 text-gray-700 whitespace-pre-line">${impressionText}</p></div>`;
+                if (findingsText) html += `<div class="mb-2.5"><div class="font-bold text-gray-600 text-[10px] uppercase">FINDINGS:</div><p class="mt-0.5 text-gray-700 whitespace-pre-line">${findingsText}</p></div>`;
+                if (impressionText) html += `<div class="mb-1"><div class="font-bold text-gray-600 text-[10px] uppercase">IMPRESSION:</div><p class="mt-0.5 text-gray-700 whitespace-pre-line">${impressionText}</p></div>`;
                 
                 html += `</div>`;
             });
-            return html || 'N/A';
+            return html || '<p class="text-xs text-gray-400 italic">No findings available.</p>';
         }
-        
-        oldFindingsEl.innerHTML = parseToHtml(oldFindings, oldImpression, examType);
-        newFindingsEl.innerHTML = parseToHtml(newFindings, newImpression, examType);
-        compareContainer.classList.remove('hidden');
+
+        document.getElementById('verify-old-findings').innerHTML = parseToHtml(oldFindings, oldImpression, examType, false);
+        document.getElementById('verify-new-findings').innerHTML = parseToHtml(newFindings, newImpression, examType, true);
+        findingsCont.classList.remove('hidden');
     } else {
-        compareContainer.classList.add('hidden');
+        findingsCont.classList.add('hidden');
     }
 
-    document.getElementById('resolve-dispute-modal').classList.remove('hidden');
+    document.getElementById('verify-release-modal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
 }
-function closeResolveModal() {
-    document.getElementById('resolve-dispute-modal').classList.add('hidden');
+
+function closeVerifyReleaseModal() {
+    document.getElementById('verify-release-modal').classList.add('hidden');
+}
+
+function submitAmendedRelease() {
+    let disputeId = (currentVerifyData && currentVerifyData.id) 
+        ? currentVerifyData.id 
+        : document.getElementById('verify-release-dispute-id')?.value;
+
+    if (!disputeId) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Dispute record ID not found.',
+            icon: 'error',
+            customClass: { container: '!z-[999999]' }
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Release Amended Report?',
+        text: 'The amended radiological report will be finalized and officially released to the patient.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#16a34a',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Release Report',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            container: '!z-[999999]',
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-xl font-bold px-4 py-2',
+            cancelButton: 'rounded-xl font-semibold px-4 py-2'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const btn = document.querySelector('#verify-release-modal button[onclick="submitAmendedRelease()"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Releasing...';
+            }
+
+            const fd = new FormData();
+            fd.append('dispute_id', disputeId);
+
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
+                method: 'POST', body: fd
+            })
+            .then(r => r.json())
+            .then(res => {
+                closeVerifyReleaseModal();
+                if (res.success) {
+                    Swal.fire({
+                        title: 'Released!',
+                        text: 'Amended report has been verified and released to the patient.',
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                    }).then(() => location.reload());
+                } else {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Confirm &amp; Release Amended Report';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                    Swal.fire({
+                        title: 'Error',
+                        text: res.message || 'An error occurred.',
+                        icon: 'error',
+                        customClass: { container: '!z-[999999]' }
+                    });
+                }
+            })
+            .catch(err => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Confirm &amp; Release Amended Report';
+                    if (window.lucide) lucide.createIcons();
+                }
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Connection or server error occurred.',
+                    icon: 'error',
+                    customClass: { container: '!z-[999999]' }
+                });
+            });
+        }
+    });
 }
 
 function confirmReupload(caseId) {
@@ -1351,14 +2138,27 @@ function submitEscalation(e) {
     });
 }
 function submitResolution(e) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
+    if (e && e.preventDefault) e.preventDefault();
+    const disputeId = document.getElementById('resolve-dispute-id').value;
+    if (!disputeId) return;
+
+    const fd = new FormData();
+    fd.append('dispute_id', disputeId);
+
+    // If in demographics mode, pass the names as well
+    const firstName = document.getElementById('resolve-first-name')?.value;
+    const lastName = document.getElementById('resolve-last-name')?.value;
+    const middleName = document.getElementById('resolve-middle-name')?.value;
+    if (firstName) fd.append('first_name', firstName);
+    if (lastName) fd.append('last_name', lastName);
+    if (middleName) fd.append('middle_name', middleName);
+
     fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
         method: 'POST', body: fd
     }).then(r=>r.json()).then(res=>{
         closeResolveModal();
         if(res.success){
-            Swal.fire('Resolved', 'The dispute ticket is now resolved.', 'success').then(()=>location.reload());
+            Swal.fire('Resolved', 'The dispute ticket is now resolved and the case has been updated.', 'success').then(()=>location.reload());
         }else{
             Swal.fire('Error', res.message || 'An error occurred.', 'error');
         }
@@ -1369,11 +2169,13 @@ function submitResolution(e) {
 setInterval(() => {
     const isDisputesTab = new URLSearchParams(window.location.search).get('tab') === 'disputes';
     const escModal = document.getElementById('escalate-dispute-modal');
-    const resModal = document.getElementById('resolve-dispute-modal');
+    const fixModal = document.getElementById('fix-demographics-modal');
+    const verModal = document.getElementById('verify-release-modal');
     const isEscalateOpen = escModal && !escModal.classList.contains('hidden');
-    const isResolveOpen = resModal && !resModal.classList.contains('hidden');
+    const isFixOpen = fixModal && !fixModal.classList.contains('hidden');
+    const isVerOpen = verModal && !verModal.classList.contains('hidden');
 
-    if (isDisputesTab && !isEscalateOpen && !isResolveOpen) {
+    if (isDisputesTab && !isEscalateOpen && !isFixOpen && !isVerOpen) {
         fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes')
             .then(res => res.text())
             .then(html => {

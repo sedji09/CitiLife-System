@@ -84,16 +84,32 @@ sort($priorities);
         <button type="button" id="tab-rad-worklist-btn" onclick="switchRadTab('worklist')"
                 class="pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
             Pending Worklist
+            <?php
+            $wlCount = count($records);
+            $wlDisplay = $wlCount > 99 ? '99+' : $wlCount;
+            ?>
+            <span id="worklist-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $wlCount ?>">
+                <?= $wlDisplay ?>
+            </span>
         </button>
         <button type="button" id="tab-rad-disputes-btn" onclick="switchRadTab('disputes')"
                 class="pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative">
             Escalated Error Reports / Disputes
+            <?php if (!empty($radDisputes)): ?>
+                <?php
+                $dispCount = count($radDisputes);
+                $dispDisplay = $dispCount > 99 ? '99+' : $dispCount;
+                ?>
+                <span id="disputes-tab-badge" class="tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $dispCount ?>">
+                    <?= $dispDisplay ?>
+                </span>
+            <?php endif; ?>
         </button>
     </nav>
 </div>
 
-<!-- Controls: Search, Filter, Sort -->
-<div class="mt-6 flex flex-col gap-4 px-4">
+<!-- Controls for Pending Worklist -->
+<div id="worklist-controls" class="mt-6 flex flex-col gap-4 px-4">
     <div class="flex flex-wrap gap-4 items-center">
         <!-- Search -->
         <div class="relative flex-1 min-w-[250px] group" style="position: relative; flex: 1 1 0%;">
@@ -132,6 +148,51 @@ sort($priorities);
             <option value="date_asc">Oldest Record</option>
             <option value="priority_desc">Priority (High-Low)</option>
             <option value="priority_asc">Priority (Low-High)</option>
+        </select>
+    </div>
+</div>
+
+<!-- Controls for Escalated Error Reports / Disputes Tab -->
+<div id="disputes-controls" class="mt-6 flex flex-col gap-4 px-4 hidden">
+    <div class="flex flex-wrap gap-4 items-center">
+        <!-- Search -->
+        <div class="relative flex-1 min-w-[250px] group" style="position: relative; flex: 1 1 0%;">
+            <div
+                style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
+                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors"
+                    style="width: 1.1rem; height: 1.1rem;"></i>
+            </div>
+            <input type="text" id="disputeSearchInput" placeholder="Search dispute by case no, patient, branch, notes..."
+                style="padding-left: 2.75rem !important;"
+                class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
+        </div>
+
+        <!-- Filter by Correction Type (The 3 types) -->
+        <select id="disputeFilterType"
+            class="w-60 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white font-medium">
+            <option value="">All Correction Types</option>
+            <option value="typo">Typographical / Minor Error</option>
+            <option value="reupload">Re-upload Diagnostic Image</option>
+            <option value="reread">Second Reading / Re-interpretation</option>
+        </select>
+
+        <!-- Filter by Branch -->
+        <select id="disputeFilterBranch"
+            class="w-44 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            <option value="">All Branches</option>
+            <?php foreach ($branchesList as $b): ?>
+                <option value="<?= htmlspecialchars($b['name']) ?>"><?= htmlspecialchars($b['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+
+        <!-- Sort by -->
+        <select id="disputeSortOption"
+            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            <option value="date_desc">Newest Escalated</option>
+            <option value="date_asc">Oldest Escalated</option>
+            <option value="type_asc">Correction Type (A-Z)</option>
+            <option value="case_asc">Case No. (A-Z)</option>
+            <option value="name_asc">Patient Name (A-Z)</option>
         </select>
     </div>
 </div>
@@ -198,8 +259,23 @@ sort($priorities);
                                         <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
                                     </div>
                                 </td>
-                                <td class="py-3 px-3 truncate max-w-[150px]" title="<?= htmlspecialchars($row['exam_type']) ?>">
-                                    <?= htmlspecialchars($row['exam_type']) ?>
+                                <td class="py-3 px-3 whitespace-nowrap text-xs text-gray-800 font-medium">
+                                    <?php
+                                    $pExams = array_filter(array_map('trim', explode(',', $row['exam_type'] ?? '')));
+                                    $pFirstExam = reset($pExams) ?: 'General Exam';
+                                    $pCount = count($pExams);
+                                    ?>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="truncate max-w-[130px]" title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
+                                            <?= htmlspecialchars($pFirstExam) ?>
+                                        </span>
+                                        <?php if ($pCount > 1): ?>
+                                            <span class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
+                                                title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
+                                                <?= $pCount ?>+
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td class="py-3 px-3">
                                     <?php
@@ -305,6 +381,8 @@ sort($priorities);
                 <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
                     <th class="text-left font-semibold px-4 py-3">Case / Patient</th>
                     <th class="text-left font-semibold px-4 py-3">Branch</th>
+                    <th class="text-left font-semibold px-4 py-3">Exam Type</th>
+                    <th class="text-left font-semibold px-4 py-3">Correction Type</th>
                     <th class="text-left font-semibold px-4 py-3">Details / Statement</th>
                     <th class="text-left font-semibold px-4 py-3">Date Escalated</th>
                     <th class="text-left font-semibold px-4 py-3">Action</th>
@@ -313,37 +391,93 @@ sort($priorities);
             <tbody id="disputes-tbody" class="divide-y divide-gray-100 bg-white">
                 <?php if (count($radDisputes) === 0): ?>
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-gray-500">
+                        <td colspan="7" class="text-center py-8 text-gray-500">
                             No escalated error reports or disputes assigned to Radiologist.
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($radDisputes as $d): ?>
+                        <?php
+                            $notes = $d['radtech_notes'] ?? '';
+                            $typeLabel = 'General Error';
+                            $typeClass = 'bg-gray-50 text-gray-700 border-gray-200';
+                            $typeIcon = 'alert-circle';
+                            $typeKey = 'other';
+
+                            if (stripos($notes, 'Typographical') !== false || stripos($notes, 'typo') !== false) {
+                                $typeLabel = 'Typographical Error';
+                                $typeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+                                $typeIcon = 'type';
+                                $typeKey = 'typo';
+                            } elseif (stripos($notes, 'Re-uploaded') !== false || stripos($notes, 'image') !== false || stripos($notes, 'reupload') !== false) {
+                                $typeLabel = 'Image Re-uploaded';
+                                $typeClass = 'bg-blue-50 text-blue-800 border-blue-200';
+                                $typeIcon = 'image-up';
+                                $typeKey = 'reupload';
+                            } elseif (stripos($notes, 'Re-reading') !== false || stripos($notes, 'Second Reading') !== false || stripos($notes, 're-interpretation') !== false || stripos($notes, 'reread') !== false) {
+                                $typeLabel = 'Second Reading';
+                                $typeClass = 'bg-purple-50 text-purple-800 border-purple-200';
+                                $typeIcon = 'repeat';
+                                $typeKey = 'reread';
+                            }
+                        ?>
                         <tr class="hover:bg-gray-50 transition-colors dispute-row" 
                             data-id="<?= htmlspecialchars($d['case_number']) ?>"
-                            data-search="<?= htmlspecialchars(strtolower($d['case_number'] . ' ' . $d['first_name'] . ' ' . $d['last_name'] . ' ' . ($d['branch_name'] ?? 'Main') . ' ' . $d['exam_type'])) ?>">
+                            data-type="<?= $typeKey ?>"
+                            data-typelabel="<?= htmlspecialchars($typeLabel) ?>"
+                            data-branch="<?= htmlspecialchars($d['branch_name'] ?? 'Main') ?>"
+                            data-date="<?= strtotime($d['created_at']) ?>"
+                            data-case="<?= htmlspecialchars($d['case_number']) ?>"
+                            data-name="<?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?>"
+                            data-search="<?= htmlspecialchars(strtolower($d['case_number'] . ' ' . $d['first_name'] . ' ' . $d['last_name'] . ' ' . ($d['branch_name'] ?? 'Main') . ' ' . $d['exam_type'] . ' ' . $notes . ' ' . $typeLabel)) ?>">
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <div class="font-mono text-xs font-semibold text-red-600"><?= htmlspecialchars($d['case_number']) ?></div>
                                 <div class="font-bold text-gray-900"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
-                                <div class="text-xs text-gray-500"><?= htmlspecialchars($d['exam_type']) ?></div>
                             </td>
                             <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-600 font-medium">
                                 <?= htmlspecialchars($d['branch_name'] ?? 'Main') ?>
                             </td>
-                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-[200px] lg:max-w-[240px] whitespace-normal break-words">
+                            <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-800 font-medium">
                                 <?php
-                                    $notesText = $d['radtech_notes'] ? htmlspecialchars($d['radtech_notes']) : 'No internal notes provided.';
-                                    $isLong = strlen($notesText) > 60;
+                                $dExams = array_filter(array_map('trim', explode(',', $d['exam_type'] ?? '')));
+                                $dFirstExam = reset($dExams) ?: 'General Exam';
+                                $dCount = count($dExams);
                                 ?>
-                                <div class="font-medium text-red-600">
-                                    <div class="line-clamp-2">"<?= $notesText ?>"</div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="truncate max-w-[130px]" title="<?= htmlspecialchars($d['exam_type'] ?? '') ?>">
+                                        <?= htmlspecialchars($dFirstExam) ?>
+                                    </span>
+                                    <?php if ($dCount > 1): ?>
+                                        <span class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
+                                            title="<?= htmlspecialchars($d['exam_type'] ?? '') ?>">
+                                            <?= $dCount ?>+
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
-                                <?php if ($isLong): ?>
-                                    <button type="button" class="text-[10px] text-blue-600 font-bold hover:underline focus:outline-none mt-1.5 flex items-center gap-1" 
-                                            onclick="showFullStatement(<?= htmlspecialchars(json_encode($d['radtech_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)">
-                                        <i data-lucide="eye" class="w-3 h-3"></i> View full text
-                                    </button>
-                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= $typeClass ?>">
+                                    <i data-lucide="<?= $typeIcon ?>" class="w-3.5 h-3.5"></i>
+                                    <?= htmlspecialchars($typeLabel) ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-[260px] lg:max-w-[320px] whitespace-normal break-words">
+                                <?php
+                                    $rawNotes = $d['radtech_notes'] ?? '';
+                                    // Strip bracketed prefix like [Typographical Error], [New Image Re-uploaded], etc.
+                                    $cleanNotes = trim(preg_replace('/^\s*\[(Typographical Error|New Image Re-uploaded|Re-reading Request|Dispute Escalation)\]\s*/i', '', $rawNotes));
+                                    
+                                    if (empty($cleanNotes)) {
+                                        if (!empty($d['description'])) {
+                                            $cleanNotes = $d['description'];
+                                        } else {
+                                            $cleanNotes = 'Forwarded for Radiologist review & report amendment.';
+                                        }
+                                    }
+                                ?>
+                                <div class="font-medium text-gray-800 italic">
+                                    "<?= htmlspecialchars($cleanNotes) ?>"
+                                </div>
                             </td>
                             <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
                                 <?= date('M j, Y h:i A', strtotime($d['created_at'])) ?>
@@ -374,57 +508,37 @@ sort($priorities);
 </div>
 
 <script>
-    function showFullStatement(notes) {
-        let htmlContent = `
-            <div class="text-left space-y-4">
-                <div>
-                    <h4 class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">RadTech Internal Notes</h4>
-                    <div class="p-4 bg-red-50 rounded-xl border border-red-100 text-red-800 text-sm">
-                        ${notes || 'No internal notes provided.'}
-                    </div>
-                </div>
-            </div>`;
-
-        Swal.fire({
-            title: 'Report Details',
-            html: htmlContent,
-            icon: 'info',
-            confirmButtonColor: '#2563eb',
-            confirmButtonText: 'Close',
-            customClass: {
-                popup: 'rounded-2xl',
-                confirmButton: 'rounded-xl font-bold px-6 py-2'
-            }
-        }).then(() => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        });
-    }
 
     // Tab Switching for Radiologist (Worklist vs Escalated Disputes)
     window.switchRadTab = function(tab) {
         sessionStorage.setItem('Citilife_radWorklist_tab', tab);
         const workCard = document.getElementById('worklist-table-card');
         const dispCard = document.getElementById('rad-disputes-table-card');
-        const filterCtrls = document.querySelector('.mt-6.flex.flex-col.gap-4');
+        const workCtrls = document.getElementById('worklist-controls');
+        const dispCtrls = document.getElementById('disputes-controls');
         const workBtn = document.getElementById('tab-rad-worklist-btn');
         const dispBtn = document.getElementById('tab-rad-disputes-btn');
 
         if (tab === 'worklist') {
             if (workCard) workCard.classList.remove('hidden');
             if (dispCard) dispCard.classList.add('hidden');
-            if (filterCtrls) filterCtrls.classList.remove('hidden');
+            if (workCtrls) workCtrls.classList.remove('hidden');
+            if (dispCtrls) dispCtrls.classList.add('hidden');
 
             if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
             if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
         } else {
             if (workCard) workCard.classList.add('hidden');
             if (dispCard) dispCard.classList.remove('hidden');
-            if (filterCtrls) filterCtrls.classList.add('hidden');
+            if (workCtrls) workCtrls.classList.add('hidden');
+            if (dispCtrls) dispCtrls.classList.remove('hidden');
 
             if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
             if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+            
+            if (typeof updateDisputesTable === 'function') {
+                updateDisputesTable();
+            }
         }
     };
 
@@ -440,6 +554,11 @@ sort($priorities);
         const ROWS_PER_PAGE = 8;
         let currentPage = 1;
         
+        const disputeSearchInput = document.getElementById('disputeSearchInput');
+        const disputeFilterType = document.getElementById('disputeFilterType');
+        const disputeFilterBranch = document.getElementById('disputeFilterBranch');
+        const disputeSortOption = document.getElementById('disputeSortOption');
+        const disputesTbody = document.getElementById('disputes-tbody');
         let allDisputeRows = Array.from(document.querySelectorAll('tr.dispute-row'));
         const DISPUTES_PER_PAGE = 8;
         let currentDisputesPage = 1;
@@ -701,23 +820,67 @@ sort($priorities);
             container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
-        function updateDisputesTable() {
-            if (!searchInput) return;
+        window.updateDisputesTable = function() {
+            if (!disputesTbody) return;
 
-            const searchTerm = searchInput.value.toLowerCase().trim();
+            const searchTerm = disputeSearchInput ? disputeSearchInput.value.toLowerCase().trim() : '';
+            const typeValue = disputeFilterType ? disputeFilterType.value : '';
+            const branchValue = disputeFilterBranch ? disputeFilterBranch.value : '';
+            const sortValue = disputeSortOption ? disputeSortOption.value : 'date_desc';
+
+            // Sorting
+            allDisputeRows.sort((a, b) => {
+                const dateA = parseInt(a.dataset.date) || 0;
+                const dateB = parseInt(b.dataset.date) || 0;
+                const typeA = (a.dataset.typelabel || '').toLowerCase();
+                const typeB = (b.dataset.typelabel || '').toLowerCase();
+                const caseA = (a.dataset.case || '').toLowerCase();
+                const caseB = (b.dataset.case || '').toLowerCase();
+                const nameA = (a.dataset.name || '').toLowerCase();
+                const nameB = (b.dataset.name || '').toLowerCase();
+
+                if (sortValue === 'date_desc') return dateB - dateA;
+                if (sortValue === 'date_asc') return dateA - dateB;
+                if (sortValue === 'type_asc') return typeA.localeCompare(typeB);
+                if (sortValue === 'case_asc') return caseA.localeCompare(caseB);
+                if (sortValue === 'name_asc') return nameA.localeCompare(nameB);
+                return dateB - dateA;
+            });
+
+            // Reorder in DOM
+            allDisputeRows.forEach(row => disputesTbody.appendChild(row));
 
             let filteredRows = [];
             allDisputeRows.forEach(row => {
-                const matchesSearch = row.dataset.search.includes(searchTerm);
-                if (matchesSearch) {
+                const matchesSearch = !searchTerm || row.dataset.search.includes(searchTerm);
+                const matchesType = !typeValue || row.dataset.type === typeValue;
+                const matchesBranch = !branchValue || row.dataset.branch === branchValue;
+
+                if (matchesSearch && matchesType && matchesBranch) {
                     filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
                 }
             });
 
+            let emptyRow = disputesTbody.querySelector('.empty-disputes-row');
+            if (filteredRows.length === 0 && allDisputeRows.length > 0) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.className = 'empty-disputes-row';
+                    emptyRow.innerHTML = '<td colspan="7" class="text-center py-8 text-gray-500">No matching escalated error reports found.</td>';
+                    disputesTbody.appendChild(emptyRow);
+                } else {
+                    emptyRow.style.display = '';
+                    disputesTbody.appendChild(emptyRow);
+                }
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+
             const totalPages = Math.max(1, Math.ceil(filteredRows.length / DISPUTES_PER_PAGE));
             if (currentDisputesPage > totalPages) currentDisputesPage = totalPages;
+            if (currentDisputesPage < 1) currentDisputesPage = 1;
 
             const startIdx = (currentDisputesPage - 1) * DISPUTES_PER_PAGE;
             const endIdx = startIdx + DISPUTES_PER_PAGE;
@@ -727,7 +890,8 @@ sort($priorities);
             });
 
             updateDisputesPaginationUI(filteredRows.length, totalPages);
-        }
+            if (window.lucide) lucide.createIcons();
+        };
 
         function updateDisputesPaginationUI(totalFiltered, totalPages) {
             const recordCountInfo = document.getElementById('disputes-record-count');
@@ -780,23 +944,27 @@ sort($priorities);
             }
 
             container.appendChild(createButton('&laquo; First', 1, currentDisputesPage <= 1));
-            container.appendChild(createButton('&lsaquo; Prev', currentDisputesPage - 1, currentDisputesPage <= 1));
+            container.appendChild(createButton('&lsaquo; Back', currentDisputesPage - 1, currentDisputesPage <= 1));
 
-            if (totalPages <= 5) {
+            if (totalPages <= 7) {
                 for (let i = 1; i <= totalPages; i++) {
-                    container.appendChild(createButton(i, i, false, i === currentDisputesPage));
+                    container.appendChild(createButton(i, i, false, i == currentDisputesPage));
                 }
             } else {
-                if (currentDisputesPage <= 3) {
-                    for (let i = 1; i <= 4; i++) container.appendChild(createButton(i, i, false, i === currentDisputesPage));
+                if (currentDisputesPage <= 4) {
+                    for (let i = 1; i <= 5; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentDisputesPage));
+                    }
                     container.appendChild(createEllipsis());
-                    container.appendChild(createButton(totalPages, totalPages, false, false));
-                } else if (currentDisputesPage > totalPages - 3) {
-                    container.appendChild(createButton(1, 1, false, false));
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentDisputesPage));
+                } else if (currentDisputesPage >= totalPages - 3) {
+                    container.appendChild(createButton(1, 1, false, 1 == currentDisputesPage));
                     container.appendChild(createEllipsis());
-                    for (let i = totalPages - 3; i <= totalPages; i++) container.appendChild(createButton(i, i, false, i === currentDisputesPage));
+                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                        container.appendChild(createButton(i, i, false, i == currentDisputesPage));
+                    }
                 } else {
-                    container.appendChild(createButton(1, 1, false, false));
+                    container.appendChild(createButton(1, 1, false, 1 == currentDisputesPage));
                     container.appendChild(createEllipsis());
                     container.appendChild(createButton(currentDisputesPage - 1, currentDisputesPage - 1, false, false));
                     container.appendChild(createButton(currentDisputesPage, currentDisputesPage, false, true));
@@ -808,6 +976,32 @@ sort($priorities);
 
             container.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
             container.appendChild(createButton('Last &raquo;', totalPages, currentDisputesPage >= totalPages));
+        }
+
+        // Event listeners for Disputes tab
+        if (disputeSearchInput) {
+            disputeSearchInput.addEventListener('input', () => {
+                currentDisputesPage = 1;
+                updateDisputesTable();
+            });
+        }
+        if (disputeFilterType) {
+            disputeFilterType.addEventListener('change', () => {
+                currentDisputesPage = 1;
+                updateDisputesTable();
+            });
+        }
+        if (disputeFilterBranch) {
+            disputeFilterBranch.addEventListener('change', () => {
+                currentDisputesPage = 1;
+                updateDisputesTable();
+            });
+        }
+        if (disputeSortOption) {
+            disputeSortOption.addEventListener('change', () => {
+                currentDisputesPage = 1;
+                updateDisputesTable();
+            });
         }
 
         // Reset to page 1 on filter/sort change
@@ -826,13 +1020,19 @@ sort($priorities);
 
         function handleHighlight() {
             const urlParams = new URLSearchParams(window.location.search);
+            const currentTabParam = urlParams.get('tab') || urlParams.get('status');
             
             // Handle Disputes Tab
-            const disputeCase = urlParams.get('highlight_dispute_case');
+            const disputeCase = urlParams.get('highlight_dispute_case') || (currentTabParam === 'disputes' ? (urlParams.get('highlight_case') || urlParams.get('highlight') || urlParams.get('case_id')) : null);
             if (disputeCase) {
                 if (typeof switchRadTab === 'function') switchRadTab('disputes');
                 const dispRows = document.querySelectorAll('.dispute-row');
-                const row = Array.from(dispRows).find(r => (r.dataset.id || '').toLowerCase() === disputeCase.toLowerCase());
+                const row = Array.from(dispRows).find(r => 
+                    (r.dataset.id || '').toLowerCase() === disputeCase.toLowerCase() ||
+                    (r.dataset.case || '').toLowerCase() === disputeCase.toLowerCase() ||
+                    (r.dataset.caseId || '').toLowerCase() === disputeCase.toLowerCase() ||
+                    r.innerText.toLowerCase().includes(disputeCase.toLowerCase())
+                );
                 if (row) {
                     const dispIndex = Array.from(dispRows).indexOf(row);
                     currentDisputesPage = Math.floor(dispIndex / DISPUTES_PER_PAGE) + 1;
@@ -841,24 +1041,54 @@ sort($priorities);
                     setTimeout(() => {
                         row.style.display = '';
                         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        row.classList.add('transition-all', 'duration-300');
-                        row.style.backgroundColor = '#fef08a';
+                        
+                        // Insert notification highlight banner at the top header (like other modules)
+                        const existingBanner = document.getElementById('highlight-banner');
+                        if (existingBanner) existingBanner.remove();
+
+                        const banner = document.createElement('div');
+                        banner.id = 'highlight-banner';
+                        banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Error report for Case <strong>${disputeCase}</strong> is highlighted below.</span></div>`;
+                        banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                        
+                        const header = document.querySelector('h2');
+                        if (header && header.parentElement) {
+                            header.parentElement.insertAdjacentElement('afterend', banner);
+                        } else {
+                            const topHeader = document.querySelector('h1') || document.querySelector('.flex.justify-between.items-center');
+                            if (topHeader && topHeader.parentElement) {
+                                topHeader.parentElement.insertAdjacentElement('afterend', banner);
+                            }
+                        }
+
                         setTimeout(() => {
-                            row.style.backgroundColor = '#fde047';
-                            setTimeout(() => {
-                                row.style.backgroundColor = '#fef08a';
+                            banner.style.transition = 'opacity 0.5s';
+                            banner.style.opacity = '0';
+                            setTimeout(() => banner.remove(), 500);
+                        }, 6000);
+
+                        // Flash highlight ring and background animation
+                        row.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400');
+                        row.style.backgroundColor = '#fef08a';
+                        
+                        let flashCount = 0;
+                        const flashInterval = setInterval(() => {
+                            flashCount++;
+                            row.style.backgroundColor = (flashCount % 2 === 1) ? '#fde047' : '#fef08a';
+                            if (flashCount >= 6) {
+                                clearInterval(flashInterval);
                                 setTimeout(() => {
-                                    row.style.backgroundColor = '#fde047';
-                                    setTimeout(() => {
-                                        row.style.transition = 'background-color 1.5s ease';
-                                        row.style.backgroundColor = '';
-                                    }, 400);
-                                }, 400);
-                            }, 400);
-                        }, 200);
+                                    row.style.transition = 'background-color 2s ease, box-shadow 2s ease';
+                                    row.style.backgroundColor = '';
+                                    row.classList.remove('ring-2', 'ring-amber-400');
+                                }, 1200);
+                            }
+                        }, 250);
 
                         const newUrl = new URL(window.location);
                         newUrl.searchParams.delete('highlight_dispute_case');
+                        newUrl.searchParams.delete('highlight_case');
+                        newUrl.searchParams.delete('highlight');
                         newUrl.searchParams.delete('is_new');
                         window.history.replaceState({}, document.title, newUrl.toString());
                     }, 200);
@@ -951,5 +1181,85 @@ sort($priorities);
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+
+        // Real-time polling for Radiologist Worklist & Escalated Error Reports (every 3 seconds)
+        let isSyncingWorklist = false;
+        setInterval(() => {
+            if (isSyncingWorklist) return;
+
+            // Don't sync if user is actively searching or typing in search inputs
+            const isTyping = document.activeElement && (
+                document.activeElement === document.getElementById('disputeSearchInput') || 
+                document.activeElement === document.getElementById('searchInput')
+            );
+            if (isTyping) return;
+
+            isSyncingWorklist = true;
+            fetch(window.location.href, { cache: 'no-store' })
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // 1. Sync Escalated Disputes Table
+                    const newDisputesTbody = doc.getElementById('disputes-tbody');
+                    const curDisputesTbody = document.getElementById('disputes-tbody');
+                    if (newDisputesTbody && curDisputesTbody) {
+                        const newContent = newDisputesTbody.innerHTML.trim();
+                        const newRowCount = newDisputesTbody.querySelectorAll('tr.dispute-row').length;
+                        const curRowCount = curDisputesTbody.querySelectorAll('tr.dispute-row').length;
+                        if (newContent !== curDisputesTbody.innerHTML.trim() || newRowCount !== curRowCount) {
+                            curDisputesTbody.innerHTML = newContent;
+                            allDisputeRows = Array.from(curDisputesTbody.querySelectorAll('tr.dispute-row'));
+                            updateDisputesTable();
+                        }
+                    }
+
+                    // 2. Sync Disputes Tab Badge
+                    const newDisputesBadge = doc.getElementById('disputes-tab-badge');
+                    const curDisputesBadge = document.getElementById('disputes-tab-badge');
+                    const disputesTabBtn = document.getElementById('tab-rad-disputes-btn');
+                    if (newDisputesBadge && curDisputesBadge) {
+                        curDisputesBadge.innerHTML = newDisputesBadge.innerHTML;
+                        curDisputesBadge.className = newDisputesBadge.className;
+                        if (newDisputesBadge.title) curDisputesBadge.title = newDisputesBadge.title;
+                    } else if (newDisputesBadge && !curDisputesBadge && disputesTabBtn) {
+                        disputesTabBtn.appendChild(newDisputesBadge);
+                    } else if (!newDisputesBadge && curDisputesBadge) {
+                        curDisputesBadge.remove();
+                    }
+
+                    // 3. Sync Pending Worklist Table
+                    const newWorklistTbody = doc.getElementById('worklist-tbody');
+                    const curWorklistTbody = document.getElementById('worklist-tbody');
+                    if (newWorklistTbody && curWorklistTbody) {
+                        const newWlContent = newWorklistTbody.innerHTML.trim();
+                        const newWlCount = newWorklistTbody.querySelectorAll('tr.record-row').length;
+                        const curWlCount = curWorklistTbody.querySelectorAll('tr.record-row').length;
+                        if (newWlContent !== curWorklistTbody.innerHTML.trim() || newWlCount !== curWlCount) {
+                            curWorklistTbody.innerHTML = newWlContent;
+                            allRows = Array.from(curWorklistTbody.querySelectorAll('tr.record-row'));
+                            updateTable();
+                        }
+                    }
+
+                    // 4. Sync Worklist Tab Badge
+                    const newWlBadge = doc.getElementById('worklist-tab-badge');
+                    const curWlBadge = document.getElementById('worklist-tab-badge');
+                    if (newWlBadge && curWlBadge) {
+                        curWlBadge.innerHTML = newWlBadge.innerHTML;
+                        curWlBadge.className = newWlBadge.className;
+                        if (newWlBadge.title) curWlBadge.title = newWlBadge.title;
+                    }
+
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                })
+                .catch(err => console.debug('Radiologist real-time sync error:', err))
+                .finally(() => {
+                    isSyncingWorklist = false;
+                });
+        }, 3000);
     });
 </script>
