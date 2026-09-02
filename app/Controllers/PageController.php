@@ -130,7 +130,14 @@ class PageController
             'payment-verifications' => 'branch_admin'
         ];
 
-        $resolvedRole = $pageOwnerMap[$page] ?? $role;
+        // If current role has its own controller for this page, prefer it over the map
+        $roleSpecificControllerFile = basePath("app/Controllers/{$role}/{$controllerName}");
+        if (file_exists($roleSpecificControllerFile)) {
+            $resolvedRole = $role;
+        } else {
+            $resolvedRole = $pageOwnerMap[$page] ?? $role;
+        }
+
 
         $controllerFile = basePath("app/Controllers/{$resolvedRole}/{$controllerName}");
         $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
