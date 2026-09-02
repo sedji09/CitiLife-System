@@ -1083,7 +1083,7 @@ class CaseModel
             // File Processing
             $uploadDir = __DIR__ . '/../../public/uploads/cases/';
             if (!is_dir($uploadDir))
-                mkdir($uploadDir, 0777, true);
+                @mkdir($uploadDir, 0777, true);
 
             $count = count($files['name']);
             for ($i = 0; $i < $count; $i++) {
