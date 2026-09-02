@@ -99,7 +99,7 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
             <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">System Under Maintenance.
             </h2>
             <p class="text-base text-gray-500 mb-6 max-w-md mx-auto leading-relaxed">
-                Medyo nag-hang ang system. Inaayos na ito ng aming technical team. Pasensya na sa abala!
+                The system encountered an unexpected issue. Our technical team is currently working on it. We apologize for the inconvenience!
             </p>
 
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">

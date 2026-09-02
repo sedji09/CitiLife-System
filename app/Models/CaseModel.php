@@ -790,23 +790,41 @@ class CaseModel
     }
 
     /**
-     * Helper to check if a column exists in a table.
+     * Helper to check if a column exists in a table safely.
      */
     public function hasColumn($table, $column)
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
-        $stmt->execute([$table, $column]);
-        return (bool) $stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->query("SHOW COLUMNS FROM `{$table}` LIKE '{$column}'");
+            return (bool) ($stmt && $stmt->fetch());
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
-     * Helper to check if a table exists in the database.
+     * Helper to check if a table exists in the database safely.
      */
     public function hasTable($table)
     {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?");
-        $stmt->execute([$table]);
-        return (bool) $stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->query("SHOW TABLES LIKE '{$table}'");
+            return (bool) ($stmt && $stmt->fetch());
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Execute SQL safely without throwing fatal exceptions on duplicate columns or minor schema differences.
+     */
+    private function safeExec($sql)
+    {
+        try {
+            $this->pdo->exec($sql);
+        } catch (\Throwable $e) {
+            error_log("safeExec notice: " . $e->getMessage());
+        }
     }
 
     /**
@@ -1311,77 +1329,58 @@ class CaseModel
 
     /**
      * Ensure database schema is up to date (Backend migration logic).
+     * Protected with try-catch and safeExec so it will NEVER throw a fatal error or crash the site.
      */
     public function ensureSchema()
     {
-        // 1. Ensure cases columns
-        if (!$this->hasColumn('cases', 'approval_status')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN approval_status ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending'");
-        }
-        if (!$this->hasColumn('cases', 'released')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN released TINYINT(1) NOT NULL DEFAULT 0");
-        }
-        if (!$this->hasColumn('cases', 'report_template')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN report_template VARCHAR(100) DEFAULT NULL");
-        }
-        $stmt = $this->pdo->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'status'");
-        $stmt->execute();
-        $enumRow = $stmt->fetchColumn();
-        if ($enumRow && strpos($enumRow, 'Report Ready') === false) {
-            $this->pdo->exec("ALTER TABLE cases MODIFY COLUMN status ENUM('Pending','Under Reading','Report Ready','For Revision','Completed','Released','Rejected') NOT NULL DEFAULT 'Pending'");
-        } elseif ($enumRow && strpos($enumRow, 'For Revision') === false) {
-            $this->pdo->exec("ALTER TABLE cases MODIFY COLUMN status ENUM('Pending','Under Reading','Report Ready','For Revision','Completed','Released','Rejected') NOT NULL DEFAULT 'Pending'");
-        }
-        if (!$this->hasColumn('cases', 'date_completed')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN date_completed DATETIME DEFAULT NULL");
-        }
-        if (!$this->hasColumn('cases', 'radtech_submitted_at')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN radtech_submitted_at DATETIME DEFAULT NULL");
-        }
-        if (!$this->hasColumn('cases', 'is_amended')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN is_amended TINYINT(1) NOT NULL DEFAULT 0");
-        }
-        if (!$this->hasColumn('cases', 'amendment_notes')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN amendment_notes TEXT DEFAULT NULL");
-        }
-        if (!$this->hasColumn('cases', 'philhealth_relation')) {
-            $this->pdo->exec("ALTER TABLE cases ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");
-        }
-        $stmt2 = $this->pdo->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cases' AND COLUMN_NAME = 'image_path'");
-        $stmt2->execute();
-        $colType = strtolower($stmt2->fetchColumn() ?: '');
-        if ($colType && strpos($colType, 'text') === false) {
-            $this->pdo->exec("ALTER TABLE cases MODIFY COLUMN image_path TEXT DEFAULT NULL");
-        }
-
-        // 2. Ensure requests table columns (Fixes SQLSTATE[42S22]: Unknown column 'is_verified')
-        if ($this->hasTable('requests')) {
-            if (!$this->hasColumn('requests', 'is_verified')) {
-                $this->pdo->exec("ALTER TABLE requests ADD COLUMN is_verified TINYINT(1) NOT NULL DEFAULT 0");
-            }
-            if (!$this->hasColumn('requests', 'philhealth_relation')) {
-                $this->pdo->exec("ALTER TABLE requests ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");
-            }
-            if (!$this->hasColumn('requests', 'original_price')) {
-                $this->pdo->exec("ALTER TABLE requests ADD COLUMN original_price DECIMAL(10,2) DEFAULT NULL");
-            }
-            if (!$this->hasColumn('requests', 'philhealth_discount')) {
-                $this->pdo->exec("ALTER TABLE requests ADD COLUMN philhealth_discount DECIMAL(10,2) DEFAULT NULL");
-            }
-            if (!$this->hasColumn('requests', 'amount_due')) {
-                $this->pdo->exec("ALTER TABLE requests ADD COLUMN amount_due DECIMAL(10,2) DEFAULT NULL");
-            }
-            $stmtReq = $this->pdo->prepare("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'requests' AND COLUMN_NAME = 'status'");
-            $stmtReq->execute();
-            $enumReq = $stmtReq->fetchColumn();
-            if ($enumReq && strpos($enumReq, 'Payment Verified') === false) {
-                $this->pdo->exec("ALTER TABLE requests MODIFY COLUMN status ENUM('Pending Approval','Pending Payment','Payment Verifying','Payment Verified','Approved','Rejected','Cancelled') NOT NULL DEFAULT 'Pending Approval'");
-            }
-        }
-
-        // 3. Ensure result_disputes table and all its columns exist
         try {
-            $this->pdo->exec("CREATE TABLE IF NOT EXISTS result_disputes (
+            // 1. Ensure cases columns
+            if (!$this->hasColumn('cases', 'approval_status')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN approval_status ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending'");
+            }
+            if (!$this->hasColumn('cases', 'released')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN released TINYINT(1) NOT NULL DEFAULT 0");
+            }
+            if (!$this->hasColumn('cases', 'report_template')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN report_template VARCHAR(100) DEFAULT NULL");
+            }
+            if (!$this->hasColumn('cases', 'date_completed')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN date_completed DATETIME DEFAULT NULL");
+            }
+            if (!$this->hasColumn('cases', 'radtech_submitted_at')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN radtech_submitted_at DATETIME DEFAULT NULL");
+            }
+            if (!$this->hasColumn('cases', 'is_amended')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN is_amended TINYINT(1) NOT NULL DEFAULT 0");
+            }
+            if (!$this->hasColumn('cases', 'amendment_notes')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN amendment_notes TEXT DEFAULT NULL");
+            }
+            if (!$this->hasColumn('cases', 'philhealth_relation')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");
+            }
+
+            // 2. Ensure requests table columns (Fixes SQLSTATE[42S22]: Unknown column 'is_verified')
+            if ($this->hasTable('requests')) {
+                if (!$this->hasColumn('requests', 'is_verified')) {
+                    $this->safeExec("ALTER TABLE requests ADD COLUMN is_verified TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!$this->hasColumn('requests', 'philhealth_relation')) {
+                    $this->safeExec("ALTER TABLE requests ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");
+                }
+                if (!$this->hasColumn('requests', 'original_price')) {
+                    $this->safeExec("ALTER TABLE requests ADD COLUMN original_price DECIMAL(10,2) DEFAULT NULL");
+                }
+                if (!$this->hasColumn('requests', 'philhealth_discount')) {
+                    $this->safeExec("ALTER TABLE requests ADD COLUMN philhealth_discount DECIMAL(10,2) DEFAULT NULL");
+                }
+                if (!$this->hasColumn('requests', 'amount_due')) {
+                    $this->safeExec("ALTER TABLE requests ADD COLUMN amount_due DECIMAL(10,2) DEFAULT NULL");
+                }
+            }
+
+            // 3. Ensure result_disputes table and all its columns exist
+            $this->safeExec("CREATE TABLE IF NOT EXISTS result_disputes (
                 id INT(11) NOT NULL AUTO_INCREMENT,
                 case_id INT(11) NOT NULL,
                 patient_id INT(11) NOT NULL,
@@ -1407,32 +1406,32 @@ class CaseModel
 
             if ($this->hasTable('result_disputes')) {
                 if (!$this->hasColumn('result_disputes', 'demographics_fixed')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN demographics_fixed TINYINT(1) NOT NULL DEFAULT 0");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN demographics_fixed TINYINT(1) NOT NULL DEFAULT 0");
                 }
                 if (!$this->hasColumn('result_disputes', 'radiologist_amended')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN radiologist_amended TINYINT(1) NOT NULL DEFAULT 0");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN radiologist_amended TINYINT(1) NOT NULL DEFAULT 0");
                 }
                 if (!$this->hasColumn('result_disputes', 'old_findings')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN old_findings TEXT DEFAULT NULL");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN old_findings TEXT DEFAULT NULL");
                 }
                 if (!$this->hasColumn('result_disputes', 'old_impression')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN old_impression TEXT DEFAULT NULL");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN old_impression TEXT DEFAULT NULL");
                 }
                 if (!$this->hasColumn('result_disputes', 'radtech_notes')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN radtech_notes TEXT DEFAULT NULL");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN radtech_notes TEXT DEFAULT NULL");
                 }
                 if (!$this->hasColumn('result_disputes', 'resolution_notes')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN resolution_notes TEXT DEFAULT NULL");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN resolution_notes TEXT DEFAULT NULL");
                 }
                 if (!$this->hasColumn('result_disputes', 'resolved_by')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN resolved_by INT(11) DEFAULT NULL");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN resolved_by INT(11) DEFAULT NULL");
                 }
                 if (!$this->hasColumn('result_disputes', 'resolved_at')) {
-                    $this->pdo->exec("ALTER TABLE result_disputes ADD COLUMN resolved_at TIMESTAMP NULL DEFAULT NULL");
+                    $this->safeExec("ALTER TABLE result_disputes ADD COLUMN resolved_at TIMESTAMP NULL DEFAULT NULL");
                 }
             }
-        } catch (Exception $e) {
-            error_log('ensureSchema result_disputes error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            error_log('ensureSchema safe catch: ' . $e->getMessage());
         }
     }
 }

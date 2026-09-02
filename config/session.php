@@ -14,7 +14,9 @@ if (session_status() === PHP_SESSION_NONE) {
             @mkdir($sessionPath, 0777, true);
             @file_put_contents($sessionPath . '/.htaccess', 'Require all denied');
         }
-        session_save_path($sessionPath);
+        if (is_dir($sessionPath) && is_writable($sessionPath)) {
+            session_save_path($sessionPath);
+        }
     }
-    session_start();
+    @session_start();
 }
