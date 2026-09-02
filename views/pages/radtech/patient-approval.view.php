@@ -321,16 +321,22 @@ foreach ($allServices as $service) {
         </div>
         
         <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);">
-            <!-- Per-body-part exam selectors are injected here by JS -->
-            <div id="assignPerPartSections" class="flex flex-col gap-4 max-h-[50vh] overflow-y-auto pr-1"></div>
-
-            <!-- Aggregated hidden input submitted to server -->
-            <input type="hidden" name="exam_type" id="assignAggregatedExam" value="">
-            <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
-
-            <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2.5 shadow-sm">
-                <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
-                <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Select Examination Procedure(s)</label>
+                <?php 
+                $examInputName = 'exam_type';
+                $placeholderText = 'Select procedure(s)...';
+                include basePath('views/components/exam-selector.php'); 
+                ?>
+                <div id="assignAllowedBadge" class="hidden text-xs text-indigo-700 flex items-center gap-1.5 mt-2 bg-indigo-50 border border-indigo-100 p-2.5 rounded-xl">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0 text-indigo-600"></i>
+                    <span id="assignAllowedBadgeText">Choices filtered to requested body part(s)</span>
+                </div>
+                <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-sm">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                    <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
+                </div>
+                <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
             </div>
             
             <div class="flex justify-end gap-3 mt-6">
