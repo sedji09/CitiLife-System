@@ -176,70 +176,194 @@ function getMatchedCategoriesAndExams(requestedStr) {
     };
 }
 
-function filterAssignModalExams(requestedBodyPart) {
-    const modal = document.getElementById('assignModal');
-    if (!modal) return;
 
-    const matchInfo = getMatchedCategoriesAndExams(requestedBodyPart);
-    const container = modal.querySelector('.exam-ms-component');
-    if (!container) return;
+// ── Per-body-part helpers ──────────────────────────────────────────────────────
 
-    const dropdown = container.querySelector('.exam-ms-dropdown');
-    const options = dropdown ? dropdown.querySelectorAll('.exam-ms-option') : [];
-    const searchInput = container.querySelector('.exam-ms-input');
-    const noResults = dropdown ? dropdown.querySelector('.exam-ms-no-results') : null;
-    const badge = document.getElementById('assignAllowedBadge');
-    const badgeText = document.getElementById('assignAllowedBadgeText');
-
-    if (matchInfo.isRestricted && matchInfo.allowedExams.length > 0) {
-        // Restrict options in dropdown to only allowed exams
-        options.forEach(opt => {
-            const val = opt.getAttribute('data-value');
-            if (matchInfo.allowedExams.includes(val)) {
-                opt.setAttribute('data-allowed', 'true');
-            } else {
-                opt.setAttribute('data-allowed', 'false');
-            }
-        });
-
-        const catNames = matchInfo.allowedCategories.join(', ');
-        if (noResults) {
-            noResults.textContent = `No matches found (Only ${catNames} exams allowed)`;
-        }
-        if (searchInput) {
-            const ph = `Select ${matchInfo.allowedCategories.join(' / ')} procedure...`;
-            searchInput.placeholder = ph;
-            searchInput.setAttribute('data-placeholder', ph);
-        }
-        if (badge && badgeText) {
-            badge.classList.remove('hidden');
-            badgeText.innerHTML = `Choices filtered to <strong>${catNames}</strong> procedures only`;
-            if (window.lucide) window.lucide.createIcons();
-        }
-    } else {
-        // Unrestricted (show all options)
-        options.forEach(opt => {
-            opt.setAttribute('data-allowed', 'true');
-        });
-        if (noResults) {
-            noResults.textContent = 'No matches found';
-        }
-        if (searchInput) {
-            searchInput.placeholder = 'Select Exam Type...';
-            searchInput.setAttribute('data-placeholder', 'Select Exam Type...');
-        }
-        if (badge) {
-            badge.classList.add('hidden');
-        }
-    }
-
-    // Trigger renderChips to update visibility
-    if (typeof renderChips === 'function') {
-        renderChips(container);
-    }
+/**
+ * Returns the allowed exam list for a SINGLE body part string.
+ */
+function getAllowedExamsForSinglePart(partStr) {
+    const info = getMatchedCategoriesAndExams(partStr);
+    return info.allowedExams.length > 0 ? info.allowedExams : (window.allActiveServices || []).map(s => s.exam_type || s.name);
 }
 
-function openAssignModal(id, requestedBodyPart, assignedExam = '') {
+/**
+ * Escapes HTML special characters.
+ */
+function _escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/**
+ * Builds the per-body-part inline selector section.
+ * Returns an HTMLElement (div).
+ */
+function buildPartSection(part, allowedExams, preSelected, idx) {
+    const section = document.createElement('div');
+    section.className = 'assign-part-section rounded-xl border border-gray-200 bg-gray-50 p-3';
+    section.setAttribute('data-part', part);
+
+    // Header badge
+    const header = document.createElement('div');
+    header.className = 'flex items-center gap-2 mb-2';
+    header.innerHTML = `
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200">
+            ${_escHtml(part)}
+        </span>
+        <span class="text-xs text-gray-500 italic">Select exam(s) for this part</span>
+    `;
+    section.appendChild(header);
+
+    // Chips container (selected items)
+    const chipsWrap = document.createElement('div');
+    chipsWrap.className = 'assign-part-chips flex flex-wrap gap-1.5 mb-2';
+    section.appendChild(chipsWrap);
+
+    // Search input wrapper (relative so dropdown can be absolute)
+    const inputWrap = document.createElement('div');
+    inputWrap.className = 'relative';
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'assign-part-search w-full rounded border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 placeholder-gray-400';
+    searchInput.placeholder = 'Search & select exam...';
+    searchInput.setAttribute('autocomplete', 'off');
+    inputWrap.appendChild(searchInput);
+    section.appendChild(inputWrap);
+
+    // Dropdown list (absolute positioned inside inputWrap)
+    const dropdown = document.createElement('div');
+    dropdown.className = 'assign-part-dropdown hidden absolute left-0 right-0 z-[70] bg-white border border-gray-300 rounded shadow-lg max-h-44 overflow-y-auto mt-1 text-sm';
+    inputWrap.appendChild(dropdown);
+
+    const ul = document.createElement('ul');
+    ul.className = 'py-1 m-0 list-none text-gray-800';
+    allowedExams.forEach(exam => {
+        const li = document.createElement('li');
+        li.className = 'assign-part-option px-3 py-1.5 cursor-pointer hover:bg-indigo-600 hover:text-white transition-colors';
+        li.setAttribute('data-value', exam);
+        li.textContent = exam;
+        ul.appendChild(li);
+    });
+    const noRes = document.createElement('li');
+    noRes.className = 'assign-part-no-results hidden px-3 py-2 text-gray-400 italic text-xs';
+    noRes.textContent = 'No matches found';
+    ul.appendChild(noRes);
+    dropdown.appendChild(ul);
+
+    // Hidden selected state
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.className = 'assign-part-hidden';
+    hiddenInput.setAttribute('data-part', part);
+    hiddenInput.value = '';
+    section.appendChild(hiddenInput);
+
+    // Required indicator
+    const reqMsg = document.createElement('p');
+    reqMsg.className = 'assign-part-required-msg hidden text-xs text-red-600 mt-1 font-medium';
+    reqMsg.textContent = `\u26A0 Please select at least one exam for "${part}"`;
+    section.appendChild(reqMsg);
+
+    // Pre-populate with already-selected exams matching this part's allowed list
+    if (preSelected && preSelected.length > 0) {
+        const matching = preSelected.filter(e => allowedExams.includes(e));
+        if (matching.length > 0) {
+            hiddenInput.value = matching.join(', ');
+        }
+    }
+
+    function renderPartChips() {
+        const vals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        chipsWrap.innerHTML = '';
+        vals.forEach(v => {
+            const chip = document.createElement('span');
+            chip.className = 'inline-flex items-center gap-1 rounded border border-indigo-300 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 shadow-sm';
+            chip.innerHTML = `${_escHtml(v)} <button type="button" class="assign-part-remove-chip ml-0.5 text-indigo-400 hover:text-red-600 font-bold" data-value="${_escHtml(v)}" data-part="${_escHtml(part)}">&times;</button>`;
+            chipsWrap.appendChild(chip);
+        });
+        // Hide already-selected options in dropdown
+        ul.querySelectorAll('.assign-part-option').forEach(opt => {
+            opt.classList.toggle('hidden', vals.includes(opt.getAttribute('data-value')));
+        });
+        updateAggregatedExamInput();
+    }
+
+    function filterDropdown(q) {
+        const vals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        let count = 0;
+        ul.querySelectorAll('.assign-part-option').forEach(opt => {
+            const v = opt.getAttribute('data-value');
+            if (vals.includes(v)) { opt.classList.add('hidden'); return; }
+            const match = !q || v.toLowerCase().includes(q.toLowerCase());
+            opt.classList.toggle('hidden', !match);
+            if (match) count++;
+        });
+        noRes.classList.toggle('hidden', count > 0);
+    }
+
+    searchInput.addEventListener('focus', () => {
+        dropdown.classList.remove('hidden');
+        filterDropdown(searchInput.value);
+    });
+    searchInput.addEventListener('input', () => {
+        dropdown.classList.remove('hidden');
+        filterDropdown(searchInput.value);
+    });
+    searchInput.addEventListener('blur', () => {
+        setTimeout(() => dropdown.classList.add('hidden'), 200);
+    });
+
+    ul.addEventListener('mousedown', (e) => {
+        const opt = e.target.closest('.assign-part-option');
+        if (!opt) return;
+        e.preventDefault();
+        const val = opt.getAttribute('data-value');
+        let vals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        if (!vals.includes(val)) {
+            vals.push(val);
+            hiddenInput.value = vals.join(', ');
+        }
+        searchInput.value = '';
+        renderPartChips();
+        dropdown.classList.add('hidden');
+    });
+
+    renderPartChips();
+    section._renderChips = renderPartChips;
+    return section;
+}
+
+/**
+ * Updates the aggregated hidden input with all selected exams across all part sections.
+ */
+function updateAggregatedExamInput() {
+    const allSelected = [];
+    document.querySelectorAll('#assignPerPartSections .assign-part-hidden').forEach(inp => {
+        const vals = inp.value ? inp.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        vals.forEach(v => { if (!allSelected.includes(v)) allSelected.push(v); });
+    });
+    const agg = document.getElementById('assignAggregatedExam');
+    if (agg) agg.value = allSelected.join(', ');
+}
+
+// Chip removal via event delegation
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.assign-part-remove-chip');
+    if (!btn) return;
+    const val = btn.getAttribute('data-value');
+    const part = btn.getAttribute('data-part');
+    const section = document.querySelector('#assignPerPartSections .assign-part-section[data-part="' + CSS.escape(part) + '"]');
+    if (!section) return;
+    const hiddenInput = section.querySelector('.assign-part-hidden');
+    if (!hiddenInput) return;
+    let vals = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+    vals = vals.filter(v => v !== val);
+    hiddenInput.value = vals.join(', ');
+    if (section._renderChips) section._renderChips();
+});
+
+function openAssignModal(id, requestedBodyPart, assignedExam) {
+    if (assignedExam === undefined) assignedExam = '';
     document.getElementById('assignModal').classList.remove('hidden');
 
     const bodyPartEl = document.getElementById('assignBodyPart');
@@ -252,111 +376,90 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '') {
     const form = document.getElementById('assignForm');
     form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
 
-    // Filter choices in the dropdown box to only match requested body parts
-    filterAssignModalExams(requestedBodyPart);
+    const warningBox = document.getElementById('assignExamWarning');
+    if (warningBox) warningBox.classList.add('hidden');
 
-    // Set or reset selected exams
-    const hiddenInput = form.querySelector('.exam-ms-hidden-input');
-    if (hiddenInput) {
-        hiddenInput.value = assignedExam || '';
-        const container = hiddenInput.closest('.exam-ms-component');
-        if (container && typeof renderChips === 'function') {
-            renderChips(container);
-        }
+    // Build per-body-part sections
+    const sectionsContainer = document.getElementById('assignPerPartSections');
+    sectionsContainer.innerHTML = '';
+
+    const preSelected = assignedExam ? assignedExam.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    const isUnspecified = !requestedBodyPart || requestedBodyPart.trim() === '' ||
+        requestedBodyPart.toLowerCase() === 'to be determined' ||
+        requestedBodyPart.toLowerCase() === 'not specified';
+
+    if (isUnspecified) {
+        const allExams = (window.allActiveServices || []).map(s => s.exam_type || s.name);
+        sectionsContainer.appendChild(buildPartSection('All / Unspecified', allExams, preSelected, 0));
+    } else {
+        const parts = requestedBodyPart.split(',').map(s => s.trim()).filter(Boolean);
+        parts.forEach((part, idx) => {
+            const allowed = getAllowedExamsForSinglePart(part);
+            sectionsContainer.appendChild(buildPartSection(part, allowed, preSelected, idx));
+        });
     }
 
+    updateAggregatedExamInput();
     document.getElementById('assign_exam_price').value = '0';
-    checkLiveExamCategoryMatch();
 
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
+    if (window.lucide) window.lucide.createIcons();
 }
 
 function checkLiveExamCategoryMatch() {
-    const warningBox = document.getElementById('assignExamWarning');
-    const warningText = document.getElementById('assignExamWarningText');
-    if (!warningBox || !warningText) return;
-
-    const requestedStr = document.getElementById('assignBodyPart') ? document.getElementById('assignBodyPart').getAttribute('data-raw') : '';
-    const matchInfo = getMatchedCategoriesAndExams(requestedStr);
-
-    if (!matchInfo.isRestricted || matchInfo.allowedExams.length === 0) {
-        warningBox.classList.add('hidden');
-        return;
-    }
-
-    const form = document.getElementById('assignForm');
-    const hiddenInput = form ? form.querySelector('.exam-ms-hidden-input') : null;
-    const assignedStr = hiddenInput ? hiddenInput.value : '';
-    const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(Boolean);
-
-    let invalidExams = [];
-    assignedExams.forEach(exam => {
-        if (!matchInfo.allowedExams.includes(exam)) {
-            invalidExams.push(exam);
-        }
-    });
-
-    if (invalidExams.length > 0) {
-        const reqCats = matchInfo.allowedCategories.join(', ');
-        warningText.innerHTML = `<strong>Category Mismatch:</strong> <em>"${invalidExams.join(', ')}"</em> is not under <strong>${reqCats}</strong> (patient's requested body part). You must only select procedures matching the requested body part.`;
-        warningBox.classList.remove('hidden');
-        if (window.lucide) window.lucide.createIcons();
-    } else {
-        warningBox.classList.add('hidden');
-    }
+    // No-op kept for compatibility; per-part sections handle their own UI.
 }
 
 function validateAssignForm(e) {
     e.preventDefault();
 
-    const form = document.getElementById('assignForm');
-    const hiddenInput = form ? form.querySelector('.exam-ms-hidden-input') : null;
-    const assignedStr = hiddenInput ? hiddenInput.value : '';
-    const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(Boolean);
+    const sections = document.querySelectorAll('#assignPerPartSections .assign-part-section');
+    let missingParts = [];
 
-    if (assignedExams.length === 0) {
+    sections.forEach(section => {
+        const part = section.getAttribute('data-part');
+        const hiddenInput = section.querySelector('.assign-part-hidden');
+        const reqMsg = section.querySelector('.assign-part-required-msg');
+        const vals = hiddenInput && hiddenInput.value
+            ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+
+        if (vals.length === 0) {
+            missingParts.push(part);
+            if (reqMsg) reqMsg.classList.remove('hidden');
+        } else {
+            if (reqMsg) reqMsg.classList.add('hidden');
+        }
+    });
+
+    if (missingParts.length > 0) {
+        const partList = missingParts.map(p => `"${p}"`).join(', ');
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'error',
-                title: 'No Exam Selected',
-                text: 'Please select at least one examination procedure.',
+                title: 'Missing Exam Assignment',
+                html: `Please select at least one exam procedure for each requested body part.<br><br><strong>Missing:</strong> ${partList}`,
                 customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
             });
+        } else {
+            alert(`Please select at least one exam for: ${partList}`);
+        }
+        return false;
+    }
+
+    updateAggregatedExamInput();
+
+    const aggInput = document.getElementById('assignAggregatedExam');
+    if (!aggInput || !aggInput.value.trim()) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'error', title: 'No Exam Selected', text: 'Please select at least one examination procedure.', customClass: { popup: 'rounded-3xl border-0 shadow-2xl' } });
         } else {
             alert('Please select at least one examination procedure.');
         }
         return false;
     }
 
-    const requestedStr = document.getElementById('assignBodyPart') ? document.getElementById('assignBodyPart').getAttribute('data-raw') : '';
-    const matchInfo = getMatchedCategoriesAndExams(requestedStr);
-
-    if (matchInfo.isRestricted && matchInfo.allowedExams.length > 0) {
-        let invalidExams = [];
-        assignedExams.forEach(exam => {
-            if (!matchInfo.allowedExams.includes(exam)) {
-                invalidExams.push(exam);
-            }
-        });
-
-        if (invalidExams.length > 0) {
-            const reqCats = matchInfo.allowedCategories.join(', ');
-            const errMsg = `You cannot assign "${invalidExams.join(', ')}" because it does not match the patient's requested body part (${reqCats}).\n\nPlease select only procedures matching the requested body part.`;
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Category Mismatch',
-                    text: errMsg,
-                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-red-600' }
-                });
-            } else {
-                alert(errMsg);
-            }
-            return false;
-        }
-    }
+    const form = document.getElementById('assignForm');
 
     const doSubmit = function() {
         closeAssignModal();
@@ -381,15 +484,10 @@ function closeAssignModal() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const assignModal = document.getElementById('assignModal');
-    if (assignModal) {
-        assignModal.addEventListener('exam-ms:change', checkLiveExamCategoryMatch);
-    }
-
+    // Legacy assign select (unused but kept for compatibility)
     const assignSelect = document.getElementById('assign_exam_select');
     const assignPriceInput = document.getElementById('assign_exam_price');
-    
-    if(assignSelect) {
+    if (assignSelect) {
         assignSelect.addEventListener('change', function() {
             const selectedOption = assignSelect.options[assignSelect.selectedIndex];
             if (selectedOption && selectedOption.dataset.price) {

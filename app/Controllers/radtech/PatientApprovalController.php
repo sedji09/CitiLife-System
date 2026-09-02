@@ -128,6 +128,7 @@ class PatientApprovalController
                     }
 
                     // Validate that assigned exams match the patient's requested body part(s)
+                    // AND that each body part has at least one assigned exam
                     $requestedExamStr = trim($req['exam_type'] ?? '');
                     if ($requestedExamStr !== '' && strtolower($requestedExamStr) !== 'to be determined' && strtolower($requestedExamStr) !== 'not specified') {
                         $stmtAll = $pdo->query("SELECT exam_type, category FROM xray_services WHERE status = 'active'");
@@ -168,32 +169,59 @@ class PatientApprovalController
                         ];
 
                         $requestedParts = array_filter(array_map('trim', explode(',', $requestedExamStr)));
-                        $allowedExams = [];
-                        foreach ($requestedParts as $part) {
+
+                        // Helper: get allowed exams for a single body part
+                        $getAllowedForPart = function($part) use ($allActiveServices, $bodyPartAliases) {
                             $partLower = strtolower($part);
                             $aliases = $bodyPartAliases[$partLower] ?? [$part];
-
+                            $allowed = [];
                             foreach ($allActiveServices as $as) {
                                 $srvNameLower = strtolower($as['exam_type']);
                                 $srvCatLower = strtolower($as['category']);
-
                                 if ($srvCatLower === $partLower || $srvNameLower === $partLower) {
-                                    $allowedExams[] = $as['exam_type'];
+                                    $allowed[] = $as['exam_type'];
                                 } else {
                                     foreach ($aliases as $alias) {
                                         $aliasLower = strtolower($alias);
                                         if ($srvCatLower === $aliasLower || strpos($srvCatLower, $aliasLower) !== false || strpos($aliasLower, $srvCatLower) !== false) {
-                                            $allowedExams[] = $as['exam_type'];
+                                            $allowed[] = $as['exam_type'];
                                         }
                                     }
                                 }
                             }
+                            return array_unique($allowed);
+                        };
+
+                        // Check each body part: validate all assigned exams belong to it AND at least one exam covers it
+                        $missingCoverage = [];
+                        $allAllowedExams = [];
+                        foreach ($requestedParts as $part) {
+                            $allowedForPart = $getAllowedForPart($part);
+                            if (!empty($allowedForPart)) {
+                                $allAllowedExams = array_merge($allAllowedExams, $allowedForPart);
+                                // Check if at least one assigned exam is in this part's allowed list
+                                $hasCoverage = false;
+                                foreach ($examArray as $assignedItem) {
+                                    if (in_array($assignedItem, $allowedForPart)) {
+                                        $hasCoverage = true;
+                                        break;
+                                    }
+                                }
+                                if (!$hasCoverage) {
+                                    $missingCoverage[] = $part;
+                                }
+                            }
                         }
 
-                        $allowedExams = array_unique($allowedExams);
-                        if (!empty($allowedExams)) {
+                        if (!empty($missingCoverage)) {
+                            throw new \Exception("Missing exam assignment for: " . implode(', ', $missingCoverage) . ". Please assign at least one procedure per requested body part.");
+                        }
+
+                        // Also validate no assigned exam is outside ALL allowed exams
+                        $allAllowedExams = array_unique($allAllowedExams);
+                        if (!empty($allAllowedExams)) {
                             foreach ($examArray as $assignedItem) {
-                                if (!in_array($assignedItem, $allowedExams)) {
+                                if (!in_array($assignedItem, $allAllowedExams)) {
                                     throw new \Exception("Cannot assign '$assignedItem': It does not match the patient's requested body part ($requestedExamStr).");
                                 }
                             }

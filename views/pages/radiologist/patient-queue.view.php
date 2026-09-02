@@ -55,6 +55,15 @@ sort($examTypes);
             <?php endforeach; ?>
         </select>
 
+        <!-- Filter by Date -->
+        <?php $defaultDateFilter = $_GET['filterDate'] ?? 'All'; ?>
+        <select id="filterDate"
+            class="w-48 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-sm bg-white cursor-pointer shadow-sm">
+            <option value="All" <?= $defaultDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
+            <option value="Today" <?= $defaultDateFilter === 'Today' ? 'selected' : '' ?>>Today's Cases</option>
+            <option value="Backlog" <?= $defaultDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
+        </select>
+
         <select id="sortDate"
             class="w-48 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-sm bg-white cursor-pointer shadow-sm">
             <option value="desc">Newest Record</option>
@@ -86,13 +95,17 @@ sort($examTypes);
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($records as $row): ?>
+                    <?php foreach ($records as $row): 
+                        $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
+                        $isToday = (date('Y-m-d', strtotime($rowDate)) === date('Y-m-d'));
+                    ?>
                         <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
                             data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                             data-exam-type="<?= htmlspecialchars($row['exam_type']) ?>"
+                            data-is-today="<?= $isToday ? 'true' : 'false' ?>"
                             data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . ($row['patient_number'] ?? '') . ' ' . $row['first_name'] . ' ' . $row['last_name'])) ?>"
-                            data-date="<?= strtotime($row['created_at']) ?>">
+                            data-date="<?= strtotime($rowDate) ?>">
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="font-medium"><?= htmlspecialchars($row['case_number']) ?></div>
                             </td>
@@ -122,8 +135,12 @@ sort($examTypes);
                                 </span>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
-                                <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
-                                <div class="text-sm text-gray-500"><?= date('M d, Y h:i A', strtotime($submitDate)) ?></div>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span class="text-sm text-gray-500"><?= date('M d, Y', strtotime($rowDate)) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($rowDate)) ?></span></span>
+                                    <?php if (!$isToday): ?>
+                                        <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="py-3 px-3">
                                 <?php
@@ -202,6 +219,7 @@ sort($examTypes);
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('searchInput');
         const filterExam = document.getElementById('filterExam');
+        const filterDate = document.getElementById('filterDate');
         const sortDate = document.getElementById('sortDate');
         const tbody = document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
@@ -214,6 +232,7 @@ sort($examTypes);
 
             const searchTerm = searchInput.value.toLowerCase();
             const filterValue = filterExam.value;
+            const filterDateValue = filterDate ? filterDate.value : 'All';
             const sortValue = sortDate.value;
 
             // Sort rows
@@ -229,8 +248,15 @@ sort($examTypes);
             allRows.forEach(row => {
                 const matchesSearch = row.dataset.search.includes(searchTerm);
                 const matchesFilter = filterValue === '' || row.dataset.examType === filterValue;
+                const isToday = row.dataset.isToday === 'true';
+                let matchesDate = true;
+                if (filterDateValue === 'Today') {
+                    matchesDate = isToday;
+                } else if (filterDateValue === 'Backlog') {
+                    matchesDate = !isToday;
+                }
 
-                if (matchesSearch && matchesFilter) {
+                if (matchesSearch && matchesFilter && matchesDate) {
                     filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
@@ -434,6 +460,7 @@ sort($examTypes);
 
         if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
         if (filterExam) filterExam.addEventListener('change', onFilterSortChange);
+        if (filterDate) filterDate.addEventListener('change', onFilterSortChange);
         if (sortDate) sortDate.addEventListener('change', onFilterSortChange);
 
         // Initial pagination & highlight

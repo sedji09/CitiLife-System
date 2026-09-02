@@ -45,6 +45,18 @@ if (!$caseId) {
     exit;
 }
 
+// Fetch case details to ensure feedback is routed to the branch where the X-ray was performed
+$caseStmt = $pdo->prepare("SELECT id, case_number, branch_id FROM cases WHERE id = ?");
+$caseStmt->execute([$caseId]);
+$caseInfo = $caseStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$caseInfo) {
+    echo json_encode(['success' => false, 'error' => 'Invalid case specified.']);
+    exit;
+}
+
+$branchId = !empty($caseInfo['branch_id']) ? (int)$caseInfo['branch_id'] : ($branchId ? (int)$branchId : null);
+
 $feedbackModel = new \FeedbackModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $feedbackModel->ensureSchema();

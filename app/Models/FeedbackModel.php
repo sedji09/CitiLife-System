@@ -58,8 +58,8 @@ class FeedbackModel
         $stmt = $this->pdo->prepare("
             SELECT f.*, b.name as branch_name, c.case_number, c.exam_type 
             FROM feedbacks f
-            LEFT JOIN branches b ON f.branch_id = b.id
             LEFT JOIN cases c ON f.case_id = c.id
+            LEFT JOIN branches b ON COALESCE(c.branch_id, f.branch_id) = b.id
             WHERE f.patient_id = ?
             ORDER BY f.created_at DESC
         ");
@@ -85,11 +85,11 @@ class FeedbackModel
         $sql = "
             SELECT f.*, p.first_name, p.last_name, p.patient_number, b.name as branch_name, c.case_number, c.exam_type, u.avatar
             FROM feedbacks f
-            LEFT JOIN patients p ON f.patient_id = p.id
-            LEFT JOIN branches b ON f.branch_id = b.id
             LEFT JOIN cases c ON f.case_id = c.id
+            LEFT JOIN patients p ON f.patient_id = p.id
+            LEFT JOIN branches b ON COALESCE(c.branch_id, f.branch_id) = b.id
             LEFT JOIN users u ON f.user_id = u.id
-            WHERE f.branch_id = ?
+            WHERE COALESCE(c.branch_id, f.branch_id) = ?
             ORDER BY f.created_at DESC
         ";
         
@@ -104,7 +104,12 @@ class FeedbackModel
 
     public function countBranchFeedback($branchId)
     {
-        $stmt = $this->pdo->prepare("SELECT count(*) FROM feedbacks WHERE branch_id = ?");
+        $stmt = $this->pdo->prepare("
+            SELECT count(*) 
+            FROM feedbacks f 
+            LEFT JOIN cases c ON f.case_id = c.id 
+            WHERE COALESCE(c.branch_id, f.branch_id) = ?
+        ");
         $stmt->execute([$branchId]);
         return (int) $stmt->fetchColumn();
     }
@@ -117,9 +122,9 @@ class FeedbackModel
         $sql = "
             SELECT f.*, p.first_name, p.last_name, p.patient_number, b.name as branch_name, c.case_number, c.exam_type, u.avatar
             FROM feedbacks f
-            LEFT JOIN patients p ON f.patient_id = p.id
-            LEFT JOIN branches b ON f.branch_id = b.id
             LEFT JOIN cases c ON f.case_id = c.id
+            LEFT JOIN patients p ON f.patient_id = p.id
+            LEFT JOIN branches b ON COALESCE(c.branch_id, f.branch_id) = b.id
             LEFT JOIN users u ON f.user_id = u.id
             ORDER BY f.created_at DESC
         ";
@@ -149,20 +154,21 @@ class FeedbackModel
         $where = "";
         
         if ($branchId) {
-            $where = "WHERE branch_id = ?";
+            $where = "WHERE COALESCE(c.branch_id, f.branch_id) = ?";
             $params[] = $branchId;
         }
 
         $stmt = $this->pdo->prepare("
             SELECT 
                 COUNT(*) as total_feedback,
-                AVG(rating) as average_rating,
-                SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as five_stars,
-                SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_stars,
-                SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_stars,
-                SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_stars,
-                SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_stars
-            FROM feedbacks
+                AVG(f.rating) as average_rating,
+                SUM(CASE WHEN f.rating = 5 THEN 1 ELSE 0 END) as five_stars,
+                SUM(CASE WHEN f.rating = 4 THEN 1 ELSE 0 END) as four_stars,
+                SUM(CASE WHEN f.rating = 3 THEN 1 ELSE 0 END) as three_stars,
+                SUM(CASE WHEN f.rating = 2 THEN 1 ELSE 0 END) as two_stars,
+                SUM(CASE WHEN f.rating = 1 THEN 1 ELSE 0 END) as one_stars
+            FROM feedbacks f
+            LEFT JOIN cases c ON f.case_id = c.id
             $where
         ");
         $stmt->execute($params);

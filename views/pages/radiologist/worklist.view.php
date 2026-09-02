@@ -141,6 +141,15 @@ sort($priorities);
             <option value="Routine">Routine</option>
         </select>
 
+        <!-- Filter by Date -->
+        <?php $urlDateFilter = $_GET['date'] ?? $_GET['filterDate'] ?? (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) ? 'All' : 'Today'); ?>
+        <select id="filterDate"
+            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            <option value="All" <?= $urlDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
+            <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's Cases</option>
+            <option value="Backlog" <?= $urlDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
+        </select>
+
         <!-- Sort by -->
         <select id="sortOption"
             class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
@@ -238,6 +247,7 @@ sort($priorities);
 
                             $isEmergency = ($pUpper === 'STAT') ? 1 : 0;
                             $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
+                            $isToday = (date('Y-m-d', strtotime($rowDate)) === date('Y-m-d'));
                             ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
@@ -245,6 +255,7 @@ sort($priorities);
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>"
+                                data-is-today="<?= $isToday ? 'true' : 'false' ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'])) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
@@ -293,9 +304,12 @@ sort($priorities);
                                     </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500">
+                                    <div class="flex flex-col gap-1 items-start">
                                         <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
-                                        <?= date('M d, Y h:i A', strtotime($submitDate)) ?>
+                                        <span class="text-sm text-gray-600"><?= date('M d, Y', strtotime($submitDate)) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($submitDate)) ?></span></span>
+                                        <?php if (!$isToday): ?>
+                                            <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 <td class="py-3 px-3">
@@ -547,6 +561,7 @@ sort($priorities);
         const searchInput = document.getElementById('searchInput');
         const filterBranch = document.getElementById('filterBranch');
         const filterPriority = document.getElementById('filterPriority');
+        const filterDate = document.getElementById('filterDate');
         const sortOption = document.getElementById('sortOption');
         const worklistTbody = document.getElementById('worklist-tbody') || document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
@@ -567,6 +582,7 @@ sort($priorities);
             if (searchInput) sessionStorage.setItem('Citilife_radWorklist_search', searchInput.value);
             if (filterBranch) sessionStorage.setItem('Citilife_radWorklist_branch', filterBranch.value);
             if (filterPriority) sessionStorage.setItem('Citilife_radWorklist_priority', filterPriority.value);
+            if (filterDate) sessionStorage.setItem('Citilife_radWorklist_date', filterDate.value);
             if (sortOption) sessionStorage.setItem('Citilife_radWorklist_sort', sortOption.value);
             sessionStorage.setItem('Citilife_radWorklist_page', currentPage);
             sessionStorage.setItem('Citilife_radWorklist_disputesPage', currentDisputesPage);
@@ -588,6 +604,14 @@ sort($priorities);
             } else if (filterPriority) {
                 const savedPriority = sessionStorage.getItem('Citilife_radWorklist_priority');
                 if (savedPriority !== null) filterPriority.value = savedPriority;
+            }
+
+            if (params.has('date') || params.has('filterDate')) {
+                const dParam = params.get('date') || params.get('filterDate');
+                if (filterDate) filterDate.value = dParam;
+            } else if (filterDate) {
+                const savedDate = sessionStorage.getItem('Citilife_radWorklist_date');
+                if (savedDate !== null && !params.has('status')) filterDate.value = savedDate;
             }
 
             if (params.has('sort')) {
@@ -626,6 +650,7 @@ sort($priorities);
             const searchTerm = searchInput.value.toLowerCase().trim();
             const branchValue = filterBranch.value;
             const priorityValue = filterPriority.value;
+            const dateValue = filterDate ? filterDate.value : 'All';
             const sortValue = sortOption.value;
 
             // Update Title dynamically based on selected branch
@@ -677,7 +702,15 @@ sort($priorities);
                 }
                 const matchesPriority = priorityValue === '' || rowPriority === priorityValue || mappedPriority === priorityValue;
 
-                if (matchesSearch && matchesBranch && matchesPriority) {
+                const isToday = row.dataset.isToday === 'true';
+                let matchesDate = true;
+                if (dateValue === 'Today') {
+                    matchesDate = isToday;
+                } else if (dateValue === 'Backlog') {
+                    matchesDate = !isToday;
+                }
+
+                if (matchesSearch && matchesBranch && matchesPriority && matchesDate) {
                     filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
@@ -1016,6 +1049,7 @@ sort($priorities);
         if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
         if (filterBranch) filterBranch.addEventListener('change', onFilterSortChange);
         if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
+        if (filterDate) filterDate.addEventListener('change', onFilterSortChange);
         if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
 
         function handleHighlight() {

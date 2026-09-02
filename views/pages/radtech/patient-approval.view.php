@@ -302,14 +302,14 @@ foreach ($allServices as $service) {
 
 <!-- Assign Exam Modal -->
 <div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-    <div class="w-full max-w-md p-6 border shadow-2xl rounded-2xl bg-white">
+    <div class="w-full max-w-lg p-6 border shadow-2xl rounded-2xl bg-white">
         <div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
             <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200">
                 <i data-lucide="clipboard-list" class="w-6 h-6"></i>
             </div>
             <div>
                 <h3 class="text-lg font-bold text-gray-900">Assign Exact Examination</h3>
-                <p class="text-sm text-gray-500 mt-0.5">Select procedures for this patient request</p>
+                <p class="text-sm text-gray-500 mt-0.5">Select at least one procedure per requested body part</p>
             </div>
         </div>
         
@@ -318,32 +318,26 @@ foreach ($allServices as $service) {
                 <i data-lucide="user-check" class="w-4 h-4 text-red-600"></i> Patient requested body part(s):
             </span>
             <span id="assignBodyPart" class="font-bold text-gray-900 text-base"></span>
-            <div id="assignAllowedBadge" class="text-xs italic text-red-600 flex items-center gap-1.5 mt-0.5">
-                <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
-                <span id="assignAllowedBadgeText">Choices filtered to procedures only</span>
-            </div>
         </div>
         
         <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Select Examination Type</label>
-                <?php 
-                $examInputName = 'exam_type';
-                $placeholderText = 'Select Exam Type...';
-                include basePath('views/components/exam-selector.php'); 
-                ?>
-                <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2.5 shadow-sm">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
-                    <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
-                </div>
-                <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
+            <!-- Per-body-part exam selectors are injected here by JS -->
+            <div id="assignPerPartSections" class="flex flex-col gap-4 max-h-[50vh] overflow-y-auto pr-1"></div>
+
+            <!-- Aggregated hidden input submitted to server -->
+            <input type="hidden" name="exam_type" id="assignAggregatedExam" value="">
+            <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
+
+            <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2.5 shadow-sm">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
+                <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
             </div>
             
             <div class="flex justify-end gap-3 mt-6">
                 <button type="button" onclick="closeAssignModal()"
                     class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600">Cancel</button>
                 <button type="submit"
-                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">Assign & Request Payment</button>
+                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">Assign &amp; Request Payment</button>
             </div>
         </form>
     </div>
