@@ -932,6 +932,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                     'patient_number' => $d['patient_number'] ?? '',
                                     'description' => $fullText,
                                     'status' => $d['status'],
+                                    'category' => $d['dispute_category'] ?? '',
                                     'created_at' => date('M d, Y h:i A', strtotime($d['created_at']))
                                 ];
                                 $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
@@ -1349,11 +1350,124 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
     function openDisputeDetailsModal(data) {
         if (!data) return;
-        const subEl = document.getElementById('ddm-subtitle');
-        const textEl = document.getElementById('ddm-full-text');
 
-        if (subEl) subEl.innerText = `Case #${data.case_number}` + (data.patient_name ? ` • ${data.patient_name}` : '');
-        if (textEl) textEl.innerHTML = formatDisputeDescriptionHtml(data.description);
+        // Subtitle with Case # and Patient Name
+        const subEl = document.getElementById('ddm-subtitle');
+        if (subEl) {
+            subEl.innerHTML = `Case <span class="font-bold text-gray-800">#${data.case_number}</span>` + 
+                (data.patient_name ? ` &bull; <span class="font-semibold text-gray-700">${data.patient_name}</span>` : '') +
+                (data.patient_number ? ` <span class="text-gray-400">(${data.patient_number})</span>` : '');
+        }
+
+        // Meta Bar (Status & Date)
+        const metaBar = document.getElementById('ddm-meta-bar');
+        if (metaBar) {
+            let statusBadge = '';
+            const st = data.status || '';
+            if (st === 'Pending RadTech Review') {
+                statusBadge = '<span class="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Patient Reviewing</span>';
+            } else if (st === 'Escalated to Radiologist') {
+                statusBadge = '<span class="inline-flex items-center gap-1 font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Waiting for Radiologist</span>';
+            } else if (st === 'Pending RadTech Verification') {
+                statusBadge = '<span class="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Ready for Release</span>';
+            } else {
+                statusBadge = `<span class="inline-flex items-center gap-1 font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> ${st || 'Resolved'}</span>`;
+            }
+
+            const dateStr = data.created_at || '';
+            metaBar.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-gray-500">Status:</span>
+                    ${statusBadge}
+                </div>
+                ${dateStr ? `<span class="text-[11px] text-gray-500 font-medium bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3 text-gray-400"></i> ${dateStr}</span>` : ''}
+            `;
+        }
+
+        // Details Breakdown Cards
+        const container = document.getElementById('ddm-content-container');
+        if (container) {
+            const desc = (data.description || '').replace(/\r\n/g, '\n').trim();
+            let findings = '';
+            let demographics = '';
+            let other = '';
+
+            const findingsMatch = desc.match(/Findings Note:\s*([\s\S]*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|$))/i);
+            if (findingsMatch && findingsMatch[1].trim()) {
+                findings = findingsMatch[1].trim().replace(/^•\s*/gm, '').trim();
+            }
+
+            const demoMatch = desc.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|$))/i);
+            if (demoMatch && demoMatch[1].trim()) {
+                demographics = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
+            }
+
+            if (!findings && !demographics) {
+                other = desc;
+            }
+
+            let cardsHtml = '';
+
+            if (demographics) {
+                const badges = demographics.split(/,|\n/).map(s => s.trim().replace(/^•\s*/, '')).filter(Boolean);
+                cardsHtml += `
+                    <div class="p-4 bg-sky-50/80 border border-sky-200 rounded-xl space-y-2.5 shadow-2xs">
+                        <div class="flex items-center gap-2 text-xs font-bold text-sky-900 uppercase tracking-wider">
+                            <i data-lucide="user-x" class="w-4 h-4 text-sky-600"></i>
+                            <span>Reported Incorrect Patient Info:</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 pt-0.5">
+                            ${badges.map(b => `
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-white text-sky-800 border border-sky-300 shadow-2xs">
+                                    <i data-lucide="tag" class="w-3.5 h-3.5 text-sky-500"></i>
+                                    ${b}
+                                </span>
+                            `).join('')}
+                        </div>
+                        <p class="text-[11px] text-sky-700 leading-relaxed pt-0.5 font-normal">
+                            The patient indicated that the selected demographic detail(s) are incorrect on their official report. You can correct these using the <strong>Fix Information</strong> action.
+                        </p>
+                    </div>
+                `;
+            }
+
+            if (findings) {
+                cardsHtml += `
+                    <div class="p-4 bg-purple-50/80 border border-purple-200 rounded-xl space-y-2 shadow-2xs">
+                        <div class="flex items-center gap-2 text-xs font-bold text-purple-900 uppercase tracking-wider">
+                            <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
+                            <span>Reported Findings / Interpretation Issue:</span>
+                        </div>
+                        <div class="p-3 bg-white border border-purple-200 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">
+                            ${findings}
+                        </div>
+                        <p class="text-[11px] text-purple-700 leading-relaxed font-normal">
+                            This medical interpretation discrepancy may be escalated to the Radiologist or corrected via new X-ray image re-upload.
+                        </p>
+                    </div>
+                `;
+            }
+
+            if (other) {
+                cardsHtml += `
+                    <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2 shadow-2xs">
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            <i data-lucide="message-square" class="w-4 h-4 text-gray-500"></i>
+                            <span>Patient Notes / Feedback:</span>
+                        </div>
+                        <div class="p-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">
+                            ${other}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (!cardsHtml) {
+                cardsHtml = '<div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500 italic text-center">No specific description provided.</div>';
+            }
+
+            container.innerHTML = cardsHtml;
+        }
 
         const modal = document.getElementById('dispute-details-modal');
         if (modal) {
@@ -1383,24 +1497,44 @@ $currentTab = $_GET['tab'] ?? 'completed';
 <!-- DISPUTE / CORRECTION DETAILS MODAL -->
 <div id="dispute-details-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" onclick="if(event.target === this) closeDisputeDetailsModal()">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-        <div class="flex items-start justify-between border-b border-gray-100 pb-3.5">
-            <div>
-                <h3 class="font-bold text-gray-900 text-base">Correction Request Details</h3>
-                <p id="ddm-subtitle" class="text-xs text-gray-500 mt-0.5"></p>
+        <!-- Header -->
+        <div class="flex items-start justify-between border-b border-gray-100 pb-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
+                    <i data-lucide="file-warning" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-base">Correction Request Details</h3>
+                    <p id="ddm-subtitle" class="text-xs text-gray-500 mt-0.5 font-medium"></p>
+                </div>
             </div>
             <button onclick="closeDisputeDetailsModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <!-- Full Statement Content -->
+        <!-- Meta Summary Bar -->
+        <div id="ddm-meta-bar" class="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
+            <!-- Populated via JS: Status badge & timestamp -->
+        </div>
+
+        <!-- Detailed Cards Section -->
         <div class="space-y-1.5">
-            <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                Correction Requested / Notes:
+            <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-gray-500"></i>
+                Correction Requested / Patient Notes:
             </label>
-            <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl max-h-96 overflow-y-auto">
-                <div id="ddm-full-text" class="text-xs text-gray-800 font-medium whitespace-pre-wrap leading-relaxed"></div>
+            <div id="ddm-content-container" class="space-y-3 max-h-80 overflow-y-auto pr-0.5">
+                <!-- Populated via JS with clean structured cards -->
             </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pt-3 border-t border-gray-100 flex items-center justify-end">
+            <button type="button" onclick="closeDisputeDetailsModal()" 
+                    class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer shadow-2xs">
+                Close
+            </button>
         </div>
     </div>
 </div>

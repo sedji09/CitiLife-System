@@ -306,7 +306,8 @@
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
     <!-- Total Patients of Branch Card -->
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition group">
+    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&tab=records"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-xs font-semibold text-gray-500 group-hover:text-blue-600 transition">Total Patients
         </p>
@@ -316,10 +317,11 @@
       </div>
       <p id="branch-total-patients" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?></p>
-    </div>
+    </a>
 
     <!-- X-ray Cases Today Card -->
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition group">
+    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&tab=queue"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">X-ray Cases
         </p>
@@ -330,7 +332,7 @@
       <p id="branch-cases-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?>
       </p>
-    </div>
+    </a>
 
     <!-- Pending Cases Card -->
     <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&status=Pending&date=All"
@@ -412,7 +414,7 @@
               </tr>
             <?php else: ?>
               <?php foreach ($recentCases as $case): ?>
-                <tr class="hover:bg-gray-50 transition-colors dash-table-tr">
+                <tr class="hover:bg-gray-50 transition-colors dash-table-tr cursor-pointer" onclick="window.location.href='<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $case['id'] ?>&from=branch-xray-cases'">
                   <td class="px-4 py-3 font-bold text-gray-900 whitespace-nowrap text-main dash-table-td">
                     <?= htmlspecialchars($case['case_number']) ?>
                   </td>

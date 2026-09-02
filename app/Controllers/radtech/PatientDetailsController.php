@@ -125,9 +125,12 @@ class PatientDetailsController
             $disputeMdl = new \ResultDisputeModel($pdo);
             $activeDispute = $disputeMdl->getActiveDisputeByCase($caseId);
 
-            $isReadOnly = in_array($caseDetails['status'], ['Pending', 'Under Reading', 'Report Ready', 'Completed'])
+            $currentRole = $_SESSION['role'] ?? 'radtech';
+            $isReadOnly = ($currentRole !== 'radtech') || (
+                in_array($caseDetails['status'], ['Pending', 'Under Reading', 'Report Ready', 'Completed'])
                 && $caseDetails['image_status'] === 'Uploaded'
-                && (!$activeDispute || $activeDispute['status'] !== 'Pending RadTech Review');
+                && (!$activeDispute || $activeDispute['status'] !== 'Pending RadTech Review')
+            );
 
             $savedTemplate = $caseDetails['report_template'] ?? '';
         }

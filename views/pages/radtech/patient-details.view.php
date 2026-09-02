@@ -10,8 +10,15 @@ if (isset($caseNotFound) && $caseNotFound) {
 ?>
 
 <?php
+$userRole = $_SESSION['role'] ?? 'radtech';
+$from = $_GET['from'] ?? '';
+
 $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
-if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
+if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases";
+} elseif ($userRole === 'admin_central' || $from === 'patient-records') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?page=patient-records";
+} elseif ($from === 'disputes') {
     $backLink .= "&tab=disputes";
 }
 ?>
@@ -24,11 +31,11 @@ if (isset($_GET['from']) && $_GET['from'] === 'disputes') {
     </a>
     <div>
         <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
-        <p class="text-sm text-gray-500 mt-1">Diagnostic image upload and case management</p>
+        <p class="text-sm text-gray-500 mt-1"><?= $userRole === 'branch_admin' ? 'View patient diagnostic examination details' : 'Diagnostic image upload and case management' ?></p>
     </div>
 </div>
 
-<?php if ($isReadOnly): ?>
+<?php if ($isReadOnly && $userRole === 'radtech'): ?>
     <div class="mt-5 rounded-lg bg-blue-50 border border-blue-300 p-4 flex items-center gap-3">
         <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0"></i>
         <p class="text-sm text-blue-800 font-medium">

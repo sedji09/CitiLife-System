@@ -36,11 +36,21 @@ if (!$caseDetails || !$isInBranch || !$isReleased) {
 
 $fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
 $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card') ? 'With PhilHealth ID' : 'Without PhilHealth ID';
+
+$userRole = $_SESSION['role'] ?? 'radtech';
+$from = $_GET['from'] ?? '';
+
+$backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records";
+if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records";
+} elseif ($userRole === 'admin_central' || $from === 'patient-records') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?page=patient-records";
+}
 ?>
 
 <!-- Header -->
 <div class="flex items-center gap-4 py-2">
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=xray-patient-records" aria-label="Go back to records"
+    <a href="<?= $backLink ?>" aria-label="Go back to records"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
