@@ -66,7 +66,7 @@ class PatientDetailsController
                             $fullNotes = 'RadTech updated and escalated case for Radiologist amendment.';
                         }
                         $disputeMdl->escalateToRadiologist($actDispute['id'], $fullNotes);
-                        
+
                         $caseDetailsForNotif = $caseModel->getCaseById($caseId);
                         if ($caseDetailsForNotif) {
                             $notificationModel->add(
