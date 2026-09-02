@@ -21,6 +21,15 @@ class BranchModel {
     }
 
     /**
+     * Get all active branches.
+     */
+    public function getActiveBranches() {
+        $stmt = $this->pdo->prepare("SELECT * FROM branches WHERE status = 'Active' ORDER BY name ASC");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Get branch by ID.
      */
     public function getBranchById($id) {

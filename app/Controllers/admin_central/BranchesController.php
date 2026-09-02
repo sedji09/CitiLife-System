@@ -86,6 +86,12 @@ class BranchesController
                 if ($id && $branchModel->updateBranchStatus($id, $newStatus)) {
                     $success = "Branch status updated to " . htmlspecialchars($newStatus) . "!";
                     $auditLogModel->addLog($currentUserId, "Branch status changed to $newStatus", 'Branch Management', 'Branch', $id, "New Status: $newStatus", $id);
+
+                    // If deactivated, immediately reset active session activity for staff belonging to this branch
+                    if ($newStatus === 'Inactive') {
+                        $stmtClear = $pdo->prepare("UPDATE users SET last_activity = NULL WHERE branch_id = ? AND role NOT IN ('admin_central', 'it_admin', 'patient')");
+                        $stmtClear->execute([$id]);
+                    }
                 } else {
                     $error = "Failed to update branch status.";
                 }

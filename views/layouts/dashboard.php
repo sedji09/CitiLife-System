@@ -27,6 +27,18 @@ if ($userId > 0) {
     header("Location: /" . PROJECT_DIR . "/login?error=" . $reason);
     exit();
   }
+
+  // Check if user's branch has been deactivated (exclude central admins, IT admins, and patients)
+  if (!empty($currentUser['branch_id']) && !in_array($currentUser['role'], ['admin_central', 'it_admin', 'patient'])) {
+    $userBranch = $branchModel->getBranchById($currentUser['branch_id']);
+    if (!$userBranch || ($userBranch['status'] ?? '') === 'Inactive') {
+      session_unset();
+      session_destroy();
+      header("Location: /" . PROJECT_DIR . "/login?error=branch_deactivated");
+      exit();
+    }
+  }
+
   // Sync session and local variables with DB
   $_SESSION['email'] = $currentUser['email'];
   $_SESSION['name'] = $currentUser['name'];

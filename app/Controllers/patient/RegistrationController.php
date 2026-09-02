@@ -35,8 +35,8 @@ class RegistrationController
         // $isClinicOpen = ($currentHour >= 8 && $currentHour < 21);
         $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
 
-        // 1. Fetch data
-        $branches = $branchModel->getAllBranches();
+        // 1. Fetch data (Active branches only)
+        $branches = $branchModel->getActiveBranches();
         $linkedPatient = $patientModel->getPatientByUserId($userId);
         $linkedPatientId = $linkedPatient['id'] ?? null;
 
@@ -89,8 +89,11 @@ class RegistrationController
                             'source' => 'portal'
                         ];
 
+                        $targetBranch = $branchModel->getBranchById($regData['branch_id']);
                         if (!$fullName || !$regData['sex'] || empty($regData['birthdate']) || !$regData['branch_id']) {
                             $error = 'Please fill in all required fields.';
+                        } elseif (!$targetBranch || ($targetBranch['status'] ?? '') === 'Inactive') {
+                            $error = 'The selected branch is currently unavailable. Please select another branch.';
                         } elseif ($isBranchClosed($regData['branch_id'])) {
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {
@@ -128,10 +131,13 @@ class RegistrationController
                             'priority' => 'Routine'
                         ];
 
+                        $targetBranch = $branchModel->getBranchById($regData['branch_id']);
                         if (!$regData['patient_id']) {
                             $error = 'Patient profile not found. Please contact the clinic to link your account before requesting an X-ray.';
                         } elseif (!$regData['branch_id']) {
                             $error = 'Please select a branch.';
+                        } elseif (!$targetBranch || ($targetBranch['status'] ?? '') === 'Inactive') {
+                            $error = 'The selected branch is currently unavailable. Please select another branch.';
                         } elseif ($isBranchClosed($regData['branch_id'])) {
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {

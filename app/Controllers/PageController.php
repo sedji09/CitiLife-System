@@ -17,6 +17,19 @@ class PageController
         $userId = $_SESSION['user_id'] ?? 0;
         $branchId = $_SESSION['branch_id'] ?? null;
 
+        // Guard: check if user's branch has been deactivated (exclude central admins, IT admins, and patients)
+        if ($userId > 0 && !empty($branchId) && !in_array($role, ['admin_central', 'it_admin', 'patient'])) {
+            $stmtBranchCheck = $pdo->prepare("SELECT status FROM branches WHERE id = ?");
+            $stmtBranchCheck->execute([$branchId]);
+            $branchStatus = $stmtBranchCheck->fetchColumn();
+            if ($branchStatus === 'Inactive') {
+                session_unset();
+                session_destroy();
+                header("Location: /" . PROJECT_DIR . "/login?error=branch_deactivated");
+                exit();
+            }
+        }
+
         // 1. Determine requested page from request URI
         $uri = $_SERVER['REQUEST_URI'];
         $path = parse_url($uri, PHP_URL_PATH);
