@@ -111,7 +111,7 @@ if (empty($token)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Password - Citilife System</title>
+    <title>Create Password - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>
         .glass-panel {
@@ -141,7 +141,7 @@ if (empty($token)) {
             <div class="text-center mb-5 sm:mb-8">
                 <!-- Citilife Logo -->
                 <div class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-sm">
-                    <img src="/<?= PROJECT_DIR ?>/public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
+                    <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo"
                         class="h-10 w-10 sm:h-12 sm:w-12 object-contain"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">

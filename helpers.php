@@ -166,3 +166,118 @@ if (!function_exists('appBaseUrl')) {
     }
 }
 
+if (!function_exists('getSystemSetting')) {
+    /**
+     * Get a setting value from system_settings table with memory caching
+     *
+     * @param string $key
+     * @param mixed $default
+     * @param bool $refresh
+     * @return mixed
+     */
+    function getSystemSetting($key, $default = '', $refresh = false)
+    {
+        static $settingsCache = null;
+        global $pdo;
+
+        if ($refresh || $settingsCache === null) {
+            $settingsCache = [];
+            if (isset($pdo) && $pdo instanceof \PDO) {
+                try {
+                    $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings");
+                    if ($stmt) {
+                        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                            $settingsCache[$row['setting_key']] = $row['setting_value'];
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Fallback to individual query if mass fetch fails
+                }
+            }
+        }
+
+        if (array_key_exists($key, $settingsCache) && $settingsCache[$key] !== null && $settingsCache[$key] !== '') {
+            return $settingsCache[$key];
+        }
+
+        // If not found in cache and pdo is available, try a direct query
+        if (isset($pdo) && $pdo instanceof \PDO) {
+            try {
+                $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1");
+                $stmt->execute([$key]);
+                $val = $stmt->fetchColumn();
+                if ($val !== false && $val !== null && $val !== '') {
+                    $settingsCache[$key] = $val;
+                    return $val;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('getSystemName')) {
+    /**
+     * Get the configured brand/system display name
+     *
+     * @param string $default
+     * @return string
+     */
+    function getSystemName($default = 'CitiLife Diagnostic Center')
+    {
+        return getSystemSetting('system_name', $default);
+    }
+}
+
+if (!function_exists('getSystemLogo')) {
+    /**
+     * Get relative path from project root to active clinic logo
+     *
+     * @param string $default
+     * @return string
+     */
+    function getSystemLogo($default = 'public/assets/img/logo/citilife-logo.png')
+    {
+        $logo = getSystemSetting('clinic_logo', $default);
+        if (!empty($logo) && file_exists(basePath($logo))) {
+            return $logo;
+        }
+        return $default;
+    }
+}
+
+if (!function_exists('getSystemLogoUrl')) {
+    /**
+     * Get web URL (relative or absolute) to the active clinic logo with cache busting
+     *
+     * @param bool $absolute
+     * @return string
+     */
+    function getSystemLogoUrl($absolute = false)
+    {
+        $relPath = getSystemLogo();
+        $fullPath = basePath($relPath);
+        $v = file_exists($fullPath) ? filemtime($fullPath) : time();
+        $query = '?v=' . $v;
+
+        if ($absolute) {
+            $appUrl = getenv('APP_URL') ?: ($_SERVER['APP_URL'] ?? '');
+            if (empty($appUrl)) {
+                $appUrl = appBaseUrl();
+            }
+            $isLocal = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+            if (defined('PROJECT_DIR') && PROJECT_DIR && $isLocal && strpos($appUrl, PROJECT_DIR) === false) {
+                return rtrim($appUrl, '/') . '/' . PROJECT_DIR . '/' . ltrim($relPath, '/') . $query;
+            }
+            return rtrim($appUrl, '/') . '/' . ltrim($relPath, '/') . $query;
+        }
+
+        if (defined('PROJECT_DIR') && PROJECT_DIR) {
+            return '/' . PROJECT_DIR . '/' . ltrim($relPath, '/') . $query;
+        }
+        return '/' . ltrim($relPath, '/') . $query;
+    }
+}
+
+

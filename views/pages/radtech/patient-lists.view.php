@@ -157,6 +157,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 <?php else: ?>
                     <?php foreach ($patients as $row): ?>
                         <?php
+                        // Safeguard: Never render error report / dispute workflow cases in Patient Queue
+                        if (in_array($row['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Correction Completed', 'Pending RadTech Verification', 'Resolved'], true)) {
+                            continue;
+                        }
+
                         $isReportReady = ($row['status'] === 'Report Ready');
                         $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d'));
                         
@@ -191,7 +196,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             data-date="<?= htmlspecialchars($row['created_at']) ?>"
                             data-status="<?= htmlspecialchars($displayStatus ?: 'Pending') ?>"
                             data-is-today="<?= $isToday ? 'true' : 'false' ?>">
-                            <td class="py-3 px-3 font-medium whitespace-nowrap"><?= htmlspecialchars($row['case_number']) ?>
+                            <td class="py-3 px-3 font-medium whitespace-nowrap">
+                                <?= htmlspecialchars($row['case_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium whitespace-nowrap">
                                 <?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?>
@@ -252,38 +258,45 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                     —
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3 px-3">
-                                <?php
-                                // $displayStatus logic moved up to row attributes for searchability
-                                $sBorder = '1.5px solid #facc15';
-                                $sBg = '#fefce8';
-                                $sColor = '#a16207';
-                                if ($displayStatus === 'Report Ready') {
-                                    $sBorder = '1.5px solid #818cf8';
-                                    $sBg = '#eef2ff';
-                                    $sColor = '#4338ca';
-                                }
-                                if ($displayStatus === 'Under Reading') {
-                                    $sBorder = '1.5px solid #60a5fa';
-                                    $sBg = '#eff6ff';
-                                    $sColor = '#1d4ed8';
-                                }
-                                if ($displayStatus === 'Completed') {
-                                    $sBorder = '1.5px solid #4ade80';
-                                    $sBg = '#f0fdf4';
-                                    $sColor = '#15803d';
-                                }
-                                if ($displayStatus === 'Rejected' || $displayStatus === 'Overdue') {
-                                    $sBorder = '1.5px solid #f87171';
-                                    $sBg = '#fef2f2';
-                                    $sColor = '#b91c1c';
-                                }
-                                ?>
-                                <span
-                                    class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
-                                    style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
-                                    <?= htmlspecialchars($displayStatus ?: 'Pending') ?>
-                                </span>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <div class="flex items-center gap-1.5">
+                                    <?php
+                                    // $displayStatus logic moved up to row attributes for searchability
+                                    $sBorder = '1.5px solid #facc15';
+                                    $sBg = '#fefce8';
+                                    $sColor = '#a16207';
+                                    if ($displayStatus === 'Report Ready') {
+                                        $sBorder = '1.5px solid #818cf8';
+                                        $sBg = '#eef2ff';
+                                        $sColor = '#4338ca';
+                                    }
+                                    if ($displayStatus === 'Under Reading') {
+                                        $sBorder = '1.5px solid #60a5fa';
+                                        $sBg = '#eff6ff';
+                                        $sColor = '#1d4ed8';
+                                    }
+                                    if ($displayStatus === 'Completed') {
+                                        $sBorder = '1.5px solid #4ade80';
+                                        $sBg = '#f0fdf4';
+                                        $sColor = '#15803d';
+                                    }
+                                    if ($displayStatus === 'Rejected' || $displayStatus === 'Overdue') {
+                                        $sBorder = '1.5px solid #f87171';
+                                        $sBg = '#fef2f2';
+                                        $sColor = '#b91c1c';
+                                    }
+                                    ?>
+                                    <span
+                                        class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                                        <?= htmlspecialchars($displayStatus ?: 'Pending') ?>
+                                    </span>
+                                    <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
+                                            <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
                                 <div class="flex flex-col gap-1 items-start">
@@ -299,7 +312,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
                                     <!-- View button always active -->
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>"
+                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>&from=queue"
                                         class="text-sm font-medium text-blue-500 hover:text-blue-700 transition"
                                         title="View Case">
                                         <i data-lucide="eye"
@@ -894,34 +907,58 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 $catIcon = 'alert-circle';
 
                                 if ($cat === 'findings_error') {
-                                    $catLabel = 'Findings Error';
+                                    $catLabel = 'Typographical Error';
                                     $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
                                     $catIcon = 'file-text';
                                 } elseif ($cat === 'demographic_error') {
                                     $catLabel = 'Patient Info Error';
                                     $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
                                     $catIcon = 'user';
+                                } elseif ($cat === 'template_error') {
+                                    $catLabel = 'Template Rename';
+                                    $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                                    $catIcon = 'edit-2';
                                 } elseif ($cat === 'both_error') {
-                                    $catLabel = 'Findings & Info';
+                                    $catLabel = 'Typo & Info';
                                     $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
                                     $catIcon = 'alert-triangle';
+                                } elseif ($cat === 'both_template_error') {
+                                    $catLabel = 'Info & Rename';
+                                    $catBadgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-200';
+                                    $catIcon = 'layers';
+                                } elseif ($cat === 'other' || $cat === 'other_error') {
+                                    $catLabel = 'Other Concern';
+                                    $catBadgeClass = 'text-gray-700 bg-gray-50 border-gray-200';
+                                    $catIcon = 'help-circle';
                                 } elseif ($cat === 'exam_details_error') {
                                     $catLabel = 'Exam Details Error';
                                     $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
                                     $catIcon = 'clipboard';
                                 } else {
                                     $descLower = strtolower($fullText);
-                                    if (strpos($descLower, 'findings') !== false && strpos($descLower, 'patient info') !== false) {
-                                        $catLabel = 'Findings & Info';
+                                    if (strpos($descLower, 'template rename') !== false && (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false)) {
+                                        $catLabel = 'Info & Rename';
+                                        $catBadgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-200';
+                                        $catIcon = 'layers';
+                                    } elseif (strpos($descLower, 'template rename') !== false || strpos($descLower, 'correct template') !== false) {
+                                        $catLabel = 'Template Rename';
+                                        $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                                        $catIcon = 'edit-2';
+                                    } elseif ((strpos($descLower, 'findings') !== false || strpos($descLower, 'typo') !== false) && strpos($descLower, 'patient info') !== false) {
+                                        $catLabel = 'Typo & Info';
                                         $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
-                                    } elseif (strpos($descLower, 'findings') !== false) {
-                                        $catLabel = 'Findings Error';
+                                    } elseif (strpos($descLower, 'findings') !== false || strpos($descLower, 'typo') !== false) {
+                                        $catLabel = 'Typographical Error';
                                         $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
                                         $catIcon = 'file-text';
                                     } elseif (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false) {
                                         $catLabel = 'Patient Info Error';
                                         $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
                                         $catIcon = 'user';
+                                    } elseif (strpos($descLower, 'other') !== false) {
+                                        $catLabel = 'Other Concern';
+                                        $catBadgeClass = 'text-gray-700 bg-gray-50 border-gray-200';
+                                        $catIcon = 'help-circle';
                                     }
                                 }
 
@@ -938,8 +975,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
                                 ?>
                                 <div class="flex flex-col items-start gap-1">
-                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border <?= $catBadgeClass ?> shadow-2xs">
-                                        <i data-lucide="<?= $catIcon ?>" class="w-3 h-3"></i>
+                                    <span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border <?= $catBadgeClass ?> shadow-2xs">
                                         <?= htmlspecialchars($catLabel) ?>
                                     </span>
                                     <button type="button" 
@@ -951,21 +987,29 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <?php $currStatus = $d['status']; ?>
-                                <?php if ($currStatus === 'Pending RadTech Review'): ?>
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                                        <i data-lucide="clock" class="w-3 h-3"></i> Patient Reviewing
+                                <?php if ($currStatus === 'Issue Reported' || $currStatus === 'Pending RadTech Review'): ?>
+                                    <span class="inline-block text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full">
+                                        Issue Reported
                                     </span>
-                                <?php elseif ($currStatus === 'Escalated to Radiologist'): ?>
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg">
-                                        <i data-lucide="clock" class="w-3 h-3"></i> Waiting for Radiologist
+                                <?php elseif ($currStatus === 'For RadTech Review'): ?>
+                                    <span class="inline-block text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                                        For RadTech Review
                                     </span>
-                                <?php elseif ($currStatus === 'Pending RadTech Verification'): ?>
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
-                                        <i data-lucide="shield-check" class="w-3 h-3"></i> Ready for Release
+                                <?php elseif ($currStatus === 'Correction in Progress'): ?>
+                                    <span class="inline-block text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
+                                        Correction in Progress
+                                    </span>
+                                <?php elseif ($currStatus === 'Correction Completed' || $currStatus === 'Pending RadTech Verification'): ?>
+                                    <span class="inline-block text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+                                        Correction Completed
+                                    </span>
+                                <?php elseif ($currStatus === 'Resolved'): ?>
+                                    <span class="inline-block text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                                        Resolved
                                     </span>
                                 <?php else: ?>
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-lg">
-                                        <i data-lucide="check-circle" class="w-3 h-3"></i> <?= htmlspecialchars($currStatus) ?>
+                                    <span class="inline-block text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                                        <?= htmlspecialchars($currStatus) ?>
                                     </span>
                                 <?php endif; ?>
                             </td>
@@ -974,135 +1018,71 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <?php
-                                    $cat = $d['dispute_category'] ?? '';
                                     $currStatus = $d['status'] ?? '';
-                                    $demoFixed = (int)($d['demographics_fixed'] ?? 0);
-                                    $radAmended = (int)($d['radiologist_amended'] ?? 0);
-                                    $isPendingReview = ($currStatus === 'Pending RadTech Review');
-                                    $isPendingVerification = ($currStatus === 'Pending RadTech Verification');
-                                    $isEscalated = ($currStatus === 'Escalated to Radiologist');
                                     $isResolved = ($currStatus === 'Resolved');
+                                    $isDemoFixed = !empty($d['demographics_fixed']);
+                                    $isCaseAmended = !empty($d['is_amended']);
 
-                                    // Classify Category:
-                                    $isDemographicOnly = ($cat === 'demographic_error');
-                                    $isFindingsOnly = in_array($cat, ['findings_error', 'exam_details_error']);
-                                    $isBoth = ($cat === 'both_error');
+                                    $hasPatientInfo = ($cat === 'demographic_error' || $cat === 'both_error' || $cat === 'both_template_error' || $catLabel === 'Patient Info Error' || $catLabel === 'Typo & Info' || $catLabel === 'Info & Rename' || stripos($fullText, 'First Name:') !== false || stripos($fullText, 'Last Name:') !== false || stripos($fullText, 'Wrong Patient Info') !== false);
+                                    $hasFindingsOrTypo = ($cat === 'findings_error' || $cat === 'both_error' || $cat === 'template_error' || $cat === 'both_template_error' || $cat === 'other' || $cat === 'other_error' || $catLabel === 'Typo & Info' || $catLabel === 'Typographical Error' || $catLabel === 'Template Rename' || $catLabel === 'Info & Rename' || $catLabel === 'Other Concern' || stripos($fullText, 'Typographical Error') !== false || stripos($fullText, 'Findings') !== false || stripos($fullText, 'Template Rename') !== false || stripos($fullText, 'Other Concern') !== false);
 
-                                    if (!$isDemographicOnly && !$isFindingsOnly && !$isBoth) {
-                                        $descLower = strtolower($d['description'] ?? '');
-                                        $hasF = strpos($descLower, 'findings') !== false || strpos($descLower, 'impression') !== false || strpos($descLower, 'reading') !== false || strpos($descLower, 'image') !== false;
-                                        $hasD = strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false || strpos($descLower, 'age') !== false || strpos($descLower, 'sex') !== false;
-                                        if ($hasF && $hasD) $isBoth = true;
-                                        elseif ($hasF) $isFindingsOnly = true;
-                                        elseif ($hasD) $isDemographicOnly = true;
-                                        else $isBoth = true;
-                                    }
+                                    $showDemoBtn = $hasPatientInfo && !$isDemoFixed && !$isResolved;
+                                    $showAmendBtn = ($hasFindingsOrTypo || !$hasPatientInfo) && !$isCaseAmended && !$isResolved && ($cat !== 'demographic_error');
 
-                                    // Button 1 (Re-upload): shows if $isBoth || $isFindingsOnly
-                                    $showReuploadBtn = $isBoth || $isFindingsOnly;
+                                    $amendBtnTitle = ($cat === 'template_error') ? 'Rename X-ray Template' : (($cat === 'both_template_error') ? 'Patient Info & Rename X-ray Template' : 'Edit / Amend Findings Report');
 
-                                    // Button 2 (Fix Demographics): shows if $isBoth || $isDemographicOnly
-                                    $showFixInfoBtn = $isBoth || $isDemographicOnly;
-
-                                    // Button 3 (Final Verify): active when required steps are completed
-                                    $isVerifyActive = false;
-                                    if ($isDemographicOnly) {
-                                        $isVerifyActive = (bool)$demoFixed;
-                                    } elseif ($isFindingsOnly) {
-                                        $isVerifyActive = $isPendingVerification;
-                                    } elseif ($isBoth) {
-                                        $isVerifyActive = $isPendingVerification && (bool)$demoFixed;
-                                    }
-
-                                    // Payloads for Modals
                                     $dispPayload = [
                                         'id' => $d['id'],
+                                        'case_id' => $d['case_id'],
                                         'case_number' => $d['case_number'],
                                         'patient_number' => $d['patient_number'] ?? '',
-                                        'description' => $d['description'],
+                                        'description' => $fullText,
                                         'first_name' => $d['first_name'] ?? '',
                                         'last_name' => $d['last_name'] ?? '',
                                         'middle_name' => $d['middle_name'] ?? '',
                                         'age' => $d['age'] ?? '',
                                         'sex' => $d['sex'] ?? '',
                                         'user_account_name' => $d['user_account_name'] ?? '',
-                                        'category' => $d['dispute_category'] ?? ''
-                                    ];
-                                    $dispJson = htmlspecialchars(json_encode($dispPayload), ENT_QUOTES, 'UTF-8');
-
-                                    $verifPayload = [
-                                        'id' => $d['id'],
-                                        'case_number' => $d['case_number'],
-                                        'patient_number' => $d['patient_number'] ?? '',
-                                        'description' => $d['description'],
                                         'category' => $d['dispute_category'] ?? '',
-                                        'first_name' => $d['first_name'] ?? '',
-                                        'last_name' => $d['last_name'] ?? '',
-                                        'middle_name' => $d['middle_name'] ?? '',
-                                        'age' => $d['age'] ?? '',
-                                        'sex' => $d['sex'] ?? '',
-                                        'user_account_name' => $d['user_account_name'] ?? '',
-                                        'radtech_notes' => $d['radtech_notes'] ?? '',
-                                        'resolution_notes' => $d['resolution_notes'] ?? '',
-                                        'old_findings' => $d['old_findings'] ?? '',
+                                        'status' => $d['status'],
                                         'findings' => $d['findings'] ?? '',
-                                        'old_impression' => $d['old_impression'] ?? '',
                                         'impression' => $d['impression'] ?? '',
+                                        'old_findings' => $d['old_findings'] ?? '',
+                                        'old_impression' => $d['old_impression'] ?? '',
                                         'exam_type' => $d['exam_type'] ?? ''
                                     ];
-                                    $verifJson = htmlspecialchars(json_encode($verifPayload), ENT_QUOTES, 'UTF-8');
+                                    $dispJson = htmlspecialchars(json_encode($dispPayload), ENT_QUOTES, 'UTF-8');
                                 ?>
 
-                                <?php if ($isResolved): ?>
+                                <?php if ($isResolved || (!$showDemoBtn && !$showAmendBtn && !in_array($currStatus, ['Correction Completed', 'Pending RadTech Verification']))): ?>
                                     <span class="text-xs text-gray-400 italic font-normal select-none">No action needed</span>
                                 <?php else: ?>
-                                    <div class="flex items-center justify-start gap-1.5">
-                                        <!-- Button 1: Re-upload / Escalate -->
-                                        <?php if ($showReuploadBtn): ?>
-                                            <?php if ($isPendingReview && !$radAmended): ?>
-                                                <button type="button" onclick="confirmReupload(<?= $d['case_id'] ?>)"
-                                                        class="text-blue-500 hover:text-blue-700 transition cursor-pointer" title="Re-upload &amp; Escalate to Radiologist">
-                                                    <i data-lucide="image-up" class="w-6 h-6 bg-blue-100 text-blue-600 p-1 rounded-md border border-blue-400 hover:bg-blue-200 transition"></i>
-                                                </button>
-                                            <?php elseif ($isEscalated): ?>
-                                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $d['case_id'] ?>&from=disputes"
-                                                   class="text-blue-500 hover:text-blue-700 transition cursor-pointer" title="View Uploaded Details (Escalated to Radiologist)">
-                                                    <i data-lucide="image" class="w-6 h-6 bg-blue-50 text-blue-500 p-1 rounded-md border border-blue-300 hover:bg-blue-100 transition"></i>
-                                                </a>
-                                            <?php else: ?>
-                                                <button type="button" disabled
-                                                        class="opacity-40 cursor-not-allowed select-none" title="Already amended by Radiologist">
-                                                    <i data-lucide="image-up" class="w-6 h-6 bg-gray-100 text-gray-400 p-1 rounded-md border border-gray-300"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-
-                                        <!-- Button 2: Fix Information (Demographics) -->
-                                        <?php if ($showFixInfoBtn): ?>
-                                            <?php if (!$demoFixed): ?>
-                                                <button type="button" onclick='openFixDemographicsModal(<?= $dispJson ?>)'
-                                                        class="text-green-500 hover:text-green-700 transition cursor-pointer" title="Fix Patient Demographics">
-                                                    <i data-lucide="clipboard-check" class="w-6 h-6 bg-green-100 text-green-600 p-1 rounded-md border border-green-400 hover:bg-green-200 transition"></i>
-                                                </button>
-                                            <?php else: ?>
-                                                <button type="button" disabled
-                                                        class="opacity-40 cursor-not-allowed select-none" title="Patient demographics already updated">
-                                                    <i data-lucide="clipboard-check" class="w-6 h-6 bg-gray-100 text-gray-400 p-1 rounded-md border border-gray-300"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-
-                                        <!-- Button 3: Verify & Release -->
-                                        <?php if ($isVerifyActive): ?>
-                                            <button type="button" onclick='openVerifyReleaseModal(<?= $verifJson ?>)'
-                                                    class="text-green-600 hover:text-green-800 transition cursor-pointer" title="Final Verify &amp; Release Amended Report">
-                                                <i data-lucide="check-circle-2" class="w-6 h-6 bg-green-100 text-green-700 p-1 rounded-md border border-green-500 hover:bg-green-200 transition"></i>
+                                    <div class="flex items-center gap-1.5">
+                                        <?php if ($currStatus === 'Correction Completed' || $currStatus === 'Pending RadTech Verification'): ?>
+                                            <!-- Action: Verify & Release (Blue icon only with tooltip) -->
+                                            <button type="button" onclick='openVerifyReleaseModal(<?= $dispJson ?>)'
+                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 hover:border-blue-400 transition shadow-2xs cursor-pointer active:scale-95"
+                                                    title="Verify &amp; Release Case">
+                                                <i data-lucide="check-check" class="w-4 h-4 text-blue-600"></i>
                                             </button>
                                         <?php else: ?>
-                                            <button type="button" disabled
-                                                    class="opacity-40 cursor-not-allowed select-none" title="Verify &amp; Release (Available after required corrections are completed)">
-                                                <i data-lucide="check-circle-2" class="w-6 h-6 bg-gray-100 text-gray-400 p-1 rounded-md border border-gray-300"></i>
-                                            </button>
+                                            <?php if ($showDemoBtn): ?>
+                                                <!-- Action for Patient Info: Fix Demographics Modal (Green icon only with tooltip) -->
+                                                <button type="button" onclick='openFixDemographicsModal(<?= $dispJson ?>)'
+                                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 hover:border-emerald-400 transition shadow-2xs cursor-pointer active:scale-95"
+                                                        title="Fix &amp; Resolve Patient Information">
+                                                    <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>
+                                                </button>
+                                            <?php endif; ?>
+
+                                            <?php if ($showAmendBtn): ?>
+                                                <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
+                                                <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&role=radtech&id=<?= (int)$d['case_id'] ?>&from=disputes&dispute_id=<?= (int)$d['id'] ?>"
+                                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 hover:border-amber-400 transition shadow-2xs cursor-pointer active:scale-95"
+                                                   title="<?= htmlspecialchars($amendBtnTitle) ?>">
+                                                    <i data-lucide="edit-3" class="w-4 h-4 text-amber-600"></i>
+                                                </a>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
@@ -1188,6 +1168,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
             } else {
                 btn.onclick = () => {
                     currentDisputesPage = page;
+                    try { sessionStorage.setItem('radtech_disputes_page', page); } catch(e) {}
                     paginateDisputes();
                     const tableContainer = document.querySelector('#disputes-table-card .overflow-x-auto');
                     if (tableContainer) tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1253,6 +1234,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         if (targetRow) {
             const rowIndex = Array.from(rows).indexOf(targetRow);
             currentDisputesPage = Math.floor(rowIndex / disputesItemsPerPage) + 1;
+            try { sessionStorage.setItem('radtech_disputes_page', currentDisputesPage); } catch(e) {}
             paginateDisputes();
 
             setTimeout(() => {
@@ -1288,6 +1270,17 @@ $currentTab = $_GET['tab'] ?? 'completed';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        try {
+            sessionStorage.setItem('radtech_last_table_url', window.location.href);
+            const isDisputesTab = (new URLSearchParams(window.location.search)).get('tab') === 'disputes';
+            if (isDisputesTab) {
+                const savedPage = parseInt(sessionStorage.getItem('radtech_disputes_page') || '1', 10);
+                if (savedPage > 1) {
+                    currentDisputesPage = savedPage;
+                }
+            }
+        } catch (e) {}
+
         setTimeout(() => {
             paginateDisputes();
             handleDisputesHighlight();
@@ -1300,19 +1293,25 @@ $currentTab = $_GET['tab'] ?? 'completed';
         const clean = desc.replace(/\r\n/g, '\n').trim();
         let findings = '';
         let demographics = '';
+        let templateRename = '';
         let other = '';
 
-        const findingsMatch = clean.match(/Findings Note:\s*([\s\S]*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|$))/i);
+        const findingsMatch = clean.match(/Findings Note:\s*([\s\S]*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|Template Rename Request:|$))/i);
         if (findingsMatch && findingsMatch[1].trim()) {
             findings = findingsMatch[1].trim().replace(/^•\s*/gm, '').trim();
         }
 
-        const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|$))/i);
+        const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|Template Rename Request:|$))/i);
         if (demoMatch && demoMatch[1].trim()) {
             demographics = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
         }
 
-        if (!findings && !demographics) {
+        const tplMatch = clean.match(/(?:Template Rename Request:|Exam Details Note:)\s*([\s\S]*?)(?=(Findings Note:|Wrong Patient Info:|Demographics Note:|Other Concern Note:|$))/i);
+        if (tplMatch && tplMatch[1].trim()) {
+            templateRename = tplMatch[1].trim().replace(/^•\s*/gm, '').trim();
+        }
+
+        if (!findings && !demographics && !templateRename) {
             other = clean;
         }
 
@@ -1321,7 +1320,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         if (findings && (scope === 'all' || scope === 'findings')) {
             html += `
                 <div class="flex items-start gap-2 text-xs py-0.5">
-                    <span class="font-bold text-purple-800 shrink-0 uppercase text-[10px] bg-purple-100 border border-purple-200 px-1.5 py-0.5 rounded">Findings</span>
+                    <span class="font-bold text-gray-800 shrink-0 uppercase text-[10px] bg-gray-100 border border-gray-300 px-1.5 py-0.5 rounded">Findings</span>
                     <span class="text-gray-800 font-medium leading-relaxed">${findings}</span>
                 </div>`;
         }
@@ -1337,11 +1336,16 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 </div>`;
         }
 
-        if (other && (!findings || scope !== 'demographics') && (!demographics || scope !== 'findings')) {
+        if (templateRename && (scope === 'all' || scope === 'template')) {
             html += `
-                <div class="text-xs text-gray-800 font-medium whitespace-pre-line leading-relaxed py-0.5">
-                    ${other}
+                <div class="flex items-start gap-2 text-xs py-0.5">
+                    <span class="font-bold text-purple-800 shrink-0 uppercase text-[10px] bg-purple-100 border border-purple-200 px-1.5 py-0.5 rounded">Template Rename</span>
+                    <span class="text-gray-800 font-medium leading-relaxed">${templateRename}</span>
                 </div>`;
+        }
+
+        if (other && (!findings || scope !== 'demographics') && (!demographics || scope !== 'findings')) {
+            html += `<div class="text-xs text-gray-800 font-medium whitespace-pre-line leading-relaxed py-0.5">${other.trim()}</div>`;
         }
 
         html += '</div>';
@@ -1364,14 +1368,14 @@ $currentTab = $_GET['tab'] ?? 'completed';
         if (metaBar) {
             let statusBadge = '';
             const st = data.status || '';
-            if (st === 'Pending RadTech Review') {
-                statusBadge = '<span class="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Patient Reviewing</span>';
-            } else if (st === 'Escalated to Radiologist') {
-                statusBadge = '<span class="inline-flex items-center gap-1 font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Waiting for Radiologist</span>';
-            } else if (st === 'Pending RadTech Verification') {
-                statusBadge = '<span class="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Ready for Release</span>';
+            if (st === 'Pending RadTech Review' || st === 'For RadTech Review' || st === 'Issue Reported') {
+                statusBadge = '<span class="inline-block font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full text-[11px] shadow-2xs">For RadTech Review</span>';
+            } else if (st === 'Correction in Progress' || st === 'Escalated to Radiologist') {
+                statusBadge = '<span class="inline-block font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full text-[11px] shadow-2xs">Correction in Progress</span>';
+            } else if (st === 'Correction Completed' || st === 'Pending RadTech Verification') {
+                statusBadge = '<span class="inline-block font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full text-[11px] shadow-2xs">Correction Completed</span>';
             } else {
-                statusBadge = `<span class="inline-flex items-center gap-1 font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-lg text-[11px] shadow-2xs"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> ${st || 'Resolved'}</span>`;
+                statusBadge = `<span class="inline-block font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full text-[11px] shadow-2xs">${st || 'Resolved'}</span>`;
             }
 
             const dateStr = data.created_at || '';
@@ -1390,19 +1394,30 @@ $currentTab = $_GET['tab'] ?? 'completed';
             const desc = (data.description || '').replace(/\r\n/g, '\n').trim();
             let findings = '';
             let demographics = '';
+            let templateRename = '';
             let other = '';
 
-            const findingsMatch = desc.match(/Findings Note:\s*([\s\S]*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|$))/i);
+            const findingsMatch = desc.match(/(?:Findings Note:|Typographical Error Note:)\s*([\s\S]*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|Other Concern Note:|Template Rename Request:|$))/i);
             if (findingsMatch && findingsMatch[1].trim()) {
                 findings = findingsMatch[1].trim().replace(/^•\s*/gm, '').trim();
             }
 
-            const demoMatch = desc.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|$))/i);
+            const demoMatch = desc.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Typographical Error Note:|Exam Details Note:|Other Concern Note:|Template Rename Request:|$))/i);
             if (demoMatch && demoMatch[1].trim()) {
                 demographics = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
             }
 
-            if (!findings && !demographics) {
+            const templateMatch = desc.match(/(?:Template Rename Request:|Exam Details Note:)\s*([\s\S]*?)(?=(Findings Note:|Typographical Error Note:|Wrong Patient Info:|Demographics Note:|Other Concern Note:|$))/i);
+            if (templateMatch && templateMatch[1].trim()) {
+                templateRename = templateMatch[1].trim();
+            }
+
+            const otherMatch = desc.match(/(?:Other Concern Note:|Other Note:)\s*([\s\S]*?)(?=(Findings Note:|Typographical Error Note:|Wrong Patient Info:|Demographics Note:|Exam Details Note:|Template Rename Request:|$))/i);
+            if (otherMatch && otherMatch[1].trim()) {
+                other = otherMatch[1].trim().replace(/^•\s*/gm, '').trim();
+            }
+
+            if (!findings && !demographics && !templateRename && !other) {
                 other = desc;
             }
 
@@ -1431,18 +1446,28 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 `;
             }
 
-            if (findings) {
+            if (templateRename) {
                 cardsHtml += `
                     <div class="p-4 bg-purple-50/80 border border-purple-200 rounded-xl space-y-2 shadow-2xs">
                         <div class="flex items-center gap-2 text-xs font-bold text-purple-900 uppercase tracking-wider">
-                            <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
-                            <span>Reported Findings / Interpretation Issue:</span>
+                            <i data-lucide="file-edit" class="w-4 h-4 text-gray-900"></i>
+                            <span>Template Rename Request:</span>
                         </div>
-                        <div class="p-3 bg-white border border-purple-200 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">
-                            ${findings}
+                        <div class="p-3 bg-white border border-purple-200/80 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">${templateRename.trim()}</div>
+                    </div>
+                `;
+            }
+
+            if (findings) {
+                cardsHtml += `
+                    <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2 shadow-2xs">
+                        <div class="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider">
+                            <i data-lucide="file-text" class="w-4 h-4 text-gray-800"></i>
+                            <span>Reported Typographical Error:</span>
                         </div>
-                        <p class="text-[11px] text-purple-700 leading-relaxed font-normal">
-                            This medical interpretation discrepancy may be escalated to the Radiologist or corrected via new X-ray image re-upload.
+                        <div class="p-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 font-medium leading-relaxed whitespace-pre-line shadow-2xs">${findings.trim()}</div>
+                        <p class="text-[11px] text-gray-700 leading-relaxed font-normal">
+                            This typographical error can be corrected directly by RadTech via Edit / Amend Report.
                         </p>
                     </div>
                 `;
@@ -1453,11 +1478,9 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2 shadow-2xs">
                         <div class="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
                             <i data-lucide="message-square" class="w-4 h-4 text-gray-500"></i>
-                            <span>Patient Notes / Feedback:</span>
+                            <span>Reported Concern / Error Details:</span>
                         </div>
-                        <div class="p-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">
-                            ${other}
-                        </div>
+                        <div class="p-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">${other.trim()}</div>
                     </div>
                 `;
             }
@@ -1519,14 +1542,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
         </div>
 
         <!-- Detailed Cards Section -->
-        <div class="space-y-1.5">
-            <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-gray-500"></i>
-                Correction Requested / Patient Notes:
-            </label>
-            <div id="ddm-content-container" class="space-y-3 max-h-80 overflow-y-auto pr-0.5">
-                <!-- Populated via JS with clean structured cards -->
-            </div>
+        <div id="ddm-content-container" class="space-y-3 max-h-80 overflow-y-auto pr-0.5">
+            <!-- Populated via JS with clean structured cards -->
         </div>
 
         <!-- Modal Footer -->
@@ -1539,28 +1556,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
     </div>
 </div>
 
-<!-- ESCALATE TO RADIOLOGIST MODAL -->
-<div id="escalate-dispute-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
-        <div class="flex items-center justify-between border-b pb-3">
-            <h3 class="font-bold text-gray-900 text-base">Escalate to Radiologist</h3>
-            <button onclick="closeEscalateModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-        </div>
-        <p class="text-xs text-gray-600">This medical interpretation error will be forwarded to the Radiologist to review the image and issue an Amended Report.</p>
-        <form id="escalate-form" onsubmit="submitEscalation(event)" class="space-y-3">
-            <input type="hidden" id="escalate-dispute-id" name="dispute_id">
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1">Internal Notes for Radiologist *</label>
-                <textarea id="escalate-notes" name="radtech_notes" required rows="3" placeholder="Example: Please re-examine the lung fields based on patient's feedback..."
-                          class="w-full text-xs rounded-xl border border-gray-300 p-3 outline-none focus:ring-2 focus:ring-red-500"></textarea>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeEscalateModal()" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
-                <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow">Send to Radiologist</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- FIX DEMOGRAPHICS MODAL (Side-by-Side Old vs New Name Comparison) -->
 <div id="fix-demographics-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 p-4">
@@ -1666,11 +1662,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 Cancel
             </button>
 
-            <!-- Apply & Fix Record Button -->
+            <!-- Fix & Resolve Button -->
             <button type="button" id="btn-apply-fix-demo" onclick="applyFixDemographics()"
-                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer">
-                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                Apply &amp; Fix Record
+                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                Fix &amp; Resolve
             </button>
         </div>
     </div>
@@ -1769,7 +1765,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         <!-- Section 4: Side-by-Side Findings Comparison Box -->
         <div id="verify-findings-container" class="space-y-2.5 hidden">
             <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
+                <i data-lucide="file-text" class="w-4 h-4 text-gray-700"></i>
                 Amended Findings &amp; Impression Comparison:
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1805,18 +1801,200 @@ $currentTab = $_GET['tab'] ?? 'completed';
     </div>
 </div>
 
+<!-- RADTECH EDIT / AMEND MODAL (Findings, DICOM Name, Template Corrections) -->
+<div id="radtech-amend-modal" class="fixed inset-0 z-50 hidden flex items-start justify-center bg-black/55 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl my-6 border border-gray-100 overflow-hidden">
+
+        <!-- ── Modal Header ── -->
+        <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="shrink-0 w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-sm">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="font-bold text-gray-900 text-sm leading-tight">Edit / Amend Report</h3>
+                        <!-- Dynamic step badge injected by JS -->
+                        <span id="amend-step-badge" class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 border border-blue-200 shrink-0">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block animate-pulse"></span>
+                            <span id="amend-step-text">Correction in Progress</span>
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-0.5 truncate">
+                        Case: <span id="amend-modal-case-number" class="font-mono font-semibold text-red-600"></span>
+                        <span class="mx-1 text-gray-300">|</span>
+                        <span id="amend-modal-patient-info" class="text-gray-600"></span>
+                        <span class="mx-1 text-gray-300">|</span>
+                        <span id="amend-modal-exam-type" class="text-gray-500 italic"></span>
+                    </p>
+                </div>
+            </div>
+            <button type="button" onclick="closeRadTechAmendModal()"
+                    class="shrink-0 ml-2 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/70 transition cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- ── Reported Issue Banner (collapsible) ── -->
+        <div id="amend-reported-issue-container" class="hidden">
+            <div class="flex items-start gap-2.5 px-5 py-3 bg-rose-50 border-b border-rose-100">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-500 mt-0.5 shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span class="text-[10px] font-extrabold text-rose-700 uppercase tracking-wider">Patient Reported Issue</span>
+                        <span id="amend-reported-category" class="px-1.5 py-0.5 text-[9px] font-bold bg-rose-200 text-rose-800 rounded uppercase tracking-wide"></span>
+                    </div>
+                    <p id="amend-reported-description" class="text-xs text-rose-900 leading-relaxed whitespace-pre-line"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Form Body ── -->
+        <form id="radtech-amend-form" class="px-5 py-4 space-y-4" onsubmit="event.preventDefault()">
+            <input type="hidden" id="amend-case-id" value="">
+            <input type="hidden" id="amend-dispute-id" value="">
+
+            <!-- Findings & Impression -->
+            <div>
+                <div class="flex items-center gap-1.5 mb-2.5">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-500"></i>
+                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Findings &amp; Impression</span>
+                </div>
+                <div class="space-y-2.5">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Findings Report</label>
+                        <textarea id="amend-findings" rows="4"
+                                  class="w-full text-xs font-mono p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none leading-relaxed resize-y transition"
+                                  placeholder="Enter or amend findings…"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Impression</label>
+                        <textarea id="amend-impression" rows="2"
+                                  class="w-full text-xs font-mono p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none leading-relaxed resize-y transition"
+                                  placeholder="Enter or amend impression…"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-dashed border-gray-200"></div>
+
+            <!-- Patient Name / DICOM -->
+            <div>
+                <div class="flex items-center gap-1.5 mb-2.5">
+                    <i data-lucide="user" class="w-3.5 h-3.5 text-blue-500"></i>
+                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Patient Name &amp; DICOM</span>
+                    <span class="text-[10px] text-gray-400 ml-1">Fix name typos for header and printed result</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">First Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="amend-first-name"
+                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Middle Name</label>
+                        <input type="text" id="amend-middle-name"
+                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Last Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="amend-last-name"
+                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-dashed border-gray-200"></div>
+
+            <!-- Exam Name, Template, Notes -->
+            <div>
+                <div class="flex items-center gap-1.5 mb-2.5">
+                    <i data-lucide="layout-template" class="w-3.5 h-3.5 text-purple-500"></i>
+                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Exam &amp; Template</span>
+                    <span class="text-[10px] text-gray-400 ml-1">Correct exam name on printed template</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Examination Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="amend-exam-type" placeholder="e.g. Chest PA"
+                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Report Template</label>
+                        <select id="amend-template"
+                                class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
+                            <option value="General Standard">General Standard</option>
+                            <option value="Standard Chest">Standard Chest</option>
+                            <option value="Extremities">Extremities</option>
+                            <option value="Spine">Spine</option>
+                            <option value="Pelvis">Pelvis &amp; Hips</option>
+                            <option value="Abdomen">Abdomen</option>
+                            <option value="Pediatric">Pediatric</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Audit Note</label>
+                        <input type="text" id="amend-notes" placeholder="e.g. Fixed name typo"
+                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amendment History -->
+            <div id="amend-history-container" class="hidden">
+                <div class="flex items-center gap-1.5 mb-2">
+                    <i data-lucide="history" class="w-3 h-3 text-gray-400"></i>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Previous Amendments</span>
+                </div>
+                <div id="amend-history-list" class="space-y-1.5 max-h-28 overflow-y-auto"></div>
+            </div>
+        </form>
+
+        <!-- ── Footer ── -->
+        <div class="flex items-center justify-between gap-3 px-5 py-3.5 bg-gray-50 border-t border-gray-100">
+            <button type="button" onclick="closeRadTechAmendModal()"
+                    class="text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg transition cursor-pointer">
+                Cancel
+            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="submitRadTechAmendment('save_only')"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition cursor-pointer shadow-sm">
+                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                    Save Draft
+                </button>
+                <button type="button" onclick="submitRadTechAmendment('save_and_release')"
+                        class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition cursor-pointer">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    Save &amp; Release
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
 <script>
 let currentFixData = null;
 let currentVerifyData = null;
 
-function openEscalateModal(id, caseNo) {
-    document.getElementById('escalate-dispute-id').value = id;
-    document.getElementById('escalate-notes').value = '';
-    document.getElementById('escalate-dispute-modal').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-}
-function closeEscalateModal() {
-    document.getElementById('escalate-dispute-modal').classList.add('hidden');
+// Helper: Ensure age is always an age number (e.g. 23), converting from birthdate if a date was stored
+function parseAgeOrBirthdateToAge(val) {
+    if (!val) return '';
+    const trimmed = String(val).trim();
+    const dateMatch = trimmed.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (dateMatch) {
+        const bdate = new Date(parseInt(dateMatch[1], 10), parseInt(dateMatch[2], 10) - 1, parseInt(dateMatch[3], 10));
+        if (!isNaN(bdate.getTime())) {
+            const today = new Date();
+            let a = today.getFullYear() - bdate.getFullYear();
+            const m = today.getMonth() - bdate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < bdate.getDate())) a--;
+            return String(Math.max(0, a));
+        }
+    }
+    const numMatch = trimmed.match(/(\d+)/);
+    return numMatch ? numMatch[1] : '';
 }
 
 // ── FIX DEMOGRAPHICS MODAL LOGIC ──
@@ -1831,34 +2009,60 @@ function openFixDemographicsModal(data) {
     
     let demoNote = '';
     const clean = descText.replace(/\r\n/g, '\n').trim();
-    const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|$))/i);
+    const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|Typographical Error Note:|Other Concern Note:|$))/i);
     if (demoMatch && demoMatch[1].trim()) {
         demoNote = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
     }
     if (!demoNote) {
         demoNote = clean;
     }
-    const items = demoNote.split(/,|\n/).map(s => s.trim().replace(/^•\s*/, '')).filter(Boolean);
+    const items = demoNote.split(/\n/).map(s => {
+        let line = s.trim().replace(/^•\s*/, '');
+        // If line is Age with a date string, convert to age
+        const ageLineMatch = line.match(/^(Age|Birthdate):\s*(.+)$/i);
+        if (ageLineMatch) {
+            const parsedAge = parseAgeOrBirthdateToAge(ageLineMatch[2]);
+            if (parsedAge) {
+                return `Age: ${parsedAge} yrs old`;
+            }
+        }
+        return line;
+    }).filter(Boolean);
+
     if (items.length > 0) {
-        statementEl.innerHTML = `• ${items.join(', ')}`;
+        statementEl.innerHTML = items.map(it => `<div>• ${it}</div>`).join('');
     } else {
         statementEl.innerHTML = `<span class="text-xs text-amber-800 italic">No specific fields reported</span>`;
     }
 
-    // Populate Side-by-Side Old vs New
-    const newFn = data.first_name || '';
-    const newLn = data.last_name || '';
-    const newMn = data.middle_name || '';
-    const ageVal = data.age ? `${data.age} yrs old` : 'N/A';
-    const sexVal = data.sex || 'N/A';
+    // Extract patient typed corrections from description
+    const fnMatch = clean.match(/First Name:\s*([^\n\r,•]+)/i);
+    const lnMatch = clean.match(/Last Name:\s*([^\n\r,•]+)/i);
+    const ageMatch = clean.match(/(?:Age|Birthdate):\s*([^\n\r,•]+)/i);
+    const sexMatch = clean.match(/(?:Sex|Gender):\s*([^\n\r,•]+)/i);
 
-    // Old name fallback
-    let oldFn = newFn;
-    let oldLn = newLn;
-    let oldMn = newMn;
-    if (data.user_account_name && data.user_account_name !== `${newFn} ${newLn}`.trim()) {
-        oldFn = data.user_account_name.split(' ')[0] || newFn;
-    }
+    const typedFn = fnMatch ? fnMatch[1].trim() : '';
+    const typedLn = lnMatch ? lnMatch[1].trim() : '';
+    const typedAge = ageMatch ? parseAgeOrBirthdateToAge(ageMatch[1]) : '';
+    const typedSex = sexMatch ? sexMatch[1].trim() : '';
+
+    // Old Record (Current in database)
+    const oldFn = data.first_name || '';
+    const oldLn = data.last_name || '';
+    const oldAge = data.age ? `${data.age} yrs old` : 'N/A';
+    const oldSex = data.sex || 'N/A';
+
+    // New / Updated Info (what patient typed into report, fallback to current if not specified)
+    const newFn = typedFn || oldFn;
+    const newLn = typedLn || oldLn;
+    const newAge = typedAge ? `${typedAge} yrs old` : oldAge;
+    const newSex = typedSex || oldSex;
+
+    // Cache resolved values on currentFixData so applyFixDemographics uses them
+    currentFixData.resolved_first_name = newFn;
+    currentFixData.resolved_last_name = newLn;
+    currentFixData.resolved_age = typedAge || (data.age ? String(data.age) : '');
+    currentFixData.resolved_sex = typedSex || data.sex || '';
 
     function safeSetText(id, text) {
         const el = document.getElementById(id);
@@ -1867,22 +2071,21 @@ function openFixDemographicsModal(data) {
 
     safeSetText('fix-old-first-name', oldFn || 'N/A');
     safeSetText('fix-old-last-name', oldLn || 'N/A');
-    safeSetText('fix-old-age', ageVal);
-    safeSetText('fix-old-sex', sexVal);
+    safeSetText('fix-old-age', oldAge);
+    safeSetText('fix-old-sex', oldSex);
 
     safeSetText('fix-new-first-name', newFn || 'N/A');
     safeSetText('fix-new-last-name', newLn || 'N/A');
-    safeSetText('fix-new-age', ageVal);
-    safeSetText('fix-new-sex', sexVal);
+    safeSetText('fix-new-age', newAge);
+    safeSetText('fix-new-sex', newSex);
 
-    // Filter which rows to display based on what the patient reported in the ticket
+    // Filter which rows to display based on what the patient reported
     const descLower = descText.toLowerCase();
-    const hasFirstName = descLower.includes('first name');
-    const hasLastName = descLower.includes('last name');
-    const hasAge = descLower.includes('age');
-    const hasSex = descLower.includes('sex') || descLower.includes('gender');
+    const hasFirstName = Boolean(typedFn) || descLower.includes('first name');
+    const hasLastName = Boolean(typedLn) || descLower.includes('last name');
+    const hasAge = Boolean(typedAge) || descLower.includes('age');
+    const hasSex = Boolean(typedSex) || descLower.includes('sex') || descLower.includes('gender');
 
-    // Dynamic field filtering based on patient description
     const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
 
     function setRowVisibility(id, visible) {
@@ -1912,8 +2115,8 @@ function openFixDemographicsModal(data) {
 
     if (btnApply) {
         btnApply.disabled = false;
-        btnApply.className = "inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer";
-        btnApply.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Apply &amp; Fix Record';
+        btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
+        btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
     }
 
     document.getElementById('fix-demographics-modal').classList.remove('hidden');
@@ -1927,14 +2130,16 @@ function closeFixDemographicsModal() {
 function applyFixDemographics() {
     if (!currentFixData) return;
     const disputeId = currentFixData.id;
-    const firstName = currentFixData.first_name || '';
-    const lastName = currentFixData.last_name || '';
+    const firstName = currentFixData.resolved_first_name || currentFixData.first_name || '';
+    const lastName = currentFixData.resolved_last_name || currentFixData.last_name || '';
     const middleName = currentFixData.middle_name || '';
+    const age = currentFixData.resolved_age || '';
+    const sex = currentFixData.resolved_sex || '';
 
     const btnApply = document.getElementById('btn-apply-fix-demo');
     if (btnApply) {
         btnApply.disabled = true;
-        btnApply.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Applying...';
+        btnApply.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Resolving...';
     }
     if (window.lucide) lucide.createIcons();
 
@@ -1943,6 +2148,12 @@ function applyFixDemographics() {
     fd.append('first_name', firstName);
     fd.append('last_name', lastName);
     fd.append('middle_name', middleName);
+    if (age) {
+        fd.append('age', age);
+    }
+    if (sex) {
+        fd.append('sex', sex);
+    }
 
     fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=update_patient_demographics', {
         method: 'POST',
@@ -1955,7 +2166,7 @@ function applyFixDemographics() {
             if (res.both_pending_escalate) {
                 Swal.fire({
                     title: 'Demographics Corrected!',
-                    text: 'Patient demographic information has been updated. Please proceed to Re-upload & Escalate to Radiologist for the remaining findings issue.',
+                    text: 'Patient demographic information has been updated. Please proceed to Edit / Amend Report for the remaining findings issue.',
                     icon: 'info',
                     showConfirmButton: false,
                     timer: 1500,
@@ -1963,8 +2174,8 @@ function applyFixDemographics() {
                 }).then(() => location.reload());
             } else {
                 Swal.fire({
-                    title: 'Changes Applied!',
-                    text: 'Patient demographic corrections applied. You can now verify and release the case using the "Verify & Release" action.',
+                    title: 'Resolved!',
+                    text: 'Patient demographic corrections applied and resolved.',
                     icon: 'success',
                     showConfirmButton: false,
                     timer: 1500,
@@ -1974,8 +2185,8 @@ function applyFixDemographics() {
         } else {
             if (btnApply) {
                 btnApply.disabled = false;
-                btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer";
-                btnApply.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Apply &amp; Fix Record';
+                btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
+                btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
             }
             Swal.fire('Error', res.message || 'Failed to update record.', 'error');
             if (window.lucide) lucide.createIcons();
@@ -1984,8 +2195,8 @@ function applyFixDemographics() {
     .catch(err => {
         if (btnApply) {
             btnApply.disabled = false;
-            btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer";
-            btnApply.innerHTML = '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Apply &amp; Fix Record';
+            btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
+            btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
         }
         Swal.fire('Error', 'Connection error occurred.', 'error');
         if (window.lucide) lucide.createIcons();
@@ -2003,32 +2214,39 @@ function openVerifyReleaseModal(data) {
 
     // Demographics comparison logic
     const descText = data.description || '';
+    const cleanDesc = descText.replace(/\r\n/g, '\n');
     const descLower = descText.toLowerCase();
     const cat = data.category || '';
 
-    const hasFirstName = descLower.includes('first name');
-    const hasLastName = descLower.includes('last name');
-    const hasMiddleName = descLower.includes('middle name');
-    const hasAge = descLower.includes('age');
-    const hasSex = descLower.includes('sex') || descLower.includes('gender');
+    const fnMatch = cleanDesc.match(/First Name:\s*([^\n\r,•]+)/i);
+    const lnMatch = cleanDesc.match(/Last Name:\s*([^\n\r,•]+)/i);
+    const ageMatch = cleanDesc.match(/(?:Age|Birthdate):\s*([^\n\r,•]+)/i);
+    const sexMatch = cleanDesc.match(/(?:Sex|Gender):\s*([^\n\r,•]+)/i);
+
+    const typedFn = fnMatch ? fnMatch[1].trim() : '';
+    const typedLn = lnMatch ? lnMatch[1].trim() : '';
+    const typedAge = ageMatch ? parseAgeOrBirthdateToAge(ageMatch[1]) : '';
+    const typedSex = sexMatch ? sexMatch[1].trim() : '';
+
+    const hasFirstName = Boolean(typedFn) || descLower.includes('first name');
+    const hasLastName = Boolean(typedLn) || descLower.includes('last name');
+    const hasAge = Boolean(typedAge) || descLower.includes('age');
+    const hasSex = Boolean(typedSex) || descLower.includes('sex') || descLower.includes('gender');
     const hasWrongInfoHeading = descLower.includes('wrong patient info');
 
-    const hasDemoChanges = (cat === 'demographic_error' || cat === 'both_error' || hasFirstName || hasLastName || hasMiddleName || hasAge || hasSex || hasWrongInfoHeading);
+    const hasDemoChanges = (cat === 'demographic_error' || cat === 'both_error' || cat === 'both_template_error' || hasFirstName || hasLastName || hasAge || hasSex || hasWrongInfoHeading);
 
     const demoCont = document.getElementById('verify-demographics-container');
     if (hasDemoChanges) {
-        const newFn = data.first_name || '';
-        const newLn = data.last_name || '';
-        const newMn = data.middle_name || '';
-        const ageVal = data.age ? `${data.age} yrs old` : 'N/A';
-        const sexVal = data.sex || 'N/A';
+        const oldFn = data.first_name || '';
+        const oldLn = data.last_name || '';
+        const oldAge = data.age ? `${data.age} yrs old` : 'N/A';
+        const oldSex = data.sex || 'N/A';
 
-        let oldFn = newFn;
-        let oldLn = newLn;
-        let oldMn = newMn;
-        if (data.user_account_name && data.user_account_name !== `${newFn} ${newLn}`.trim()) {
-            oldFn = data.user_account_name.split(' ')[0] || newFn;
-        }
+        const newFn = typedFn || oldFn;
+        const newLn = typedLn || oldLn;
+        const newAge = typedAge ? `${typedAge} yrs old` : oldAge;
+        const newSex = typedSex || oldSex;
 
         function safeSetVer(id, text) {
             const el = document.getElementById(id);
@@ -2037,13 +2255,13 @@ function openVerifyReleaseModal(data) {
 
         safeSetVer('ver-old-first-name', oldFn || 'N/A');
         safeSetVer('ver-old-last-name', oldLn || 'N/A');
-        safeSetVer('ver-old-age', ageVal);
-        safeSetVer('ver-old-sex', sexVal);
+        safeSetVer('ver-old-age', oldAge);
+        safeSetVer('ver-old-sex', oldSex);
 
         safeSetVer('ver-new-first-name', newFn || 'N/A');
         safeSetVer('ver-new-last-name', newLn || 'N/A');
-        safeSetVer('ver-new-age', ageVal);
-        safeSetVer('ver-new-sex', sexVal);
+        safeSetVer('ver-new-age', newAge);
+        safeSetVer('ver-new-sex', newSex);
 
         // Dynamic field row filtering
         const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
@@ -2081,11 +2299,11 @@ function openVerifyReleaseModal(data) {
     const newImpression = data.impression || '';
     const examType = data.exam_type || '';
 
-    // If only patient info/demographics was reported, do NOT show findings comparison
-    const isPureDemographicError = (cat === 'demographic_error') || 
-        (hasDemoChanges && !oldFindings && !descLower.includes('findings') && !descLower.includes('impression') && !descLower.includes('reading') && cat !== 'both_error');
+    // If only patient info/demographics or template rename was reported, do NOT show findings comparison
+    const isPureDemographicOrTemplate = (cat === 'demographic_error') || (cat === 'template_error') || (cat === 'both_template_error') ||
+        (!descLower.includes('findings') && !descLower.includes('impression') && !descLower.includes('reading') && !descLower.includes('typo') && cat !== 'both_error');
 
-    const hasFindings = !isPureDemographicError && (cat === 'findings_error' || cat === 'exam_details_error' || cat === 'both_error' || Boolean(oldFindings));
+    const hasFindings = !isPureDemographicOrTemplate && (cat === 'findings_error' || cat === 'exam_details_error' || cat === 'both_error' || cat === 'other' || Boolean(oldFindings));
 
     if (hasFindings && (oldFindings || newFindings)) {
         function parseToHtml(fJson, iJson, fallbackKey, isNew = false) {
@@ -2257,20 +2475,7 @@ function confirmReupload(caseId) {
     });
 }
 
-function submitEscalation(e) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=escalate_to_radiologist', {
-        method: 'POST', body: fd
-    }).then(r=>r.json()).then(res=>{
-        closeEscalateModal();
-        if(res.success){
-            Swal.fire('Escalated', 'The ticket is now forwarded to the Radiologist.', 'success').then(()=>location.reload());
-        }else{
-            Swal.fire('Error', res.message || 'An error occurred.', 'error');
-        }
-    });
-}
+
 function submitResolution(e) {
     if (e && e.preventDefault) e.preventDefault();
     const disputeId = document.getElementById('resolve-dispute-id').value;
@@ -2299,18 +2504,22 @@ function submitResolution(e) {
     });
 }
 
-// Real-time polling for RadTech Patient Error Reports
+// Real-time polling for RadTech Patient Lists & Error Reports
 setInterval(() => {
+    if (document.visibilityState === 'hidden') return;
+
     const isDisputesTab = new URLSearchParams(window.location.search).get('tab') === 'disputes';
-    const escModal = document.getElementById('escalate-dispute-modal');
     const fixModal = document.getElementById('fix-demographics-modal');
     const verModal = document.getElementById('verify-release-modal');
-    const isEscalateOpen = escModal && !escModal.classList.contains('hidden');
+    const amendModal = document.getElementById('radtech-amend-modal');
     const isFixOpen = fixModal && !fixModal.classList.contains('hidden');
     const isVerOpen = verModal && !verModal.classList.contains('hidden');
+    const isAmendOpen = amendModal && !amendModal.classList.contains('hidden');
 
-    if (isDisputesTab && !isEscalateOpen && !isFixOpen && !isVerOpen) {
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes')
+    if (isFixOpen || isVerOpen || isAmendOpen) return;
+
+    if (isDisputesTab) {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes&_t=' + Date.now())
             .then(res => res.text())
             .then(html => {
                 const parser = new DOMParser();
@@ -2318,7 +2527,7 @@ setInterval(() => {
                 
                 const newTbody = doc.getElementById('disputes-table-body');
                 const oldTbody = document.getElementById('disputes-table-body');
-                if (newTbody && oldTbody) {
+                if (newTbody && oldTbody && newTbody.innerHTML !== oldTbody.innerHTML) {
                     paginateDisputes(newTbody);
                     oldTbody.innerHTML = newTbody.innerHTML;
                     if (window.lucide) lucide.createIcons();
@@ -2331,7 +2540,34 @@ setInterval(() => {
                     if (newBadge.title) curBadge.title = newBadge.title;
                 }
             })
-            .catch(console.error);
+            .catch(() => {});
+    } else {
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&_t=' + Date.now())
+            .then(res => res.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const newTbody = doc.getElementById('table-body');
+                const oldTbody = document.getElementById('table-body');
+                if (newTbody && oldTbody && newTbody.innerHTML !== oldTbody.innerHTML) {
+                    oldTbody.innerHTML = newTbody.innerHTML;
+                    if (typeof applyFilters === 'function') {
+                        applyFilters();
+                    }
+                    if (window.lucide) lucide.createIcons();
+                }
+
+                const newBadge = doc.getElementById('radtech-disputes-tab-badge');
+                const curBadge = document.getElementById('radtech-disputes-tab-badge');
+                if (newBadge && curBadge) {
+                    curBadge.innerHTML = newBadge.innerHTML;
+                    if (newBadge.title) curBadge.title = newBadge.title;
+                }
+            })
+            .catch(() => {});
     }
-}, 5000);
+}, 3500);
+window.PROJECT_DIR = <?= json_encode(PROJECT_DIR) ?>;
 </script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/radtech-amend.js"></script>

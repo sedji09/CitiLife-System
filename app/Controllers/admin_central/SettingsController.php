@@ -62,6 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $saveSetting('closed_branches', $closedBranchesStr);
         $saveSetting('closed_message', $closedMessage);
 
+        // Handle Operating Hours Settings
+        $operatingHoursOpen  = trim($_POST['operating_hours_open']  ?? '08:00');
+        $operatingHoursClose = trim($_POST['operating_hours_close'] ?? '21:00');
+
+        // Validate time format (HH:MM)
+        $timePattern = '/^([01]\d|2[0-3]):[0-5]\d$/';
+        if (!preg_match($timePattern, $operatingHoursOpen) || !preg_match($timePattern, $operatingHoursClose)) {
+            $error = "Invalid time format for operating hours. Please use HH:MM (24-hour).";
+        } elseif ($operatingHoursOpen >= $operatingHoursClose) {
+            $error = "Opening time must be earlier than closing time.";
+        } else {
+            $saveSetting('operating_hours_open',  $operatingHoursOpen,  'Operational');
+            $saveSetting('operating_hours_close', $operatingHoursClose, 'Operational');
+        }
+
         // Handle Logo Upload
         if (isset($_FILES['clinic_logo'])) {
             if ($_FILES['clinic_logo']['error'] === UPLOAD_ERR_OK) {
@@ -72,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $fileInfo = pathinfo($_FILES['clinic_logo']['name']);
                 $extension = strtolower($fileInfo['extension']);
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
                 
                 if (in_array($extension, $allowedExtensions)) {
                     $filename = 'logo_' . time() . '.' . $extension;
@@ -82,11 +97,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $dbPath = "public/assets/img/logo/" . $filename;
                         $stmt = $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = 'clinic_logo'");
                         $stmt->execute([$dbPath]);
+
+                        // Sync fallback citilife-logo.png for any static or cached references
+                        @copy($targetFile, $uploadDir . 'citilife-logo.png');
+
+                        if (function_exists('getSystemSetting')) {
+                            getSystemSetting('', '', true); // Refresh cache
+                        }
                     } else {
                         $error = "Failed to upload logo to server.";
                     }
                 } else {
-                    $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
+                    $error = "Invalid file type. Only JPG, PNG, WEBP, SVG, and GIF are allowed.";
                 }
             } elseif ($_FILES['clinic_logo']['error'] !== UPLOAD_ERR_NO_FILE) {
                 // If there's an error other than NO_FILE, show it
@@ -148,6 +170,9 @@ $systemStatus = $dbSettings['system_status'] ?? 'open';
 $closedBranchesStr = $dbSettings['closed_branches'] ?? '';
 $closedBranchesArr = ($closedBranchesStr === 'all' || $closedBranchesStr === '') ? [$closedBranchesStr] : explode(',', $closedBranchesStr);
 $closedMessage = $dbSettings['closed_message'] ?? '';
+$enableOperatingHours = '1'; // Always enforced
+$operatingHoursOpen   = $dbSettings['operating_hours_open']  ?? '08:00';
+$operatingHoursClose  = $dbSettings['operating_hours_close'] ?? '21:00';
 
 // Fetch branches for settings view
 $branchModel = new \BranchModel($pdo);

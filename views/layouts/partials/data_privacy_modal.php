@@ -534,14 +534,14 @@ if (empty($_SESSION['data_privacy_accepted'])):
                             <!-- Hero Card (Patient) -->
                             <div id="dpm-hero-card">
                                 <div id="dpm-hero-logo">
-                                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
+                                    <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo"
                                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
                                 </div>
                                 <div id="dpm-hero-content">
-                                    <span id="dpm-hero-eyebrow">Citilife Diagnostic Center</span>
+                                    <span id="dpm-hero-eyebrow"><?= htmlspecialchars(getSystemName()) ?></span>
                                     <h3 id="dpm-hero-title">Protecting Your Data</h3>
                                     <p id="dpm-hero-text">
-                                        At Citilife Diagnostics, we hold the privacy and security of your personal information in the highest regard, ensuring that all data collected across our platforms remains strictly confidential.
+                                        At <?= htmlspecialchars(getSystemName()) ?>, we hold the privacy and security of your personal information in the highest regard, ensuring that all data collected across our platforms remains strictly confidential.
                                     </p>
                                 </div>
                             </div>
@@ -559,7 +559,7 @@ if (empty($_SESSION['data_privacy_accepted'])):
                                     <h4 class="dpm-section-title">How Citilife collects and protects data</h4>
                                 </div>
                                 <div class="dpm-section-content">
-                                    <p>To deliver the highest quality of medical diagnostic services, Citilife requires the collection of specific personal and medical information from our patients.</p>
+                                    <p>To deliver the highest quality of medical diagnostic services, <?= htmlspecialchars(getSystemName()) ?> requires the collection of specific personal and medical information from our patients.</p>
                                     <p>While handling your data, we guarantee the strict protection of your privacy and the absolute confidentiality of your records, adhering firmly to the mandates of the <strong>Data
                                             Privacy Act of 2012 (Republic Act No. 10173)</strong>.</p>
                                     <p>Your sensitive information is exclusively accessible to authorized healthcare professionals and personnel. Any transmission of data occurs through highly encrypted web channels, and your records are safely archived in secure databases that meet all strict regulatory standards and government guidelines.
@@ -588,14 +588,14 @@ if (empty($_SESSION['data_privacy_accepted'])):
                             <!-- Hero Card (Staff) -->
                             <div id="dpm-hero-card">
                                 <div id="dpm-hero-logo">
-                                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
+                                    <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo"
                                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiLz48cGF0aCBkPSJNOSA4aDZhMiAyIDAgMCAxIDIgMnY0YTIgMiAwIDAgMS0yIDJIOXoiLz48L3N2Zz4='">
                                 </div>
                                 <div id="dpm-hero-content">
-                                    <span id="dpm-hero-eyebrow">Citilife Diagnostic Center</span>
+                                    <span id="dpm-hero-eyebrow"><?= htmlspecialchars(getSystemName()) ?></span>
                                     <h3 id="dpm-hero-title">Staff Confidentiality Agreement</h3>
                                     <p id="dpm-hero-text">
-                                        As an authorized personnel of Citilife Diagnostics, you are entrusted with sensitive patient data and medical records. Strict confidentiality is expected at all times.
+                                        As an authorized personnel of <?= htmlspecialchars(getSystemName()) ?>, you are entrusted with sensitive patient data and medical records. Strict confidentiality is expected at all times.
                                     </p>
                                 </div>
                             </div>

@@ -8,6 +8,8 @@ $branchModel = new \BranchModel($pdo);
 require_once __DIR__ . '/../../../app/Models/FeedbackModel.php';
 $feedbackModel = new \FeedbackModel($pdo);
 
+
+
 $userId = $_SESSION['user_id'] ?? 0;
 $completedCases = [];
 $rejectedCases = [];
@@ -47,6 +49,13 @@ if ($patientRow && isset($patientRow['patient_number'])) {
     }
     $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
     $disputedCaseIds = array_column($patientDisputes, 'case_id');
+    $disputesByCaseId = [];
+    foreach ($patientDisputes as $disp) {
+        $cid = (int) $disp['case_id'];
+        if (!isset($disputesByCaseId[$cid])) {
+            $disputesByCaseId[$cid] = $disp;
+        }
+    }
 
     $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name, 
                                      b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
@@ -86,6 +95,7 @@ $statusBadge = [
     'Report Ready' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'border' => 'border-indigo-400', 'label' => 'Report Ready'],
     'Released' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Released'],
     'Completed' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Completed'],
+    'Edited' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Edited'],
     'Rejected' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-400', 'label' => 'Rejected'],
     'Cancelled' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-400', 'label' => 'Cancelled'],
 ];
@@ -197,7 +207,9 @@ $statusBadge = [
                 <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-start gap-3">
                     <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"></i>
                     <p class="text-xs sm:text-sm text-blue-800">
-                        <strong>Note:</strong> You can only report errors for your X-ray records within <strong>30 days</strong> from the examination date. The "Report an Error" option is automatically disabled for older records.
+                        <strong>Note:</strong> You can only request corrections for your X-ray records within <strong>30
+                            days</strong> from the examination date. The "Request Correction" option is automatically
+                        disabled for older records.
                     </p>
                 </div>
 
@@ -205,7 +217,9 @@ $statusBadge = [
                 <div id="completed-cards-container" class="space-y-4">
                     <?php foreach ($completedCases as $c): ?>
                         <?php
-                        $displayStatus = $c['status'];
+                        $caseDispute = $disputesByCaseId[$c['id']] ?? null;
+                        $isAmendedCase = (!empty($c['is_amended']) && (int) $c['is_amended'] === 1) || ($caseDispute && $caseDispute['status'] === 'Resolved');
+                        $displayStatus = $isAmendedCase ? 'Edited' : $c['status'];
                         $badge = $statusBadge[$displayStatus] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'border' => 'border-gray-200', 'label' => $displayStatus];
                         $branchName = $c['branch_name'] ?? $c['branch'] ?? '—';
                         ?>
@@ -258,16 +272,17 @@ $statusBadge = [
                                 class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-1.5 sm:gap-3">
                                 <?php
                                 $isExpired30Days = strtotime($c['created_at']) < strtotime('-30 days');
-                                if (!in_array($c['id'], $disputedCaseIds) && !$isExpired30Days):
-                                ?>
+                                if (!in_array($c['id'], $disputedCaseIds) && !$isExpired30Days && !$isAmendedCase):
+                                    ?>
                                     <button type="button"
                                         onclick="openDisputeModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
                                         class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
-                                        Report an Error
+                                        Request Correction
                                     </button>
-                                <?php elseif (in_array($c['id'], $disputedCaseIds)): ?>
-                                    <span class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
-                                        Error Reported
+                                <?php elseif (in_array($c['id'], $disputedCaseIds) && !$isAmendedCase): ?>
+                                    <span
+                                        class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
+                                        Correction Requested
                                     </span>
                                 <?php endif; ?>
 
@@ -285,8 +300,7 @@ $statusBadge = [
                                 $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $c['id']);
                                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                                 ?>
-                                <a href="<?= $reportUrl ?>"
-                                    <?= $onClickAttr ?>
+                                <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                                     class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                     <i data-lucide="file-text" class="w-4 h-4"></i>
                                     View Report
@@ -349,7 +363,8 @@ $statusBadge = [
                             data-id="<?= htmlspecialchars($c['case_number']) ?>" data-case-id="<?= $c['id'] ?>"
                             data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>">
 
-                            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/60 border-b border-gray-100 dark:border-gray-700/80 flex justify-between items-center">
+                            <div
+                                class="px-4 py-3 bg-gray-50 dark:bg-gray-900/60 border-b border-gray-100 dark:border-gray-700/80 flex justify-between items-center">
                                 <div class="flex items-center gap-2">
                                     <span
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Request
@@ -357,7 +372,8 @@ $statusBadge = [
                                     <span
                                         class="font-mono text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
-                                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40 uppercase tracking-wider">Rejected</span>
+                                <span
+                                    class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40 uppercase tracking-wider">Rejected</span>
                             </div>
 
                             <div class="p-4 sm:p-5 flex gap-4 sm:gap-6 items-start">
@@ -387,7 +403,8 @@ $statusBadge = [
                                 <button type="button"
                                     onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
                                     class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
-                                    <i data-lucide="phone" class="w-4 h-4 text-gray-500 shrink-0"></i> <span>Contact Clinic</span>
+                                    <i data-lucide="phone" class="w-4 h-4 text-gray-500 shrink-0"></i> <span>Contact
+                                        Clinic</span>
                                 </button>
                             </div>
                         </div>
@@ -447,7 +464,8 @@ $statusBadge = [
                             data-id="<?= htmlspecialchars($c['case_number']) ?>" data-case-id="<?= $c['id'] ?>"
                             data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>">
 
-                            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/60 border-b border-gray-100 dark:border-gray-700/80 flex justify-between items-center">
+                            <div
+                                class="px-4 py-3 bg-gray-50 dark:bg-gray-900/60 border-b border-gray-100 dark:border-gray-700/80 flex justify-between items-center">
                                 <div class="flex items-center gap-2">
                                     <span
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Request
@@ -455,7 +473,8 @@ $statusBadge = [
                                     <span
                                         class="font-mono text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
-                                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 uppercase tracking-wider">Cancelled</span>
+                                <span
+                                    class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 uppercase tracking-wider">Cancelled</span>
                             </div>
 
                             <div class="p-4 sm:p-5 flex gap-4 sm:gap-6 items-start">
@@ -481,14 +500,15 @@ $statusBadge = [
                             </div>
 
                             <?php if (!empty($contacts)): ?>
-                            <div
-                                class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
-                                <button type="button"
-                                    onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
-                                    class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
-                                    <i data-lucide="phone" class="w-4 h-4 text-gray-500 shrink-0"></i> <span>Contact Clinic</span>
-                                </button>
-                            </div>
+                                <div
+                                    class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
+                                    <button type="button"
+                                        onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
+                                        class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                        <i data-lucide="phone" class="w-4 h-4 text-gray-500 shrink-0"></i> <span>Contact
+                                            Clinic</span>
+                                    </button>
+                                </div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -531,8 +551,11 @@ $statusBadge = [
                     <?php foreach ($patientDisputes as $disp): ?>
                         <?php
                         $statusBadgeMap = [
+                            'Issue Reported' => 'bg-amber-50 text-amber-700 border-amber-300',
                             'Pending RadTech Review' => 'bg-amber-50 text-amber-700 border-amber-300',
-                            'Escalated to Radiologist' => 'bg-purple-50 text-purple-700 border-purple-300',
+                            'For RadTech Review' => 'bg-amber-50 text-amber-700 border-amber-300',
+                            'Correction in Progress' => 'bg-indigo-50 text-indigo-700 border-indigo-300',
+                            'Correction Completed' => 'bg-blue-50 text-blue-700 border-blue-300',
                             'Pending RadTech Verification' => 'bg-blue-50 text-blue-700 border-blue-300',
                             'Resolved' => 'bg-green-50 text-green-700 border-green-300',
                             'Rejected' => 'bg-red-50 text-red-700 border-red-300',
@@ -542,9 +565,10 @@ $statusBadge = [
                         $catMap = [
                             'demographic_error' => 'Wrong Patient Info',
                             'exam_details_error' => 'Wrong Body Part / Exam',
-                            'findings_error' => 'Discrepancy in Findings',
-                            'both_error' => 'Wrong Patient Info & Findings Discrepancy',
-                            'other' => 'Other Error'
+                            'findings_error' => 'Typographical Error in Report',
+                            'both_error' => 'Wrong Patient Info & Typographical Error',
+                            'other' => 'Other Concern',
+                            'other_error' => 'Other Concern'
                         ];
                         ?>
                         <div id="dispute-card-<?= $disp['id'] ?>" data-id="<?= $disp['id'] ?>"
@@ -561,8 +585,9 @@ $statusBadge = [
                                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold <?= $bCls ?>">
                                     <?php
                                     $dispStatus = $disp['status'];
-                                    if ($dispStatus === 'Escalated to Radiologist')
-                                        $dispStatus = 'Radiologist Review';
+                                    if ($dispStatus === 'Escalated to Radiologist') {
+                                        $dispStatus = 'Correction in Progress';
+                                    }
                                     ?>
                                     <?= htmlspecialchars($dispStatus) ?>
                                 </span>
@@ -580,7 +605,8 @@ $statusBadge = [
                                     </h4>
                                     <div class="text-sm text-gray-700 mb-3">
                                         <span class="text-gray-500 font-medium mr-1 block mb-1">Details of Correction:</span>
-                                        <div class="font-medium text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100"><?= nl2br(htmlspecialchars(trim($disp['description']))) ?></div>
+                                        <div class="font-medium text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                            <?= nl2br(htmlspecialchars(trim($disp['description']))) ?></div>
                                     </div>
                                     <div class="flex flex-col sm:flex-row gap-1 sm:gap-4 text-xs text-gray-500">
                                         <span class="flex items-center gap-1.5">
@@ -745,7 +771,8 @@ $statusBadge = [
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-200 z-[10000] flex flex-col max-h-full"
             id="dispute-modal-content">
             <!-- Modal Header -->
-            <div class="px-6 py-5 border-b border-gray-100 bg-red-50/50 flex flex-shrink-0 items-center justify-between">
+            <div
+                class="px-6 py-5 border-b border-gray-100 bg-red-50/50 flex flex-shrink-0 items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-red-100 text-red-600 rounded-xl">
                         <i data-lucide="alert-triangle" class="w-5 h-5"></i>
@@ -770,40 +797,49 @@ $statusBadge = [
             </div>
 
             <!-- Form -->
-            <form id="dispute-form" onsubmit="submitDisputeForm(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <form id="dispute-form" onsubmit="submitDisputeForm(event)"
+                class="flex flex-col flex-1 min-h-0 overflow-hidden">
                 <!-- Scrollable Body -->
                 <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     <input type="hidden" name="case_id" id="dispute-case-id">
                     <input type="hidden" name="action" value="submit_dispute">
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span
+                                class="text-red-500">*</span></label>
                         <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
                             class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
                             <option value="" disabled selected>-- Select Category --</option>
-                            <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
-                            <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist
-                                Re-examination)</option>
-                            <option value="both_error">3. Both (Wrong Patient Info & Image Discrepancy)</option>
+                            <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)
+                            </option>
+                            <option value="findings_error">2. Typographical Error in Report (Findings or Impression)
+                            </option>
+                            <option value="template_error">3. Rename X-ray Template / Body Part (e.g. Left or Right)
+                            </option>
+                            <option value="both_error">4. Both (Wrong Patient Info &amp; Typographical Error)</option>
+                            <option value="both_template_error">5. Both (Wrong Patient Info &amp; Rename X-ray Template)
+                            </option>
+                            <option value="other">6. Others (Please specify error/concern)</option>
                         </select>
                     </div>
 
                     <!-- Dynamic Patient Info Correction Options -->
                     <div id="demographic-options-container"
                         class="hidden p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
-                        <label class="block text-xs font-bold text-gray-700">Select what needs correction: <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-gray-700">Select what needs correction: <span
+                                class="text-red-500">*</span></label>
 
                         <div class="grid grid-cols-2 gap-2 text-xs text-gray-700">
                             <label
                                 class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                                <input type="checkbox" id="chk-first-name" class="rounded text-red-600 focus:ring-red-500"
-                                    onchange="toggleCorrectionInputs()">
+                                <input type="checkbox" id="chk-first-name"
+                                    class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
                                 <span class="font-medium">First Name</span>
                             </label>
                             <label
                                 class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
-                                <input type="checkbox" id="chk-last-name" class="rounded text-red-600 focus:ring-red-500"
-                                    onchange="toggleCorrectionInputs()">
+                                <input type="checkbox" id="chk-last-name"
+                                    class="rounded text-red-600 focus:ring-red-500" onchange="toggleCorrectionInputs()">
                                 <span class="font-medium">Last Name</span>
                             </label>
                             <label
@@ -820,27 +856,102 @@ $statusBadge = [
                             </label>
                         </div>
 
-                        <!-- Info Alert in place of manual inputs -->
-                        <div id="correction-inputs-container" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden">
-                            <div class="flex items-start gap-2 text-blue-800">
-                                <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
-                                <div class="text-xs">
-                                    <p class="font-medium mb-1">Update your Profile Settings first!</p>
-                                    <p class="text-blue-700/80 mb-2">Please make sure your correct information is updated in your Account Settings. Submitting this report will notify the clinic to re-generate your result using your latest profile details.</p>
-                                    <a href="#" onclick="openPatientSettings(event); closeDisputeModal();" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition">
-                                        Go to Settings <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                                    </a>
+                        <!-- Patient Input Fields for Corrections -->
+                        <div id="correction-inputs-container"
+                            class="mt-3 space-y-2.5 hidden pt-2 border-t border-gray-200/70">
+                            <p class="text-[11px] font-semibold text-gray-500">Enter your correct details below:</p>
+
+                            <!-- First Name Input -->
+                            <div id="field-correct-first-name" class="hidden">
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Correct First Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="input-correct-first-name" placeholder="Enter correct First Name"
+                                    class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                            </div>
+
+                            <!-- Last Name Input -->
+                            <div id="field-correct-last-name" class="hidden">
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Correct Last Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="input-correct-last-name" placeholder="Enter correct Last Name"
+                                    class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                            </div>
+
+                            <!-- Age Input (Calendar) -->
+                            <div id="field-correct-age" class="hidden">
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Correct Age <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text" id="input-correct-birthdate" readonly
+                                        placeholder="Select birthdate"
+                                        class="w-full rounded-xl border border-gray-300 pl-9 pr-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer transition">
+                                    <i data-lucide="calendar"
+                                        class="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none"></i>
+                                </div>
+                                <input type="hidden" id="input-correct-age">
+                                <div id="preview-calculated-age"
+                                    class="hidden mt-1.5 text-[11px] text-gray-600 flex items-center gap-1.5 font-medium bg-gray-100/90 px-2.5 py-1 rounded-lg border border-gray-200">
+                                    <span class="text-gray-500">Age:</span>
+                                    <span id="val-calculated-age" class="font-bold text-red-600"></span>
                                 </div>
                             </div>
+
+                            <!-- Sex / Gender Input -->
+                            <div id="field-correct-sex" class="hidden">
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Correct Sex / Gender <span class="text-red-500">*</span>
+                                </label>
+                                <select id="input-correct-sex"
+                                    class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                                    <option value="" disabled selected>-- Select Correct Sex / Gender --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic X-ray Template Rename Options Container -->
+                    <div id="template-rename-options-container"
+                        class="hidden p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-2xl space-y-3.5">
+                        <div class="flex flex-wrap items-center justify-between gap-3 pb-1">
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                X-RAY TEMPLATE / EXAM NAME <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] text-gray-400 font-medium">Quick Side:</span>
+                                <button type="button" onclick="setTemplateSide('Left')"
+                                    class="px-3 py-1 text-xs font-semibold bg-white hover:bg-gray-100 hover:text-red-600 active:scale-95 text-gray-700 rounded-lg border border-gray-300 transition shadow-2xs cursor-pointer">Left</button>
+                                <button type="button" onclick="setTemplateSide('Right')"
+                                    class="px-3 py-1 text-xs font-semibold bg-white hover:bg-gray-100 hover:text-red-600 active:scale-95 text-gray-700 rounded-lg border border-gray-300 transition shadow-2xs cursor-pointer">Right</button>
+                                <button type="button" onclick="setTemplateSide('Bilateral')"
+                                    class="px-3 py-1 text-xs font-semibold bg-white hover:bg-gray-100 hover:text-red-600 active:scale-95 text-gray-700 rounded-lg border border-gray-300 transition shadow-2xs cursor-pointer">Bilateral</button>
+                            </div>
+                        </div>
+
+                        <div class="pt-0.5">
+                            <input type="text" id="input-correct-template" placeholder="e.g. Left Knee AP / Lateral"
+                                class="w-full text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-300 bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition shadow-2xs">
+                        </div>
+
+                        <div class="text-xs text-gray-500 flex items-center gap-2.5 pt-1">
+                            <span class="text-gray-400 font-medium">Current record:</span>
+                            <span
+                                class="font-semibold text-gray-800 bg-white px-3 py-1 rounded-lg border border-gray-200 shadow-2xs"
+                                id="dispute-current-exam-text">Foot</span>
                         </div>
                     </div>
 
                     <!-- Description Textarea Container -->
                     <div id="general-description-container" class="hidden">
-                        <label class="block text-xs font-bold text-gray-700 mb-1">Provide details of the correction needed <span class="text-red-500">*</span></label>
+                        <label id="dispute-description-label" class="block text-xs font-bold text-gray-700 mb-1">Provide
+                            details of the correction needed <span class="text-red-500">*</span></label>
                         <textarea name="description" id="dispute-description" rows="3"
                             class="w-full rounded-xl border border-gray-300 p-3 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
-                            placeholder="Example: 'My right arm was examined instead of left...', or explain discrepancy in findings"></textarea>
+                            placeholder="Please describe what is incorrect or needs correction..."></textarea>
                     </div>
                 </div>
 

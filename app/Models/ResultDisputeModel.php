@@ -17,7 +17,7 @@ class ResultDisputeModel {
     public function createDispute($caseId, $patientId, $branchId, $category, $description) {
         $stmt = $this->pdo->prepare("
             INSERT INTO result_disputes (case_id, patient_id, branch_id, dispute_category, description, status, assigned_role, created_at)
-            VALUES (?, ?, ?, ?, ?, 'Pending RadTech Review', 'radtech', NOW())
+            VALUES (?, ?, ?, ?, ?, 'Issue Reported', 'radtech', NOW())
         ");
         $stmt->execute([$caseId, $patientId, $branchId, $category, $description]);
         return $this->pdo->lastInsertId();
@@ -79,11 +79,9 @@ class ResultDisputeModel {
             $params[] = $branchId;
         }
 
-        // ROLE GATEKEEPING:
-        // RadTech sees ALL disputes for their branch so they can track escalated and verified statuses
-        // Radiologist ONLY sees tickets explicitly escalated to radiologist (Escalated to Radiologist)
+        // Error reports / disputes are strictly between Patient and RadTech
         if ($role === 'radiologist') {
-            $sql .= " AND rd.assigned_role = 'radiologist'";
+            return [];
         }
 
         if ($status) {
@@ -183,5 +181,38 @@ class ResultDisputeModel {
             return $stmtUpdate->execute($params);
         }
         return false;
+    }
+
+    /**
+     * Advance dispute status along the 5-step workflow:
+     * Issue Reported -> For RadTech Review -> Correction in Progress -> Correction Completed -> Resolved
+     *
+     * @param int $disputeId
+     * @param string $newStatus
+     * @param int|null $userId
+     * @return bool
+     */
+    public function advanceStatus($disputeId, $newStatus, $userId = null) {
+        $disputeId = (int)$disputeId;
+        if (!$disputeId) {
+            return false;
+        }
+
+        $fields = ["status = ?"];
+        $params = [$newStatus];
+
+        if ($newStatus === 'Resolved') {
+            $fields[] = "resolved_at = NOW()";
+            $resolverId = $userId ?? ($_SESSION['user_id'] ?? null);
+            if ($resolverId !== null) {
+                $fields[] = "resolved_by = ?";
+                $params[] = (int)$resolverId;
+            }
+        }
+
+        $params[] = $disputeId;
+        $sql = "UPDATE result_disputes SET " . implode(", ", $fields) . " WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($params);
     }
 }

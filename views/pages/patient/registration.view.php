@@ -28,7 +28,8 @@
             <i data-lucide="clock" class="w-5 h-5 text-yellow-600 shrink-0 mt-0.5"></i>
             <p class="text-sm text-yellow-800">
                 <strong>Notice:</strong> The clinic is currently closed. Online requests are only accepted between
-                <strong>8:00 AM</strong> and <strong>9:00 PM</strong>.
+                <strong><?= htmlspecialchars($openTimeDisplay) ?></strong> and
+                <strong><?= htmlspecialchars($closeTimeDisplay) ?></strong>.
             </p>
         </div>
     <?php endif; ?>
@@ -56,11 +57,14 @@
                 </div>
             </div>
 
-            <form method="POST" action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=registration" class="space-y-4" enctype="multipart/form-data">
+            <form method="POST"
+                action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=registration"
+                class="space-y-4" enctype="multipart/form-data">
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Branch <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Branch <span
+                            class="text-red-500">*</span></label>
                     <select name="branch_id" required
                         class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400">
                         <option value="" disabled selected>Select branch</option>
@@ -79,10 +83,28 @@
                     // Retrieve dynamic categories from DB and standard anatomical parts
                     $dbCategories = !empty($groupedServices) ? array_keys($groupedServices) : [];
                     $standardBodyParts = [
-                        'Chest', 'Skull', 'Head', 'Abdomen', 'Upper Extremities', 'Lower Extremities', 
-                        'Spine', 'Pelvis', 'Neck', 'Shoulder', 'Arm', 'Elbow', 
-                        'Forearm', 'Hand / Wrist', 'Upper Back', 'Lower Back', 'Pelvis / Hip', 
-                        'Thigh', 'Knee', 'Lower Leg', 'Ankle', 'Foot'
+                        'Chest',
+                        'Skull',
+                        'Head',
+                        'Abdomen',
+                        'Upper Extremities',
+                        'Lower Extremities',
+                        'Spine',
+                        'Pelvis',
+                        'Neck',
+                        'Shoulder',
+                        'Arm',
+                        'Elbow',
+                        'Forearm',
+                        'Hand / Wrist',
+                        'Upper Back',
+                        'Lower Back',
+                        'Pelvis / Hip',
+                        'Thigh',
+                        'Knee',
+                        'Lower Leg',
+                        'Ankle',
+                        'Foot'
                     ];
                     $availableOptions = array_values(array_unique(array_merge($dbCategories, $standardBodyParts)));
                     sort($availableOptions);
@@ -91,7 +113,8 @@
                     include basePath('views/components/exam-selector.php');
                     ?>
                     <p class="text-xs text-gray-500 mt-2">
-                        Note: The Radiologic Technologist will determine the exact examination type and corresponding fee upon reviewing your request. You will be able to make a payment afterward.
+                        Note: The Radiologic Technologist will determine the exact examination type and corresponding
+                        fee upon reviewing your request. You will be able to make a payment afterward.
                     </p>
                 </div>
 
@@ -103,7 +126,7 @@
                 <?php else: ?>
                     <button type="button" disabled
                         class="flex items-center justify-center gap-2 w-full rounded-xl bg-gray-400 text-white font-bold text-sm py-3 px-5 transition shadow-sm cursor-not-allowed mt-4">
-                        <i data-lucide="clock" class="w-4 h-4"></i> System Closed
+                        <i data-lucide="clock" class="w-4 h-4"></i> Clinic Closed
                     </button>
                 <?php endif; ?>
             </form>
@@ -112,4 +135,3 @@
 
     </div>
 </div>
-

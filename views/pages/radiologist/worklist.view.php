@@ -5,10 +5,7 @@ require_once __DIR__ . '/../../../config/database.php';
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
 
-require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
-$disputeModel = new \ResultDisputeModel($pdo);
-$radDisputes = $disputeModel->getDisputesForClinic(null, 'radiologist');
-$pendingRadDisputeCount = count(array_filter($radDisputes, function($d) { return $d['status'] === 'Escalated to Radiologist'; }));
+
 
 // Fetch all branches
 $branchesList = $branchModel->getAllBranches();
@@ -92,19 +89,7 @@ sort($priorities);
                 <?= $wlDisplay ?>
             </span>
         </button>
-        <button type="button" id="tab-rad-disputes-btn" onclick="switchRadTab('disputes')"
-                class="pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative">
-            Escalated Error Reports / Disputes
-            <?php if (!empty($radDisputes)): ?>
-                <?php
-                $dispCount = count($radDisputes);
-                $dispDisplay = $dispCount > 99 ? '99+' : $dispCount;
-                ?>
-                <span id="disputes-tab-badge" class="tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $dispCount ?>">
-                    <?= $dispDisplay ?>
-                </span>
-            <?php endif; ?>
-        </button>
+
     </nav>
 </div>
 
@@ -162,49 +147,7 @@ sort($priorities);
 </div>
 
 <!-- Controls for Escalated Error Reports / Disputes Tab -->
-<div id="disputes-controls" class="mt-6 flex flex-col gap-4 px-4 hidden">
-    <div class="flex flex-wrap gap-4 items-center">
-        <!-- Search -->
-        <div class="relative flex-1 min-w-[250px] group" style="position: relative; flex: 1 1 0%;">
-            <div
-                style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
-                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors"
-                    style="width: 1.1rem; height: 1.1rem;"></i>
-            </div>
-            <input type="text" id="disputeSearchInput" placeholder="Search dispute by case no, patient, branch, notes..."
-                style="padding-left: 2.75rem !important;"
-                class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
-        </div>
 
-        <!-- Filter by Correction Type (The 3 types) -->
-        <select id="disputeFilterType"
-            class="w-60 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white font-medium">
-            <option value="">All Correction Types</option>
-            <option value="typo">Typographical / Minor Error</option>
-            <option value="reupload">Re-upload Diagnostic Image</option>
-            <option value="reread">Second Reading / Re-interpretation</option>
-        </select>
-
-        <!-- Filter by Branch -->
-        <select id="disputeFilterBranch"
-            class="w-44 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
-            <option value="">All Branches</option>
-            <?php foreach ($branchesList as $b): ?>
-                <option value="<?= htmlspecialchars($b['name']) ?>"><?= htmlspecialchars($b['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-
-        <!-- Sort by -->
-        <select id="disputeSortOption"
-            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
-            <option value="date_desc">Newest Escalated</option>
-            <option value="date_asc">Oldest Escalated</option>
-            <option value="type_asc">Correction Type (A-Z)</option>
-            <option value="case_asc">Case No. (A-Z)</option>
-            <option value="name_asc">Patient Name (A-Z)</option>
-        </select>
-    </div>
-</div>
 
 <div class="px-4">
     <div id="worklist-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
@@ -387,139 +330,7 @@ sort($priorities);
     </div>
 </div>
 
-<!-- ESCALATED ERROR REPORTS / DISPUTES TABLE CARD (Hidden by default) -->
-<div id="rad-disputes-table-card" class="hidden rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mx-4">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
-                    <th class="text-left font-semibold px-4 py-3">Case / Patient</th>
-                    <th class="text-left font-semibold px-4 py-3">Branch</th>
-                    <th class="text-left font-semibold px-4 py-3">Exam Type</th>
-                    <th class="text-left font-semibold px-4 py-3">Correction Type</th>
-                    <th class="text-left font-semibold px-4 py-3">Details / Statement</th>
-                    <th class="text-left font-semibold px-4 py-3">Date Escalated</th>
-                    <th class="text-left font-semibold px-4 py-3">Action</th>
-                </tr>
-            </thead>
-            <tbody id="disputes-tbody" class="divide-y divide-gray-100 bg-white">
-                <?php if (count($radDisputes) === 0): ?>
-                    <tr>
-                        <td colspan="7" class="text-center py-8 text-gray-500">
-                            No escalated error reports or disputes assigned to Radiologist.
-                        </td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($radDisputes as $d): ?>
-                        <?php
-                            $notes = $d['radtech_notes'] ?? '';
-                            $typeLabel = 'General Error';
-                            $typeClass = 'bg-gray-50 text-gray-700 border-gray-200';
-                            $typeIcon = 'alert-circle';
-                            $typeKey = 'other';
 
-                            if (stripos($notes, 'Typographical') !== false || stripos($notes, 'typo') !== false) {
-                                $typeLabel = 'Typographical Error';
-                                $typeClass = 'bg-amber-50 text-amber-800 border-amber-200';
-                                $typeIcon = 'type';
-                                $typeKey = 'typo';
-                            } elseif (stripos($notes, 'Re-uploaded') !== false || stripos($notes, 'image') !== false || stripos($notes, 'reupload') !== false) {
-                                $typeLabel = 'Image Re-uploaded';
-                                $typeClass = 'bg-blue-50 text-blue-800 border-blue-200';
-                                $typeIcon = 'image-up';
-                                $typeKey = 'reupload';
-                            } elseif (stripos($notes, 'Re-reading') !== false || stripos($notes, 'Second Reading') !== false || stripos($notes, 're-interpretation') !== false || stripos($notes, 'reread') !== false) {
-                                $typeLabel = 'Second Reading';
-                                $typeClass = 'bg-purple-50 text-purple-800 border-purple-200';
-                                $typeIcon = 'repeat';
-                                $typeKey = 'reread';
-                            }
-                        ?>
-                        <tr class="hover:bg-gray-50 transition-colors dispute-row" 
-                            data-id="<?= htmlspecialchars($d['case_number']) ?>"
-                            data-type="<?= $typeKey ?>"
-                            data-typelabel="<?= htmlspecialchars($typeLabel) ?>"
-                            data-branch="<?= htmlspecialchars($d['branch_name'] ?? 'Main') ?>"
-                            data-date="<?= strtotime($d['created_at']) ?>"
-                            data-case="<?= htmlspecialchars($d['case_number']) ?>"
-                            data-name="<?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?>"
-                            data-search="<?= htmlspecialchars(strtolower($d['case_number'] . ' ' . $d['first_name'] . ' ' . $d['last_name'] . ' ' . ($d['branch_name'] ?? 'Main') . ' ' . $d['exam_type'] . ' ' . $notes . ' ' . $typeLabel)) ?>">
-                            <td class="px-4 py-3.5 whitespace-nowrap">
-                                <div class="font-mono text-xs font-semibold text-red-600"><?= htmlspecialchars($d['case_number']) ?></div>
-                                <div class="font-bold text-gray-900"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
-                            </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-600 font-medium">
-                                <?= htmlspecialchars($d['branch_name'] ?? 'Main') ?>
-                            </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap text-xs text-gray-800 font-medium">
-                                <?php
-                                $dExams = array_filter(array_map('trim', explode(',', $d['exam_type'] ?? '')));
-                                $dFirstExam = reset($dExams) ?: 'General Exam';
-                                $dCount = count($dExams);
-                                ?>
-                                <div class="flex items-center gap-1.5">
-                                    <span class="truncate max-w-[130px]" title="<?= htmlspecialchars($d['exam_type'] ?? '') ?>">
-                                        <?= htmlspecialchars($dFirstExam) ?>
-                                    </span>
-                                    <?php if ($dCount > 1): ?>
-                                        <span class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
-                                            title="<?= htmlspecialchars($d['exam_type'] ?? '') ?>">
-                                            <?= $dCount ?>+
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= $typeClass ?>">
-                                    <i data-lucide="<?= $typeIcon ?>" class="w-3.5 h-3.5"></i>
-                                    <?= htmlspecialchars($typeLabel) ?>
-                                </span>
-                            </td>
-                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-[260px] lg:max-w-[320px] whitespace-normal break-words">
-                                <?php
-                                    $rawNotes = $d['radtech_notes'] ?? '';
-                                    // Strip bracketed prefix like [Typographical Error], [New Image Re-uploaded], etc.
-                                    $cleanNotes = trim(preg_replace('/^\s*\[(Typographical Error|New Image Re-uploaded|Re-reading Request|Dispute Escalation)\]\s*/i', '', $rawNotes));
-                                    
-                                    if (empty($cleanNotes)) {
-                                        if (!empty($d['description'])) {
-                                            $cleanNotes = $d['description'];
-                                        } else {
-                                            $cleanNotes = 'Forwarded for Radiologist review & report amendment.';
-                                        }
-                                    }
-                                ?>
-                                <div class="font-medium text-gray-800 italic">
-                                    "<?= htmlspecialchars($cleanNotes) ?>"
-                                </div>
-                            </td>
-                            <td class="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
-                                <?= date('M j, Y h:i A', strtotime($d['created_at'])) ?>
-                            </td>
-                            <td class="px-4 py-3.5 whitespace-nowrap">
-                                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $d['case_id'] ?>&branch_id=<?= $d['branch_id'] ?>"
-                                   class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
-                                    <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Amend Report
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-    
-    <!-- Pagination footer for Disputes -->
-    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
-        <!-- Record count -->
-        <span id="disputes-record-count" class="text-xs text-gray-500 font-medium"></span>
-
-        <!-- Pagination Controls -->
-        <div class="flex items-center flex-wrap gap-1.5" id="disputes-pagination-controls">
-            <!-- Dynamic page buttons will be inserted here -->
-        </div>
-    </div>
-</div>
 
 <script>
 
@@ -1235,33 +1046,7 @@ sort($priorities);
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
 
-                    // 1. Sync Escalated Disputes Table
-                    const newDisputesTbody = doc.getElementById('disputes-tbody');
-                    const curDisputesTbody = document.getElementById('disputes-tbody');
-                    if (newDisputesTbody && curDisputesTbody) {
-                        const newContent = newDisputesTbody.innerHTML.trim();
-                        const newRowCount = newDisputesTbody.querySelectorAll('tr.dispute-row').length;
-                        const curRowCount = curDisputesTbody.querySelectorAll('tr.dispute-row').length;
-                        if (newContent !== curDisputesTbody.innerHTML.trim() || newRowCount !== curRowCount) {
-                            curDisputesTbody.innerHTML = newContent;
-                            allDisputeRows = Array.from(curDisputesTbody.querySelectorAll('tr.dispute-row'));
-                            updateDisputesTable();
-                        }
-                    }
 
-                    // 2. Sync Disputes Tab Badge
-                    const newDisputesBadge = doc.getElementById('disputes-tab-badge');
-                    const curDisputesBadge = document.getElementById('disputes-tab-badge');
-                    const disputesTabBtn = document.getElementById('tab-rad-disputes-btn');
-                    if (newDisputesBadge && curDisputesBadge) {
-                        curDisputesBadge.innerHTML = newDisputesBadge.innerHTML;
-                        curDisputesBadge.className = newDisputesBadge.className;
-                        if (newDisputesBadge.title) curDisputesBadge.title = newDisputesBadge.title;
-                    } else if (newDisputesBadge && !curDisputesBadge && disputesTabBtn) {
-                        disputesTabBtn.appendChild(newDisputesBadge);
-                    } else if (!newDisputesBadge && curDisputesBadge) {
-                        curDisputesBadge.remove();
-                    }
 
                     // 3. Sync Pending Worklist Table
                     const newWorklistTbody = doc.getElementById('worklist-tbody');

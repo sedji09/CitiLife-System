@@ -74,6 +74,8 @@
                     <?php if ($currentTab === 'queue'): ?>
                         <th class="text-left font-semibold px-4 py-3.5">Priority</th>
                         <th class="text-left font-semibold px-4 py-3.5">Status</th>
+                    <?php else: ?>
+                        <th class="text-left font-semibold px-4 py-3.5 whitespace-nowrap">Status</th>
                     <?php endif; ?>
                     <th class="text-left font-semibold px-4 py-3.5">Date</th>
                     <th class="text-left font-semibold px-4 py-3.5 text-center">Actions</th>
@@ -85,7 +87,7 @@
                 if (empty($data)):
                     ?>
                     <tr>
-                        <td colspan="<?= ($currentTab === 'queue') ? 8 : 6 ?>" class="text-center py-12">
+                        <td colspan="<?= ($currentTab === 'queue') ? 8 : 7 ?>" class="text-center py-12">
                             <div class="flex flex-col items-center justify-center text-gray-500">
                                 <i data-lucide="<?= ($currentTab === 'queue') ? 'clipboard-list' : 'folder-open' ?>"
                                     class="w-12 h-12 mb-3 opacity-20"></i>
@@ -107,7 +109,9 @@
                             data-priority="<?= htmlspecialchars($row['priority'] ?? '') ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>"
                             data-is-today="<?= $isToday ? 'true' : 'false' ?>">
-                            <td class="py-3 px-4 font-medium text-gray-900"><?= htmlspecialchars($row['case_number']) ?></td>
+                            <td class="py-3 px-4 font-medium text-gray-900 whitespace-nowrap">
+                                <?= htmlspecialchars($row['case_number']) ?>
+                            </td>
                             <td class="py-3 px-4 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
                             <td class="py-3 px-4">
                                 <span
@@ -172,6 +176,18 @@
                                         class="inline-flex items-center rounded-full border border-<?= $sColor ?>-200 bg-<?= $sColor ?>-50 px-2.5 py-1 text-xs font-semibold text-<?= $sColor ?>-700 shadow-sm">
                                         <?= htmlspecialchars($displayStatus) ?>
                                     </span>
+                                </td>
+                            <?php else: ?>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
+                                            <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            Released
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                             <?php endif; ?>
                             <td class="py-3 px-4 text-gray-500 whitespace-nowrap">

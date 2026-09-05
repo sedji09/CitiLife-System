@@ -115,7 +115,8 @@
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>">
-                            <td class="py-3 px-3 font-medium whitespace-nowrap"><?= htmlspecialchars($row['case_number']) ?>
+                            <td class="py-3 px-3 font-medium whitespace-nowrap">
+                                <?= htmlspecialchars($row['case_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium whitespace-nowrap">
                                 <?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?>
@@ -167,12 +168,19 @@
                                     <?= htmlspecialchars($row['priority']) ?>
                                 </span>
                             </td>
-                            <td class="py-3 px-3">
-                                <span
-                                    class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
-                                    style="border:1.5px solid #818cf8;background-color:#eef2ff;color:#4338ca">
-                                    Report Ready
-                                </span>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <div class="flex items-center gap-1.5">
+                                    <span
+                                        class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #818cf8;background-color:#eef2ff;color:#4338ca">
+                                        Report Ready
+                                    </span>
+                                    <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
+                                            <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
                                 <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
@@ -180,7 +188,7 @@
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
                                     <!-- View button -->
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>"
+                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>&from=report-ready"
                                         class="text-sm font-medium text-blue-500 hover:text-blue-700 transition"
                                         title="View Case">
                                         <i data-lucide="eye"
@@ -415,4 +423,7 @@
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     }
+    try {
+        sessionStorage.setItem('radtech_last_table_url', window.location.href);
+    } catch(e) {}
 </script>

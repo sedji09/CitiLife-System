@@ -70,9 +70,16 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 
         <div class="mt-6 flex flex-col md:flex-row justify-between gap-8">
             <div class="flex-1 space-y-1">
-                <h4 class="text-xl font-bold text-gray-800 tracking-wide">
-                    <?= htmlspecialchars($caseDetails['case_number']) ?>
-                </h4>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <h4 class="text-xl font-bold text-gray-800 tracking-wide">
+                        <?= htmlspecialchars($caseDetails['case_number']) ?>
+                    </h4>
+                    <?php if (!empty($caseDetails['is_amended']) && (int) $caseDetails['is_amended'] === 1): ?>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300 shadow-xs" title="This record has been corrected / edited">
+                            <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                        </span>
+                    <?php endif; ?>
+                </div>
                 <p class="text-lg text-gray-500 font-medium"><?= $fullName ?></p>
 
 
@@ -148,7 +155,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
             </div>
             <div id="findings-viewer-container"
                 class="flex-1 bg-[#0a0a0a] relative overflow-hidden group flex items-center justify-center p-4">
-                <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed'])): ?>
+                <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['findings'])): ?>
                     <?php
                     $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
                     ?>

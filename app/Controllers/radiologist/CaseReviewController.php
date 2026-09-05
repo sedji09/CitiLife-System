@@ -30,79 +30,73 @@ $isSubmitted = false;
 $caseDetails = $caseModel->getCaseById($caseId);
 
 // 2. Handle Form Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_report'])) {
-    try {
-        $submitData = [
-            'clinical_information' => $_POST['clinical_information'] ?? '',
-            'exam_reports_arr' => json_decode($_POST['exam_reports'] ?? '{}', true) ?: []
-        ];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['save_draft']) || isset($_POST['submit_final'])) {
+        $isFinal = isset($_POST['submit_final']);
+        try {
+            $submitData = [
+                'clinical_information' => $_POST['clinical_information'] ?? '',
+                'exam_reports_arr' => json_decode($_POST['exam_reports'] ?? '{}', true) ?: []
+            ];
 
-        $result = $caseModel->submitRadiologistReport($caseId, $radiologistId, $submitData, $notificationModel);
+            $result = $caseModel->submitRadiologistReport($caseId, $radiologistId, $submitData, $notificationModel, $isFinal);
 
-        if ($result['success']) {
-            $isSubmitted = true;
+            if ($result['success']) {
+                $isSubmitted = true;
+                $successMsg = $isFinal ? "Report successfully finalized." : "Draft successfully saved.";
 
-            require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
-            $disputeMdl = new \ResultDisputeModel($pdo);
-            
-            // Check if this case actually has an active dispute being resolved
-            $activeDispute = $disputeMdl->getActiveDisputeByCase($caseId);
-            
-            if ($activeDispute && $activeDispute['status'] === 'Escalated to Radiologist') {
-                $successMsg = "Amended Report successfully submitted. The dispute ticket status is now 'Pending RadTech Verification' for final approval.";
-                
-                // Step 4 of Dispute Workflow: Update active dispute status to Pending RadTech Verification
-                $oldFindings = $caseDetails['findings'] ?? '';
-                $oldImpression = $caseDetails['impression'] ?? '';
-                $disputeMdl->updateDisputeStatusForCase($caseId, 'Pending RadTech Verification', 'radtech', $oldFindings, $oldImpression);
+                if ($isFinal) {
+                    require_once __DIR__ . '/../../Helpers/pdf_generator_helper.php';
+                    generateAndSaveReportPdf($caseId, $pdo);
+                }
+
+                // Build a meaningful audit log entry
+                $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
+                $examList = implode(', ', array_keys($submitData['exam_reports_arr']));
+                $details = "Patient: {$patientName} | Case #{$caseId} | Exams: {$examList}";
+
+                $action = $isFinal ? 'Submitted Final Findings Report' : 'Saved Draft Findings Report';
+                $auditLogModel->addLog(
+                    $radiologistId,
+                    $action,
+                    'Findings & Reports',
+                    'Case',
+                    $caseId,
+                    $details,
+                    $caseDetails['branch_id'] ?? null
+                );
+
+                // Re-fetch to get updated status
+                $caseDetails = $caseModel->getCaseById($caseId);
             } else {
-                $successMsg = "Report successfully submitted.";
+                $errorMsg = $result['message'];
             }
+        } catch (\Exception $e) {
+            $errorMsg = "Failed to " . ($isFinal ? "submit final report: " : "save draft: ") . $e->getMessage();
+        }
+    } elseif (isset($_POST['revert_to_draft'])) {
+        try {
+            // we will implement revertToDraft in CaseModel
+            $caseModel->revertToDraft($caseId);
 
-            // Build a meaningful audit log entry
             $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
-            $examList = implode(', ', array_keys($submitData['exam_reports_arr']));
-            $details = "Patient: {$patientName} | Case #{$caseId} | Exams: {$examList}";
-
+            
             $auditLogModel->addLog(
                 $radiologistId,
-                'Submitted Amended Findings Report',
-                'Findings & Reports',
+                'Reverted Findings Report to Draft',
+                'Report Correction',
                 'Case',
                 $caseId,
-                $details,
+                "Patient: {$patientName} | Case #{$caseId} | Reverted to draft for editing",
                 $caseDetails['branch_id'] ?? null
             );
 
             // Re-fetch to get updated status
             $caseDetails = $caseModel->getCaseById($caseId);
-        } else {
-            $errorMsg = $result['message'];
+            $successMsg = "Report reverted to draft. You can now edit the findings.";
+        } catch (\Exception $e) {
+            $errorMsg = "Failed to revert report: " . $e->getMessage();
         }
-    } catch (\Exception $e) {
-        $errorMsg = "Failed to submit report: " . $e->getMessage();
-    }
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unlock_report'])) {
-    try {
-        $caseModel->unlockReport($caseId);
-
-        $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
-        
-        $auditLogModel->addLog(
-            $radiologistId,
-            'Unlocked Findings Report',
-            'Report Correction',
-            'Case',
-            $caseId,
-            "Patient: {$patientName} | Case #{$caseId} | Unlocked for editing",
-            $caseDetails['branch_id'] ?? null
-        );
-
-        // Re-fetch to get updated status
-        $caseDetails = $caseModel->getCaseById($caseId);
-        $successMsg = "Report unlocked. You can now edit the findings.";
-    } catch (\Exception $e) {
-        $errorMsg = "Failed to unlock report: " . $e->getMessage();
     }
 }
 
@@ -135,7 +129,8 @@ if (!$caseDetails) {
     }
 
     $fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
-    $isCompleted = ($isSubmitted || in_array($caseDetails['status'], ['Report Ready', 'Completed']));
+    $isCompleted = (($caseDetails['report_status'] ?? '') === 'Final' || in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']));
+    $isDraftLocked = (!$isCompleted && ($caseDetails['report_status'] ?? '') === 'Draft' && !empty($caseDetails['findings']));
 
     // ── Parse exam types ──────────────────────────────────────────────────────────
     $examTypeRaw = $caseDetails['exam_type'] ?? '';

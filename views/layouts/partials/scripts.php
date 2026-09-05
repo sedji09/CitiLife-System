@@ -1236,6 +1236,7 @@
           this.chatMenuOpen = false;
           this.profileMenuOpen = false;
           this.mobileProfileMenuOpen = false;
+          nextTick(() => this.renderIcons());
         } else {
           this.globalNotificationOptionsOpen = false;
         }
@@ -1315,6 +1316,71 @@
           return { bg: '#fff5f5', color: '#dc2626' }; // Soft red matching Citilife brand!
         }
         return { bg: '#eff6ff', color: '#3b82f6' }; // Blue
+      },
+      getNotificationCircleClass(item) {
+        if (!item) return 'notif-color-read';
+        if (item.is_read == 1 || item.is_read === true) {
+          return 'notif-color-read';
+        }
+
+        const title = (item.title || '').toLowerCase();
+
+        // 1. SUCCESS / GREEN (Completed, Approved, Released, Resolved, Verified)
+        if (
+          title.includes('approved') ||
+          title.includes('released') ||
+          title.includes('resolved') ||
+          title.includes('verified') ||
+          (title.includes('completed') && !title.includes('reading completed'))
+        ) {
+          return 'notif-color-success';
+        }
+
+        // 2. VIOLET / PURPLE (Report Ready, Edited Report Ready, Report Updated)
+        if (title.includes('report ready') || title.includes('report updated')) {
+          return 'notif-color-purple';
+        }
+
+        // 3. DANGER / RED (Rejected, Denied, Cancelled, Lockout, Critical)
+        if (
+          title.includes('reject') ||
+          title.includes('denied') ||
+          title.includes('cancel') ||
+          title.includes('lockout') ||
+          title.includes('critical')
+        ) {
+          return 'notif-color-danger';
+        }
+
+        // 3. WARNING / AMBER / ORANGE (Overdue, Error Report, Dispute, Escalated, Feedback, Alert)
+        if (
+          title.includes('overdue') ||
+          title.includes('error report') ||
+          title.includes('dispute') ||
+          title.includes('escalat') ||
+          title.includes('feedback') ||
+          title.includes('alert') ||
+          title.includes('warning')
+        ) {
+          return 'notif-color-warning';
+        }
+
+        // 4. INFO / BLUE (New X-ray, Report Ready, Reading, Payment, Request, etc.)
+        if (
+          title.includes('x-ray') ||
+          title.includes('image') ||
+          title.includes('upload') ||
+          title.includes('report') ||
+          title.includes('reading') ||
+          title.includes('payment') ||
+          title.includes('request') ||
+          title.includes('registration') ||
+          title.includes('account')
+        ) {
+          return 'notif-color-info';
+        }
+
+        return 'notif-color-danger';
       },
       dismissToast(id) {
         this.toasts = this.toasts.filter(t => t.id !== id);
@@ -1706,9 +1772,10 @@
         const currentDot = document.getElementById('rad-activity-dot');
         if (!currentDot) return;
 
-        currentDot.classList.remove('bg-gray-400', 'bg-green-500', 'bg-red-500');
+        currentDot.classList.remove('bg-gray-400', 'bg-green-500', 'bg-red-500', 'animate-pulse');
         if (data.state === 'active') {
           currentDot.classList.add('bg-green-500');
+          if (data.is_typing) currentDot.classList.add('animate-pulse');
         } else if (data.state === 'idle') {
           currentDot.classList.add('bg-gray-400');
         } else {

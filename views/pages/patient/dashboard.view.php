@@ -8,10 +8,12 @@ $caseModel = new \CaseModel($pdo);
 require_once __DIR__ . '/../../../app/Models/FeedbackModel.php';
 require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
 require_once __DIR__ . '/../../../app/Models/ServiceModel.php';
+require_once __DIR__ . '/../../../app/Models/CaseStatusTransition.php';
 
 $feedbackModel = new \FeedbackModel($pdo);
 $disputeModel = new \ResultDisputeModel($pdo);
 $serviceModel = new \ServiceModel($pdo);
+
 
 $userId = $_SESSION['user_id'] ?? 0;
 $sessionEmail = $_SESSION['email'] ?? '';
@@ -46,6 +48,7 @@ if ($patientId) {
     $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
     $patientDisputes = $disputeModel->getDisputesByPatient($patientId);
     $disputedCaseIds = array_column($patientDisputes, 'case_id');
+    $activeCaseDispute = ($latestCase && !empty($latestCase['id'])) ? $disputeModel->getActiveDisputeByCase($latestCase['id']) : null;
 }
 
 // 4. Fetch RadTech name if assigned
@@ -92,61 +95,104 @@ $currentStep = 0;
 $displayStatus = 'Pending';
 $isRejected = ($userAccountStatus === 'Rejected');
 
-if ($latestCase) {
-    $recordType = $latestCase['record_type'] ?? 'Case';
-
-    if ($latestCase['status'] === 'Rejected') {
-        $currentStep = 0;
-        $displayStatus = 'Rejected';
-        $isRejected = true;
-    } elseif ($latestCase['status'] === 'Cancelled') {
-        $currentStep = 0;
-        $displayStatus = 'Cancelled';
-        $isRejected = true;
-    } elseif ($recordType === 'Request' && $latestCase['status'] === 'Pending Approval') {
-        $currentStep = 2;
-        $displayStatus = 'Pending';
-    } elseif ($recordType === 'Case' && $latestCase['status'] === 'Pending') {
-        if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
-            $currentStep = 5;
-            $displayStatus = 'X-ray Taken';
-        } else {
-            $currentStep = 4;
-            $displayStatus = 'Approved';
-        }
-    } elseif ($latestCase['status'] === 'Pending Payment') {
-        $currentStep = 2;
-        $displayStatus = 'Pending Payment';
-    } elseif ($latestCase['status'] === 'Payment Verifying') {
-        $currentStep = 2;
-        $displayStatus = 'Payment Verifying';
-    } elseif ($latestCase['status'] === 'Payment Verified') {
-        $currentStep = 3;
-        $displayStatus = 'Payment Verified';
-    } elseif ($latestCase['status'] === 'Under Reading') {
-        $currentStep = 5;
-        $displayStatus = 'Under Reading';
-    } elseif ($latestCase['status'] === 'Report Ready') {
-        $currentStep = 6;
-        $displayStatus = 'Report Ready';
-    } elseif (in_array($latestCase['status'], ['Released', 'Completed'])) {
-        $currentStep = 7;
-        $displayStatus = $latestCase['status'];
-    } else {
-        $currentStep = 2;
-        $displayStatus = $latestCase['status'] ?: 'Pending';
-    }
+$isCorrectionWorkflow = false;
+$activeDisputeStatus = '';
+$latestCaseDispute = null;
+if ($latestCase && !empty($latestCase['id'])) {
+    $stmtD = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? ORDER BY created_at DESC LIMIT 1");
+    $stmtD->execute([$latestCase['id']]);
+    $latestCaseDispute = $stmtD->fetch(PDO::FETCH_ASSOC);
 }
 
-$steps = [
-    1 => 'Registration',
-    2 => 'Payment',
-    3 => 'RadTech Verification',
-    4 => 'X-ray Examination',
-    5 => 'Radiologist Reading',
-    6 => 'Report Finalized',
-    7 => 'Released',
-];
+if ($latestCaseDispute && !in_array($latestCaseDispute['status'], ['Rejected'])) {
+    $isCorrectionWorkflow = true;
+    $activeDisputeStatus = $latestCaseDispute['status'];
+} elseif ($latestCase && CaseStatusTransition::isErrorWorkflow($latestCase['status'] ?? '')) {
+    $isCorrectionWorkflow = true;
+    $activeDisputeStatus = $latestCase['status'];
+} elseif ($latestCase && (int) ($latestCase['is_amended'] ?? 0) === 1) {
+    $isCorrectionWorkflow = true;
+    $activeDisputeStatus = 'Resolved';
+}
+
+if ($isCorrectionWorkflow) {
+    $steps = CaseStatusTransition::getErrorStepsList();
+    if ($activeDisputeStatus === 'Resolved' || $activeDisputeStatus === 'Correction Completed' || (!$activeDispute && (int) ($latestCase['is_amended'] ?? 0) === 1)) {
+        $currentStep = 4;
+        $displayStatus = 'Edited';
+    } else {
+        $currentStep = CaseStatusTransition::getErrorStep($activeDisputeStatus);
+        $displayStatus = $activeDisputeStatus ?: 'Issue Reported';
+    }
+} else {
+    $steps = [
+        1 => 'Registration',
+        2 => 'Payment',
+        3 => 'RadTech Verification',
+        4 => 'X-ray Examination',
+        5 => 'Radiologist Reading',
+        6 => 'Report Finalized',
+        7 => 'Released',
+    ];
+
+    if ($latestCase) {
+        $recordType = $latestCase['record_type'] ?? 'Case';
+
+        if ($latestCase['status'] === 'Rejected') {
+            $currentStep = 0;
+            $displayStatus = 'Rejected';
+            $isRejected = true;
+        } elseif ($latestCase['status'] === 'Cancelled') {
+            $currentStep = 0;
+            $displayStatus = 'Cancelled';
+            $isRejected = true;
+        } elseif ($recordType === 'Request' && $latestCase['status'] === 'Pending Approval') {
+            $currentStep = 2;
+            $displayStatus = 'Pending';
+        } elseif ($recordType === 'Case' && $latestCase['status'] === 'Pending') {
+            if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
+                $currentStep = 5;
+                $displayStatus = 'X-ray Taken';
+            } else {
+                $currentStep = 4;
+                $displayStatus = 'Approved';
+            }
+        } elseif ($latestCase['status'] === 'Pending Payment') {
+            $currentStep = 2;
+            $displayStatus = 'Pending Payment';
+        } elseif ($latestCase['status'] === 'Payment Verifying') {
+            $currentStep = 2;
+            $displayStatus = 'Payment Verifying';
+        } elseif ($latestCase['status'] === 'Payment Verified') {
+            $currentStep = 3;
+            $displayStatus = 'Payment Verified';
+        } elseif ($latestCase['status'] === 'Approved') {
+            $currentStep = 4;
+            $displayStatus = 'Approved';
+        } elseif ($latestCase['status'] === 'X-ray Taken') {
+            $currentStep = 5;
+            $displayStatus = 'X-ray Taken';
+        } elseif ($latestCase['status'] === 'Under Reading') {
+            $currentStep = 5;
+            $displayStatus = 'Under Reading';
+        } elseif ($latestCase['status'] === 'Report Ready') {
+            $currentStep = 6;
+            $displayStatus = 'Report Ready';
+        } elseif (in_array($latestCase['status'], ['Released', 'Completed']) || (int) ($latestCase['released'] ?? 0) === 1) {
+            $currentStep = 7;
+            $displayStatus = $latestCase['status'] ?: 'Released';
+        } else {
+            // Forward guard: If date_completed exists or released is 1, case is completed, never regress to 2
+            if (!empty($latestCase['date_completed']) || (int) ($latestCase['released'] ?? 0) === 1) {
+                $currentStep = 7;
+                $displayStatus = 'Released';
+            } else {
+                $currentStep = 2;
+                $displayStatus = $latestCase['status'] ?: 'Pending';
+            }
+        }
+    }
+}
 
 $statusColors = [
     'Pending' => ['bg' => '#FFF7ED', 'border' => '#FED7AA', 'text' => '#C2410C', 'label' => 'Pending Review'],
@@ -161,6 +207,15 @@ $statusColors = [
     'Completed' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Completed'],
     'Rejected' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Rejected'],
     'Cancelled' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Cancelled'],
+    // Error Correction 5-Step Workflow Badges
+    'Issue Reported' => ['bg' => '#FFF1F2', 'border' => '#FECDD3', 'text' => '#E11D48', 'label' => 'Issue Reported – Under Review'],
+    'For RadTech Review' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'For RadTech Review'],
+    'Pending RadTech Review' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'For RadTech Review'],
+    'Correction in Progress' => ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'text' => '#4338CA', 'label' => 'Correction in Progress'],
+    'Correction Completed' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Edited'],
+    'Pending RadTech Verification' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Edited'],
+    'Resolved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Resolved – Updated Report Released'],
+    'Edited' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Edited'],
 ];
 
 $statusDescriptions = [
@@ -176,6 +231,14 @@ $statusDescriptions = [
     'Completed' => 'Your X-ray examination has been completed. You can view your report result below.',
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
     'Cancelled' => 'You have cancelled this request.',
+    // Error Correction Descriptions
+    'Issue Reported' => 'Your error report has been received and queued for review by the RadTech team.',
+    'For RadTech Review' => 'Our Radiologic Technologist is actively evaluating your reported issue.',
+    'Pending RadTech Review' => 'Our Radiologic Technologist is actively evaluating your reported issue.',
+    'Correction in Progress' => 'The RadTech is actively amending your report findings and patient details.',
+    'Edited' => 'The report has been corrected and is now ready. Please check back shortly for your updated X-ray report.',
+    'Pending RadTech Verification' => 'The report has been corrected and is now ready. Please check back shortly for your updated X-ray report.',
+    'Resolved' => 'Your reported issue has been corrected and the updated official report has been released.',
 ];
 
 // --- QUEUE MANAGEMENT LOGIC ---
@@ -222,18 +285,58 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
     $caseStatus = $latestCase['status'];
     $caseImageStatus = $latestCase['image_status'] ?? '';
+    $estimatedTimeBadge = null;
+    $estimatedTimeBadgeBg = '';
+    $estimatedTimeBadgeBorder = '';
+    $estimatedTimeSubtext = '';
+    $estimatedTimeColor = '#dc2626';
 
     if (in_array($caseStatus, ['Report Ready', 'Completed', 'Released'])) {
         $estimatedTimeDisplay = 'Completed';
+        $estimatedTimeColor = '#16a34a';
+        $estimatedTimeSubtext = 'Official results are ready for viewing/download.';
     } elseif ($caseImageStatus === 'Uploaded' && in_array($caseStatus, ['Pending', 'Under Reading'])) {
-        $baseMins = $peopleAhead * 20;
-        $startMins = max(0, $baseMins);
-        $endMins = $startMins + 60;
+        $submitTimeStr = !empty($latestCase['radtech_submitted_at']) ? $latestCase['radtech_submitted_at'] : $latestCase['created_at'];
+        $submitTimestamp = strtotime($submitTimeStr);
+        $elapsedSeconds = max(0, time() - $submitTimestamp);
+        $elapsedHours = $elapsedSeconds / 3600;
 
-        $startTime = date('g:i A', strtotime("+$startMins minutes"));
-        $endTime = date('g:i A', strtotime("+$endMins minutes"));
+        // Fixed 1 to 2 hours window from X-ray upload
+        $targetStart = date('g:i A', $submitTimestamp + 3600);
+        $targetEnd = date('g:i A', $submitTimestamp + 7200);
 
-        $estimatedTimeDisplay = "$startTime &ndash; $endTime";
+        if ($elapsedHours <= 2.0) {
+            // Normal: Within 1-2 hours
+            $estimatedTimeDisplay = 'Within 1 &ndash; 2 Hours';
+            $estimatedTimeColor = '#dc2626';
+            $estimatedTimeSubtext = 'Results are usually ready 1 to 2 hours after your X-ray.';
+        } else {
+            // Exceeded 2 hours: dynamically detect Option B (High Queue) vs Option A (Under In-Depth Review)
+            $totalCasesInQueue = count($queueList);
+            $isHighQueue = ($peopleAhead >= 3 || $totalCasesInQueue >= 5 || $statAhead > 0);
+
+            if ($isHighQueue) {
+                // Option B: High Queue Volume detected
+                $estimatedTimeDisplay = 'Finalizing Reading';
+                $estimatedTimeBadge = 'High Queue Today';
+                $estimatedTimeBadgeBg = '#fef3c7';
+                $estimatedTimeBadgeBorder = '#fde68a';
+                $estimatedTimeColor = '#d97706';
+                $estimatedTimeSubtext = 'Taking a bit longer due to many patients today. Thank you for your patience.';
+            } else {
+                // Option A: Doctor reading in progress
+                $estimatedTimeDisplay = 'Under Reading';
+                $estimatedTimeBadge = 'Doctor Reviewing';
+                $estimatedTimeBadgeBg = '#e0e7ff';
+                $estimatedTimeBadgeBorder = '#c7d2fe';
+                $estimatedTimeColor = '#4f46e5';
+                $estimatedTimeSubtext = 'The doctor is currently reviewing your X-ray. Results will be ready shortly.';
+            }
+
+            if ($elapsedHours > 24) {
+                $estimatedTimeSubtext .= ' You may also check with our clinic front desk.';
+            }
+        }
     } else {
         $estimatedTimeDisplay = '&mdash;';
     }
@@ -261,6 +364,31 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
     body.theme-dark .status-summary-box strong {
         color: #fff !important;
+    }
+
+    /* Queue board dark mode */
+    body.theme-dark #patient-dashboard-queue-board {
+        background: #1e293b !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08) !important;
+        color: #f1f5f9 !important;
+    }
+    body.theme-dark #patient-dashboard-queue-board .queue-label {
+        color: #94a3b8 !important;
+    }
+    body.theme-dark #patient-dashboard-queue-board .queue-num {
+        color: #f8fafc !important;
+    }
+    body.theme-dark #patient-dashboard-queue-board .queue-vdivider {
+        background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.15), transparent) !important;
+    }
+    body.theme-dark #patient-dashboard-queue-board .queue-hdivider {
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent) !important;
+    }
+    body.theme-dark #patient-dashboard-estimated-time .est-title {
+        color: #e2e8f0 !important;
+    }
+    body.theme-dark #patient-dashboard-estimated-time .est-subtext {
+        color: #94a3b8 !important;
     }
 
     /* Custom Alert Overlay */
@@ -530,24 +658,24 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <div style="display: flex; align-items: stretch; gap: 0;">
                 <!-- Your Queue # -->
                 <div style="flex: 1; text-align: center; padding: 4px 10px 4px 2px; display: flex; flex-direction: column;">
-                    <div
+                    <div class="queue-label"
                         style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">
                         Your Queue #</div>
-                    <div
+                    <div class="queue-num"
                         style="font-size: 24px; font-weight: 800; line-height: 1; color: #1e293b; font-variant-numeric: tabular-nums;">
                         <?= $patientQueueNumber ?>
                     </div>
                 </div>
 
                 <!-- Divider -->
-                <div
+                <div class="queue-vdivider"
                     style="width: 1px; align-self: center; height: 32px; background: linear-gradient(180deg, transparent, #e2e8f0, transparent); flex-shrink: 0;">
                 </div>
 
                 <!-- People Ahead -->
                 <div
                     style="flex: 1; text-align: center; padding: 4px 2px 4px 10px; display: flex; flex-direction: column; justify-content: center;">
-                    <div
+                    <div class="queue-label"
                         style="font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; white-space: nowrap;">
                         PEOPLE AHEAD OF YOU</div>
                     <div
@@ -564,16 +692,28 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
             <!-- Estimated Reporting Time -->
             <?php if (!empty($estimatedTimeDisplay)): ?>
-                <div style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);">
+                <div class="queue-hdivider" style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);">
                 </div>
 
                 <div class="text-center" id="patient-dashboard-estimated-time">
-                    <div style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">Estimated Reporting Time
+                    <div class="est-title" style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 3px;">Estimated Reporting Time
                     </div>
-                    <div style="font-size: 16px; font-weight: 800; color: #dc2626;"><?= $estimatedTimeDisplay ?></div>
-                    <?php if ($estimatedTimeDisplay !== 'Completed' && $estimatedTimeDisplay !== '&mdash;'): ?>
-                        <div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 2px;">Based on current
-                            Radiologist queue</div>
+
+                    <?php if (!empty($estimatedTimeBadge)): ?>
+                        <div style="margin-bottom: 5px;">
+                            <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: <?= $estimatedTimeColor ?>; background: <?= $estimatedTimeBadgeBg ?>; border: 1px solid <?= $estimatedTimeBadgeBorder ?>; padding: 2px 8px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $estimatedTimeColor ?>;"></span>
+                                <?= htmlspecialchars($estimatedTimeBadge) ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="est-time-val" style="font-size: 16px; font-weight: 800; color: <?= $estimatedTimeColor ?>;"><?= $estimatedTimeDisplay ?></div>
+                    
+                    <?php if (!empty($estimatedTimeSubtext)): ?>
+                        <div class="est-subtext" style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 3px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.35;">
+                            <?= htmlspecialchars($estimatedTimeSubtext) ?>
+                        </div>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -594,10 +734,19 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         ?>
 
         <!-- Latest X-ray Status Card -->
-        <div id="patient-dashboard-latest-status"
+        <div id="patient-dashboard-latest-status" data-case-id="<?= (int) ($latestCase['id'] ?? 0) ?>"
+            data-status="<?= htmlspecialchars($displayStatus) ?>"
+            data-timestamp-unix="<?= strtotime($latestCase['status_timestamp'] ?? $latestCase['created_at']) ?: 0 ?>"
             class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
             <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gray-100 gap-2">
-                <h2 class="font-bold text-gray-900 text-sm sm:text-base whitespace-nowrap">Latest X-ray Status</h2>
+                <div class="flex items-center gap-2 min-w-0">
+                    <?php if (!$isCorrectionWorkflow): ?>
+                        <i data-lucide="activity" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 shrink-0"></i>
+                    <?php endif; ?>
+                    <h2 class="font-bold text-gray-900 text-sm sm:text-base truncate">
+                        <?= $isCorrectionWorkflow ? 'Correction Status' : 'Latest X-ray Status' ?>
+                    </h2>
+                </div>
                 <span
                     class="inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
@@ -639,7 +788,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                     <?php if ($done): ?>bg-green-500 text-white
                                     <?php elseif ($active): ?>bg-red-500 text-white
                                     <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
-                                            <?php if ($num === 5 && ($latestCase['status'] ?? '') === 'Under Reading'): ?>
+                                            <?php if (($num === 5 && ($latestCase['status'] ?? '') === 'Under Reading') || ($isCorrectionWorkflow && $num === 3 && in_array($displayStatus, ['For RadTech Review', 'Pending RadTech Review', 'Correction in Progress']))): ?>
                                                 <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>"
                                                     class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                             <?php endif; ?>
@@ -791,20 +940,20 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     <?php endif; ?>
 
                     <?php if ($isCompletedOrReleased): ?>
-                        <?php if (!in_array($latestCase['id'], $disputedCaseIds) && !$isExpired30Days): ?>
+                        <?php if (!in_array($latestCase['id'], $disputedCaseIds) && !$isExpired30Days && !$isCorrectionWorkflow): ?>
                             <button type="button"
                                 onclick="openDisputeModal(<?= $latestCase['id'] ?>, <?= htmlspecialchars(json_encode($latestCase['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($latestCase['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
-                                Report an Error
+                                Request Correction
                             </button>
-                        <?php elseif (in_array($latestCase['id'], $disputedCaseIds)): ?>
+                        <?php elseif (($isCorrectionWorkflow || in_array($latestCase['id'], $disputedCaseIds)) && !in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) && (int) ($latestCase['is_amended'] ?? 0) !== 1): ?>
                             <span
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
-                                Error Reported
+                                <?= htmlspecialchars($sInfo['label'] ?? 'Correction Requested') ?>
                             </span>
                         <?php endif; ?>
 
-                        <?php if (!in_array($latestCase['id'], $feedbackCaseIds)): ?>
+                        <?php if (!in_array($latestCase['id'], $feedbackCaseIds) && (!$isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) || (int) ($latestCase['is_amended'] ?? 0) === 1)): ?>
                             <button type="button"
                                 onclick="openFeedbackModal(<?= $latestCase['id'] ?>, <?= htmlspecialchars(json_encode($latestCase['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($latestCase['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-yellow-400 hover:bg-yellow-500 hover:text-white text-yellow-600 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
@@ -815,12 +964,12 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         <?php
                         $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $latestCase['id']);
                         $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
+                        $reportBtnLabel = ($isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) || (int) ($latestCase['is_amended'] ?? 0) === 1) ? 'View Updated Report' : 'View Report';
                         ?>
-                        <a href="<?= $reportUrl ?>"
-                            <?= $onClickAttr ?>
+                        <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                             class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                             <i data-lucide="file-text" class="w-4 h-4"></i>
-                            View Report
+                            <?= $reportBtnLabel ?>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -1109,7 +1258,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h2 class="font-bold text-gray-900 text-base">Report an Error / Dispute Result</h2>
+                    <h2 class="font-bold text-gray-900 text-base">Request Correction</h2>
                     <p class="text-xs text-gray-500">Notice an issue with your report or info? Report it to the clinic.
                     </p>
                 </div>
@@ -1139,9 +1288,14 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
                         <option value="" disabled selected>-- Select Category --</option>
                         <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
-                        <option value="findings_error">2. Wrong Body Part / Image Discrepancy (Requires Radiologist
-                            Re-examination)</option>
-                        <option value="both_error">3. Both (Wrong Patient Info & Image Discrepancy)</option>
+                        <option value="findings_error">2. Typographical Error in Report (Findings or Impression)
+                        </option>
+                        <option value="template_error">3. Rename X-ray Template / Body Part (e.g. Left or Right)
+                        </option>
+                        <option value="both_error">4. Both (Wrong Patient Info &amp; Typographical Error)</option>
+                        <option value="both_template_error">5. Both (Wrong Patient Info &amp; Rename X-ray Template)
+                        </option>
+                        <option value="other">6. Others (Please specify error/concern)</option>
                     </select>
                 </div>
 
@@ -1175,14 +1329,99 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             <span class="font-medium">Sex</span>
                         </label>
                     </div>
+
+                    <!-- Patient Input Fields for Corrections -->
+                    <div id="correction-inputs-container"
+                        class="mt-3 space-y-2.5 hidden pt-2 border-t border-gray-200/70">
+                        <p class="text-[11px] font-semibold text-gray-500">Enter your correct details below:</p>
+
+                        <!-- First Name Input -->
+                        <div id="field-correct-first-name" class="hidden">
+                            <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                Correct First Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="input-correct-first-name" placeholder="Enter correct First Name"
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                        </div>
+
+                        <!-- Last Name Input -->
+                        <div id="field-correct-last-name" class="hidden">
+                            <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                Correct Last Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="input-correct-last-name" placeholder="Enter correct Last Name"
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                        </div>
+
+                        <!-- Age Input (Calendar) -->
+                        <div id="field-correct-age" class="hidden">
+                            <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                Correct Age <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="input-correct-birthdate" readonly placeholder="Select birthdate"
+                                    class="w-full rounded-xl border border-gray-300 pl-9 pr-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer transition">
+                                <i data-lucide="calendar" class="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none"></i>
+                            </div>
+                            <input type="hidden" id="input-correct-age">
+                            <div id="preview-calculated-age" class="hidden mt-1.5 text-[11px] text-gray-600 flex items-center gap-1.5 font-medium bg-gray-100/90 px-2.5 py-1 rounded-lg border border-gray-200">
+                                <span class="text-gray-500">Age:</span>
+                                <span id="val-calculated-age" class="font-bold text-red-600"></span>
+                            </div>
+                        </div>
+
+                        <!-- Sex / Gender Input -->
+                        <div id="field-correct-sex" class="hidden">
+                            <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                Correct Sex / Gender <span class="text-red-500">*</span>
+                            </label>
+                            <select id="input-correct-sex"
+                                class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                                <option value="" disabled selected>-- Select Correct Sex / Gender --</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic X-ray Template Rename Options Container -->
+                <div id="template-rename-options-container"
+                    class="hidden p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-2xl space-y-3.5">
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-1">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                            X-RAY TEMPLATE / EXAM NAME <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-gray-400 font-medium">Quick Side:</span>
+                            <button type="button" onclick="setTemplateSide('Left')"
+                                class="px-3 py-1 text-xs font-semibold bg-white hover:bg-gray-100 hover:text-red-600 active:scale-95 text-gray-700 rounded-lg border border-gray-300 transition shadow-2xs cursor-pointer">Left</button>
+                            <button type="button" onclick="setTemplateSide('Right')"
+                                class="px-3 py-1 text-xs font-semibold bg-white hover:bg-gray-100 hover:text-red-600 active:scale-95 text-gray-700 rounded-lg border border-gray-300 transition shadow-2xs cursor-pointer">Right</button>
+                            <button type="button" onclick="setTemplateSide('Bilateral')"
+                                class="px-3 py-1 text-xs font-semibold bg-white hover:bg-gray-100 hover:text-red-600 active:scale-95 text-gray-700 rounded-lg border border-gray-300 transition shadow-2xs cursor-pointer">Bilateral</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-0.5">
+                        <input type="text" id="input-correct-template" placeholder="e.g. Left Knee AP / Lateral"
+                            class="w-full text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-300 bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition shadow-2xs">
+                    </div>
+
+                    <div class="text-xs text-gray-500 flex items-center gap-2.5 pt-1">
+                        <span class="text-gray-400 font-medium">Current record:</span>
+                        <span
+                            class="font-semibold text-gray-800 bg-white px-3 py-1 rounded-lg border border-gray-200 shadow-2xs"
+                            id="dispute-current-exam-text">Foot</span>
+                    </div>
                 </div>
 
                 <div id="general-description-container" class="hidden space-y-1">
-                    <label class="block text-xs font-bold text-gray-700">Details of Findings Discrepancy: <span
-                            class="text-red-500">*</span></label>
-                    <textarea name="findings_description" id="dispute-description" rows="3"
+                    <label id="dispute-description-label" class="block text-xs font-bold text-gray-700">Details of
+                        Typographical Error: <span class="text-red-500">*</span></label>
+                    <textarea name="description" id="dispute-description" rows="3"
                         class="w-full rounded-xl border border-gray-300 p-3 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
-                        placeholder="Please describe the discrepancy or issue with the radiologist's findings..."></textarea>
+                        placeholder="Please describe what is incorrect or needs correction..."></textarea>
                 </div>
             </div>
 
@@ -1434,7 +1673,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         const baseClass = "absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full z-20 transition-colors";
                         dot.innerHTML = '';
                         if (data.state === 'active') {
-                            dot.className = baseClass + " bg-green-500";
+                            dot.className = baseClass + " bg-green-500" + (data.is_typing ? " animate-pulse" : "");
                         } else if (data.state === 'idle') {
                             dot.className = baseClass + " bg-gray-400";
                         } else {
@@ -1447,5 +1686,219 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
         setInterval(pollRadiologistActivity, 2500);
         pollRadiologistActivity();
+    })();
+
+    // Real-Time Stepper Updater (AJAX – no full reload)
+    (function () {
+        const statusCard = document.getElementById('patient-dashboard-latest-status');
+        if (!statusCard) return;
+
+        const caseId = statusCard.getAttribute('data-case-id');
+        if (!caseId || caseId === '0') return;
+
+        let currentStatus = statusCard.getAttribute('data-status') || '';
+        let currentTimestampUnix = parseInt(statusCard.getAttribute('data-timestamp-unix') || '0', 10);
+
+        // ── Color & description lookups (mirrors PHP $statusColors / $statusDescriptions) ──
+        const STATUS_COLORS = {
+            'Pending': { bg: '#FFF7ED', border: '#FED7AA', text: '#C2410C', label: 'Pending Review' },
+            'Pending Payment': { bg: '#FFFBEB', border: '#FDE68A', text: '#D97706', label: 'Pending Payment' },
+            'Payment Verifying': { bg: '#EFF6FF', border: '#BFDBFE', text: '#1D4ED8', label: 'Payment Verifying' },
+            'Payment Verified': { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669', label: 'Payment Verified' },
+            'Approved': { bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D', label: 'Approved – For Examination' },
+            'X-ray Taken': { bg: '#EFF6FF', border: '#BFDBFE', text: '#1D4ED8', label: 'X-ray Taken' },
+            'Under Reading': { bg: '#EFF6FF', border: '#DBEAFE', text: '#1D4ED8', label: 'Under Reading by Radiologist' },
+            'Report Ready': { bg: '#EEF2FF', border: '#C7D2FE', text: '#4338CA', label: 'Report Ready' },
+            'Released': { bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D', label: 'Released' },
+            'Completed': { bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D', label: 'Completed' },
+            'Rejected': { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B', label: 'Request Rejected' },
+            'Cancelled': { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B', label: 'Request Cancelled' },
+            'Issue Reported': { bg: '#FFF1F2', border: '#FECDD3', text: '#E11D48', label: 'Issue Reported – Under Review' },
+            'For RadTech Review': { bg: '#FFFBEB', border: '#FDE68A', text: '#D97706', label: 'For RadTech Review' },
+            'Pending RadTech Review': { bg: '#FFFBEB', border: '#FDE68A', text: '#D97706', label: 'For RadTech Review' },
+            'Correction in Progress': { bg: '#EEF2FF', border: '#C7D2FE', text: '#4338CA', label: 'Correction in Progress' },
+            'Correction Completed': { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669', label: 'Edited' },
+            'Pending RadTech Verification': { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669', label: 'Edited' },
+            'Resolved': { bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D', label: 'Resolved – Updated Report Released' },
+            'Edited': { bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D', label: 'Edited' },
+        };
+
+        const STATUS_DESCS = {
+            'Pending': 'Your X-ray request has been received and is pending approval from the RadTech team.',
+            'Pending Payment': 'The RadTech has assigned your examination type. Please proceed to payment.',
+            'Payment Verifying': 'Your payment proof has been submitted. Please wait for the Branch Admin to verify your payment.',
+            'Payment Verified': 'Your payment has been verified. Awaiting final approval.',
+            'Approved': 'Your request has been approved. Please proceed to the X-ray room for the examination.',
+            'X-ray Taken': 'Your X-ray images have been captured and are being prepared for expert reading.',
+            'Under Reading': 'Your X-ray images have been captured and sent to the Radiologist for interpretation.',
+            'Report Ready': 'Your X-ray report is ready. Please visit the branch to collect your results.',
+            'Released': 'Your X-ray report has been released. You can now view your report result below.',
+            'Completed': 'Your X-ray examination has been completed. You can view your report result below.',
+            'Issue Reported': 'Your error report has been received and queued for review by the RadTech team.',
+            'For RadTech Review': 'Our Radiologic Technologist is actively evaluating your reported issue.',
+            'Pending RadTech Review': 'Our Radiologic Technologist is actively evaluating your reported issue.',
+            'Correction in Progress': 'The RadTech is actively amending your report findings and patient details.',
+            'Correction Completed': 'Corrections have been made and verified. Awaiting final release to your portal.',
+            'Resolved': 'Your reported issue has been corrected and the updated official report has been released.',
+            'Edited': 'Your reported issue has been corrected and the updated official report has been released.',
+        };
+
+        // Error workflow step mapping (mirrors PHP getErrorStep())
+        const ERROR_STEP_MAP = {
+            'Issue Reported': 2,
+            'For RadTech Review': 3,
+            'Pending RadTech Review': 3,
+            'Correction in Progress': 3,
+            'Correction Completed': 4,
+            'Pending RadTech Verification': 4,
+            'Resolved': 4,
+            'Edited': 4,
+        };
+
+        const ERROR_STEPS = { 1: 'Issue Reported', 2: 'For RadTech Review', 3: 'Correction in Progress', 4: 'Correction Completed' };
+
+        // Standard exam step mapping
+        const EXAM_STEPS = { 1: 'Registration', 2: 'Payment', 3: 'RadTech Verification', 4: 'X-ray Examination', 5: 'Radiologist Reading', 6: 'Report Finalized', 7: 'Released' };
+        const EXAM_STEP_MAP = {
+            'Pending': 2, 'Pending Payment': 2, 'Payment Verifying': 2, 'Payment Verified': 3,
+            'Approved': 4, 'X-ray Taken': 5, 'Under Reading': 5, 'Report Ready': 6, 'Released': 7, 'Completed': 7,
+        };
+
+        function getErrorStep(st) { return ERROR_STEP_MAP[st] || 2; }
+        function getExamStep(st) { return EXAM_STEP_MAP[st] || 2; }
+
+        function updateStepperDOM(newStatus, isErrorWorkflow, errorStep, errorStepData) {
+            const stepperWrap = statusCard.querySelector('.flex.items-start.justify-between.w-full');
+            if (!stepperWrap) return;
+
+            const stepCells = stepperWrap.querySelectorAll(':scope > div');
+            const steps = isErrorWorkflow ? ERROR_STEPS : EXAM_STEPS;
+            const totalSteps = Object.keys(steps).length;
+            const currStep = isErrorWorkflow
+                ? (errorStep || getErrorStep(newStatus))
+                : getExamStep(newStatus);
+
+            stepCells.forEach((cell, idx) => {
+                const num = idx + 1;
+                const done = num < currStep || (num === totalSteps && currStep === totalSteps);
+                const active = num === currStep && currStep !== totalSteps;
+
+                // ── Circle ──
+                const circle = cell.querySelector('.relative.z-10');
+                if (circle) {
+                    circle.className = circle.className
+                        .replace(/bg-green-500|bg-red-500|bg-white|border\s|sm:border-2\s|border-gray-200\s|text-gray-400|text-white/g, '')
+                        .trim();
+                    if (done) circle.classList.add('bg-green-500', 'text-white');
+                    else if (active) circle.classList.add('bg-red-500', 'text-white');
+                    else circle.classList.add('bg-white', 'border', 'sm:border-2', 'border-gray-200', 'text-gray-400');
+
+                    // inner: check icon or number
+                    const svgIcon = circle.querySelector('i[data-lucide="check"]');
+                    const numSpan = circle.querySelector('span[data-num]') || circle;
+                    if (done) {
+                        circle.innerHTML = (circle.querySelector('span#rad-activity-dot') ? circle.querySelector('span#rad-activity-dot').outerHTML : '')
+                            + '<i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>';
+                        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [circle] });
+                    } else if (!circle.querySelector('i[data-lucide]')) {
+                        const dot = circle.querySelector('span#rad-activity-dot');
+                        circle.innerHTML = (dot ? dot.outerHTML : '') + num;
+                    }
+                }
+
+                // ── Connector lines ──
+                const nextNum = num + 1;
+                const nextDone = nextNum < currStep || (nextNum === totalSteps && currStep === totalSteps);
+                const nextActive = nextNum === currStep && currStep !== totalSteps;
+
+                const leftLine = cell.querySelector('.absolute.left-0.right-1\\/2');
+                const rightLine = cell.querySelector('.absolute.left-1\\/2.right-0');
+                if (leftLine) {
+                    leftLine.className = leftLine.className
+                        .replace(/bg-green-500|bg-red-500|bg-gray-200/g, '').trim()
+                        + (done ? ' bg-green-500' : active ? ' bg-red-500' : ' bg-gray-200');
+                }
+                if (rightLine) {
+                    rightLine.className = rightLine.className
+                        .replace(/bg-green-500|bg-red-500|bg-gray-200/g, '').trim()
+                        + (nextDone ? ' bg-green-500' : nextActive ? ' bg-red-500' : ' bg-gray-200');
+                }
+
+                // ── Label text ──
+                const labelSpan = cell.querySelector('span.mt-1\\.5, span.mt-2');
+                if (labelSpan) {
+                    labelSpan.className = labelSpan.className
+                        .replace(/stepper-text-active|text-gray-400/g, '').trim()
+                        + ((done || active) ? ' stepper-text-active' : ' text-gray-400');
+                }
+            });
+        }
+
+        function updateStatusBox(newStatus) {
+            const info = STATUS_COLORS[newStatus] || { bg: '#F9FAFB', border: '#E5E7EB', text: '#374151', label: newStatus };
+            const desc = STATUS_DESCS[newStatus] || '';
+
+            // Badge in header
+            const badge = statusCard.querySelector('[style*="border-color"]');
+            if (badge) {
+                badge.style.background = info.bg;
+                badge.style.borderColor = info.border;
+                badge.style.color = info.text;
+                const dot = badge.querySelector('span');
+                if (dot) dot.style.background = info.text;
+                // update text (last text node)
+                badge.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = ' ' + newStatus; });
+            }
+
+            // Summary box
+            const summaryBox = statusCard.querySelector('.status-summary-box');
+            if (summaryBox) {
+                summaryBox.style.background = info.bg;
+                summaryBox.style.borderColor = info.border;
+                const strong = summaryBox.querySelector('strong');
+                if (strong) strong.textContent = info.label;
+                const pText = summaryBox.querySelector('p.text-xs, p.text-sm ~ p, p + p');
+                if (pText) pText.textContent = desc;
+                summaryBox.querySelectorAll('[style*="color"]').forEach(el => { el.style.color = info.text; });
+            }
+
+            // Update data attribute so next poll compares correctly
+            statusCard.setAttribute('data-status', newStatus);
+        }
+
+        function pollTrackingStatus() {
+            if (document.hidden) return;
+            if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
+            const disputeModal = document.getElementById('disputeModal');
+            if (disputeModal && !disputeModal.classList.contains('hidden')) return;
+
+            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/cases.php?case_id=${caseId}&_t=` + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    const newStatus = data.status || '';
+                    const newTimestampUnix = parseInt(data.timestamp_unix || '0', 10);
+
+                    if (newStatus !== currentStatus && newTimestampUnix >= currentTimestampUnix) {
+                        currentStatus = newStatus;
+                        currentTimestampUnix = newTimestampUnix;
+
+                        const isError = data.workflow_type === 'error_correction';
+
+                        // Update stepper in-place (no reload)
+                        updateStepperDOM(newStatus, isError, data.error_step, data);
+                        updateStatusBox(newStatus);
+
+                        // If status flips to released/completed in normal workflow → reload for report button etc.
+                        if (!isError && ['Released', 'Completed', 'Report Ready'].includes(newStatus)) {
+                            window.location.reload();
+                        }
+                    }
+                })
+                .catch(err => console.debug('Tracking status poll error:', err));
+        }
+
+        setInterval(pollTrackingStatus, 3000);
     })();
 </script>

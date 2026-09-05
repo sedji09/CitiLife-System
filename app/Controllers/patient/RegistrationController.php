@@ -31,9 +31,19 @@ class RegistrationController
             $groupedServices[$service['category']][] = $service;
         }
 
-        $currentHour = (int) date('G');
-        // $isClinicOpen = ($currentHour >= 8 && $currentHour < 21);
-        $isClinicOpen = true; // TEMPORARILY DISABLED: ($currentHour >= 8 && $currentHour < 21);
+        // Fetch dynamic operating hours from system_settings
+        $openTimeSetting  = getSystemSetting('operating_hours_open',  '08:00');
+        $closeTimeSetting = getSystemSetting('operating_hours_close', '21:00');
+
+        $openTime  = \DateTime::createFromFormat('H:i', $openTimeSetting)  ?: \DateTime::createFromFormat('H:i', '08:00');
+        $closeTime = \DateTime::createFromFormat('H:i', $closeTimeSetting) ?: \DateTime::createFromFormat('H:i', '21:00');
+        $now       = new \DateTime('now');
+
+        $isClinicOpen = ($now >= $openTime && $now < $closeTime);
+
+        // Human-readable times for display
+        $openTimeDisplay  = $openTime->format('g:i A');
+        $closeTimeDisplay = $closeTime->format('g:i A');
 
         // 1. Fetch data (Active branches only)
         $branches = $branchModel->getActiveBranches();
@@ -66,7 +76,7 @@ class RegistrationController
         // 2. Handle POST actions
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$isClinicOpen) {
-                $error = 'The clinic is currently closed. Online requests are only accepted between 8:00 AM and 9:00 PM.';
+                $error = "The clinic is currently closed. Online requests are only accepted between {$openTimeDisplay} and {$closeTimeDisplay}.";
             } else {
                 $formAction = $_POST['form_action'] ?? 'register';
 

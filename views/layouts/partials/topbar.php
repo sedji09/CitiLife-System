@@ -238,29 +238,13 @@
           <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50 relative rounded-t-xl">
             <div class="text-sm font-bold text-gray-800">Notifications</div>
             
-            <!-- Global Notification Options (3-dots) -->
-            <button @click.stop="toggleGlobalNotificationOptions"
-              class="global-notif-btn text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-200 relative z-10">
-              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            <!-- Direct Mark All As Read Button (Solid Red) -->
+            <button v-if="notifications.length > 0" @click.stop="markAllRead"
+              class="text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:scale-[0.98] px-2.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+              title="Mark all notifications as read">
+              <i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+              <span>Mark all as read</span>
             </button>
-            
-            <!-- Global Options Dropdown (Facebook Style) -->
-            <div v-show="globalNotificationOptionsOpen" style="display: none; right: 8px; top: 48px;" 
-                 class="global-notif-dropdown absolute w-max z-[99]"
-                 @click.stop>
-              <!-- Smooth SVG Arrow -->
-              <svg class="absolute text-white" style="top: -10px; right: 12px; width: 24px; height: 10px; filter: drop-shadow(0px -2px 2px rgba(0,0,0,0.06)); z-index: 20;" viewBox="0 0 24 10" fill="currentColor">
-                <path d="M 0 10 C 8 10 10 0 12 0 C 14 0 16 10 24 10 Z"></path>
-              </svg>
-              
-              <!-- Main Box -->
-              <div class="relative rounded-xl p-1.5 z-10" style="background-color: white; box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 0 2px rgba(0,0,0,0.04);">
-                <button @click.stop="markAllRead(); globalNotificationOptionsOpen = false;" class="w-full text-left px-3 pr-8 py-2 text-[15px] font-medium text-gray-800 flex items-center gap-3 transition-colors whitespace-nowrap rounded-lg" style="background-color: transparent;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='transparent'">
-                  <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  Mark all as read
-                </button>
-              </div>
-            </div>
           </div>
           <div class="max-h-72 overflow-auto custom-scrollbar">
             <template v-if="notifications.length > 0">
@@ -270,7 +254,7 @@
                 
                 <div
                   class="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors"
-                  :class="item.is_read == 0 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400'">
+                  :class="getNotificationCircleClass(item)">
                   <i data-lucide="bell" class="w-5 h-5"></i>
                 </div>
                 <div class="text-sm flex-1 min-w-0 pr-2">

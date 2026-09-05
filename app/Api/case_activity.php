@@ -33,7 +33,7 @@ if ($action === 'ping') {
         exit;
     }
 
-    $status = $_POST['status'] ?? 'viewing'; // 'typing' or 'viewing' or 'inactive'
+    $status = $_POST['status'] ?? $_GET['status'] ?? $_REQUEST['status'] ?? 'viewing'; // 'typing' or 'viewing' or 'inactive'
 
     if ($status === 'inactive') {
         // Set rad_last_active far in the past so the patient's status check
@@ -43,6 +43,19 @@ if ($action === 'ping') {
     } else {
         $stmt = $pdo->prepare("UPDATE cases SET rad_activity_status = ?, rad_last_active = NOW() WHERE id = ?");
         $stmt->execute([$status, $caseId]);
+
+        // If typing and an active dispute exists, advance status to 'Correction in Progress'
+        if ($status === 'typing') {
+            $stmtChkDisp = $pdo->prepare("SELECT id FROM result_disputes WHERE case_id = ? AND status IN ('Issue Reported', 'For RadTech Review', 'Pending RadTech Review') LIMIT 1");
+            $stmtChkDisp->execute([$caseId]);
+            $activeDispId = $stmtChkDisp->fetchColumn();
+            if ($activeDispId) {
+                $pdo->prepare("UPDATE result_disputes SET status = 'Correction in Progress', updated_at = NOW() WHERE id = ?")
+                    ->execute([$activeDispId]);
+                $pdo->prepare("UPDATE cases SET status = 'Correction in Progress', status_timestamp = NOW() WHERE id = ?")
+                    ->execute([$caseId]);
+            }
+        }
     }
 
     echo json_encode(['success' => true]);
@@ -82,7 +95,9 @@ if ($action === 'status') {
         SELECT 
             rad_activity_status, 
             TIMESTAMPDIFF(SECOND, rad_last_active, NOW()) as diff_seconds,
-            status 
+            TIMESTAMPDIFF(HOUR, created_at, NOW()) as elapsed_hours,
+            status,
+            released
         FROM cases 
         WHERE id = ?
     ");
@@ -97,30 +112,47 @@ if ($action === 'status') {
     $radStatus = $row['rad_activity_status'];
     $diff = $row['diff_seconds'] !== null ? (int) $row['diff_seconds'] : 999999;
 
-    $displayStatus = 'inactive';
+    $displayActivity = 'inactive';
+    $isTyping = false;
 
     if ($radStatus) {
-        if ($diff > 12) {
-            // More than 12 seconds since last ping -> left the page or closed
-            $displayStatus = 'inactive';
+        if ($diff > 15) {
+            // More than 15 seconds since last ping -> left the page or closed
+            $displayActivity = 'inactive';
         } elseif ($radStatus === 'typing') {
-            if ($diff <= 6) {
-                // Typed recently
-                $displayStatus = 'active'; // typing
-            } else {
-                // Stopped typing -> idle
-                $displayStatus = 'idle';
-            }
+            $displayActivity = 'active';
+            $isTyping = ($diff <= 6);
         } elseif ($radStatus === 'viewing') {
-            // Viewing but not typing. If ping gets slightly delayed, it stays idle.
-            $displayStatus = 'idle';
+            // Staff is actively viewing/working on the case page
+            $displayActivity = 'active';
         }
     }
 
+    // Check if there is an active dispute for this case
+    $stmtDisp = $pdo->prepare("SELECT status FROM result_disputes WHERE case_id = ? AND status NOT IN ('Resolved', 'Correction Completed') ORDER BY id DESC LIMIT 1");
+    $stmtDisp->execute([$caseId]);
+    $dispStatus = $stmtDisp->fetchColumn();
+
+    $caseStatus = $row['status'] ?: 'Pending';
+    $effectiveDisplayStatus = $dispStatus ?: $caseStatus;
+
+    if ($effectiveDisplayStatus === 'Escalated to Radiologist') {
+        $effectiveDisplayStatus = 'Correction in Progress';
+    }
+
+    $isOverdue = ((int)($row['elapsed_hours'] ?? 0)) >= 3;
+    if ($effectiveDisplayStatus === 'Pending' && $isOverdue) {
+        $effectiveDisplayStatus = 'Overdue';
+    }
+
     echo json_encode([
-        'success' => true,
-        'state'   => $displayStatus,
-        'diff'    => $diff
+        'success'        => true,
+        'state'          => $displayActivity,
+        'is_typing'      => $isTyping,
+        'diff'           => $diff,
+        'case_status'    => $caseStatus,
+        'display_status' => $effectiveDisplayStatus,
+        'is_released'    => (int)($row['released'] ?? 0) === 1
     ]);
     exit;
 }

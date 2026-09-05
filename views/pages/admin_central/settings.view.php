@@ -63,11 +63,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         <div class="space-y-1">
                             <label class="text-sm font-bold text-gray-700">System Display Name</label>
-                            <p class="text-[11px] text-gray-400">Used in titles and browser tabs</p>
+                            <p class="text-[11px] text-gray-400">Used in titles, reports, emails, and browser tabs</p>
                         </div>
                         <div class="md:col-span-2">
-                            <input type="text" name="system_name" value="<?= htmlspecialchars($currentSystemName) ?>"
+                            <input type="text" name="system_name" value="<?= htmlspecialchars($currentSystemName) ?>" required
                                 class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+                            <p class="mt-1.5 text-[10px] text-gray-400 italic">Changing the system name will update all navigation headers, reports, and outgoing emails across the entire system.</p>
                         </div>
                     </div>
 
@@ -82,28 +83,30 @@
                         <div class="md:col-span-2">
                             <div class="flex flex-col sm:flex-row items-center gap-6">
                                 <!-- Current Logo Preview -->
-                                <div
-                                    class="h-32 w-32 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex items-center justify-center overflow-hidden group">
-                                    <?php if ($currentLogo): ?>
-                                        <img src="<?= '/' . PROJECT_DIR . '/' . $currentLogo ?>"
-                                            class="h-full w-full object-contain p-2 transition-transform group-hover:scale-110">
-                                    <?php else: ?>
-                                        <i data-lucide="image-plus" class="w-8 h-8 text-gray-300"></i>
-                                    <?php endif; ?>
+                                <div id="logoPreviewBox"
+                                    class="h-32 w-32 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex items-center justify-center overflow-hidden group relative transition-all">
+                                    <img id="logoPreviewImg" src="<?= getSystemLogoUrl() ?>"
+                                        class="h-full w-full object-contain p-2 transition-transform group-hover:scale-110 <?= empty($currentLogo) ? 'hidden' : '' ?>"
+                                        alt="Logo Preview">
+                                    <div id="logoPlaceholder" class="flex flex-col items-center justify-center text-gray-300 <?= !empty($currentLogo) ? 'hidden' : '' ?>">
+                                        <i data-lucide="image-plus" class="w-8 h-8"></i>
+                                    </div>
+                                    <span id="previewBadge" class="hidden absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-600/90 text-white text-[9px] font-bold rounded-full uppercase tracking-wider backdrop-blur-sm shadow-sm whitespace-nowrap">
+                                        New Preview
+                                    </span>
                                 </div>
                                 <!-- Upload Input -->
                                 <div class="flex-1 w-full">
                                     <label class="block">
                                         <span class="sr-only">Choose logo</span>
-                                        <input type="file" name="clinic_logo" accept="image/*" class="block w-full text-sm text-gray-500
+                                        <input type="file" id="clinicLogoInput" name="clinic_logo" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp, image/svg+xml" class="block w-full text-sm text-gray-500
                                                         file:mr-4 file:py-2.5 file:px-4
                                                         file:rounded-xl file:border-0
                                                         file:text-sm file:font-bold
                                                         file:bg-blue-50 file:text-blue-700
                                                         hover:file:bg-blue-100 transition-all cursor-pointer">
                                     </label>
-                                    <p class="mt-2 text-[10px] text-gray-400 italic">Changing the logo will update it
-                                        across all branch reports and logins.</p>
+                                    <p class="mt-2 text-[10px] text-gray-400 italic">Changing the logo will automatically update it across all branch reports, portal pages, and outgoing emails.</p>
                                 </div>
                             </div>
                         </div>
@@ -209,6 +212,52 @@
                 </div>
             </div> -->
 
+            <!-- Operating Hours Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-gray-100 bg-gray-50/30">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-900">Operating Hours</h3>
+                            <p class="text-xs text-gray-500">Clinic hours shown to patients on the registration portal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <?php
+                        $openTs    = strtotime($operatingHoursOpen)  ?: strtotime('08:00');
+                        $closeTs   = strtotime($operatingHoursClose) ?: strtotime('21:00');
+                        $openVal = date('H:i', $openTs);
+                        $closeVal = date('H:i', $closeTs);
+                    ?>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="space-y-1">
+                            <label class="text-sm font-bold text-gray-700">Open &amp; Close Time</label>
+                            <p class="text-[11px] text-gray-400">Select clinic operating hours.</p>
+                        </div>
+                        <div class="md:col-span-2 flex items-center gap-3">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Opens at</p>
+                                <input type="time" name="operating_hours_open" value="<?= $openVal ?>" required
+                                    class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-stone-50 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+                            </div>
+                            <span class="text-gray-300 font-bold text-lg mt-4">—</span>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Closes at</p>
+                                <input type="time" name="operating_hours_close" value="<?= $closeVal ?>" required
+                                    class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-stone-50 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
             <!-- Action Buttons -->
             <div class="flex items-center justify-end gap-3 pt-6">
                 <button type="reset"
@@ -224,6 +273,8 @@
         </form>
     </div>
 </main>
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -368,5 +419,58 @@
                 });
             }
         }
+
+        // --- Instant Live Logo Preview on File Selection ---
+        const clinicLogoInput = document.getElementById('clinicLogoInput');
+        const logoPreviewImg = document.getElementById('logoPreviewImg');
+        const logoPlaceholder = document.getElementById('logoPlaceholder');
+        const logoPreviewBox = document.getElementById('logoPreviewBox');
+        const previewBadge = document.getElementById('previewBadge');
+        const defaultLogoUrl = "<?= getSystemLogoUrl() ?>";
+
+        if (clinicLogoInput) {
+            clinicLogoInput.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (file) {
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please select an image file (PNG, JPG, WEBP, GIF, SVG).');
+                        this.value = '';
+                        return;
+                    }
+                    const objectUrl = URL.createObjectURL(file);
+                    if (logoPreviewImg) {
+                        logoPreviewImg.src = objectUrl;
+                        logoPreviewImg.classList.remove('hidden');
+                    }
+                    if (logoPlaceholder) {
+                        logoPlaceholder.classList.add('hidden');
+                    }
+                    if (logoPreviewBox) {
+                        logoPreviewBox.classList.remove('border-gray-200');
+                        logoPreviewBox.classList.add('border-blue-500', 'bg-blue-50/20');
+                    }
+                    if (previewBadge) {
+                        previewBadge.classList.remove('hidden');
+                    }
+                }
+            });
+        }
+
+        // Restore preview on form reset
+        const settingsFormElement = document.getElementById('settingsForm');
+        if (settingsFormElement) {
+            settingsFormElement.addEventListener('reset', function () {
+                setTimeout(() => {
+                    if (logoPreviewImg) { logoPreviewImg.src = defaultLogoUrl; }
+                    if (logoPreviewBox) {
+                        logoPreviewBox.classList.add('border-gray-200');
+                        logoPreviewBox.classList.remove('border-blue-500', 'bg-blue-50/20');
+                    }
+                    if (previewBadge) { previewBadge.classList.add('hidden'); }
+                }, 50);
+            });
+        }
+
+
     });
 </script>

@@ -265,10 +265,40 @@ if (isset($_GET['action'])) {
 $branchId = $_SESSION['branch_id'] ?? 1;
 $allPatients = $caseModel->getWorklist($branchId, null, null);
 
-// Filter logic: Show all unreleased and active cases (includes backlogs)
+// Fetch active dispute case IDs to prevent error report cases from leaking into the regular Patient Queue
+$activeDisputeCaseIds = [];
+try {
+    $stmtDisputes = $pdo->query("SELECT DISTINCT case_id FROM result_disputes WHERE status NOT IN ('Resolved', 'Rejected')");
+    if ($stmtDisputes) {
+        $activeDisputeCaseIds = $stmtDisputes->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+    }
+} catch (\Throwable $e) {
+    $activeDisputeCaseIds = [];
+}
+
+// Error workflow statuses that belong exclusively to the dispute / error correction workflow
+$errorWorkflowStatuses = [
+    'Issue Reported',
+    'For RadTech Review',
+    'Pending RadTech Review',
+    'Correction in Progress',
+    'Correction Completed',
+    'Pending RadTech Verification',
+    'Resolved'
+];
+
+// Filter logic: Show all unreleased and active cases (includes backlogs), strictly excluding error report cases
 $statusFilter = $_GET['status'] ?? null;
-$patients = array_filter($allPatients, function ($p) use ($statusFilter) {
+$patients = array_filter($allPatients, function ($p) use ($statusFilter, $activeDisputeCaseIds, $errorWorkflowStatuses) {
     if ($p['released'] != 0 || $p['status'] === 'Rejected') {
+        return false;
+    }
+    // Exclude cases that are part of the error reporting / dispute workflow
+    if (in_array($p['status'], $errorWorkflowStatuses, true)) {
+        return false;
+    }
+    // Exclude cases that currently have an active dispute ticket
+    if (!empty($p['id']) && in_array((int) $p['id'], array_map('intval', $activeDisputeCaseIds), true)) {
         return false;
     }
     $pStatus = $p['status'] ?: 'Pending';

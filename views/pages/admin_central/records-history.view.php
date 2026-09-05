@@ -59,6 +59,11 @@
                                             class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-800/50 tracking-wider">
                                             <?= htmlspecialchars($case['case_number']) ?>
                                         </span>
+                                        <?php if (!empty($case['is_amended']) && (int) $case['is_amended'] === 1): ?>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700" title="This record has been edited">
+                                                <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                                            </span>
+                                        <?php endif; ?>
                                         <div
                                             class="px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-200 shadow-sm">
                                             <?= date('M d, Y', strtotime($case['created_at'])) ?>
@@ -146,9 +151,16 @@
                                             elseif ($statusText === 'Report Ready')
                                                 $statusColor = 'bg-purple-50 border-purple-200 text-purple-700';
                                             ?>
-                                            <div
-                                                class="inline-flex items-center justify-center px-3 py-1 rounded-full border <?= $statusColor ?> text-xs font-bold tracking-wide">
-                                                <?= htmlspecialchars($statusText) ?>
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <div
+                                                    class="inline-flex items-center justify-center px-3 py-1 rounded-full border <?= $statusColor ?> text-xs font-bold tracking-wide">
+                                                    <?= htmlspecialchars($statusText) ?>
+                                                </div>
+                                                <?php if (!empty($case['is_amended']) && (int) $case['is_amended'] === 1): ?>
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700" title="This record has been edited">
+                                                        <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>

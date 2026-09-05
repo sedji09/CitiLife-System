@@ -6,6 +6,8 @@
  * following the minimalist GitHub aesthetic.
  */
 
+require_once __DIR__ . '/../../helpers.php';
+
 if (!function_exists('renderGitHubStyleEmail')) {
     /**
      * Core renderer for GitHub-styled email
@@ -14,22 +16,30 @@ if (!function_exists('renderGitHubStyleEmail')) {
      *   'headerTitle'   => string (e.g. "Please verify your identity, sedji09"),
      *   'cardContent'   => string (HTML content inside the white card),
      *   'footerNotice'  => string (Contextual notice below card),
-     *   'brandLogo'     => string (optional custom logo SVG or text),
+     *   'brandLogoUrl'  => string (optional custom logo URL),
      * ]
      * @return string
      */
     function renderGitHubStyleEmail($params = [])
     {
+        $systemName = function_exists('getSystemName') ? getSystemName() : 'CitiLife Diagnostic Center';
         $headerTitle = $params['headerTitle'] ?? '';
         $cardContent = $params['cardContent'] ?? '';
-        $footerNotice = $params['footerNotice'] ?? 'You received this email because of an activity related to your Citilife account.';
+        $footerNotice = $params['footerNotice'] ?? ("You received this email because of an activity related to your " . $systemName . " account.");
         $currentYear = date('Y');
 
-        $appUrl = getenv('APP_URL') ?: ($_SERVER['APP_URL'] ?? 'https://citilife-system-production.up.railway.app');
-        $logoUrl = rtrim($appUrl, '/') . '/public/assets/img/logo/citilife-logo.png';
+        if (!empty($params['brandLogoUrl'])) {
+            $logoUrl = $params['brandLogoUrl'];
+        } else {
+            $logoUrl = function_exists('getSystemLogoUrl') ? getSystemLogoUrl(true) : '';
+            if (empty($logoUrl)) {
+                $appUrl = getenv('APP_URL') ?: ($_SERVER['APP_URL'] ?? 'https://citilife-system-production.up.railway.app');
+                $logoUrl = rtrim($appUrl, '/') . '/public/assets/img/logo/citilife-logo.png';
+            }
+        }
 
         $logoHtml = '<div style="display: inline-block; margin-bottom: 16px;">
-            <img src="' . htmlspecialchars($logoUrl) . '" alt="Citilife" width="56" height="56" style="display: block; width: 56px; height: 56px; max-width: 56px; border-radius: 50%; object-fit: contain; margin: 0 auto; border: 0;" />
+            <img src="' . htmlspecialchars($logoUrl) . '" alt="' . htmlspecialchars($systemName) . '" width="56" height="56" style="display: block; width: 56px; height: 56px; max-width: 56px; border-radius: 50%; object-fit: contain; margin: 0 auto; border: 0;" />
         </div>';
 
         return '<!DOCTYPE html>
@@ -68,9 +78,9 @@ if (!function_exists('renderGitHubStyleEmail')) {
                     <!-- Outer Footer Details -->
                     <tr>
                         <td align="center" style="padding: 24px 16px 12px 16px; font-size: 12px; line-height: 18px; color: #656d76; text-align: center;">
-                            <p style="margin: 0 0 8px 0;">' . $footerNotice . '</p>
-                            <p style="margin: 0 0 8px 0; font-weight: 500;">Citilife Medical &amp; Diagnostic Center</p>
-                            <p style="margin: 0; color: #8c959f;">&copy; ' . $currentYear . ' Citilife Diagnostic Center. All rights reserved.</p>
+                            <p style="margin: 0 0 8px 0;">' . htmlspecialchars($footerNotice) . '</p>
+                            <p style="margin: 0 0 8px 0; font-weight: 500;">' . htmlspecialchars($systemName) . '</p>
+                            <p style="margin: 0; color: #8c959f;">&copy; ' . $currentYear . ' ' . htmlspecialchars($systemName) . '. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>
@@ -96,14 +106,15 @@ if (!function_exists('renderOtpEmail')) {
      */
     function renderOtpEmail($recipientName, $otpCode, $purpose = 'login', $expiryMinutes = 15, $customHeading = null, $footerReason = null)
     {
+        $systemName = function_exists('getSystemName') ? getSystemName() : 'CitiLife Diagnostic Center';
         $safeName = htmlspecialchars($recipientName ?: 'there');
         $heading = $customHeading ?: "Please verify your identity, <strong>{$safeName}</strong>";
 
         if (!$footerReason) {
-            $footerReason = "You're receiving this email because a verification code was requested for your Citilife account. If this wasn't you, please secure your account or ignore this message.";
+            $footerReason = "You're receiving this email because a verification code was requested for your {$systemName} account. If this wasn't you, please secure your account or ignore this message.";
         }
 
-        $purposeLabel = "Citilife " . htmlspecialchars($purpose);
+        $purposeLabel = htmlspecialchars($systemName) . " " . htmlspecialchars($purpose);
 
         $cardContent = '
             <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 22px; color: #1f2328;">
@@ -126,7 +137,7 @@ if (!function_exists('renderOtpEmail')) {
 
             <div style="border-top: 1px solid #d0d7de; padding-top: 18px; margin-top: 24px;">
                 <p style="margin: 0; font-size: 14px; line-height: 20px; color: #1f2328; font-weight: 500;">
-                    Thank you for choosing <strong>Citilife</strong>
+                    Thank you for choosing <strong>' . htmlspecialchars($systemName) . '</strong>
                 </p>
             </div>
         ';
@@ -156,9 +167,10 @@ if (!function_exists('renderActionEmail')) {
      */
     function renderActionEmail($recipientName, $heading, $introText, $buttonText, $buttonUrl, $expiryNote = null, $securityNote = null, $footerReason = null, $buttonColor = '#dc2626')
     {
+        $systemName = function_exists('getSystemName') ? getSystemName() : 'CitiLife Diagnostic Center';
         $safeName = htmlspecialchars($recipientName ?: 'there');
         if (!$footerReason) {
-            $footerReason = "You're receiving this email because of a request associated with your Citilife account.";
+            $footerReason = "You're receiving this email because of a request associated with your {$systemName} account.";
         }
 
         $cardContent = '
@@ -203,7 +215,7 @@ if (!function_exists('renderActionEmail')) {
 
             <div style="border-top: 1px solid #d0d7de; padding-top: 18px; margin-top: 24px;">
                 <p style="margin: 0; font-size: 14px; line-height: 20px; color: #1f2328; font-weight: 500;">
-                    Thank you for choosing <strong>Citilife</strong>
+                    Thank you for choosing <strong>' . htmlspecialchars($systemName) . '</strong>
                 </p>
             </div>
         ';
@@ -232,9 +244,10 @@ if (!function_exists('renderNotificationEmail')) {
      */
     function renderNotificationEmail($recipientName, $heading, $introText, $details = [], $buttonText = null, $buttonUrl = null, $footerReason = null, $buttonColor = '#dc2626')
     {
+        $systemName = function_exists('getSystemName') ? getSystemName() : 'CitiLife Diagnostic Center';
         $safeName = htmlspecialchars($recipientName ?: 'there');
         if (!$footerReason) {
-            $footerReason = "You're receiving this notification because of an update in your Citilife account records.";
+            $footerReason = "You're receiving this notification because of an update in your {$systemName} account records.";
         }
 
         $cardContent = '
@@ -273,7 +286,7 @@ if (!function_exists('renderNotificationEmail')) {
         $cardContent .= '
             <div style="border-top: 1px solid #d0d7de; padding-top: 18px; margin-top: 24px;">
                 <p style="margin: 0; font-size: 14px; line-height: 20px; color: #1f2328; font-weight: 500;">
-                    Thank you for choosing <strong>Citilife</strong>
+                    Thank you for choosing <strong>' . htmlspecialchars($systemName) . '</strong>
                 </p>
             </div>
         ';
@@ -285,3 +298,4 @@ if (!function_exists('renderNotificationEmail')) {
         ]);
     }
 }
+

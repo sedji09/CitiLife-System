@@ -73,7 +73,7 @@
             if (!emptyMsg) {
                 emptyMsg = document.createElement('tr');
                 emptyMsg.id = emptyMsgId;
-                emptyMsg.innerHTML = `<td colspan="6" class="text-center py-8 text-gray-500">No records match your filters.</td>`;
+                emptyMsg.innerHTML = `<td colspan="7" class="text-center py-8 text-gray-500">No records match your filters.</td>`;
                 tbody.appendChild(emptyMsg);
             } else {
                 emptyMsg.style.display = '';

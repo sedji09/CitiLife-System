@@ -142,29 +142,7 @@ if ($activeDispute && $backPage === 'worklist') {
     </div>
 </div>
 
-<?php if ($activeDispute): ?>
-<div class="mb-5 rounded-2xl bg-amber-50 border-2 border-amber-300 p-5 shadow-sm space-y-3">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 text-amber-900 font-bold text-base">
-            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i>
-            <span>Patient Error Report / Dispute Active (Escalated by RadTech)</span>
-        </div>
-        <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900">
-            <?= htmlspecialchars($activeDispute['status']) ?>
-        </span>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div class="bg-red-50 p-3 rounded-xl border border-red-200 col-span-1">
-            <span class="font-bold text-red-900 block mb-1">Patient Error Report / Complaint:</span>
-            <p class="text-red-800 font-medium"><?= htmlspecialchars($activeDispute['description'] ?: 'No description provided by patient.') ?></p>
-        </div>
-        <div class="bg-red-50 p-3 rounded-xl border border-red-200 col-span-1">
-            <span class="font-bold text-red-900 block mb-1">RadTech Internal Notes:</span>
-            <p class="text-red-800 font-medium"><?= htmlspecialchars($activeDispute['radtech_notes'] ?: 'No internal notes provided.') ?></p>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
+
 
 <!-- ══ Row 2: Viewer + Report Editor ══ -->
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
@@ -363,7 +341,8 @@ if ($activeDispute && $backPage === 'worklist') {
         <form id="report-form" method="POST" action="">
             <input type="hidden" name="clinical_information" id="clinical_information_hidden" value="<?= htmlspecialchars($caseDetails['clinical_information'] ?? '') ?>">
             <input type="hidden" name="exam_reports" id="exam_reports_hidden" value="">
-            <input type="hidden" name="submit_report" value="1">
+            <input type="hidden" name="save_draft" id="save_draft_input" disabled>
+            <input type="hidden" name="submit_final" id="submit_final_input" disabled>
         </form>
 
         <!-- Exam panels -->
@@ -396,11 +375,11 @@ if ($activeDispute && $backPage === 'worklist') {
                             <span class="text-[10px] text-gray-400" id="findings-count-<?= $idx ?>">0 words</span>
                         </div>
                         <textarea
-                            class="exam-findings flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
+                            class="exam-findings flex-1 w-full rounded-xl border border-gray-200 <?= ($isCompleted || $isDraftLocked) ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
                             placeholder="Describe radiographic findings for <?= htmlspecialchars($exam) ?>..."
-                            <?= $isCompleted ? 'readonly' : '' ?>><?= htmlspecialchars($savedF) ?></textarea>
+                            <?= ($isCompleted || $isDraftLocked) ? 'readonly' : '' ?>><?= htmlspecialchars($savedF) ?></textarea>
                     </div>
 
                     <!-- Impression -->
@@ -410,11 +389,11 @@ if ($activeDispute && $backPage === 'worklist') {
                             <span class="text-[10px] text-gray-400" id="impression-count-<?= $idx ?>">0 words</span>
                         </div>
                         <textarea
-                            class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-white cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
+                            class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= ($isCompleted || $isDraftLocked) ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
                             placeholder="Impression for <?= htmlspecialchars($exam) ?>..."
-                            <?= $isCompleted ? 'readonly' : '' ?>><?= htmlspecialchars($savedI) ?></textarea>
+                            <?= ($isCompleted || $isDraftLocked) ? 'readonly' : '' ?>><?= htmlspecialchars($savedI) ?></textarea>
                     </div>
                 </div>
 
@@ -431,29 +410,35 @@ if ($activeDispute && $backPage === 'worklist') {
                 </div>
                 <button type="button" id="btn-edit-report"
                         class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all">
-                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Findings
+                    <i data-lucide="edit-3" class="w-4 h-4"></i> Revert to Draft
                 </button>
             </div>
             
-            <div id="editable-footer-actions" class="<?= $isCompleted ? 'hidden' : '' ?> w-full">
-                <button type="button" id="btn-submit-report"
+            <div id="editable-footer-actions" class="<?= $isCompleted ? 'hidden' : '' ?> w-full flex flex-col gap-2">
+                <button type="button" id="btn-edit-draft"
+                        class="<?= $isDraftLocked ? '' : 'hidden' ?> w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Draft
+                </button>
+                <button type="button" id="btn-save-draft"
+                        class="<?= $isDraftLocked ? 'hidden' : '' ?> w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl shadow-sm focus:ring-4 focus:ring-gray-100 focus:outline-none transition-all">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="button" id="btn-submit-final"
                         class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm focus:ring-4 focus:ring-red-200 focus:outline-none transition-all">
-                    <i data-lucide="send" class="w-4 h-4"></i> Submit Report
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit as Final
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-
-<!-- ══ JavaScript ═══════════════════════════════════════════════════════════════ -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ── Exam data store ───────────────────────────────────────────────────────
     const examKeys  = <?= json_encode($examTypes) ?>;
     const savedData = <?= json_encode($savedReports) ?>;
     let isCompleted = <?= $isCompleted ? 'true' : 'false' ?>;
+    let isDraftLocked = <?= $isDraftLocked ? 'true' : 'false' ?>;
     const STORAGE_KEY = `rad_case_draft_<?= $caseId ?>`;
 
     const store = {}; // { examKey: { findings, impression } }
@@ -608,14 +593,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const clinicalPanel = null; // removed
     document.getElementById('btn-clinical')?.addEventListener('click', () => {});
 
-    // ── Submit ────────────────────────────────────────────────────────────────
-    document.getElementById('btn-submit-report')?.addEventListener('click', (e) => {
-        if (isCompleted) return;
+    // ── Edit Draft Unlock ─────────────────────────────────────────────────────
+    const btnEditDraft = document.getElementById('btn-edit-draft');
+    if (btnEditDraft) {
+        btnEditDraft.addEventListener('click', () => {
+            isDraftLocked = false;
+            document.querySelectorAll('.exam-findings, .exam-impression').forEach(ta => {
+                ta.removeAttribute('readonly');
+                ta.classList.remove('bg-gray-50', 'cursor-not-allowed', 'text-gray-600');
+                ta.classList.add('bg-white', 'focus:ring-2', 'focus:ring-red-100', 'focus:border-red-300');
+            });
+            btnEditDraft.classList.add('hidden');
+            document.getElementById('btn-save-draft').classList.remove('hidden');
+        });
+    }
 
-        // Save current panel's values into store first
-        syncHiddenInput();
+    // ── Submit Logic ──────────────────────────────────────────────────────────
 
-        // Validate every exam has findings AND impression
+    function validateReport() {
         let firstInvalid = -1;
         let firstInvalidField = null;
 
@@ -638,20 +633,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const field = panel?.querySelector(firstInvalidField === 'findings' ? '.exam-findings' : '.exam-impression');
             if (field) {
                 field.classList.add('border-red-500', 'ring-2', 'ring-red-200');
-                field.setCustomValidity('Please fill out this field.');
+                field.setCustomValidity('Please fill out this field before finalizing.');
                 field.reportValidity();
                 field.addEventListener('input', () => {
                     field.setCustomValidity('');
                     field.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
                 }, { once: true });
             }
-            return;
+            return false;
         }
+        return true;
+    }
 
-        // All valid — submit
-        confirmAction('Submit Report', 'Would you like to confirm finalizing and submitting this report?', () => {
+    document.getElementById('btn-save-draft')?.addEventListener('click', (e) => {
+        if (isCompleted) return;
+        syncHiddenInput();
+
+        document.getElementById('save_draft_input').disabled = false;
+        document.getElementById('submit_final_input').disabled = true;
+        document.getElementById('report-form').submit();
+    });
+
+    document.getElementById('btn-submit-final')?.addEventListener('click', (e) => {
+        if (isCompleted) return;
+        syncHiddenInput();
+
+        if (!validateReport()) return;
+
+        confirmAction('Submit Final Report', 'Are you sure this report is final? You will not be able to edit it once submitted.', () => {
+            document.getElementById('save_draft_input').disabled = true;
+            document.getElementById('submit_final_input').disabled = false;
             document.getElementById('report-form').submit();
-        }, 'Yes, Submit', false, e);
+        }, 'Yes, Submit Final', false, e);
     });
 
     // ── Unlock Report Findings for Editing ────────────────────────────────────
@@ -692,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form.action = '';
         const input = document.createElement('input');
         input.type = 'hidden';
-        input.name = 'unlock_report';
+        input.name = 'revert_to_draft';
         input.value = '1';
         form.appendChild(input);
         document.body.appendChild(form);

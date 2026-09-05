@@ -13,19 +13,63 @@ if (isset($caseNotFound) && $caseNotFound) {
 $userRole = $_SESSION['role'] ?? 'radtech';
 $from = $_GET['from'] ?? '';
 
-$backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
+if (!function_exists('getXrayImageLabel')) {
+    function getXrayImageLabel($sPath, $idx = 0, $examType = '') {
+        $baseName = pathinfo($sPath, PATHINFO_FILENAME);
+
+        // 1. If saved with original file name: case_{caseId}_{time}_{idx}_{originalName}
+        if (preg_match('/^case_\d+_\d+_\d+_(.+)$/', $baseName, $m)) {
+            $name = trim($m[1]);
+            return $name;
+        }
+
+        // 2. If corresponding exam from exam_type exists (e.g. "Chest PA", "Chest AP, Chest PA")
+        if (!empty($examType)) {
+            $exams = array_values(array_filter(array_map('trim', explode(',', $examType))));
+            if (isset($exams[$idx]) && $exams[$idx] !== '') {
+                return $exams[$idx];
+            }
+        }
+
+        // 3. If file has a descriptive name (not starting with case_ or random hash)
+        if (!preg_match('/^case_\d+/i', $baseName) && strlen($baseName) > 2) {
+            return str_replace(['_', '-'], ' ', $baseName);
+        }
+
+        // 4. Default fallback: exam_type if single exam, else IMG {idx + 1}
+        if (!empty($examType) && !str_contains($examType, ',')) {
+            return trim($examType);
+        }
+
+        return 'IMG ' . ($idx + 1);
+    }
+}
+
+$from = $_GET['from'] ?? '';
+
 if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     $backLink = "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases";
 } elseif ($userRole === 'admin_central' || $from === 'patient-records') {
     $backLink = "/" . PROJECT_DIR . "/index.php?page=patient-records";
+} elseif ($from === 'report-ready') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=report-ready";
+} elseif ($from === 'approval' || $from === 'patient-approval') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval";
+} elseif ($from === 'queue' || $from === 'patient-queue') {
+    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
 } elseif ($from === 'disputes') {
-    $backLink .= "&tab=disputes";
+    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes";
+} elseif (!empty($activeDispute) || !empty($_GET['dispute_id'])) {
+    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes";
+} else {
+    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
 }
 ?>
 
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="<?= $backLink ?>"
+    <a href="<?= htmlspecialchars($backLink) ?>"
+        id="patient-details-back-btn"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
@@ -37,16 +81,120 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     </div>
 </div>
 
-<?php if ($isReadOnly && $userRole === 'radtech'): ?>
-    <div class="mt-5 rounded-lg bg-blue-50 border border-blue-300 p-4 flex items-center gap-3">
-        <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0"></i>
-        <p class="text-sm text-blue-800 font-medium">
-            <?= (!empty($activeDispute) && $activeDispute['status'] === 'Escalated to Radiologist')
-                ? 'This error report has already been escalated to the Radiologist for review & report amendment.'
-                : 'This case has already been submitted to the radiologist' ?>
-        </p>
-    </div>
+<?php
+// Determine amendment type based on reported issue
+$dCategory  = $activeDispute['dispute_category'] ?? $activeDispute['category'] ?? '';
+$dDescLower = strtolower($activeDispute['description'] ?? '');
+
+$isTemplateOnly = ($dCategory === 'template_error');
+$isBothTemplate = ($dCategory === 'both_template_error');
+$isPureDemo     = ($dCategory === 'demographic_error');
+$isBothTypo     = ($dCategory === 'both_error');
+$isTypoOnly     = ($dCategory === 'findings_error');
+
+$showFindings         = in_array($dCategory, ['findings_error', 'both_error', 'exam_details_error', 'other', 'other_error']);
+$showXrayTemplateName = in_array($dCategory, ['template_error', 'both_template_error']);
+$showDemographics     = false; // Patient demographics are managed via Fix Patient Demographics in the table
+
+// Fallback detection from description if category wasn't exact
+if (!$showFindings && !$showXrayTemplateName && !$isPureDemo) {
+    if (strpos($dDescLower, 'template rename') !== false || strpos($dDescLower, 'correct template') !== false) {
+        $showXrayTemplateName = true;
+    } elseif (strpos($dDescLower, 'findings') !== false || strpos($dDescLower, 'typo') !== false) {
+        $showFindings = true;
+    }
+}
+
+// Extract patient's requested changes from dispute description
+$dDesc = $activeDispute['description'] ?? '';
+$reqCorrectTemplate = '';
+$reqSide = '';
+$reqNotes = '';
+$reqFirstName = '';
+$reqLastName = '';
+$reqAge = '';
+$reqSex = '';
+
+if (preg_match('/Correct Template:\s*([^\n\r]+)/i', $dDesc, $m)) {
+    $reqCorrectTemplate = trim($m[1]);
+}
+if (preg_match('/Selected Side:\s*([^\n\r]+)/i', $dDesc, $m)) {
+    $reqSide = trim($m[1]);
+}
+if (preg_match('/Notes:\s*([^\n\r]+)/i', $dDesc, $m)) {
+    $reqNotes = trim($m[1]);
+}
+if (preg_match('/First Name:\s*([^\n\r,]+)/i', $dDesc, $m)) {
+    $reqFirstName = trim($m[1]);
+}
+if (preg_match('/Last Name:\s*([^\n\r,]+)/i', $dDesc, $m)) {
+    $reqLastName = trim($m[1]);
+}
+if (preg_match('/(?:Age|Birthdate):\s*([^\n\r,]+)/i', $dDesc, $m)) {
+    $rawVal = trim($m[1]);
+    if (preg_match('/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/', $rawVal, $dm)) {
+        try {
+            $bdate = new DateTime($dm[0]);
+            $today = new DateTime();
+            $reqAge = (string)$today->diff($bdate)->y;
+        } catch (\Exception $e) {
+            $reqAge = '';
+        }
+    } elseif (preg_match('/(\d+)/', $rawVal, $nm)) {
+        $reqAge = $nm[1];
+    }
+}
+if (preg_match('/Sex:\s*([^\n\r,]+)/i', $dDesc, $m)) {
+    $reqSex = trim($m[1]);
+}
+
+// Banner text tailored to category
+$amendBannerMsg = 'Amend Mode — Edit findings directly below and save when done.';
+if ($showXrayTemplateName && $showFindings) {
+    $amendBannerMsg = 'Amend Mode — Edit findings and rename X-ray template below and save when done.';
+} elseif ($showXrayTemplateName) {
+    $amendBannerMsg = 'Amend Mode — Rename X-ray template name below and save when done.';
+} elseif ($showFindings) {
+    $amendBannerMsg = 'Amend Mode — Edit findings directly below and save when done.';
+}
+
+$catBadgeLabel = match ($dCategory) {
+    'findings_error'      => 'Typographical Error',
+    'demographic_error'   => 'Patient Info Error',
+    'template_error'      => 'Template Rename',
+    'both_error'          => 'Typo & Info Error',
+    'both_template_error' => 'Info & Template Rename',
+    'exam_details_error'  => 'Exam Details Error',
+    'other', 'other_error'=> 'Other Concern',
+    default               => ucwords(str_replace('_', ' ', $dCategory ?: 'Correction Request'))
+};
+?>
+
+<div id="patient-details-status-banner-container">
+<?php if ($isReadOnly && $userRole === 'radtech' && !($isAmendMode ?? false)): ?>
+    <?php if ($caseDetails['status'] === 'Report Ready'): ?>
+        <div class="mt-5 rounded-lg bg-purple-50 border border-purple-300 p-4 flex items-center gap-3 shadow-xs">
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-600 shrink-0"></i>
+            <p class="text-sm text-purple-800 font-medium">The radiologist report is ready. You can review the findings below and print the result.</p>
+        </div>
+    <?php elseif ($caseDetails['status'] === 'Completed' || $caseDetails['status'] === 'Released'): ?>
+        <div class="mt-5 rounded-lg bg-green-50 border border-green-300 p-4 flex items-center gap-3 shadow-xs">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 shrink-0"></i>
+            <p class="text-sm text-green-800 font-medium">This case has been completed and released.</p>
+        </div>
+    <?php elseif ($caseDetails['status'] === 'Under Reading'): ?>
+        <div class="mt-5 rounded-lg bg-blue-50 border border-blue-300 p-4 flex items-center gap-3 shadow-xs">
+            <i data-lucide="clock" class="w-5 h-5 text-blue-600 shrink-0"></i>
+            <p class="text-sm text-blue-800 font-medium">This case is currently under reading by the radiologist.</p>
+        </div>
+    <?php else: ?>
+        <div class="mt-5 rounded-lg bg-blue-50 border border-blue-300 p-4 flex items-center gap-3 shadow-xs">
+            <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0"></i>
+            <p class="text-sm text-blue-800 font-medium">This case has already been submitted to the radiologist.</p>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>
+</div>
 
 <?php if ($errorMsg): ?>
     <div class="mt-5 rounded-lg bg-red-50 border border-red-300 p-4 flex items-center gap-3">
@@ -63,7 +211,9 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     </div>
 <?php endif; ?>
 
+<?php if (empty($activeDispute) && !($isAmendMode ?? false)): ?>
 <form method="POST" action="" enctype="multipart/form-data" id="patient-details-form">
+<?php endif; ?>
     <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- Patient Verification -->
@@ -155,24 +305,39 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                 <div class="pt-1">
                     <span class="block text-gray-600 text-sm font-medium mb-1.5">Status</span>
                     <?php
-                    $displayStatus = $caseDetails['status'] ?: 'Pending';
+                    if (!empty($activeDispute)) {
+                        $displayStatus = $activeDispute['status'] ?? ($caseDetails['status'] ?: 'Pending');
+                    } else {
+                        $displayStatus = $caseDetails['status'] ?: 'Pending';
+                    }
+                    if ($displayStatus === 'Escalated to Radiologist') {
+                        $displayStatus = 'Correction in Progress';
+                    }
                     $isOverdue = (time() - strtotime($caseDetails['created_at'])) >= 3 * 3600;
                     if ($displayStatus === 'Pending' && $isOverdue) {
                         $displayStatus = 'Overdue';
                     }
-
-                    if ($displayStatus === 'Completed')
-                        $sBadge = 'border border-green-400 bg-green-50 text-green-700';
-                    elseif ($displayStatus === 'Under Reading')
-                        $sBadge = 'border border-blue-400 bg-blue-50 text-blue-700';
-                    elseif ($displayStatus === 'Report Ready')
-                        $sBadge = 'border border-indigo-400 bg-indigo-50 text-indigo-700';
-                    elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected')
-                        $sBadge = 'border border-red-400 bg-red-50 text-red-700';
-                    else
-                        $sBadge = 'border border-yellow-400 bg-yellow-50 text-yellow-700';
+                    if ($displayStatus === 'Completed' || $displayStatus === 'Resolved') {
+                        $sBadge = 'border border-green-200 bg-green-50 text-green-700';
+                    } elseif ($displayStatus === 'Correction Completed' || $displayStatus === 'Pending RadTech Verification') {
+                        $sBadge = 'border border-blue-200 bg-blue-50 text-blue-700';
+                    } elseif ($displayStatus === 'Correction in Progress') {
+                        $sBadge = 'border border-indigo-200 bg-indigo-50 text-indigo-700';
+                    } elseif ($displayStatus === 'For RadTech Review') {
+                        $sBadge = 'border border-amber-200 bg-amber-50 text-amber-700';
+                    } elseif (in_array($displayStatus, ['Issue Reported', 'Pending RadTech Review'])) {
+                        $sBadge = 'border border-rose-200 bg-rose-50 text-rose-700';
+                    } elseif ($displayStatus === 'Under Reading') {
+                        $sBadge = 'border border-blue-200 bg-blue-50 text-blue-700';
+                    } elseif ($displayStatus === 'Report Ready') {
+                        $sBadge = 'border border-purple-200 bg-purple-50 text-purple-700';
+                    } elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected') {
+                        $sBadge = 'border border-red-200 bg-red-50 text-red-700';
+                    } else {
+                        $sBadge = 'border border-yellow-200 bg-yellow-50 text-yellow-700';
+                    }
                     ?>
-                    <span class="inline-block font-bold text-xs px-3 py-1.5 rounded-full <?= $sBadge ?>">
+                    <span id="case-status-badge" class="inline-block font-bold text-xs px-3 py-1.5 rounded-full transition-all duration-300 <?= $sBadge ?>">
                         <?= htmlspecialchars($displayStatus) ?>
                     </span>
                 </div>
@@ -181,283 +346,397 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 
     </div>
 
-    <?php $isReportReady = empty($activeDispute) && in_array($caseDetails['status'], ['Report Ready', 'Completed']); ?>
+    <?php $isReportReady = empty($activeDispute) && in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']); ?>
 
     <?php if (!empty($activeDispute)): ?>
         <!-- 2-COLUMN DISPUTE RESOLUTION ROW -->
         <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-
-            <!-- Left Card: Patient Error Report & Endorsement -->
-            <div
-                class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm space-y-5 h-full flex flex-col justify-between">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="file-warning" class="w-5 h-5 text-red-600"></i>
-                    <h3 class="text-lg font-semibold text-gray-800">Correction & Endorsement</h3>
-                </div>
-
-                <!-- Patient Stated Report -->
+            <!-- ═════════════════════════════════════════════════════════════════
+                 DISPUTE MODE: LEFT CARD is Diagnostic Image & Patient Issue
+                 ═════════════════════════════════════════════════════════════════ -->
+            <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col h-full space-y-4">
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Patient's Reported Issue
-                        </label>
-                        <?php if (!empty($activeDispute['category'])): ?>
-                            <?php
-                            $cat = $activeDispute['category'];
-                            $catLabel = match ($cat) {
-                                'findings_error' => 'Findings Error',
-                                'demographic_error' => 'Demographic Error',
-                                'both_error' => 'Findings & Demographic Error',
-                                'exam_details_error' => 'Exam Details Error',
-                                default => ucwords(str_replace('_', ' ', $cat))
-                            };
-                            ?>
-                            <span
-                                class="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                                <?= htmlspecialchars($catLabel) ?>
-                            </span>
-                        <?php endif; ?>
-                    </div>
-                    <?php
-                    $rawDesc = trim($activeDispute['description'] ?? 'No notes provided.');
-                    $cleanRaw = str_replace(["\r\n", "\r"], "\n", $rawDesc);
-
-                    $findingsNote = '';
-                    if (preg_match('/Findings Note:\s*(.*?)(?=(Wrong Patient Info:|Exam Details Note:|Demographics Note:|$))/si', $cleanRaw, $m)) {
-                        $findingsNote = trim(preg_replace('/^\s*•\s*/m', '', trim($m[1])));
-                    }
-
-                    // Fallback to general description only if there is no demographic section
-                    if (empty($findingsNote) && !preg_match('/(Wrong Patient Info:|Demographics Note:)/i', $cleanRaw)) {
-                        $findingsNote = $cleanRaw;
-                    }
-                    ?>
-                    <?php if (!empty($findingsNote)): ?>
-                        <div
-                            class="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-wrap mt-1">
-                            <?= htmlspecialchars($findingsNote) ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-500 italic mt-1">
-                            No specific findings notes reported.
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Correction Type Options (Clean single-line options) -->
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-                        Correction Type
-                    </label>
-                    <?php
-                    $activeCorrectionType = 'typo';
-                    if (!empty($activeDispute['radtech_notes'])) {
-                        if (str_contains($activeDispute['radtech_notes'], '[New Image Re-uploaded]')) {
-                            $activeCorrectionType = 'reupload';
-                        } elseif (str_contains($activeDispute['radtech_notes'], '[Re-reading Request]')) {
-                            $activeCorrectionType = 'reread';
-                        }
-                    }
-
-                    $existingPaths = [];
-                    if (!empty($caseDetails['image_path'])) {
-                        $decoded = json_decode($caseDetails['image_path'], true);
-                        $existingPaths = is_array($decoded) ? $decoded : [$caseDetails['image_path']];
-                    }
-                    $existingCount = count($existingPaths);
-                    ?>
-                    <div class="space-y-2">
-                        <label
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors select-none has-checked:border-red-500 has-checked:bg-red-50/40">
-                            <input type="radio" name="correction_type" value="typo" <?= $activeCorrectionType === 'typo' ? 'checked' : '' ?> onchange="toggleCorrectionMode(this.value)"
-                                class="text-red-600 focus:ring-red-500" <?= $isReadOnly ? 'disabled' : '' ?>>
-                            <span class="text-xs font-semibold text-gray-800">Typographical / Minor Error in Report</span>
-                        </label>
-                        <label
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors select-none has-checked:border-red-500 has-checked:bg-red-50/40">
-                            <input type="radio" name="correction_type" value="reupload"
-                                <?= $activeCorrectionType === 'reupload' ? 'checked' : '' ?>
-                                onchange="toggleCorrectionMode(this.value)" class="text-red-600 focus:ring-red-500"
-                                <?= $isReadOnly ? 'disabled' : '' ?>>
-                            <span class="text-xs font-semibold text-gray-800">Re-upload Diagnostic Image</span>
-                        </label>
-                        <label
-                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors select-none has-checked:border-red-500 has-checked:bg-red-50/40">
-                            <input type="radio" name="correction_type" value="reread" <?= $activeCorrectionType === 'reread' ? 'checked' : '' ?> onchange="toggleCorrectionMode(this.value)"
-                                class="text-red-600 focus:ring-red-500" <?= $isReadOnly ? 'disabled' : '' ?>>
-                            <span class="text-xs font-semibold text-gray-800">Request Second Reading /
-                                Re-interpretation</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- RadTech Endorsement Notes to Radiologist -->
-                <div>
-                    <label for="radtech_dispute_notes"
-                        class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-                        Notes for Radiologist <?= $isReadOnly ? '' : '<span class="text-red-500">*</span>' ?>
-                    </label>
-                    <textarea name="radtech_dispute_notes" id="radtech_dispute_notes" rows="3" <?= $isReadOnly ? 'readonly disabled' : 'required' ?>
-                        class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 <?= $isReadOnly ? 'bg-gray-50 text-gray-600 cursor-not-allowed' : '' ?>"
-                        placeholder="Enter endorsement instructions for the Radiologist..."><?= htmlspecialchars($activeDispute['radtech_notes'] ?? '') ?></textarea>
-                </div>
-            </div>
-
-            <script>
-                window.toggleCorrectionMode = function (mode) {
-                    var isReadOnly = <?= $isReadOnly ? 'true' : 'false' ?>;
-                    var retainedSection = document.getElementById('retained-image-section');
-                    var dropZoneContainer = document.getElementById('drop-zone-container');
-                    var fileCounter = document.getElementById('file-counter');
-                    var retainedBadge = document.getElementById('retained-status-badge');
-                    var errNoImg = document.getElementById('no-image-error');
-                    var errLimit = document.getElementById('limit-error');
-
-                    if (errNoImg) errNoImg.style.display = 'none';
-                    if (errLimit) errLimit.style.display = 'none';
-
-                    if (isReadOnly) {
-                        // When read-only (already escalated to Radiologist), ALWAYS show the image archive section!
-                        if (retainedSection) retainedSection.classList.remove('hidden');
-                        if (dropZoneContainer) dropZoneContainer.classList.add('hidden');
-                        if (retainedBadge) {
-                            if (mode === 'reupload') {
-                                retainedBadge.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Re-uploaded Image';
-                                retainedBadge.className = 'inline-flex items-center gap-1 font-semibold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded';
-                            } else {
-                                retainedBadge.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Retained for Report';
-                                retainedBadge.className = 'inline-flex items-center gap-1 font-semibold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded';
-                            }
-                        }
-                        if (fileCounter) {
-                            fileCounter.textContent = '<?= count($existingPaths) ?>     <?= count($existingPaths) === 1 ? 'file' : 'files' ?>';
-                        }
-                    } else {
-                        if (mode === 'typo' || mode === 'reread') {
-                            if (retainedSection) retainedSection.classList.remove('hidden');
-                            if (dropZoneContainer) dropZoneContainer.classList.add('hidden');
-                            if (retainedBadge) {
-                                retainedBadge.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Retained for Report';
-                                retainedBadge.className = 'inline-flex items-center gap-1 font-semibold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded';
-                            }
-                            if (fileCounter) {
-                                fileCounter.textContent = '<?= count($existingPaths) ?>     <?= count($existingPaths) === 1 ? 'file' : 'files' ?>';
-                            }
-                        } else {
-                            if (retainedSection) retainedSection.classList.add('hidden');
-                            if (dropZoneContainer) dropZoneContainer.classList.remove('hidden');
-                            if (fileCounter) {
-                                    fileCounter.textContent = (typeof fileQueue !== 'undefined' && fileQueue.length ? fileQueue.length : 0) + ' files';
-                                }
-                            }
-                        }
-                        if (window.lucide) window.lucide.createIcons();
-                    };
-
-                    document.addEventListener('DOMContentLoaded', function() {
-                        var curMode = '<?= $activeCorrectionType ?>';
-                        if (window.toggleCorrectionMode) window.toggleCorrectionMode(curMode);
-                    });
-                </script>
-
-                <!-- Right Card: Diagnostic Image / Retained Image -->
-                <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col h-full space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="image" class="w-5 h-5 text-gray-700"></i>
-                            <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image</h3>
-                        </div>
-                        <span id="file-counter" class="text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2.5 py-0.5">
-                            <?= $existingCount ?>     <?= $existingCount === 1 ? 'file' : 'files' ?>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image</h3>
+                        <span class="text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2.5 py-0.5">
+                            <?= $existingCount = count(json_decode($caseDetails['image_path'] ?? '[]', true) ?: [$caseDetails['image_path'] ?? '']) ?> <?= $existingCount === 1 ? 'file' : 'files' ?>
                         </span>
                     </div>
+                    <p class="text-xs text-gray-500">DICOM · JPG · JPEG · PNG — Max 15 MB per file</p>
+                </div>
 
-                    <!-- Retained / Uploaded Image Section -->
-                    <div id="retained-image-section" class="space-y-3">
-                        <div class="rounded-lg bg-gray-50 border border-gray-200 p-3 flex items-center justify-between text-xs">
-                            <span class="font-medium text-gray-700">Attached Image(s): <strong><?= $existingCount ?>     <?= $existingCount === 1 ? 'file' : 'files' ?></strong></span>
-                            <span id="retained-status-badge" class="inline-flex items-center gap-1 font-semibold <?= $activeCorrectionType === 'reupload' ? 'text-blue-700 bg-blue-100 border border-blue-200' : 'text-green-700 bg-green-100 border border-green-200' ?> px-2 py-0.5 rounded">
-                                <i data-lucide="<?= $activeCorrectionType === 'reupload' ? 'check-circle' : 'check' ?>" class="w-3.5 h-3.5"></i>
-                                <?= $activeCorrectionType === 'reupload' ? 'Re-uploaded Image' : 'Retained for Report' ?>
-                            </span>
-                        </div>
+                <!-- Retained / Uploaded Image Section -->
+                <div id="retained-image-section" class="space-y-3 flex-1">
+                    <p class="text-xs text-gray-500">Click thumbnail to view full-screen image.</p>
 
-                        <p class="text-xs text-gray-500">Click thumbnail to view full-screen image.</p>
+                    <?php $existingPaths = json_decode($caseDetails['image_path'] ?? '[]', true) ?: [$caseDetails['image_path'] ?? '']; ?>
+                    <?php if (!empty($existingPaths)): ?>
+                        <div class="flex flex-wrap gap-4 pt-1">
+                            <?php foreach ($existingPaths as $idx => $sPath): ?>
+                                <?php $imgLabel = getXrayImageLabel($sPath, $idx, $caseDetails['exam_type'] ?? ''); ?>
+                                <div onclick="openXrayLightbox('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>')"
+                                     style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
+                                     class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
+                                     title="<?= htmlspecialchars($imgLabel) ?> — Click to view fullscreen">
+                                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="<?= htmlspecialchars($imgLabel) ?>"
+                                         style="width: 100%; height: 100%; object-fit: contain;"
+                                         class="opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
 
-                        <?php if (!empty($existingPaths)): ?>
-                                <div class="flex flex-wrap gap-4 pt-1">
-                                    <?php foreach ($existingPaths as $idx => $sPath): ?>
-                                            <div onclick="openXrayLightbox('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>')"
-                                                style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
-                                                class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
-                                                title="Click to view image fullscreen">
-                                                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
-                                                    style="width: 100%; height: 100%; object-fit: contain;"
-                                                    class="opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
-                                    
-                                                <!-- Center Expand Icon on Hover -->
-                                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                                                    <div class="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                                                        <i data-lucide="maximize-2" class="w-5 h-5 text-white stroke-[2.5]"></i>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Bottom Label -->
-                                                <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] font-bold text-white py-1 text-center uppercase tracking-wider z-10 pointer-events-none">
-                                                    IMG <?= $idx + 1 ?>
-                                                </div>
-                                            </div>
-                                    <?php endforeach; ?>
-                                </div>
-                        <?php else: ?>
-                                <p class="text-xs text-gray-400 italic">No existing image found.</p>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Errors -->
-                    <div id="file-size-error" style="display:none;"
-                        class="rounded-lg bg-red-50 border border-red-300 p-3 flex items-center gap-2">
-                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0"></i>
-                        <p id="file-size-error-msg" class="text-sm text-red-700 font-medium">File exceeds 15 MB limit.</p>
-                    </div>
-                    <div id="no-image-error" style="display:none;"
-                        class="rounded-lg bg-red-50 border border-red-300 p-3 flex items-center gap-3">
-                        <i data-lucide="image-off" class="w-5 h-5 text-red-600 shrink-0"></i>
-                        <p class="text-sm text-red-700 font-medium">Please upload at least one diagnostic image.</p>
-                    </div>
-                    <div id="limit-error" style="display:none;"
-                        class="rounded-lg bg-orange-50 border border-orange-300 p-3 flex items-center gap-3">
-                        <i data-lucide="info" class="w-5 h-5 text-orange-600 shrink-0"></i>
-                        <p id="limit-error-msg" class="text-sm text-orange-700 font-medium">Image count must match exam count.</p>
-                    </div>
-
-                    <?php if (!$isReadOnly): ?>
-                        <!-- Dropzone Container (shown only when reupload is selected and NOT read-only) -->
-                        <div id="drop-zone-container" class="hidden">
-                            <div class="space-y-3">
-                                <div id="drop-zone"
-                                    class="flex flex-col items-center justify-center border-2 border-dashed border-red-200 rounded-xl min-h-[11rem] relative cursor-pointer transition-colors bg-white hover:bg-red-50">
-                                    <div class="text-center p-4 pointer-events-none">
-                                        <div class="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                                    <!-- Center Expand Icon on Hover -->
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                        <div class="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
+                                            <i data-lucide="maximize-2" class="w-5 h-5 text-white stroke-[2.5]"></i>
                                         </div>
-                                        <p class="text-xs font-semibold text-red-600 mb-0.5">Click or drag new X-ray files here</p>
-                                        <p class="text-[11px] text-gray-400">Max 15 MB per file (DICOM, JPG, PNG)</p>
                                     </div>
-                                    <input type="file" id="xray_file_input" name="xray_image[]" accept=".jpg,.jpeg,.png,.dcm,.dicom"
-                                        class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" multiple>
-                                </div>
 
-                                <!-- Preview list -->
-                                <div id="file-preview-area" style="display:flex;flex-direction:column;gap:0.5rem;max-height:16rem;overflow-y:auto;">
-                                    <p id="no-file-msg" style="font-size:0.75rem;color:#9ca3af;font-style:italic;">No files selected yet.</p>
+                                    <!-- Bottom Label -->
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black/75 text-[10px] font-bold text-white py-1 px-1.5 text-center uppercase tracking-wider z-10 pointer-events-none truncate" title="<?= htmlspecialchars($imgLabel) ?>">
+                                        <?= htmlspecialchars($imgLabel) ?>
+                                    </div>
                                 </div>
-                            </div>
+                            <?php endforeach; ?>
                         </div>
+                    <?php else: ?>
+                        <p class="text-xs text-gray-400 italic">No existing image found.</p>
                     <?php endif; ?>
                 </div>
 
             </div>
+
+                <!-- ═════════════════════════════════════════════════════════════════
+                     AMEND MODE: RIGHT CARD is Edit / Amend Container
+                     ═════════════════════════════════════════════════════════════════ -->
+                <?php
+                $isEdited = (isset($_GET['saved']) && $_GET['saved'] == '1')
+                    || (!empty($caseDetails['is_amended']) && (int)$caseDetails['is_amended'] === 1)
+                    || in_array($activeDispute['status'] ?? '', ['Resolved', 'Correction Completed']);
+                ?>
+                <div class="rounded-xl border border-amber-300 bg-white shadow-sm flex flex-col h-full overflow-hidden">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="edit-3" class="h-4 w-4 text-amber-600"></i>
+                            <h3 class="text-sm font-bold text-gray-800">
+                                <?php if ($showXrayTemplateName && $showFindings): ?>
+                                    Edit Report &amp; Rename X-ray Template
+                                <?php elseif ($showXrayTemplateName): ?>
+                                    Rename X-ray Template
+                                <?php else: ?>
+                                    Edit Report Findings
+                                <?php endif; ?>
+                            </h3>
+                        </div>
+                        <?php if ($isEdited): ?>
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs shrink-0">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]"></i>
+                                Edited
+                            </span>
+                        <?php endif; ?>
+                    </div>
+
+                    <form method="POST" action="" class="p-6 space-y-5 flex-1 flex flex-col">
+                        <input type="hidden" name="save_amendment" value="1">
+                        <input type="hidden" name="dispute_id" value="<?= (int)($activeDispute['id'] ?? 0) ?>">
+
+                        <!-- 1. TEMPLATE RENAME CONTROLS (Categories 3 & 5) -->
+                        <?php if ($showXrayTemplateName): ?>
+                            <div class="space-y-4">
+                                <?php if ($reqCorrectTemplate || $reqNotes || $reqSide): ?>
+                                    <!-- Patient Reported Rename Callout -->
+                                    <div class="rounded-xl bg-gray-50/80 border border-gray-300 p-4 px-5 py-4 text-xs text-black space-y-2" style="padding: 1rem 1.25rem;">
+                                        <div class="flex items-center justify-between font-semibold text-black">
+                                            <span>Patient Requested Change:</span>
+                                            <?php if ($reqSide): ?>
+                                                <span class="px-2 py-0.5 rounded bg-white text-gray-800 font-semibold text-[11px] border border-gray-300 uppercase tracking-wider">Side: <?= htmlspecialchars($reqSide) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if ($reqCorrectTemplate): ?>
+                                            <p class="text-black font-normal">Desired Template: <strong class="font-bold text-black"><?= htmlspecialchars($reqCorrectTemplate) ?></strong></p>
+                                        <?php endif; ?>
+                                        <?php if ($reqNotes): ?>
+                                            <p class="text-gray-700 italic">Notes: "<?= htmlspecialchars($reqNotes) ?>"</p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- Template Rename Input & Quick Modifiers -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider">X-RAY TEMPLATE / EXAM NAME</label>
+                                        <?php if (!$isEdited): ?>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-xs text-gray-400 font-medium mr-0.5">Quick Side:</span>
+                                                <button type="button" onclick="applyRadtechSidePrefix('Left')" class="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-200 transition cursor-pointer active:scale-95">Left</button>
+                                                <button type="button" onclick="applyRadtechSidePrefix('Right')" class="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-200 transition cursor-pointer active:scale-95">Right</button>
+                                                <button type="button" onclick="applyRadtechSidePrefix('Bilateral')" class="px-2.5 py-1 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-200 transition cursor-pointer active:scale-95">Bilateral</button>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="text"
+                                               id="amend_exam_type_input"
+                                               name="amend_exam_type"
+                                               value="<?= htmlspecialchars($reqCorrectTemplate ?: ($caseDetails['exam_type'] ?? '')) ?>"
+                                               <?= $isEdited ? 'readonly disabled' : '' ?>
+                                               placeholder="e.g. Left Knee AP / Lateral"
+                                               class="w-full text-sm font-semibold p-3 rounded-lg border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-100' ?> outline-none transition">
+                                    </div>
+                                    <div class="text-xs text-gray-500 flex items-center gap-1.5 pt-0.5">
+                                        <span>Current record:</span>
+                                        <strong class="font-bold text-black"><?= htmlspecialchars($caseDetails['exam_type'] ?? '') ?></strong>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+
+                        <!-- 3. REPORT FINDINGS & IMPRESSION (Categories 2, 4, 6 - Omitted for 3 & 5) -->
+                        <?php if ($showFindings): ?>
+                            <?php
+                            // Pre-populate previous findings & impression so RadTech can just edit the typo
+                            $currentFindings   = trim($caseDetails['findings'] ?? '');
+                            $currentImpression = trim($caseDetails['impression'] ?? '');
+
+                            // Fallback to activeDispute snapshot if case fields were empty
+                            if (empty($currentFindings) && !empty($activeDispute['old_findings'])) {
+                                $currentFindings = trim($activeDispute['old_findings']);
+                            }
+                            if (empty($currentImpression) && !empty($activeDispute['old_impression'])) {
+                                $currentImpression = trim($activeDispute['old_impression']);
+                            }
+
+                            // If stored as JSON (multi-exam format), format cleanly as readable text
+                            if (!empty($currentFindings) && ($currentFindings[0] === '{' || $currentFindings[0] === '[')) {
+                                $decodedFindings = json_decode($currentFindings, true);
+                                if (is_array($decodedFindings)) {
+                                    $fParts = [];
+                                    $iParts = [];
+                                    foreach ($decodedFindings as $eKey => $eData) {
+                                        if (is_array($eData)) {
+                                            if (!empty($eData['findings'])) {
+                                                $fParts[] = (count($decodedFindings) > 1 ? "[$eKey]\n" : '') . trim($eData['findings']);
+                                            }
+                                            if (!empty($eData['impression'])) {
+                                                $iParts[] = (count($decodedFindings) > 1 ? "[$eKey]\n" : '') . trim($eData['impression']);
+                                            }
+                                        } elseif (is_string($eData)) {
+                                            $fParts[] = trim($eData);
+                                        }
+                                    }
+                                    if (!empty($fParts)) {
+                                        $currentFindings = implode("\n\n", $fParts);
+                                    }
+                                    if (empty($currentImpression) && !empty($iParts)) {
+                                        $currentImpression = implode("\n\n", $iParts);
+                                    }
+                                }
+                            }
+
+                            // Standard template fallback if still blank
+                            if (empty($currentFindings)) {
+                                $examUpper = strtoupper(trim($caseDetails['exam_type'] ?? ''));
+                                if (strpos($examUpper, 'CHEST') !== false) {
+                                    $currentFindings = "The lung fields are clear without evidence of focal consolidation, mass, or infiltrates. The cardiac silhouette is within normal limits in size and configuration. The costophrenic angles are sharp and well-defined. No pleural effusion or pneumothorax is seen. The visualized osseous structures are intact.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No radiographic evidence of active cardiopulmonary disease.";
+                                    }
+                                } elseif (strpos($examUpper, 'ABDOMEN') !== false) {
+                                    $currentFindings = "There is a normal distribution of bowel gas within the abdomen. No dilated bowel loops or abnormal air-fluid levels are seen. No radiopaque foreign bodies or abnormal calcifications are identified. The soft tissue shadows are within normal limits, and the visualized bony structures appear intact.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No radiographic evidence of acute intra-abdominal pathology.";
+                                    }
+                                } elseif (strpos($examUpper, 'SKULL') !== false || strpos($examUpper, 'PARANASAL') !== false || strpos($examUpper, 'PNS') !== false) {
+                                    $currentFindings = "The cranial vault and visualized facial bones show normal configuration and bone density. No evidence of fracture or focal lytic or blastic bone lesion. Paranasal sinuses and mastoid air cells appear normally aerated.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No radiographic evidence of acute cranial or facial bone injury.";
+                                    }
+                                } else {
+                                    $currentFindings = "The visualized osseous structures demonstrate normal alignment and density. No evidence of fracture or dislocation is seen. Joint spaces are well maintained, and there is no significant soft tissue swelling or abnormal calcification.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No acute bony abnormality.";
+                                    }
+                                }
+                            }
+
+                            if (empty($currentImpression)) {
+                                $examUpper = strtoupper(trim($caseDetails['exam_type'] ?? ''));
+                                if (strpos($examUpper, 'CHEST') !== false) {
+                                    $currentImpression = "No radiographic evidence of active cardiopulmonary disease.";
+                                } elseif (strpos($examUpper, 'ABDOMEN') !== false) {
+                                    $currentImpression = "No radiographic evidence of acute intra-abdominal pathology.";
+                                } else {
+                                    $currentImpression = "No acute bony abnormality.";
+                                }
+                            }
+                            ?>
+
+                            <!-- Findings -->
+                            <div class="flex-1 flex flex-col">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">FINDINGS</label>
+                                </div>
+                                <textarea name="amend_findings" rows="5"
+                                          <?= $isEdited ? 'readonly disabled' : '' ?>
+                                          class="w-full flex-1 text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                          placeholder="Enter or correct findings…"><?= htmlspecialchars($currentFindings) ?></textarea>
+                            </div>
+
+                            <!-- Impression -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">IMPRESSION</label>
+                                </div>
+                                <textarea name="amend_impression" rows="3"
+                                          <?= $isEdited ? 'readonly disabled' : '' ?>
+                                          class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                          placeholder="Enter or correct impression…"><?= htmlspecialchars($currentImpression) ?></textarea>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!$isEdited): ?>
+                            <!-- Single Action Button -->
+                            <div class="flex items-center justify-end pt-3 border-t border-gray-100 mt-auto">
+                                <button type="button"
+                                        onclick="submitRadtechAmendment(this, event);"
+                                        class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm active:scale-95 cursor-pointer">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                    Save &amp; Resolve
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    </form>
+                </div>
+        </div>
+
+        <script>
+        function applyRadtechSidePrefix(side) {
+            const inp = document.getElementById('amend_exam_type_input');
+            if (!inp || inp.disabled || inp.readOnly) return;
+            let val = inp.value.trim();
+            val = val.replace(/^(Left|Right|Bilateral)\s+/i, '');
+            inp.value = side + (val ? ' ' + val : '');
+            inp.focus();
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function submitRadtechAmendment(btn, e) {
+            const form = btn.closest('form');
+            if (!form) return;
+
+            const showFindings = <?= json_encode($showFindings) ?>;
+            const showRename   = <?= json_encode($showXrayTemplateName) ?>;
+
+            if (showFindings) {
+                const f = form.querySelector('textarea[name="amend_findings"]');
+                if (f && !f.value.trim()) {
+                    Swal.fire('Findings Required', 'Please enter the report findings before saving.', 'warning');
+                    f.focus();
+                    return;
+                }
+            }
+
+            if (showRename) {
+                const t = form.querySelector('input[name="amend_exam_type"]');
+                if (t && !t.value.trim()) {
+                    Swal.fire('Exam Template Required', 'Please specify the corrected X-ray template / body part name.', 'warning');
+                    t.focus();
+                    return;
+                }
+            }
+
+            confirmFormAction(
+                btn,
+                'save_and_release',
+                'Confirm Save & Resolve',
+                'Would you like to save these amendments and resolve this error report? The updated record will be marked as Resolved and released.',
+                'amendment_action',
+                e
+            );
+        }
+
+        <?php if (!$isEdited): ?>
+        // ── RadTech Amendment Activity Tracking (Typing Indicator) ────────
+        (function() {
+            let amendPingInterval = null;
+            let radtechActivityStatus = 'viewing';
+            let lastAmendTypedTime = 0;
+            const currentCaseId = <?= (int)($caseId ?? ($caseDetails['id'] ?? 0)) ?>;
+            if (!currentCaseId) return;
+
+            function sendAmendPing() {
+                if (document.visibilityState === 'hidden') return;
+                if (radtechActivityStatus === 'typing' && (Date.now() - lastAmendTypedTime > 5000)) {
+                    radtechActivityStatus = 'viewing';
+                }
+                const fd = new FormData();
+                fd.append('status', radtechActivityStatus);
+                fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/case_activity.php?action=ping&case_id=${currentCaseId}`, {
+                    method: 'POST',
+                    body: fd
+                }).catch(err => console.debug('Amend ping error:', err));
+            }
+
+            function sendAmendInactivePing() {
+                if (amendPingInterval) {
+                    clearInterval(amendPingInterval);
+                    amendPingInterval = null;
+                }
+                const pingUrl = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/case_activity.php?action=ping&case_id=${currentCaseId}&status=inactive`;
+                const fd = new FormData();
+                fd.append('status', 'inactive');
+                try {
+                    navigator.sendBeacon(pingUrl, fd);
+                } catch(e) {}
+                try {
+                    fetch(pingUrl, {
+                        method: 'POST', body: fd, keepalive: true
+                    }).catch(()=>{});
+                } catch(e) {}
+            }
+
+            // Listen for typing/input on all amendment form fields
+            const amendInputs = document.querySelectorAll(
+                '#amend_exam_type_input, input[name="amend_first_name"], input[name="amend_middle_name"], input[name="amend_last_name"], input[name="amend_age"], select[name="amend_sex"], textarea[name="amend_findings"], textarea[name="amend_impression"]'
+            );
+            amendInputs.forEach(el => {
+                const onInput = () => {
+                    lastAmendTypedTime = Date.now();
+                    if (radtechActivityStatus !== 'typing') {
+                        radtechActivityStatus = 'typing';
+                        sendAmendPing();
+                    }
+                };
+                el.addEventListener('input', onInput);
+                el.addEventListener('change', onInput);
+            });
+
+            // Initial viewing ping and continuous 2.5s ping
+            sendAmendPing();
+            amendPingInterval = setInterval(sendAmendPing, 2500);
+
+            // Inactive beacons on leaving the page or clicking back
+            window.addEventListener('beforeunload', sendAmendInactivePing);
+            window.addEventListener('pagehide', sendAmendInactivePing);
+            window.addEventListener('popstate', sendAmendInactivePing);
+
+            document.querySelectorAll('#patient-details-back-btn, a[href*="role=radtech"], button.back-btn, #back-btn, a[href*="page="], a[href*="tab="]').forEach(el => {
+                el.addEventListener('click', sendAmendInactivePing);
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    sendAmendInactivePing();
+                } else {
+                    radtechActivityStatus = 'viewing';
+                    if (!amendPingInterval) {
+                        sendAmendPing();
+                        amendPingInterval = setInterval(sendAmendPing, 2500);
+                    }
+                }
+            });
+        })();
+        <?php endif; ?>
+        </script>
 
     <?php else: ?>
             <!-- NORMAL CASE (No dispute): Standard Diagnostic Image Upload Card -->
@@ -531,11 +810,12 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                             <?php if (!empty($savedPaths)): ?>
                                     <div class="flex flex-wrap gap-4">
                                         <?php foreach ($savedPaths as $idx => $sPath): ?>
+                                                <?php $imgLabel = getXrayImageLabel($sPath, $idx, $caseDetails['exam_type'] ?? ''); ?>
                                                 <div onclick="openXrayLightbox('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>')"
                                                     style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
                                                     class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
-                                                    title="Click to view image fullscreen">
-                                                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="X-ray <?= $idx + 1 ?>"
+                                                    title="<?= htmlspecialchars($imgLabel) ?> — Click to view fullscreen">
+                                                    <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" alt="<?= htmlspecialchars($imgLabel) ?>"
                                                         style="width: 100%; height: 100%; object-fit: contain;"
                                                         class="opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
                                     
@@ -547,8 +827,8 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                                                     </div>
 
                                                     <!-- Bottom Label -->
-                                                    <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] font-bold text-white py-1 text-center uppercase tracking-wider z-10 pointer-events-none">
-                                                        IMG <?= $idx + 1 ?>
+                                                    <div class="absolute bottom-0 left-0 right-0 bg-black/75 text-[10px] font-bold text-white py-1 px-1.5 text-center uppercase tracking-wider z-10 pointer-events-none truncate" title="<?= htmlspecialchars($imgLabel) ?>">
+                                                        <?= htmlspecialchars($imgLabel) ?>
                                                     </div>
                                                 </div>
                                         <?php endforeach; ?>
@@ -564,8 +844,9 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                     <?php endif; ?>
                 </div>
 
+                <div id="radiologist-findings-wrapper" class="flex flex-col h-full">
                 <?php if ($isReadOnly): ?>
-                    <!-- Radiologist Report Findings Card -->
+                    <!-- READ-ONLY FINDINGS CARD -->
                     <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col h-full">
                         <div class="mb-4 flex items-center gap-2">
                             <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
@@ -635,12 +916,14 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                                     <p class="text-xs text-gray-500 max-w-[280px]">The radiologist has not yet submitted the findings and impression for this case.</p>
                                 </div>
                         <?php endif; ?>
-                    </div>
-                <?php endif; ?>
+                    </div><!-- end read-only card -->
+                <?php endif; ?><!-- end isReadOnly -->
+                </div>
 
             </div>
     <?php endif; ?>
 
+    <?php if (empty($activeDispute) && !($isAmendMode ?? false)): ?>
     <!-- Validation Error Banner -->
     <div id="rad-selection-error"
         class="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mt-6 hidden flex items-start gap-3 shadow-sm transition-opacity duration-300"
@@ -654,7 +937,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     </div>
 
     <!-- Action Buttons -->
-    <div class="mt-6 flex gap-4 items-center">
+    <div id="patient-details-action-buttons" class="mt-6 flex gap-4 items-center">
         <?php if (!$isReadOnly): ?>
                 <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 p-2 rounded-lg shadow-sm">
                     <label for="radiologist_id" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i
@@ -680,7 +963,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                                     document.getElementById('rad-selected-text').innerHTML = 'Dr. " . addslashes(htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name'])))) . "';
                                     document.getElementById('rad-options').classList.add('hidden');
                                     document.getElementById('rad-selection-error').classList.add('hidden');
-                                \"" : '' ?>>
+                                    \"" : '' ?>>
                                         <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-500' ?>">Dr.
                                             <?= htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name']))) ?></span>
                                         <?php if ($isAvailable): ?>
@@ -728,10 +1011,10 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                     </script>
                 </div>
                 <button type="button"
-                    onclick="if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } <?php if (!empty($activeDispute)): ?>const dispNotes = document.getElementById('radtech_dispute_notes'); if (dispNotes && !dispNotes.value.trim()){ Swal.fire('Notes Required', 'Please enter endorsement notes for the Radiologist before escalating.', 'warning'); dispNotes.focus(); return; }<?php endif; ?> confirmFormAction(this, '1', '<?= !empty($activeDispute) ? "Confirm Escalation" : "Confirm Submission" ?>', '<?= !empty($activeDispute) ? "Would you like to escalate this error report to the Radiologist?" : "Would you like to confirm submitting this case?" ?>', 'submit_radiologist', event)"
+                    onclick="if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case?', 'submit_radiologist', event)"
                     class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm h-full">
                     <i data-lucide="send" class="w-4 h-4"></i>
-                    <?= !empty($activeDispute) ? 'Escalate to Radiologist' : 'Submit to Radiologist' ?>
+                    Submit to Radiologist
                 </button>
         <?php else: ?>
                 <button type="button" disabled
@@ -759,6 +1042,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
         <?php endif; ?>
     </div>
 </form>
+<?php endif; ?>
 
 
 <?php if (!$isReadOnly): ?>
@@ -1099,5 +1383,147 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Smart return to originating table (Patient Error Reports, Patient Queue, Report Ready, etc.)
+    const backBtn = document.getElementById('patient-details-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function(e) {
+            try {
+                const lastTableUrl = sessionStorage.getItem('radtech_last_table_url');
+                if (lastTableUrl && (
+                    lastTableUrl.includes('page=patient-lists') ||
+                    lastTableUrl.includes('page=patient-approval') ||
+                    lastTableUrl.includes('page=report-ready') ||
+                    lastTableUrl.includes('page=branch-xray-cases') ||
+                    lastTableUrl.includes('page=patient-records')
+                )) {
+                    e.preventDefault();
+                    window.location.href = lastTableUrl;
+                }
+            } catch (err) {}
+        });
+    }
 });
+
+// Real-time status sync for RadTech Patient Details via AJAX (no page reload)
+(function() {
+    const caseId = <?= (int)($caseId ?? ($caseDetails['id'] ?? 0)) ?>;
+    if (!caseId) return;
+
+    let currentCaseStatus = <?= json_encode($displayStatus) ?>;
+
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case 'Completed':
+            case 'Resolved':
+                return 'border border-green-200 bg-green-50 text-green-700';
+            case 'Correction Completed':
+            case 'Pending RadTech Verification':
+                return 'border border-blue-200 bg-blue-50 text-blue-700';
+            case 'Correction in Progress':
+                return 'border border-indigo-200 bg-indigo-50 text-indigo-700';
+            case 'For RadTech Review':
+                return 'border border-amber-200 bg-amber-50 text-amber-700';
+            case 'Issue Reported':
+            case 'Pending RadTech Review':
+                return 'border border-rose-200 bg-rose-50 text-rose-700';
+            case 'Under Reading':
+                return 'border border-blue-200 bg-blue-50 text-blue-700';
+            case 'Report Ready':
+                return 'border border-purple-200 bg-purple-50 text-purple-700';
+            case 'Overdue':
+            case 'Rejected':
+                return 'border border-red-200 bg-red-50 text-red-700';
+            default:
+                return 'border border-yellow-200 bg-yellow-50 text-yellow-700';
+        }
+    }
+
+    let isSyncing = false;
+    function syncCaseDetailsViaAjax(newStatus) {
+        if (isSyncing) return;
+        isSyncing = true;
+
+        // Immediate visual feedback on status badge
+        const badge = document.getElementById('case-status-badge');
+        if (badge) {
+            badge.className = 'inline-block font-bold text-xs px-3 py-1.5 rounded-full transition-all duration-300 ' + getStatusBadgeClass(newStatus);
+            badge.textContent = newStatus;
+            badge.classList.add('scale-110', 'ring-2', 'ring-purple-400');
+            setTimeout(() => {
+                badge.classList.remove('scale-110', 'ring-2', 'ring-purple-400');
+            }, 600);
+        }
+
+        // Fetch fresh rendered page sections via AJAX (NO PAGE RELOAD)
+        const syncUrl = window.location.href + (window.location.href.includes('?') ? '&' : '?') + '_ajax_sync=1&_t=' + Date.now();
+        fetch(syncUrl, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(res => res.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // 1. Update status banner
+                const curBanner = document.getElementById('patient-details-status-banner-container');
+                const newBanner = doc.getElementById('patient-details-status-banner-container');
+                if (curBanner && newBanner) {
+                    curBanner.innerHTML = newBanner.innerHTML;
+                }
+
+                // 2. Update findings card
+                const curFindings = document.getElementById('radiologist-findings-wrapper');
+                const newFindings = doc.getElementById('radiologist-findings-wrapper');
+                if (curFindings && newFindings) {
+                    curFindings.innerHTML = newFindings.innerHTML;
+                }
+
+                // 3. Update action buttons
+                const curActions = document.getElementById('patient-details-action-buttons');
+                const newActions = doc.getElementById('patient-details-action-buttons');
+                if (curActions && newActions) {
+                    curActions.innerHTML = newActions.innerHTML;
+                }
+
+                // 4. Update status badge with precise server-side classes and text
+                const curBadge = document.getElementById('case-status-badge');
+                const freshBadge = doc.getElementById('case-status-badge');
+                if (curBadge && freshBadge) {
+                    curBadge.className = freshBadge.className;
+                    curBadge.textContent = freshBadge.textContent;
+                }
+
+                // Re-initialize Lucide icons for new elements
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons();
+                }
+            })
+            .catch(err => {
+                console.error('AJAX sync failed:', err);
+            })
+            .finally(() => {
+                isSyncing = false;
+            });
+    }
+
+    const pollInterval = setInterval(() => {
+        if (document.visibilityState === 'hidden') return;
+
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/case_activity.php?action=status&case_id=' + caseId + '&_t=' + Date.now())
+            .then(res => res.json())
+            .then(data => {
+                if (!data || !data.success) return;
+
+                const newStatus = data.display_status || data.case_status;
+                if (newStatus && newStatus !== currentCaseStatus) {
+                    currentCaseStatus = newStatus;
+                    syncCaseDetailsViaAjax(newStatus);
+                }
+            })
+            .catch(() => {});
+    }, 2500);
+
+    window.addEventListener('beforeunload', () => clearInterval(pollInterval));
+})();
 </script>

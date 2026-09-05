@@ -1,8 +1,11 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../app/Models/CaseStatusTransition.php';
+require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
 
 $caseModel = new \CaseModel($pdo);
 $patientModel = new \PatientModel($pdo);
+$disputeModel = new \ResultDisputeModel($pdo);
 
 $userId = $_SESSION['user_id'] ?? 0;
 $stmtU = $pdo->prepare("SELECT status FROM users WHERE id = ?");
@@ -59,6 +62,15 @@ if ($patientId) {
     }
 }
 
+$activeCaseDispute = null;
+$latestCaseDispute = null;
+if ($caseId) {
+    $activeCaseDispute = $disputeModel->getActiveDisputeByCase($caseId);
+    $stmtD = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? ORDER BY created_at DESC LIMIT 1");
+    $stmtD->execute([$caseId]);
+    $latestCaseDispute = $stmtD->fetch(PDO::FETCH_ASSOC);
+}
+
 $isRejectedGlobal = ($userAccountStatus === 'Rejected');
 
 $statusColors = [
@@ -74,6 +86,15 @@ $statusColors = [
     'Completed' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Completed'],
     'Rejected' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Rejected'],
     'Cancelled' => ['bg' => '#FEF2F2', 'border' => '#FECACA', 'text' => '#991B1B', 'label' => 'Request Cancelled'],
+    // Error Correction 5-Step Workflow Badges
+    'Issue Reported' => ['bg' => '#FFF1F2', 'border' => '#FECDD3', 'text' => '#E11D48', 'label' => 'Issue Reported – Under Review'],
+    'For RadTech Review' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'For RadTech Review'],
+    'Pending RadTech Review' => ['bg' => '#FFFBEB', 'border' => '#FDE68A', 'text' => '#D97706', 'label' => 'For RadTech Review'],
+    'Correction in Progress' => ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'text' => '#4338CA', 'label' => 'Correction in Progress'],
+    'Correction Completed' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Edited'],
+    'Pending RadTech Verification' => ['bg' => '#ECFDF5', 'border' => '#A7F3D0', 'text' => '#059669', 'label' => 'Edited'],
+    'Resolved' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Resolved – Updated Report Released'],
+    'Edited' => ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'text' => '#15803D', 'label' => 'Edited'],
 ];
 
 $statusDescriptions = [
@@ -89,6 +110,15 @@ $statusDescriptions = [
     'Completed' => 'Your X-ray examination has been completed. You can view your report result below.',
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
     'Cancelled' => 'You have cancelled this request.',
+    // Error Correction 5-Step Descriptions
+    'Issue Reported' => 'Your error report has been received and logged. The Radiologic Technologist will review your concerns shortly.',
+    'For RadTech Review' => 'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
+    'Pending RadTech Review' => 'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
+    'Correction in Progress' => 'The Radiologic Technologist is actively amending and correcting the report findings/information.',
+    'Correction Completed' => 'The report has been corrected and is now ready. Please check back shortly for your updated X-ray report.',
+    'Pending RadTech Verification' => 'The report has been corrected and is now ready. Please check back shortly for your updated X-ray report.',
+    'Resolved' => 'The report corrections have been finalized and released. You can now view your updated X-ray report result below.',
+    'Edited' => 'The report corrections have been finalized and released. You can now view your updated X-ray report result below.',
 ];
 ?>
 
@@ -162,7 +192,21 @@ $statusDescriptions = [
         $statusVal = $caseRow['status'] ?? 'Pending';
         $recordType = $caseRow['record_type'] ?? ($reqId ? 'Request' : 'Case');
 
-        if ($statusVal === 'Rejected' || ($caseRow['approval_status'] ?? '') === 'Rejected') {
+        $isCorrectionWorkflow = ($latestCaseDispute !== null && !in_array($latestCaseDispute['status'], ['Rejected']))
+            || (int)($caseRow['is_amended'] ?? 0) === 1
+            || \CaseStatusTransition::isErrorWorkflow($statusVal);
+
+        if ($isCorrectionWorkflow) {
+            $steps = \CaseStatusTransition::getErrorStepsList();
+            $dispStatus = $latestCaseDispute['status'] ?? ($statusVal ?: 'Issue Reported');
+            if ($dispStatus === 'Resolved' || $dispStatus === 'Correction Completed' || ($latestCaseDispute === null && (int)($caseRow['is_amended'] ?? 0) === 1)) {
+                $currentStep = 4;
+                $displayStatus = 'Edited';
+            } else {
+                $displayStatus = $dispStatus;
+                $currentStep = \CaseStatusTransition::getErrorStep($displayStatus);
+            }
+        } elseif ($statusVal === 'Rejected' || ($caseRow['approval_status'] ?? '') === 'Rejected') {
             $currentStep = 0;
             $displayStatus = 'Rejected';
             $isRejected = true;
@@ -202,12 +246,18 @@ $statusDescriptions = [
         } elseif ($statusVal === 'Report Ready') {
             $currentStep = 6;
             $displayStatus = 'Report Ready';
-        } elseif (in_array($statusVal, ['Released', 'Completed'])) {
+        } elseif (in_array($statusVal, ['Released', 'Completed']) || (int)($caseRow['released'] ?? 0) === 1) {
             $currentStep = 7;
-            $displayStatus = $statusVal;
+            $displayStatus = $statusVal ?: 'Released';
         } else {
-            $currentStep = 2;
-            $displayStatus = $statusVal ?: 'Pending';
+            // Forward guard: If date_completed exists or released is 1, case is completed, never regress to 2
+            if (!empty($caseRow['date_completed']) || (int)($caseRow['released'] ?? 0) === 1) {
+                $currentStep = 7;
+                $displayStatus = 'Released';
+            } else {
+                $currentStep = 2;
+                $displayStatus = $statusVal ?: 'Pending';
+            }
         }
 
         $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
@@ -216,12 +266,20 @@ $statusDescriptions = [
         ?>
 
         <!-- Unified Layout Matching Picture 4 -->
-        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-8">
-            <!-- Header: Examination Progress + Status Badge -->
+        <div id="patient-case-status-card"
+            data-case-id="<?= (int) ($caseRow['id'] ?? 0) ?>"
+            data-status="<?= htmlspecialchars($displayStatus) ?>"
+            data-timestamp-unix="<?= strtotime($caseRow['status_timestamp'] ?? $caseRow['created_at']) ?: 0 ?>"
+            class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden mb-8">
+            <!-- Header: Examination Progress / Error Correction Progress + Status Badge -->
             <div class="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 gap-2">
-                <div class="flex items-center gap-2.5">
-                    <i data-lucide="activity" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500"></i>
-                    <h2 class="font-bold text-gray-900 text-sm sm:text-base">Examination Progress</h2>
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <?php if ($isCorrectionWorkflow): ?>
+                        <h2 class="font-bold text-gray-900 text-sm sm:text-base truncate">Correction Status</h2>
+                    <?php else: ?>
+                        <i data-lucide="activity" class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 shrink-0"></i>
+                        <h2 class="font-bold text-gray-900 text-sm sm:text-base truncate">Examination Progress</h2>
+                    <?php endif; ?>
                 </div>
                 <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>; color: <?= $sInfo['text'] ?>">
@@ -258,7 +316,7 @@ $statusDescriptions = [
                                     <?php if ($done): ?>bg-green-500 text-white
                                     <?php elseif ($active): ?>bg-red-500 text-white
                                     <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
-                                            <?php if ($num === 5 && ($caseRow['status'] ?? '') === 'Under Reading'): ?>
+                                            <?php if (($num === 5 && ($caseRow['status'] ?? '') === 'Under Reading') || ($isCorrectionWorkflow && $num === 3 && in_array($displayStatus, ['For RadTech Review', 'Pending RadTech Review', 'Correction in Progress']))): ?>
                                                 <span id="rad-activity-dot" data-case-id="<?= $caseRow['id'] ?? 0 ?>" class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                             <?php endif; ?>
                                             <?php if ($done): ?>
@@ -393,20 +451,23 @@ $statusDescriptions = [
                     </div>
                 </div>
 
-                <!-- Bottom Action Row (View Report if Released/Completed) -->
-                <?php if (in_array($caseRow['status'] ?? '', ['Released', 'Completed']) || ($caseRow['approval_status'] ?? '') === 'Completed'): ?>
+                <!-- Bottom Action Row (View Report if Released/Completed or Resolved) -->
+                <?php if (in_array($caseRow['status'] ?? '', ['Released', 'Completed', 'Resolved']) || ($caseRow['approval_status'] ?? '') === 'Completed' || (int)($caseRow['released'] ?? 0) === 1): ?>
                     <div class="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between gap-3 sm:gap-4">
-                        <span class="text-[11px] sm:text-sm text-gray-600 leading-tight">Official X-ray report is available for viewing.</span>
+                        <span class="text-[11px] sm:text-sm text-gray-600 leading-tight">
+                            <?= ($isCorrectionWorkflow && ($caseRow['status'] ?? '') === 'Resolved') ? 'Updated official X-ray report is available for viewing.' : 'Official X-ray report is available for viewing.' ?>
+                        </span>
                         <?php
                         $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
                         $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
                         $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
+                        $btnLabel = ($isCorrectionWorkflow && ($caseRow['status'] ?? '') === 'Resolved') ? 'View Updated Report' : 'View Report';
                         ?>
                         <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                             class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-[11px] sm:text-xs py-2 sm:py-2.5 px-4 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0"
                             style="background: linear-gradient(135deg, #15803d, #16a34a);">
                             <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 h-4"></i>
-                            <span>View Report</span>
+                            <span><?= $btnLabel ?></span>
                         </a>
                     </div>
                 <?php endif; ?>
@@ -479,4 +540,196 @@ $statusDescriptions = [
             }
         });
     }
+
+    // Live Typing Activity Indicator Poller (green = typing, gray = idle, red = inactive)
+    (function () {
+        function pollRadActivity() {
+            const dot = document.getElementById('rad-activity-dot');
+            if (!dot) return;
+
+            const caseId = dot.getAttribute('data-case-id');
+            if (!caseId || caseId === '0') return;
+
+            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/case_activity.php?action=status&case_id=${caseId}&_t=` + Date.now())
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success) {
+                        const baseClass = "absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full z-20 transition-colors";
+                        if (data.state === 'active') {
+                            dot.className = baseClass + " bg-green-500" + (data.is_typing ? " animate-pulse" : "");
+                        } else if (data.state === 'idle') {
+                            dot.className = baseClass + " bg-gray-400";
+                        } else {
+                            dot.className = baseClass + " bg-red-500";
+                        }
+                    }
+                })
+                .catch(err => console.debug('Activity polling error:', err));
+        }
+
+        setInterval(pollRadActivity, 2500);
+        pollRadActivity();
+    })();
+
+    // Real-Time Stepper Updater (AJAX – no full reload)
+    (function () {
+        const statusCard = document.getElementById('patient-case-status-card');
+        if (!statusCard) return;
+
+        const caseId = statusCard.getAttribute('data-case-id');
+        if (!caseId || caseId === '0') return;
+
+        let currentStatus = statusCard.getAttribute('data-status') || '';
+        let currentTimestampUnix = parseInt(statusCard.getAttribute('data-timestamp-unix') || '0', 10);
+
+        const STATUS_COLORS = {
+            'Issue Reported':              { bg:'#FFF1F2', border:'#FECDD3', text:'#E11D48', label:'Issue Reported – Under Review' },
+            'For RadTech Review':          { bg:'#FFFBEB', border:'#FDE68A', text:'#D97706', label:'For RadTech Review' },
+            'Pending RadTech Review':      { bg:'#FFFBEB', border:'#FDE68A', text:'#D97706', label:'For RadTech Review' },
+            'Correction in Progress':      { bg:'#EEF2FF', border:'#C7D2FE', text:'#4338CA', label:'Correction in Progress' },
+            'Correction Completed':        { bg:'#ECFDF5', border:'#A7F3D0', text:'#059669', label:'Edited' },
+            'Pending RadTech Verification':{ bg:'#ECFDF5', border:'#A7F3D0', text:'#059669', label:'Edited' },
+            'Resolved':                    { bg:'#F0FDF4', border:'#BBF7D0', text:'#15803D', label:'Resolved – Updated Report Released' },
+            'Released':                    { bg:'#F0FDF4', border:'#BBF7D0', text:'#15803D', label:'Released' },
+            'Completed':                   { bg:'#F0FDF4', border:'#BBF7D0', text:'#15803D', label:'Completed' },
+            'Under Reading':               { bg:'#EFF6FF', border:'#DBEAFE', text:'#1D4ED8', label:'Under Reading by Radiologist' },
+            'Report Ready':                { bg:'#EEF2FF', border:'#C7D2FE', text:'#4338CA', label:'Report Ready' },
+        };
+
+        const STATUS_DESCS = {
+            'Issue Reported':         'Your error report has been received and logged. The Radiologic Technologist will review your concerns shortly.',
+            'For RadTech Review':     'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
+            'Pending RadTech Review': 'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
+            'Correction in Progress': 'The Radiologic Technologist is actively amending and correcting the report findings/information.',
+            'Correction Completed':   'The report has been corrected and is now ready. Please check back shortly for your updated X-ray report.',
+            'Resolved':               'The report corrections have been finalized and released. You can now view your updated X-ray report result below.',
+            'Edited':                 'The report corrections have been finalized and released. You can now view your updated X-ray report result below.',
+        };
+
+        const ERROR_STEP_MAP = {
+            'Issue Reported':              2,
+            'For RadTech Review':          3,
+            'Pending RadTech Review':      3,
+            'Correction in Progress':      3,
+            'Correction Completed':        4,
+            'Pending RadTech Verification':4,
+            'Resolved':                    4,
+            'Edited':                      4,
+        };
+
+        function updateStepperDOM(newStatus, isError, errorStep) {
+            const stepperWrap = statusCard.querySelector('.flex.items-start.justify-between.w-full');
+            if (!stepperWrap) return;
+
+            const stepCells = stepperWrap.querySelectorAll(':scope > div');
+            const totalSteps = stepCells.length;
+            const currStep = isError
+                ? (errorStep || ERROR_STEP_MAP[newStatus] || 2)
+                : 2; // fallback – exam steps handled by reload
+
+            stepCells.forEach((cell, idx) => {
+                const num = idx + 1;
+                const done   = num < currStep || (num === totalSteps && currStep === totalSteps);
+                const active = num === currStep && currStep !== totalSteps;
+
+                const circle = cell.querySelector('.relative.z-10');
+                if (circle) {
+                    circle.className = circle.className
+                        .replace(/bg-green-500|bg-red-500|bg-white|border\s|sm:border-2\s|border-gray-200\s|text-gray-400|text-white/g, '')
+                        .trim();
+                    if (done)        circle.classList.add('bg-green-500','text-white');
+                    else if (active) circle.classList.add('bg-red-500','text-white');
+                    else             circle.classList.add('bg-white','border','sm:border-2','border-gray-200','text-gray-400');
+
+                    if (done) {
+                        const dot = circle.querySelector('span#rad-activity-dot');
+                        circle.innerHTML = (dot ? dot.outerHTML : '')
+                            + '<i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>';
+                        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [circle] });
+                    } else if (!circle.querySelector('i[data-lucide]')) {
+                        const dot = circle.querySelector('span#rad-activity-dot');
+                        circle.innerHTML = (dot ? dot.outerHTML : '') + num;
+                    }
+                }
+
+                const nextNum = num + 1;
+                const nextDone   = nextNum < currStep || (nextNum === totalSteps && currStep === totalSteps);
+                const nextActive = nextNum === currStep && currStep !== totalSteps;
+
+                const leftLine  = cell.querySelector('.absolute.left-0.right-1\\/2');
+                const rightLine = cell.querySelector('.absolute.left-1\\/2.right-0');
+                if (leftLine)  leftLine.className  = leftLine.className.replace(/bg-green-500|bg-red-500|bg-gray-200/g,'').trim()  + (done      ? ' bg-green-500' : active      ? ' bg-red-500' : ' bg-gray-200');
+                if (rightLine) rightLine.className = rightLine.className.replace(/bg-green-500|bg-red-500|bg-gray-200/g,'').trim() + (nextDone  ? ' bg-green-500' : nextActive  ? ' bg-red-500' : ' bg-gray-200');
+
+                const labelSpan = cell.querySelector('span.mt-1\\.5, span[class*="mt-1"]');
+                if (labelSpan) {
+                    labelSpan.className = labelSpan.className.replace(/stepper-text-active|text-gray-400/g,'').trim()
+                        + ((done || active) ? ' stepper-text-active' : ' text-gray-400');
+                }
+            });
+        }
+
+        function updateStatusBox(newStatus) {
+            const info = STATUS_COLORS[newStatus] || { bg:'#F9FAFB', border:'#E5E7EB', text:'#374151', label: newStatus };
+            const desc = STATUS_DESCS[newStatus] || '';
+
+            // Header badge
+            const badge = statusCard.querySelector('span.inline-flex.items-center.gap-1\\.5.rounded-full');
+            if (badge) {
+                badge.style.background   = info.bg;
+                badge.style.borderColor  = info.border;
+                badge.style.color        = info.text;
+                const dot = badge.querySelector('span');
+                if (dot) dot.style.background = info.text;
+                badge.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = ' ' + newStatus + ' '; });
+            }
+
+            // Summary box
+            const summaryBox = statusCard.querySelector('.status-summary-box');
+            if (summaryBox) {
+                summaryBox.style.background  = info.bg;
+                summaryBox.style.borderColor = info.border;
+                const strong = summaryBox.querySelector('strong');
+                if (strong) strong.textContent = info.label;
+                const descP = summaryBox.querySelector('p + p, p.text-xs');
+                if (descP) descP.textContent = desc;
+                summaryBox.querySelectorAll('[style*="color"]').forEach(el => { el.style.color = info.text; });
+            }
+
+            statusCard.setAttribute('data-status', newStatus);
+        }
+
+        function pollCaseStatus() {
+            if (document.hidden) return;
+            if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
+
+            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/cases.php?case_id=${caseId}&_t=` + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    const newStatus = data.status || '';
+                    const newTimestampUnix = parseInt(data.timestamp_unix || '0', 10);
+
+                    if (newStatus !== currentStatus && newTimestampUnix >= currentTimestampUnix) {
+                        currentStatus = newStatus;
+                        currentTimestampUnix = newTimestampUnix;
+
+                        const isError = data.workflow_type === 'error_correction';
+
+                        // Update stepper and badge in-place — no page reload
+                        updateStepperDOM(newStatus, isError, data.error_step);
+                        updateStatusBox(newStatus);
+
+                        // For non-error workflows or final states that add new UI (report button), reload
+                        if (!isError && ['Released','Completed','Report Ready'].includes(newStatus)) {
+                            window.location.reload();
+                        }
+                    }
+                })
+                .catch(err => console.debug('Case status poll error:', err));
+        }
+
+        setInterval(pollCaseStatus, 3000);
+    })();
 </script>

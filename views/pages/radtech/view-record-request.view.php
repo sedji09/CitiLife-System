@@ -93,7 +93,14 @@
 
             <div class="flex items-start justify-between border-b border-gray-300 pb-4 mb-8">
                 <div>
-                    <h3 class="text-[22px] font-bold text-gray-900">Requested Findings Report and Images</h3>
+                    <div class="flex items-center gap-2.5">
+                        <h3 class="text-[22px] font-bold text-gray-900">Requested Findings Report and Images</h3>
+                        <?php if (!empty($caseDetails['is_amended']) && (int) $caseDetails['is_amended'] === 1): ?>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
+                                <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                            </span>
+                        <?php endif; ?>
+                    </div>
                     <span
                         class="text-gray-400 text-sm mt-1"><?= date('M d, Y', strtotime($caseDetails['created_at'])) ?></span>
                 </div>
@@ -124,7 +131,7 @@
                     </div>
                     <div id="findings-viewer-container"
                         class="flex-1 min-h-0 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
-                        <?php if ($caseDetails['status'] === 'Completed'): ?>
+                        <?php if (in_array($caseDetails['status'] ?? '', ['Completed', 'Report Ready', 'Released']) || !empty($caseDetails['findings'])): ?>
                             <?php
                             $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseDetails['id'] . "&preview=true";
                             ?>

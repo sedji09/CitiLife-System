@@ -1055,7 +1055,7 @@
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
     }
     
-    @media (max-width: 768px) {
+        @media (max-width: 768px) {
         html body .datepicker-dropdown {
             position: fixed !important;
             top: 50% !important;
@@ -1063,6 +1063,58 @@
             transform: translate(-50%, -50%) !important;
             margin: 0 !important;
         }
+    }
+
+    /* ===== Notification Dynamic Icon & Circle Colors ===== */
+    .notif-color-success {
+      background-color: #d1fae5 !important;
+      color: #059669 !important;
+    }
+    .notif-color-danger {
+      background-color: #fee2e2 !important;
+      color: #dc2626 !important;
+    }
+    .notif-color-warning {
+      background-color: #fef3c7 !important;
+      color: #d97706 !important;
+    }
+    .notif-color-info {
+      background-color: #dbeafe !important;
+      color: #2563eb !important;
+    }
+    .notif-color-purple {
+      background-color: #ede9fe !important;
+      color: #7c3aed !important;
+    }
+    .notif-color-read {
+      background-color: #f3f4f6 !important;
+      color: #9ca3af !important;
+    }
+
+    /* Dark Mode Notification Badges */
+    body.theme-dark .notif-color-success {
+      background-color: rgba(16, 185, 129, 0.25) !important;
+      color: #6ee7b7 !important;
+    }
+    body.theme-dark .notif-color-danger {
+      background-color: rgba(239, 68, 68, 0.25) !important;
+      color: #fca5a5 !important;
+    }
+    body.theme-dark .notif-color-warning {
+      background-color: rgba(245, 158, 11, 0.25) !important;
+      color: #fcd34d !important;
+    }
+    body.theme-dark .notif-color-info {
+      background-color: rgba(59, 130, 246, 0.25) !important;
+      color: #93c5fd !important;
+    }
+    body.theme-dark .notif-color-purple {
+      background-color: rgba(139, 92, 246, 0.25) !important;
+      color: #c4b5fd !important;
+    }
+    body.theme-dark .notif-color-read {
+      background-color: rgba(75, 85, 99, 0.25) !important;
+      color: #9ca3af !important;
     }
   </style>
 

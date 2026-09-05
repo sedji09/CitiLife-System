@@ -38,6 +38,7 @@ $records = $caseModel->getReleasedRecords($branchId);
                     <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient No.</th>
                     <th class="text-left font-semibold px-3 py-3 truncate max-w-[200px]">Patient Name</th>
                     <th class="text-left font-semibold px-3 py-3 truncate max-w-[150px]">Exam Type</th>
+                    <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Status</th>
                     <th class="text-left font-semibold px-3 py-3">Date</th>
                     <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Actions</th>
                 </tr>
@@ -45,7 +46,7 @@ $records = $caseModel->getReleasedRecords($branchId);
             <tbody id="table-body" class="text-gray-800 bg-white divide-y divide-gray-100">
                 <?php if (count($records) === 0): ?>
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-gray-500">
+                        <td colspan="7" class="text-center py-8 text-gray-500">
                             No completed records found. Click 'Send Results' in the patient queue to move cases here.
                         </td>
                     </tr>
@@ -84,6 +85,17 @@ $records = $caseModel->getReleasedRecords($branchId);
                                             title="<?= htmlspecialchars($row['exam_type']) ?>">+<?= $extraCount ?></span>
                                     <?php endif; ?>
                                 </div>
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
+                                        <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Released
+                                    </span>
+                                <?php endif; ?>
                             </td>
                             <td class="py-3 px-3">
                                 <div class="text-sm text-gray-500"><?= date('F d, Y', strtotime($row['created_at'])) ?></div>

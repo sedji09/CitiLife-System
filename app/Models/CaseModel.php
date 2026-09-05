@@ -234,8 +234,9 @@ class CaseModel
     /**
      * Save radiologist findings and update status.
      */
-    public function saveFinding($caseId, $radiologistId, $data)
+    public function saveFinding($caseId, $radiologistId, $data, $isFinal = false)
     {
+        $finalInt = $isFinal ? 1 : 0;
         $stmt = $this->pdo->prepare("
             UPDATE cases
             SET clinical_information = ?,
@@ -243,8 +244,14 @@ class CaseModel
                 impression           = ?,
                 recommendation       = '',
                 radiologist_id       = ?,
-                date_completed       = NOW(),
-                status               = CASE WHEN status = 'Completed' THEN 'Completed' ELSE 'Report Ready' END
+                date_completed       = CASE WHEN ? = 1 THEN NOW() ELSE date_completed END,
+                status               = CASE 
+                                            WHEN ? = 1 THEN 
+                                                CASE WHEN status = 'Completed' THEN 'Completed' ELSE 'Report Ready' END
+                                            ELSE 
+                                                CASE WHEN status IN ('Pending', 'Report Ready') THEN 'Under Reading' ELSE status END
+                                        END,
+                report_status        = CASE WHEN ? = 1 THEN 'Final' ELSE 'Draft' END
             WHERE id = ?
         ");
         return $stmt->execute([
@@ -252,6 +259,9 @@ class CaseModel
             $data['findings'],
             $data['impression'],
             $radiologistId,
+            $finalInt,
+            $finalInt,
+            $finalInt,
             $caseId
         ]);
     }
@@ -260,7 +270,7 @@ class CaseModel
      * Unified logic for a radiologist submitting a report.
      * Handles data processing, DB updates, and notifies the RadTech and Patient.
      */
-    public function submitRadiologistReport($caseId, $radiologistId, $data, $notificationModel)
+    public function submitRadiologistReport($caseId, $radiologistId, $data, $notificationModel, $isFinal = false)
     {
         $examReportsArr = $data['exam_reports_arr'] ?? [];
         $clinicalInfo = $data['clinical_information'] ?? '';
@@ -291,9 +301,11 @@ class CaseModel
         $cDataBefore = $this->getCaseById($caseId);
         $wasAlreadySubmitted = ($cDataBefore && !empty($cDataBefore['date_completed']));
 
-        if ($this->saveFinding($caseId, $radiologistId, $saveData)) {
+        if ($this->saveFinding($caseId, $radiologistId, $saveData, $isFinal)) {
             $cData = $this->getCaseById($caseId);
-            if ($cData && !empty($cData['branch_id'])) {
+            
+            // Only notify if it's Final
+            if ($isFinal && $cData && !empty($cData['branch_id'])) {
                 // Determine branch name/code for the message
                 $branchLabel = str_replace(' Branch', '', $cData['branch_name']);
 
@@ -396,12 +408,21 @@ class CaseModel
     /**
      * Unlock a case to be edited.
      */
-    public function unlockReport($caseId)
+    public function revertToDraft($caseId)
     {
+        // Fetch old pdf path to delete
+        $stmtCheck = $this->pdo->prepare("SELECT pdf_path FROM cases WHERE id = ?");
+        $stmtCheck->execute([$caseId]);
+        $oldPdf = $stmtCheck->fetchColumn();
+
+        if ($oldPdf && file_exists(__DIR__ . '/../../../' . $oldPdf)) {
+            unlink(__DIR__ . '/../../../' . $oldPdf);
+        }
+
         if ($this->hasColumn('cases', 'released')) {
-            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', released = 0 WHERE id = ?");
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', report_status = 'Draft', pdf_path = NULL, released = 0 WHERE id = ?");
         } else {
-            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading' WHERE id = ?");
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', report_status = 'Draft', pdf_path = NULL WHERE id = ?");
         }
         return $stmt->execute([$caseId]);
     }
@@ -507,7 +528,8 @@ class CaseModel
                 NULL as image_status,
                 r.original_price,
                 r.philhealth_discount,
-                r.amount_due
+                r.amount_due,
+                NULL as radtech_submitted_at
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
             WHERE r.patient_id = ?
@@ -538,7 +560,8 @@ class CaseModel
                 (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
                 NULL as original_price,
                 0.00 as philhealth_discount,
-                0 as amount_due
+                0 as amount_due,
+                c.radtech_submitted_at
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
@@ -581,7 +604,8 @@ class CaseModel
                 NULL as image_status,
                 r.original_price,
                 r.philhealth_discount,
-                r.amount_due
+                r.amount_due,
+                NULL as radtech_submitted_at
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
             WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified', 'Rejected', 'Cancelled')
@@ -612,7 +636,8 @@ class CaseModel
                 (CASE WHEN c.image_path IS NOT NULL AND c.image_path != '' AND c.image_path != '[]' THEN 'Uploaded' ELSE 'Pending' END) as image_status,
                 req.original_price,
                 COALESCE(req.philhealth_discount, 0.00) as philhealth_discount,
-                COALESCE(req.amount_due, 0) as amount_due
+                COALESCE(req.amount_due, 0) as amount_due,
+                c.radtech_submitted_at
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             LEFT JOIN requests req ON c.request_id = req.id
@@ -832,7 +857,7 @@ class CaseModel
      */
     public function releaseResult($caseId)
     {
-        $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Completed', released = 1 WHERE id = ?");
+        $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Completed', released = 1, status_timestamp = NOW(), date_completed = COALESCE(date_completed, NOW()) WHERE id = ?");
         return $stmt->execute([$caseId]);
     }
 
@@ -1098,7 +1123,16 @@ class CaseModel
                     return ['success' => false, 'message' => "Invalid file format for \"$fileName\". Only JPG, PNG, and DICOM formats are allowed."];
                 }
 
-                $newFileName = 'case_' . $caseId . '_' . time() . '_' . $i . '.' . $fileExt;
+                // Preserve original file name (sanitized) or fallback to exam name
+                $origBase = pathinfo($fileName, PATHINFO_FILENAME);
+                $safeOrig = preg_replace('/[^a-zA-Z0-9_\-\s\(\)]/', '', $origBase);
+                $safeOrig = trim(preg_replace('/\s+/', ' ', $safeOrig));
+                if (empty($safeOrig)) {
+                    $exams = array_values(array_filter(array_map('trim', explode(',', $data['exam_type'] ?? ''))));
+                    $safeOrig = isset($exams[$i]) ? $exams[$i] : ('image_' . ($i + 1));
+                }
+
+                $newFileName = 'case_' . $caseId . '_' . time() . '_' . $i . '_' . $safeOrig . '.' . $fileExt;
 
                 if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $newFileName)) {
                     $uploadedPaths[] = 'public/uploads/cases/' . $newFileName;
@@ -1359,6 +1393,15 @@ class CaseModel
             if (!$this->hasColumn('cases', 'philhealth_relation')) {
                 $this->safeExec("ALTER TABLE cases ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");
             }
+            if (!$this->hasColumn('cases', 'status_timestamp')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN status_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            }
+            // Ensure cases.status allows error workflow states (Issue Reported, For RadTech Review, etc.)
+            $stmtStatusCol = $this->pdo->query("SHOW COLUMNS FROM cases LIKE 'status'");
+            $statusColInfo = $stmtStatusCol ? $stmtStatusCol->fetch(PDO::FETCH_ASSOC) : null;
+            if ($statusColInfo && strpos(strtolower($statusColInfo['Type']), 'enum') !== false) {
+                $this->safeExec("ALTER TABLE cases MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'Pending'");
+            }
 
             // 2. Ensure requests table columns (Fixes SQLSTATE[42S22]: Unknown column 'is_verified')
             if ($this->hasTable('requests')) {
@@ -1430,8 +1473,85 @@ class CaseModel
                     $this->safeExec("ALTER TABLE result_disputes ADD COLUMN resolved_at TIMESTAMP NULL DEFAULT NULL");
                 }
             }
+
+            // 4. Ensure case_amendments table exists
+            $this->safeExec("CREATE TABLE IF NOT EXISTS case_amendments (
+                id INT(11) NOT NULL AUTO_INCREMENT,
+                case_id INT(11) NOT NULL,
+                dispute_id INT(11) DEFAULT NULL,
+                amended_by INT(11) NOT NULL,
+                amended_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                findings_before TEXT DEFAULT NULL,
+                findings_after TEXT DEFAULT NULL,
+                impression_before TEXT DEFAULT NULL,
+                impression_after TEXT DEFAULT NULL,
+                dicom_name_before VARCHAR(255) DEFAULT NULL,
+                dicom_name_after VARCHAR(255) DEFAULT NULL,
+                template_before VARCHAR(255) DEFAULT NULL,
+                template_after VARCHAR(255) DEFAULT NULL,
+                patient_name_before VARCHAR(255) DEFAULT NULL,
+                patient_name_after VARCHAR(255) DEFAULT NULL,
+                notes TEXT DEFAULT NULL,
+                PRIMARY KEY (id),
+                KEY idx_case_id (case_id),
+                KEY idx_dispute_id (dispute_id),
+                KEY idx_amended_by (amended_by)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+            if ($this->hasTable('case_amendments')) {
+                if (!$this->hasColumn('case_amendments', 'exam_type_before')) {
+                    $this->safeExec("ALTER TABLE case_amendments ADD COLUMN exam_type_before VARCHAR(255) DEFAULT NULL");
+                }
+                if (!$this->hasColumn('case_amendments', 'exam_type_after')) {
+                    $this->safeExec("ALTER TABLE case_amendments ADD COLUMN exam_type_after VARCHAR(255) DEFAULT NULL");
+                }
+            }
         } catch (\Throwable $e) {
             error_log('ensureSchema safe catch: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Transition a case status forward using CaseStatusTransition guard.
+     * Guarantees that progress tracking never regresses backwards.
+     *
+     * @param int $caseId
+     * @param string $newStatus
+     * @param int|null $userId
+     * @return bool
+     */
+    public function transitionStatus(int $caseId, string $newStatus, ?int $userId = null): bool
+    {
+        require_once __DIR__ . '/CaseStatusTransition.php';
+
+        $stmt = $this->pdo->prepare("SELECT id, status, released FROM cases WHERE id = ?");
+        $stmt->execute([$caseId]);
+        $current = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$current) {
+            return false;
+        }
+
+        $currentStatus = $current['status'] ?? 'Pending';
+
+        if (!CaseStatusTransition::canTransition($currentStatus, $newStatus)) {
+            error_log("CaseModel::transitionStatus blocked backward transition for case {$caseId}: from '{$currentStatus}' to '{$newStatus}'");
+            return false;
+        }
+
+        $isReleased = in_array($newStatus, ['Released', 'Resolved', 'Completed']) ? 1 : $current['released'];
+
+        $sql = "UPDATE cases SET status = ?, released = ?, status_timestamp = NOW()";
+        $params = [$newStatus, $isReleased];
+
+        if ($newStatus === 'Resolved' || $newStatus === 'Released' || $newStatus === 'Completed') {
+            $sql .= ", date_completed = COALESCE(date_completed, NOW())";
+        }
+
+        $sql .= " WHERE id = ?";
+        $params[] = $caseId;
+
+        $stmtUpdate = $this->pdo->prepare($sql);
+        return $stmtUpdate->execute($params);
     }
 }

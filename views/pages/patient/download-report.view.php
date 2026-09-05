@@ -714,11 +714,19 @@ if (!$isMultiExam) {
         <!-- Header -->
         <div class="report-header">
             <div class="header-left">
-                <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/citilife-logo.png" alt="Citilife Logo"
+                <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo"
                     class="header-logo">
                 <div class="header-text">
-                    <h1>CITILIFE</h1>
-                    <p>DIAGNOSTIC CENTER</p>
+                    <?php 
+                        $fullSysName = getSystemName();
+                        $parts = explode(' ', $fullSysName, 2);
+                        $mainTitle = strtoupper($parts[0] ?? '');
+                        $subTitle = isset($parts[1]) ? strtoupper($parts[1]) : '';
+                    ?>
+                    <h1><?= htmlspecialchars($mainTitle) ?></h1>
+                    <?php if (!empty($subTitle)): ?>
+                        <p><?= htmlspecialchars($subTitle) ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="header-right">
@@ -919,16 +927,38 @@ if (!$isMultiExam) {
         }
         ?>
         <?php foreach ($savedPaths as $idx => $sPath): ?>
+            <?php
+            $plateExam = '';
+            if (!empty($parsedData) && is_array($parsedData)) {
+                $examKeys = array_keys($parsedData);
+                if (isset($examKeys[$idx]) && !empty(trim($examKeys[$idx]))) {
+                    $plateExam = trim($examKeys[$idx]);
+                }
+            }
+            if (empty($plateExam) && !empty($case['exam_type'])) {
+                $examsList = array_values(array_filter(array_map('trim', explode(',', $case['exam_type']))));
+                if (count($examsList) > 1 && isset($examsList[$idx]) && $examsList[$idx] !== '') {
+                    $plateExam = $examsList[$idx];
+                } else {
+                    $plateExam = trim($case['exam_type']);
+                }
+            }
+            ?>
             <div class="page image-page">
 
                 <div
                     style="width: 100%; text-align: center; margin-bottom: 20px; font-family: 'Raleway', sans-serif; position: relative; z-index: 1;">
                     <h2
-                        style="font-size: 16pt; font-weight: bold; color: #111; letter-spacing: 1px; text-transform: uppercase;">
+                        style="font-size: 16pt; font-weight: bold; color: #111; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 5px 0;">
                         X-RAY PLATE IMAGE <?= count($savedPaths) > 1 ? '(' . ($idx + 1) . ')' : '' ?></h2>
-                    <p style="font-family: Arial, sans-serif; font-size: 10pt; color: #555; margin-top: 5px;">Case No:
+                    <p style="font-family: Arial, sans-serif; font-size: 10pt; color: #555; margin: 0 0 5px 0;">Case No:
                         <?= $caseNum ?> &nbsp;|&nbsp; Patient Name: <?= $fullName ?>
                     </p>
+                    <?php if (!empty($plateExam)): ?>
+                        <div style="font-family: 'Raleway', sans-serif; font-size: 11pt; font-weight: 700; color: #111; letter-spacing: 0.8px; text-transform: uppercase;">
+                            Examination: <?= htmlspecialchars($plateExam) ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <div

@@ -76,7 +76,11 @@ if (isset($_GET['export_pdf'])) {
     // Format display range
     $rangeLabel = date('F j, Y', strtotime($startDate)) . ' to ' . date('F j, Y', strtotime($endDate));
     $branchMetadata = $branchModel->getBranchMetadata($branchName);
-    $logoPath = realpath(__DIR__ . '/../../../public/assets/img/logo/citilife-logo.png');
+    $logoRelPath = function_exists('getSystemLogo') ? getSystemLogo() : 'public/assets/img/logo/citilife-logo.png';
+    $logoPath = realpath(__DIR__ . '/../../../' . $logoRelPath);
+    if (!$logoPath || !file_exists($logoPath)) {
+        $logoPath = realpath(__DIR__ . '/../../../public/assets/img/logo/citilife-logo.png');
+    }
     $logoBase64 = "";
     if ($logoPath && file_exists($logoPath)) {
         $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
@@ -285,8 +289,16 @@ if (isset($_GET['export_pdf'])) {
                         <?php endif; ?>
                     </td>
                     <td class="clinic-info">
-                        <h1>Citilife</h1>
-                        <p>Diagnostic Center</p>
+                        <?php 
+                            $fullSysName = function_exists('getSystemName') ? getSystemName() : 'Citilife Diagnostic Center';
+                            $parts = explode(' ', $fullSysName, 2);
+                            $mainTitle = $parts[0] ?? '';
+                            $subTitle = $parts[1] ?? '';
+                        ?>
+                        <h1><?= htmlspecialchars($mainTitle) ?></h1>
+                        <?php if (!empty($subTitle)): ?>
+                            <p><?= htmlspecialchars($subTitle) ?></p>
+                        <?php endif; ?>
                     </td>
                     <td class="branch-info">
                         <div class="metadata">
@@ -427,7 +439,7 @@ if (isset($_GET['export_pdf'])) {
 
     // ── Canvas Footer: draw both texts on the SAME y-baseline ──
     $canvas = $dompdf->getCanvas();
-    $font = $dompdf->getFontMetrics()->get_font('helvetica', 'normal');
+    $font = $dompdf->getFontMetrics()->getFont('helvetica', 'normal');
     $color = [148 / 255, 163 / 255, 184 / 255]; // #94a3b8
     $lineCol = [226 / 255, 232 / 255, 240 / 255]; // #e2e8f0
     $w = $canvas->get_width();        // ~595pt for A4

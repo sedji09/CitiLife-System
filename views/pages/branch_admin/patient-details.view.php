@@ -141,7 +141,7 @@ if (isset($caseNotFound) && $caseNotFound) {
 </div>
 
 <!-- Image Archive -->
-<?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed']); ?>
+<?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']); ?>
 
 <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
@@ -154,6 +154,27 @@ if (isset($caseNotFound) && $caseNotFound) {
     <div id="file-preview-area">
         <!-- Read-only image grid -->
         <?php
+        if (!function_exists('getXrayImageLabel')) {
+            function getXrayImageLabel($sPath, $idx = 0, $examType = '') {
+                $baseName = pathinfo($sPath, PATHINFO_FILENAME);
+                if (preg_match('/^case_\d+_\d+_\d+_(.+)$/', $baseName, $m)) {
+                    return trim($m[1]);
+                }
+                if (!empty($examType)) {
+                    $exams = array_values(array_filter(array_map('trim', explode(',', $examType))));
+                    if (isset($exams[$idx]) && $exams[$idx] !== '') {
+                        return $exams[$idx];
+                    }
+                }
+                if (!preg_match('/^case_\d+/i', $baseName) && strlen($baseName) > 2) {
+                    return str_replace(['_', '-'], ' ', $baseName);
+                }
+                if (!empty($examType) && !str_contains($examType, ',')) {
+                    return trim($examType);
+                }
+                return 'IMG ' . ($idx + 1);
+            }
+        }
         $savedPaths = [];
         if (!empty($caseDetails['image_path'])) {
             $decoded = json_decode($caseDetails['image_path'], true);
@@ -167,12 +188,13 @@ if (isset($caseNotFound) && $caseNotFound) {
         <?php if (!empty($savedPaths)): ?>
             <div class="flex flex-wrap gap-4">
                 <?php foreach ($savedPaths as $idx => $sPath): ?>
+                    <?php $imgLabel = getXrayImageLabel($sPath, $idx, $caseDetails['exam_type'] ?? ''); ?>
                     <div onclick="openXrayLightbox('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>')"
                         style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
                         class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
-                        title="Click to view image fullscreen">
+                        title="<?= htmlspecialchars($imgLabel) ?> — Click to view fullscreen">
                         <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?><?= htmlspecialchars($sPath) ?>" 
-                             alt="X-ray <?= $idx + 1 ?>"
+                             alt="<?= htmlspecialchars($imgLabel) ?>"
                              class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
                         
                         <!-- Center Expand Icon on Hover -->
@@ -183,8 +205,8 @@ if (isset($caseNotFound) && $caseNotFound) {
                         </div>
 
                         <!-- Bottom Label -->
-                        <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[10px] font-bold text-white py-1 text-center uppercase tracking-wider z-10 pointer-events-none">
-                            IMG <?= $idx + 1 ?>
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/75 text-[10px] font-bold text-white py-1 px-1.5 text-center uppercase tracking-wider z-10 pointer-events-none truncate" title="<?= htmlspecialchars($imgLabel) ?>">
+                            <?= htmlspecialchars($imgLabel) ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
