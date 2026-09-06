@@ -832,7 +832,7 @@
                         </div>
                         <div>
                             <label for="swal-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
-                            <textarea id="swal-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-gray-800 transition" placeholder="State why this payment is being rejected so the patient knows what to fix..."></textarea>
+                            <textarea id="swal-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:border-red-500 focus:outline-none outline-none text-gray-800 transition" placeholder="State why this payment is being rejected so the patient knows what to fix..."></textarea>
                         </div>
                     </div>
                 `,

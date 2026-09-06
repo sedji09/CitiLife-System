@@ -115,7 +115,9 @@ class PatientApprovalController
                     header("Location: " . $redirectBase . "/patient-details?role=radtech&id=" . urlencode($newCaseId) . "&from=approval");
                     exit;
                 } catch (\Throwable $e) {
-                    $pdo->rollBack();
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
                     $_SESSION['flash_error'] = "Approval failed: " . $e->getMessage();
                     $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') : '';
                     header("Location: " . $redirectBase . "/patient-approval");
@@ -142,6 +144,10 @@ class PatientApprovalController
 
                     if (!$reqData) {
                         throw new \Exception("Request record not found.");
+                    }
+
+                    if (!in_array($reqData['status'], ['Pending Approval', 'Pending'])) {
+                        throw new \Exception("Cannot reject request: This request is already in {$reqData['status']} status.");
                     }
 
                     $reqNum = $reqData['request_number'] ?: ('REQ-' . str_pad($requestId, 5, '0', STR_PAD_LEFT));
@@ -209,12 +215,12 @@ class PatientApprovalController
                 try {
                     $pdo->beginTransaction();
                     
-                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND branch_id = ? AND (status = 'Pending Approval' OR status = 'Pending' OR status = 'Pending Payment')");
+                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND branch_id = ? AND (status = 'Pending Approval' OR status = 'Pending')");
                     $stmt->execute([$requestId, $branchId]);
                     $req = $stmt->fetch();
                     
                     if (!$req) {
-                        throw new \Exception("Request not found or not in pending state.");
+                        throw new \Exception("Request not found, already assigned, or not in pending approval state.");
                     }
 
                     // Calculate total original price and PhilHealth discount based on selected exams
@@ -419,12 +425,12 @@ class PatientApprovalController
                                     'Request Number' => htmlspecialchars($reqNum),
                                     'Assigned Exam'  => htmlspecialchars($examType),
                                     'Amount Due'     => 'PHP ' . $formattedDue,
-                                    'Status'         => '<span style="color: #2563eb; font-weight: 600;">Pending Payment</span>'
+                                    'Status'         => '<span style="color: #d97706; font-weight: 600;">Pending Payment</span>'
                                 ],
                                 "Proceed to Payment",
                                 $portalUrl,
                                 "You're receiving this notification regarding your X-ray examination request at Citilife.",
-                                "#2563eb"
+                                "#d97706"
                             );
                             sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
                         }

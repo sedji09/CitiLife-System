@@ -139,6 +139,7 @@ $uuid = uniqid('es_');
 
                 // Render chips
                 function renderChips(container) {
+                    const isComponentReadOnly = container.getAttribute('data-readonly') === 'true';
                     const hiddenInput = container.querySelector('.exam-ms-hidden-input');
                     const chipsContainer = container.querySelector('.exam-ms-chips-container');
                     const searchInput = container.querySelector('.exam-ms-input');
@@ -159,22 +160,33 @@ $uuid = uniqid('es_');
                     // Re-build chips
                     selected.forEach(item => {
                         const chip = document.createElement('span');
-                        chip.className = 'inline-flex flex-shrink-0 items-center rounded border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 shadow-sm';
+                        chip.className = isComponentReadOnly
+                            ? 'inline-flex flex-shrink-0 items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-2xs'
+                            : 'inline-flex flex-shrink-0 items-center rounded border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 shadow-sm';
 
                         const text = document.createElement('span');
                         text.textContent = item;
-
-                        const removeBtn = document.createElement('button');
-                        removeBtn.type = 'button';
-                        removeBtn.className = 'exam-ms-remove-btn ml-1.5 text-red-400 hover:text-red-700 focus:outline-none font-bold align-middle';
-                        removeBtn.innerHTML = '&times;';
-                        removeBtn.setAttribute('data-value', item);
-
                         chip.appendChild(text);
-                        chip.appendChild(removeBtn);
+
+                        if (!isComponentReadOnly) {
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'exam-ms-remove-btn ml-1.5 text-red-400 hover:text-red-700 focus:outline-none font-bold align-middle';
+                            removeBtn.innerHTML = '&times;';
+                            removeBtn.setAttribute('data-value', item);
+                            chip.appendChild(removeBtn);
+                        }
 
                         chipsContainer.insertBefore(chip, searchInput);
                     });
+
+                    if (isComponentReadOnly) {
+                        if (searchInput) searchInput.style.display = 'none';
+                        if (dropdown) dropdown.classList.add('hidden');
+                        return;
+                    } else {
+                        if (searchInput) searchInput.style.display = '';
+                    }
 
                     // Update placeholder
                     searchInput.placeholder = selected.length === 0 ? (searchInput.getAttribute('data-placeholder') || "Search...") : "";
@@ -331,6 +343,9 @@ $uuid = uniqid('es_');
                     const msBox = e.target.closest('.exam-ms-box');
                     if (msBox) {
                         const container = msBox.closest('.exam-ms-component');
+                        if (container && container.getAttribute('data-readonly') === 'true') {
+                            return; // Read-only: do not open dropdown
+                        }
                         const dropdown = container.querySelector('.exam-ms-dropdown');
                     
                         if (window.examMSOpenId && window.examMSOpenId !== container.id) {

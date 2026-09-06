@@ -58,7 +58,7 @@
         </a>
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Pending Approval
+            Patient Requests
         </a>
     </nav>
 </div>
@@ -111,6 +111,7 @@
                     <?php foreach ($patients as $row): ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
@@ -175,11 +176,6 @@
                                         style="border:1.5px solid #818cf8;background-color:#eef2ff;color:#4338ca">
                                         Report Ready
                                     </span>
-                                    <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
-                                            <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
-                                        </span>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td class="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
@@ -195,22 +191,24 @@
                                             class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
                                     </a>
 
-                                    <!-- Re-edit button -->
-                                    <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
-                                        class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition"
-                                        title="Allow Radiologist to Re-edit (Revert to Draft)">
-                                        <span class="w-6 h-6 mr-1 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 px-1 py-1 rounded-md border border-yellow-400 inline-flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
-                                                <polyline points="14 2 14 8 20 8"/>
-                                                <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
-                                                <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
-                                                <polyline points="7.5 9.5 11 12 7.5 14.5"/>
-                                                <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
-                                                <polyline points="6.5 22.5 3 20 6.5 17.5"/>
-                                            </svg>
-                                        </span>
-                                    </button>
+                                    <?php if (empty($row['released']) || (int)$row['released'] === 0): ?>
+                                     <!-- Re-edit button -->
+                                     <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
+                                         class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition"
+                                         title="Allow Radiologist to Re-edit (Revert to Draft)">
+                                         <span class="w-6 h-6 mr-1 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 px-1 py-1 rounded-md border border-yellow-400 inline-flex items-center justify-center">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                 <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
+                                                 <polyline points="14 2 14 8 20 8"/>
+                                                 <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
+                                                 <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
+                                                 <polyline points="7.5 9.5 11 12 7.5 14.5"/>
+                                                 <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
+                                                 <polyline points="6.5 22.5 3 20 6.5 17.5"/>
+                                             </svg>
+                                         </span>
+                                     </button>
+                                     <?php endif; ?>
 
                                     <!-- Print Result -->
                                     <a href="javascript:void(0)"
@@ -308,6 +306,90 @@
         }
     }
 
+    function handleHighlight() {
+        const params = new window.URLSearchParams(window.location.search);
+        const highlightId = params.get('highlight') || params.get('highlight_case') || params.get('case_id');
+        if (!highlightId) return;
+
+        // Reset search/filter to ensure highlighted row is visible
+        const searchInput = document.getElementById('search-input');
+        const filterPriority = document.getElementById('filter-priority');
+        if (searchInput) searchInput.value = '';
+        if (filterPriority) filterPriority.value = 'All';
+        applyFilters();
+
+        setTimeout(() => {
+            const rows = document.querySelectorAll('#table-body tr.record-row');
+            let targetRow = null;
+            const hlLower = highlightId.trim().toLowerCase();
+
+            rows.forEach(row => {
+                if ((row.dataset.id || '').toLowerCase() === hlLower ||
+                    (row.dataset.caseId || '').toLowerCase() === hlLower) {
+                    targetRow = row;
+                }
+            });
+
+            if (targetRow) {
+                targetRow.style.display = '';
+
+                // Scroll table container or window smoothly to the row
+                const tableWrapper = targetRow.closest('.overflow-y-auto');
+                if (tableWrapper) {
+                    const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
+                    tableWrapper.scrollTo({ top: Math.max(0, rowTop - 40), behavior: 'smooth' });
+                } else {
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                // Flash highlight animation
+                targetRow.style.transition = 'background-color 0.4s ease';
+                targetRow.style.backgroundColor = '#fef08a';
+                setTimeout(() => {
+                    targetRow.style.backgroundColor = '#fde047';
+                    setTimeout(() => {
+                        targetRow.style.backgroundColor = '#fef08a';
+                        setTimeout(() => {
+                            targetRow.style.backgroundColor = '#fde047';
+                            setTimeout(() => {
+                                targetRow.style.transition = 'background-color 1.5s ease';
+                                targetRow.style.backgroundColor = '';
+                            }, 400);
+                        }, 400);
+                    }, 400);
+                }, 200);
+
+                // Remove existing banner if present
+                const existingBanner = document.getElementById('highlight-banner');
+                if (existingBanner) existingBanner.remove();
+
+                // Info banner
+                const banner = document.createElement('div');
+                banner.id = 'highlight-banner';
+                banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
+                banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                const header = document.querySelector('h2');
+                if (header && header.parentElement) {
+                    header.parentElement.insertAdjacentElement('afterend', banner);
+                }
+                setTimeout(() => {
+                    banner.style.transition = 'opacity 0.5s';
+                    banner.style.opacity = '0';
+                    setTimeout(() => banner.remove(), 500);
+                }, 6000);
+
+                // Clean up URL parameter cleanly
+                try {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('highlight');
+                    cleanUrl.searchParams.delete('highlight_case');
+                    cleanUrl.searchParams.delete('case_id');
+                    window.history.replaceState({}, document.title, cleanUrl.toString());
+                } catch (e) {}
+            }
+        }, 150);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const sortSelect = document.getElementById('sort-date');
@@ -315,6 +397,7 @@
                 sortSelect.value = 'Newest Case';
                 applyFilters();
             }
+            handleHighlight();
         }, 100);
     });
 
@@ -327,10 +410,18 @@
 
 <div id="release-loading-overlay"
     class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
-    <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mb-4"></div>
-    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing the results...
-    </p>
+    <div id="release-spinner-container">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mb-4"></div>
+    </div>
+    <div id="release-success-icon" class="hidden mb-4">
+        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+    </div>
+    <h3 id="release-title-text" class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the results...</p>
 </div>
 
 <script>
@@ -346,19 +437,14 @@
                         This will revert the report to draft status (Under Reading) so the radiologist can update findings and impressions.
                     </div>
                     <div class="text-left mb-2">
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Quick Reason Presets:
+                        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                            RadTech Notes <span class="text-red-500">*</span>:
                         </label>
-                        <div class="flex flex-wrap gap-1.5 mb-3">
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Clarification needed on findings/impression.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Findings Clarification</button>
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Patient clinical history/demographics need update.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Patient Info/History</button>
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Additional X-ray view/projection uploaded.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Additional View</button>
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Typographical error in report findings.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Typo in Report</button>
-                        </div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Reason for Re-Edit <span class="text-red-500">*</span>:
-                        </label>
-                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition outline-none resize-none" placeholder="Explain specifically what needs to be changed or reviewed..."></textarea>
+                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" onfocus="if(!this.dataset.error){this.style.borderColor='#d97706';}" onblur="if(!this.dataset.error){this.style.borderColor='#d1d5db';}" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
+                        <p id="swal-reedit-error" class="hidden text-xs text-red-600 mt-2 font-medium items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-red-500 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <span>Please enter notes for the radiologist.</span>
+                        </p>
                     </div>
                 `,
                 icon: 'question',
@@ -368,14 +454,43 @@
                 confirmButtonColor: '#d97706',
                 cancelButtonColor: '#6b7280',
                 customClass: {
-                    popup: 'rounded-2xl p-5 max-w-lg',
-                    confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                    popup: 'rounded-2xl p-5 max-w-lg font-sans',
+                    confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm',
                     cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
                 },
+                didOpen: () => {
+                    const textarea = document.getElementById('swal-reedit-reason');
+                    const errEl = document.getElementById('swal-reedit-error');
+                    if (textarea) {
+                        textarea.focus();
+                        textarea.addEventListener('input', () => {
+                            if (textarea.value.trim().length > 0) {
+                                textarea.dataset.error = '';
+                                textarea.style.borderColor = '#d97706';
+                                textarea.style.backgroundColor = '#ffffff';
+                                if (errEl) {
+                                    errEl.classList.add('hidden');
+                                    errEl.classList.remove('flex');
+                                }
+                            }
+                        });
+                    }
+                },
                 preConfirm: () => {
-                    const text = document.getElementById('swal-reedit-reason').value.trim();
+                    const textarea = document.getElementById('swal-reedit-reason');
+                    const errEl = document.getElementById('swal-reedit-error');
+                    const text = textarea ? textarea.value.trim() : '';
                     if (!text) {
-                        Swal.showValidationMessage('Please enter a reason so the radiologist knows what to review.');
+                        if (textarea) {
+                            textarea.dataset.error = '1';
+                            textarea.style.borderColor = '#ef4444';
+                            textarea.style.backgroundColor = '#fef2f2';
+                            textarea.focus();
+                        }
+                        if (errEl) {
+                            errEl.classList.remove('hidden');
+                            errEl.classList.add('flex');
+                        }
                         return false;
                     }
                     return text;
@@ -545,6 +660,23 @@
                     }
 
                     if (result.success) {
+                        const spinner = document.getElementById('release-spinner-container');
+                        const successIcon = document.getElementById('release-success-icon');
+                        const titleEl = document.getElementById('release-title-text');
+                        const statusTextEl = document.getElementById('release-status-text');
+
+                        if (spinner) spinner.classList.add('hidden');
+                        if (successIcon) successIcon.classList.remove('hidden');
+                        if (titleEl) {
+                            titleEl.textContent = 'Result Released!';
+                            titleEl.className = 'text-xl font-bold text-green-600 dark:text-green-400';
+                        }
+                        if (statusTextEl) {
+                            statusTextEl.textContent = 'Case moved to X-ray Patient Records.';
+                            statusTextEl.className = 'text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
+                        }
+
+                        await new Promise(r => setTimeout(r, 1200));
                         window.location.reload();
                     } else {
                         throw new Error(result.message || 'Server rejected the upload.');

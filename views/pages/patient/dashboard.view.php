@@ -127,8 +127,8 @@ if ($isCorrectionWorkflow) {
 } else {
     $steps = [
         1 => 'Registration',
-        2 => 'Payment',
-        3 => 'RadTech Verification',
+        2 => 'RadTech Verification',
+        3 => 'Payment',
         4 => 'X-ray Examination',
         5 => 'Radiologist Reading',
         6 => 'Report Finalized',
@@ -146,9 +146,18 @@ if ($isCorrectionWorkflow) {
             $currentStep = 0;
             $displayStatus = 'Cancelled';
             $isRejected = true;
-        } elseif ($recordType === 'Request' && $latestCase['status'] === 'Pending Approval') {
+        } elseif ($recordType === 'Request' && in_array($latestCase['status'], ['Pending Approval', 'Pending'])) {
             $currentStep = 2;
             $displayStatus = 'Pending';
+        } elseif ($latestCase['status'] === 'Pending Payment') {
+            $currentStep = 3;
+            $displayStatus = 'Pending Payment';
+        } elseif ($latestCase['status'] === 'Payment Verifying') {
+            $currentStep = 3;
+            $displayStatus = 'Payment Verifying';
+        } elseif ($latestCase['status'] === 'Payment Verified') {
+            $currentStep = 4;
+            $displayStatus = 'Payment Verified';
         } elseif ($recordType === 'Case' && $latestCase['status'] === 'Pending') {
             if (isset($latestCase['image_status']) && $latestCase['image_status'] === 'Uploaded') {
                 $currentStep = 5;
@@ -157,15 +166,6 @@ if ($isCorrectionWorkflow) {
                 $currentStep = 4;
                 $displayStatus = 'Approved';
             }
-        } elseif ($latestCase['status'] === 'Pending Payment') {
-            $currentStep = 2;
-            $displayStatus = 'Pending Payment';
-        } elseif ($latestCase['status'] === 'Payment Verifying') {
-            $currentStep = 2;
-            $displayStatus = 'Payment Verifying';
-        } elseif ($latestCase['status'] === 'Payment Verified') {
-            $currentStep = 3;
-            $displayStatus = 'Payment Verified';
         } elseif ($latestCase['status'] === 'Approved') {
             $currentStep = 4;
             $displayStatus = 'Approved';
@@ -943,7 +943,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <?php if ($canCancel || $isPendingPayment || $isCompletedOrReleased || ($latestCase['status'] ?? '') === 'Rejected'): ?>
                 <!-- Footer / Action Buttons -->
                 <div
-                    class="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center <?= (($latestCase['status'] ?? '') === 'Rejected') ? 'justify-between' : 'justify-end' ?> gap-2 sm:gap-3">
+                    class="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-gray-50 border-t border-gray-100 flex <?= (($latestCase['status'] ?? '') === 'Rejected') ? 'flex-col sm:flex-row items-stretch sm:items-center justify-between' : 'items-center justify-end' ?> gap-1.5 sm:gap-3">
                     <?php if (($latestCase['status'] ?? '') === 'Rejected'): ?>
                         <div class="flex items-center min-w-0 text-left py-0.5">
                             <div class="text-xs sm:text-sm text-red-800 leading-snug">
@@ -1417,14 +1417,14 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             </div>
                         </div>
 
-                        <!-- Sex / Gender Input -->
+                        <!-- Sex Input -->
                         <div id="field-correct-sex" class="hidden">
                             <label class="block text-[11px] font-bold text-gray-700 mb-1">
-                                Correct Sex / Gender <span class="text-red-500">*</span>
+                                Correct Sex <span class="text-red-500">*</span>
                             </label>
                             <select id="input-correct-sex"
                                 class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
-                                <option value="" disabled selected>-- Select Correct Sex / Gender --</option>
+                                <option value="" disabled selected>-- Select Correct Sex --</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
@@ -1814,9 +1814,9 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         const ERROR_STEPS = { 1: 'Issue Reported', 2: 'For RadTech Review', 3: 'Correction in Progress', 4: 'Correction Completed' };
 
         // Standard exam step mapping
-        const EXAM_STEPS = { 1: 'Registration', 2: 'Payment', 3: 'RadTech Verification', 4: 'X-ray Examination', 5: 'Radiologist Reading', 6: 'Report Finalized', 7: 'Released' };
+        const EXAM_STEPS = { 1: 'Registration', 2: 'RadTech Verification', 3: 'Payment', 4: 'X-ray Examination', 5: 'Radiologist Reading', 6: 'Report Finalized', 7: 'Released' };
         const EXAM_STEP_MAP = {
-            'Pending': 2, 'Pending Payment': 2, 'Payment Verifying': 2, 'Payment Verified': 3,
+            'Pending': 2, 'Pending Approval': 2, 'Pending Payment': 3, 'Payment Verifying': 3, 'Payment Verified': 4,
             'Approved': 4, 'X-ray Taken': 5, 'Under Reading': 5, 'Report Ready': 6, 'Released': 7, 'Completed': 7,
         };
 

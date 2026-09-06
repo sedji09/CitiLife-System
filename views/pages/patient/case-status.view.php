@@ -17,8 +17,8 @@ $reqId = isset($_GET['request_id']) ? (int) $_GET['request_id'] : 0;
 
 $steps = [
     1 => 'Registration',
-    2 => 'Payment',
-    3 => 'RadTech Verification',
+    2 => 'RadTech Verification',
+    3 => 'Payment',
     4 => 'X-ray Examination',
     5 => 'Radiologist Reading',
     6 => 'Report Finalized',
@@ -218,13 +218,13 @@ $statusDescriptions = [
             $currentStep = 2;
             $displayStatus = 'Pending';
         } elseif ($statusVal === 'Pending Payment') {
-            $currentStep = 2;
+            $currentStep = 3;
             $displayStatus = 'Pending Payment';
         } elseif ($statusVal === 'Payment Verifying') {
-            $currentStep = 2;
+            $currentStep = 3;
             $displayStatus = 'Payment Verifying';
         } elseif ($statusVal === 'Payment Verified') {
-            $currentStep = 3;
+            $currentStep = 4;
             $displayStatus = 'Payment Verified';
         } elseif ($recordType === 'Case' && $statusVal === 'Pending') {
             if (isset($caseRow['image_status']) && $caseRow['image_status'] === 'Uploaded') {

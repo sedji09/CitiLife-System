@@ -9,6 +9,13 @@ if (isset($caseNotFound) && $caseNotFound) {
 }
 ?>
 
+<!-- Vanilla JS Datepicker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+
+<!-- html2canvas for Report Release snapshot -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <?php
 $userRole = $_SESSION['role'] ?? 'radtech';
 $from = $_GET['from'] ?? '';
@@ -898,7 +905,7 @@ $catBadgeLabel = match ($dCategory) {
                                                             <?php if (!empty($reportData['impression'])): ?>
                                                                 <div>
                                                                     <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                                                    <p class="text-sm text-gray-950 font-bold whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm"><?= htmlspecialchars($reportData['impression']) ?></p>
+                                                                    <p class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm"><?= htmlspecialchars($reportData['impression']) ?></p>
                                                                 </div>
                                                             <?php endif; ?>
                                                         </div>
@@ -913,7 +920,7 @@ $catBadgeLabel = match ($dCategory) {
                                                 <?php if (!empty($impressionRaw)): ?>
                                                     <div>
                                                         <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                                        <div class="text-sm text-gray-950 font-bold whitespace-pre-wrap leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm"><?= htmlspecialchars($impressionRaw) ?></div>
+                                                        <div class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm"><?= htmlspecialchars($impressionRaw) ?></div>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>
@@ -1030,17 +1037,34 @@ $catBadgeLabel = match ($dCategory) {
                     Submit to Radiologist
                 </button>
         <?php else: ?>
-                <button type="button" disabled
-                    class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-400 cursor-not-allowed shadow-sm">
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                    Already Submitted
-                </button>
+                <?php if ($isReportReady): ?>
+                    <?php if (!empty($caseDetails['released']) && (int)$caseDetails['released'] === 1): ?>
+                        <button type="button" disabled
+                            class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-400 cursor-not-allowed shadow-sm">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            Already Released
+                        </button>
+                    <?php else: ?>
+                        <button type="button" onclick="releaseToPhoto(<?= $caseId ?>, this, event)"
+                            class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm cursor-pointer">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            Release Result
+                        </button>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <button type="button" disabled
+                        class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-5 py-2.5 text-sm font-bold text-gray-400 cursor-not-allowed shadow-sm">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        Already Submitted
+                    </button>
+                <?php endif; ?>
         <?php endif; ?>
 
         <?php if (empty($activeDispute)): ?>
                 <?php if ($isReportReady): ?>
+                    <?php if (empty($caseDetails['released']) || (int)$caseDetails['released'] === 0): ?>
                         <button type="button" onclick="triggerReEdit(<?= $caseId ?>, this, event)"
-                            class="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-yellow-50 px-5 py-2.5 text-sm font-semibold text-yellow-800 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition shadow-sm"
+                            class="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-yellow-50 px-5 py-2.5 text-sm font-semibold text-yellow-800 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition shadow-sm cursor-pointer"
                             title="Revert report to draft so radiologist can edit">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
@@ -1053,6 +1077,7 @@ $catBadgeLabel = match ($dCategory) {
                             </svg>
                             Allow Re-edit
                         </button>
+                    <?php endif; ?>
                         <a href="javascript:void(0)"
                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
                             class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
@@ -1128,11 +1153,12 @@ $catBadgeLabel = match ($dCategory) {
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Birthdate <span class="text-red-500">*</span></label>
                         <span id="modal_pat_calc_age" class="text-xs text-blue-600 font-semibold"><?= !empty($caseDetails['age']) ? $caseDetails['age'] . ' yrs old' : '' ?></span>
                     </div>
-                    <input type="date" name="birthdate" id="modal_pat_birthdate" required
-                        value="<?= htmlspecialchars($caseDetails['birthdate'] ?? '') ?>"
-                        max="<?= date('Y-m-d') ?>"
-                        onchange="updateModalPatientAge()"
-                        class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+                    <div class="relative">
+                        <input type="text" name="birthdate" id="modal_pat_birthdate" readonly placeholder="Select birthdate" required
+                            value="<?= htmlspecialchars($caseDetails['birthdate'] ?? '') ?>"
+                            class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 pr-9 outline-none transition cursor-pointer">
+                        <i data-lucide="calendar" class="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Sex <span class="text-red-500">*</span></label>
@@ -1212,15 +1238,39 @@ $catBadgeLabel = match ($dCategory) {
 </div>
 
 <script>
+    let modalPatientDatePicker = null;
+
+    function initModalPatientDatePicker() {
+        const bdayInput = document.getElementById('modal_pat_birthdate');
+        if (bdayInput && typeof Datepicker !== 'undefined') {
+            if (!modalPatientDatePicker) {
+                modalPatientDatePicker = new Datepicker(bdayInput, {
+                    autohide: true,
+                    format: 'yyyy-mm-dd',
+                    todayHighlight: true,
+                    maxDate: new Date()
+                });
+                bdayInput.addEventListener('changeDate', function () {
+                    updateModalPatientAge();
+                });
+            }
+        }
+    }
+
     function openEditPatientInfoModal() {
         const modal = document.getElementById('edit-patient-info-modal');
         if (modal) {
             modal.classList.remove('hidden');
+            initModalPatientDatePicker();
             togglePhilHealthModalFields();
             updateModalPatientAge();
             if (window.lucide) window.lucide.createIcons();
         }
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initModalPatientDatePicker();
+    });
 
     function closeEditPatientInfoModal() {
         const modal = document.getElementById('edit-patient-info-modal');
@@ -1919,19 +1969,14 @@ async function triggerReEdit(caseId, btn, event = null) {
                     This will revert the report to draft status (Under Reading) so the radiologist can update findings and impressions.
                 </div>
                 <div class="text-left mb-2">
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                        Quick Reason Presets:
+                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                        RadTech Notes <span class="text-red-500">*</span>:
                     </label>
-                    <div class="flex flex-wrap gap-1.5 mb-3">
-                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Clarification needed on findings/impression.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Findings Clarification</button>
-                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Patient clinical history/demographics need update.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Patient Info/History</button>
-                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Additional X-ray view/projection uploaded.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Additional View</button>
-                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Typographical error in report findings.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Typo in Report</button>
-                    </div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                        Reason for Re-Edit <span class="text-red-500">*</span>:
-                    </label>
-                    <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition outline-none resize-none" placeholder="Explain specifically what needs to be changed or reviewed..."></textarea>
+                    <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" onfocus="if(!this.dataset.error){this.style.borderColor='#d97706';}" onblur="if(!this.dataset.error){this.style.borderColor='#d1d5db';}" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
+                    <p id="swal-reedit-error" class="hidden text-xs text-red-600 mt-2 font-medium items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-red-500 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span>Please enter notes for the radiologist.</span>
+                    </p>
                 </div>
             `,
             icon: 'question',
@@ -1941,14 +1986,43 @@ async function triggerReEdit(caseId, btn, event = null) {
             confirmButtonColor: '#d97706',
             cancelButtonColor: '#6b7280',
             customClass: {
-                popup: 'rounded-2xl p-5 max-w-lg',
-                confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                popup: 'rounded-2xl p-5 max-w-lg font-sans',
+                confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm',
                 cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
             },
+            didOpen: () => {
+                const textarea = document.getElementById('swal-reedit-reason');
+                const errEl = document.getElementById('swal-reedit-error');
+                if (textarea) {
+                    textarea.focus();
+                    textarea.addEventListener('input', () => {
+                        if (textarea.value.trim().length > 0) {
+                            textarea.dataset.error = '';
+                            textarea.style.borderColor = '#d97706';
+                            textarea.style.backgroundColor = '#ffffff';
+                            if (errEl) {
+                                errEl.classList.add('hidden');
+                                errEl.classList.remove('flex');
+                            }
+                        }
+                    });
+                }
+            },
             preConfirm: () => {
-                const text = document.getElementById('swal-reedit-reason').value.trim();
+                const textarea = document.getElementById('swal-reedit-reason');
+                const errEl = document.getElementById('swal-reedit-error');
+                const text = textarea ? textarea.value.trim() : '';
                 if (!text) {
-                    Swal.showValidationMessage('Please enter a reason so the radiologist knows what to review.');
+                    if (textarea) {
+                        textarea.dataset.error = '1';
+                        textarea.style.borderColor = '#ef4444';
+                        textarea.style.backgroundColor = '#fef2f2';
+                        textarea.focus();
+                    }
+                    if (errEl) {
+                        errEl.classList.remove('hidden');
+                        errEl.classList.add('flex');
+                    }
                     return false;
                 }
                 return text;
@@ -2033,4 +2107,188 @@ async function triggerReEdit(caseId, btn, event = null) {
         }
     }
 }
+
+async function releaseToPhoto(caseId, btn, event = null) {
+    if (event) event.preventDefault();
+    let confirmed = false;
+    if (typeof confirmAlert === 'function') {
+        const res = await confirmAlert('Confirm Release', 'Would you like to confirm releasing this result and moving it to X-ray Patient Records?');
+        confirmed = res && res.isConfirmed;
+    } else if (typeof Swal !== 'undefined') {
+        const res = await Swal.fire({
+            title: 'Confirm Release',
+            text: 'Would you like to confirm releasing this result and moving it to X-ray Patient Records?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Release',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            customClass: { popup: 'rounded-2xl' }
+        });
+        confirmed = res && res.isConfirmed;
+    } else {
+        confirmed = confirm('Would you like to confirm releasing this result and moving it to X-ray Patient Records?');
+    }
+    if (!confirmed) return;
+
+    const baseDir = '<?= defined("PROJECT_DIR") && PROJECT_DIR ? "/" . PROJECT_DIR : "" ?>';
+    const overlay = document.getElementById('release-loading-overlay');
+    const statusText = document.getElementById('release-status-text');
+
+    // Disable button to prevent double clicks
+    const originalHTML = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    // Show refined overlay
+    if (overlay) overlay.classList.remove('hidden');
+    if (statusText) statusText.textContent = 'Initializing report snapshot...';
+
+    try {
+        // 1. Create a hidden iframe to render the perfect print layout
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.top = '-10000px';
+        iframe.style.left = '-10000px';
+        iframe.style.width = '814px'; // Fixed A4 width for predictable rendering
+        iframe.style.height = '1200px';
+        iframe.style.border = 'none';
+
+        // Use snapshot=1 to skip auto-print in the iframe
+        iframe.src = `${baseDir}/index.php?page=print-report&id=${caseId}&no_shadow=1&snapshot=1`;
+        document.body.appendChild(iframe);
+
+        iframe.onload = async () => {
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+                // Wait briefly for fonts/images
+                await new Promise(r => setTimeout(r, 1000));
+
+                const pages = doc.querySelectorAll('.report-page');
+                if (!pages.length) throw new Error("No pages found to render.");
+
+                // Expand iframe height so it fits ALL pages
+                iframe.style.height = (doc.documentElement.scrollHeight + 200) + 'px';
+                await new Promise(r => setTimeout(r, 500));
+
+                let base64Images = [];
+                for (let i = 0; i < pages.length; i++) {
+                    const page = pages[i];
+                    if (statusText) statusText.textContent = `Processing page ${i + 1} of ${pages.length}...`;
+
+                    const canvas = await html2canvas(page, {
+                        scale: pages.length > 5 ? 1.5 : 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        width: page.scrollWidth,
+                        height: page.scrollHeight,
+                        windowWidth: doc.documentElement.scrollWidth,
+                        windowHeight: doc.documentElement.scrollHeight
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', pages.length > 5 ? 0.8 : 0.9);
+                    base64Images.push(imgData);
+                }
+
+                if (statusText) statusText.textContent = 'Uploading consolidated report...';
+
+                // Submit images to backend
+                const formData = new FormData();
+                formData.append('id', caseId);
+                formData.append('images', JSON.stringify(base64Images));
+
+                const response = await fetch(`${baseDir}/patient-details?id=${caseId}&action=release_and_upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const resText = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(resText);
+                } catch (jsonErr) {
+                    console.error("Server response was not valid JSON:", resText);
+                    throw new Error('Server returned invalid response format: ' + (resText ? resText.substring(0, 100) : 'Empty response'));
+                }
+
+                if (result.success) {
+                    const spinner = document.getElementById('release-spinner-container');
+                    const successIcon = document.getElementById('release-success-icon');
+                    const titleEl = document.getElementById('release-title-text');
+                    const statusTextEl = document.getElementById('release-status-text');
+
+                    if (spinner) spinner.classList.add('hidden');
+                    if (successIcon) successIcon.classList.remove('hidden');
+                    if (titleEl) {
+                        titleEl.textContent = 'Result Released!';
+                        titleEl.className = 'text-base font-bold text-green-600 dark:text-green-400';
+                    }
+                    if (statusTextEl) {
+                        statusTextEl.textContent = 'Case moved to X-ray Patient Records.';
+                        statusTextEl.className = 'text-xs text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
+                    }
+
+                    await new Promise(r => setTimeout(r, 1200));
+                    window.location.reload();
+                } else {
+                    throw new Error(result.message || 'Server rejected the upload.');
+                }
+            } catch (err) {
+                console.error(err);
+                if (typeof errorAlert === 'function') {
+                    errorAlert('Generation Failed', err.message);
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Generation Failed', text: err.message, customClass: { popup: 'rounded-2xl' } });
+                } else {
+                    alert('Generation Failed: ' + err.message);
+                }
+                if (overlay) overlay.classList.add('hidden');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.innerHTML = originalHTML;
+                }
+            } finally {
+                iframe.remove();
+            }
+        };
+    } catch (e) {
+        console.error(e);
+        if (typeof errorAlert === 'function') {
+            errorAlert('Generation Failed', e.message);
+        } else if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'error', title: 'Generation Failed', text: e.message, customClass: { popup: 'rounded-2xl' } });
+        } else {
+            alert('Generation Failed: ' + e.message);
+        }
+        if (overlay) overlay.classList.add('hidden');
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = originalHTML;
+        }
+    }
+}
 </script>
+
+<!-- Release Loading Overlay -->
+<div id="release-loading-overlay" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col items-center max-w-xs w-full mx-4 border border-gray-100 dark:border-gray-700 transition-all">
+        <div id="release-spinner-container">
+            <div class="animate-spin rounded-full h-14 w-14 border-4 border-red-600 border-t-transparent mb-4"></div>
+        </div>
+        <div id="release-success-icon" class="hidden mb-4">
+            <div class="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+        </div>
+        <h3 id="release-title-text" class="text-base font-bold text-gray-800 dark:text-gray-100">Processing Release</h3>
+        <p id="release-status-text" class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the results...</p>
+    </div>
+</div>

@@ -48,7 +48,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 <div class="flex items-center justify-between">
     <div>
         <h2 class="text-xl font-semibold text-gray-900">Patient List</h2>
-        <p class="text-sm text-gray-500 mt-1">Manage approvals and active examination queue</p>
+        <p class="text-sm text-gray-500 mt-1">Manage patient requests and today's examination queue</p>
     </div>
 </div>
 
@@ -86,7 +86,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         </a>
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Pending Approval
+            Patient Requests
         </a>
     
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
@@ -115,7 +115,19 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <option <?= $defaultPriorityFilter === 'Urgent' ? 'selected' : '' ?>>Urgent</option>
             <option <?= $defaultPriorityFilter === 'STAT' ? 'selected' : '' ?>>STAT</option>
         </select>
-        <?php $defaultDateFilter = $_GET['filterDate'] ?? (isset($_GET['highlight']) ? 'All' : 'Today'); ?>
+        <?php $defaultStatusFilter = $_GET['filterStatus'] ?? 'All'; ?>
+        <select id="filter-status"
+            class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="All" <?= $defaultStatusFilter === 'All' ? 'selected' : '' ?>>All Statuses</option>
+            <option value="For Revision" <?= $defaultStatusFilter === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
+            <option value="Pending" <?= $defaultStatusFilter === 'Pending' ? 'selected' : '' ?>>Pending</option>
+            <option value="Under Reading" <?= $defaultStatusFilter === 'Under Reading' ? 'selected' : '' ?>>Under Reading</option>
+            <option value="Report Ready" <?= $defaultStatusFilter === 'Report Ready' ? 'selected' : '' ?>>Report Ready</option>
+            <option value="Completed" <?= $defaultStatusFilter === 'Completed' ? 'selected' : '' ?>>Completed</option>
+            <option value="Overdue" <?= $defaultStatusFilter === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
+        </select>
+        <?php $hasHighlight = !empty($_GET['highlight']) || !empty($_GET['highlight_case']) || !empty($_GET['case_id']); ?>
+        <?php $defaultDateFilter = $_GET['filterDate'] ?? ($hasHighlight ? 'All' : 'Today'); ?>
         <select id="filter-date"
             class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option value="All" <?= $defaultDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
@@ -165,30 +177,40 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         $isReportReady = ($row['status'] === 'Report Ready');
                         $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d'));
                         
-                        $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
+                        if (($row['status'] ?? '') === 'For Revision' || (!empty($row['re_edit_reason']) && ($row['status'] ?? '') === 'Under Reading')) {
+                            $displayStatus = 'For Revision';
+                        } elseif ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') {
+                            $displayStatus = 'Rejected';
+                        } else {
+                            $displayStatus = $row['status'];
+                        }
                         $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
                         if ($displayStatus === 'Pending' && $isOverdue) {
                             $displayStatus = 'Overdue';
                         }
 
                         $initialDisplay = '';
-                        if ($defaultDateFilter === 'Today' && !$isToday) $initialDisplay = 'display: none;';
-                        if ($defaultDateFilter === 'Backlog' && $isToday) $initialDisplay = 'display: none;';
-                        if ($defaultPriorityFilter !== 'All' && $defaultPriorityFilter !== $row['priority']) $initialDisplay = 'display: none;';
-                        
-                        $sLower = strtolower($defaultSearch);
-                        if ($sLower !== '') {
-                            $nMatch = strpos(strtolower($row['first_name'] . ' ' . $row['last_name']), $sLower) !== false;
-                            $cMatch = strpos(strtolower($row['case_number']), $sLower) !== false;
-                            $pMatch = strpos(strtolower($row['patient_number'] ?? ''), $sLower) !== false;
-                            if (!$nMatch && !$cMatch && !$pMatch) {
-                                $initialDisplay = 'display: none;';
+                        if (!$hasHighlight) {
+                            if ($defaultDateFilter === 'Today' && !$isToday) $initialDisplay = 'display: none;';
+                            if ($defaultDateFilter === 'Backlog' && $isToday) $initialDisplay = 'display: none;';
+                            if ($defaultPriorityFilter !== 'All' && $defaultPriorityFilter !== $row['priority']) $initialDisplay = 'display: none;';
+                            if ($defaultStatusFilter !== 'All' && $defaultStatusFilter !== $displayStatus) $initialDisplay = 'display: none;';
+                            
+                            $sLower = strtolower($defaultSearch);
+                            if ($sLower !== '') {
+                                $nMatch = strpos(strtolower($row['first_name'] . ' ' . $row['last_name']), $sLower) !== false;
+                                $cMatch = strpos(strtolower($row['case_number']), $sLower) !== false;
+                                $pMatch = strpos(strtolower($row['patient_number'] ?? ''), $sLower) !== false;
+                                if (!$nMatch && !$cMatch && !$pMatch) {
+                                    $initialDisplay = 'display: none;';
+                                }
                             }
                         }
                         ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             style="<?= $initialDisplay ?>"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-case-id="<?= (int)$row['id'] ?>"
                             data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
@@ -291,11 +313,6 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                         style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
                                         <?= htmlspecialchars($displayStatus ?: 'Pending') ?>
                                     </span>
-                                    <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
-                                            <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
-                                        </span>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td class="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
@@ -320,22 +337,24 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                     </a>
 
                                     <?php if ($isReportReady): ?>
-                                        <!-- Re-edit — active when Report Ready -->
-                                        <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
-                                            class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition"
-                                            title="Allow Radiologist to Re-edit (Revert to Draft)">
-                                            <span class="w-6 h-6 mr-1 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 px-1 py-1 rounded-md border border-yellow-400 inline-flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
-                                                    <polyline points="14 2 14 8 20 8"/>
-                                                    <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
-                                                    <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
-                                                    <polyline points="7.5 9.5 11 12 7.5 14.5"/>
-                                                    <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
-                                                    <polyline points="6.5 22.5 3 20 6.5 17.5"/>
-                                                </svg>
-                                            </span>
-                                        </button>
+                                         <?php if (empty($row['released']) || (int)$row['released'] === 0): ?>
+                                         <!-- Re-edit — active when Report Ready and not yet released -->
+                                         <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
+                                             class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition"
+                                             title="Allow Radiologist to Re-edit (Revert to Draft)">
+                                             <span class="w-6 h-6 mr-1 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 px-1 py-1 rounded-md border border-yellow-400 inline-flex items-center justify-center">
+                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                     <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
+                                                     <polyline points="14 2 14 8 20 8"/>
+                                                     <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
+                                                     <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
+                                                     <polyline points="7.5 9.5 11 12 7.5 14.5"/>
+                                                     <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
+                                                     <polyline points="6.5 22.5 3 20 6.5 17.5"/>
+                                                 </svg>
+                                             </span>
+                                         </button>
+                                         <?php endif; ?>
 
                                         <!-- Print Result — active when Report Ready -->
                                         <a href="javascript:void(0)"
@@ -391,6 +410,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         return {
             searchInput: document.getElementById('search-input'),
             filterPriority: document.getElementById('filter-priority'),
+            filterStatus: document.getElementById('filter-status'),
             filterDate: document.getElementById('filter-date'),
             sortDate: document.getElementById('sort-date'),
             tbody: document.getElementById('table-body')
@@ -398,17 +418,32 @@ $currentTab = $_GET['tab'] ?? 'completed';
     }
 
     function saveQueueState() {
-        const { searchInput, filterPriority, filterDate, sortDate } = getQueueInputs();
+        const { searchInput, filterPriority, filterStatus, filterDate, sortDate } = getQueueInputs();
         if (searchInput) sessionStorage.setItem('Citilife_radtechQueue_search', searchInput.value);
         if (filterPriority) sessionStorage.setItem('Citilife_radtechQueue_priority', filterPriority.value);
+        if (filterStatus) sessionStorage.setItem('Citilife_radtechQueue_status', filterStatus.value);
         if (filterDate) sessionStorage.setItem('Citilife_radtechQueue_date', filterDate.value);
         if (sortDate) sessionStorage.setItem('Citilife_radtechQueue_sort', sortDate.value);
         sessionStorage.setItem('Citilife_radtechQueue_page', currentMainPage);
     }
 
     function restoreFiltersFromSession() {
-        const { searchInput, filterPriority, filterDate, sortDate } = getQueueInputs();
+        const { searchInput, filterPriority, filterStatus, filterDate, sortDate } = getQueueInputs();
         const urlParams = new window.URLSearchParams(window.location.search);
+        const hasHighlightParam = urlParams.has('highlight') || urlParams.has('highlight_case') || urlParams.has('case_id') || !!pendingQueueHighlight || !!window.__hasExecutedHighlight;
+
+        if (hasHighlightParam) {
+            // When navigating from a notification, reset all filters so the target row is guaranteed visible
+            if (filterPriority) filterPriority.value = 'All';
+            if (filterStatus) filterStatus.value = 'All';
+            if (filterDate) filterDate.value = 'All';
+            if (searchInput) searchInput.value = '';
+            sessionStorage.removeItem('Citilife_radtechQueue_priority');
+            sessionStorage.removeItem('Citilife_radtechQueue_status');
+            sessionStorage.removeItem('Citilife_radtechQueue_date');
+            sessionStorage.removeItem('Citilife_radtechQueue_search');
+            return;
+        }
 
         // Priority filter
         if (urlParams.has('filterPriority')) {
@@ -418,11 +453,18 @@ $currentTab = $_GET['tab'] ?? 'completed';
             if (savedPriority) filterPriority.value = savedPriority;
         }
 
+        // Status filter
+        if (urlParams.has('filterStatus') || urlParams.has('status')) {
+            const sParam = urlParams.get('filterStatus') || urlParams.get('status');
+            if (filterStatus) filterStatus.value = sParam;
+        } else if (filterStatus) {
+            const savedStatus = sessionStorage.getItem('Citilife_radtechQueue_status');
+            if (savedStatus) filterStatus.value = savedStatus;
+        }
+
         // Date filter
         if (urlParams.has('filterDate')) {
             if (filterDate) filterDate.value = urlParams.get('filterDate');
-        } else if (urlParams.has('highlight')) {
-            if (filterDate) filterDate.value = 'All';
         } else if (filterDate) {
             const savedDate = sessionStorage.getItem('Citilife_radtechQueue_date');
             if (savedDate) filterDate.value = savedDate;
@@ -443,11 +485,9 @@ $currentTab = $_GET['tab'] ?? 'completed';
         }
 
         // Page
-        if (!urlParams.has('highlight')) {
-            const savedPage = parseInt(sessionStorage.getItem('Citilife_radtechQueue_page'));
-            if (savedPage && savedPage > 0) {
-                currentMainPage = savedPage;
-            }
+        const savedPage = parseInt(sessionStorage.getItem('Citilife_radtechQueue_page'));
+        if (savedPage && savedPage > 0) {
+            currentMainPage = savedPage;
         }
     }
 
@@ -460,7 +500,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'filter-date' || e.target.id === 'sort-date')) {
+        if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'filter-status' || e.target.id === 'filter-date' || e.target.id === 'sort-date')) {
             currentMainPage = 1;
             saveQueueState();
             applyFilters();
@@ -468,12 +508,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
     });
 
     function applyFilters(targetTbody = null) {
-        const { searchInput, filterPriority, filterDate, sortDate, tbody: defaultTbody } = getQueueInputs();
+        const { searchInput, filterPriority, filterStatus, filterDate, sortDate, tbody: defaultTbody } = getQueueInputs();
         const tbody = targetTbody || defaultTbody;
         if (!tbody) return;
 
         const search = (searchInput?.value || '').toLowerCase().trim();
         const priority = filterPriority?.value || '<?= htmlspecialchars($defaultPriorityFilter) ?>';
+        const status = filterStatus?.value || '<?= htmlspecialchars($defaultStatusFilter) ?>';
         const dateFilter = filterDate?.value || '<?= htmlspecialchars($defaultDateFilter) ?>';
         const sort = sortDate?.value || 'Newest Case';
 
@@ -520,12 +561,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
             const matchSearch = !search || name.includes(search) || id.includes(search) || patient.includes(search) || rowPriority.toLowerCase().includes(search) || rowStatus.includes(search);
             const matchPriority = priority === 'Filter by Priority' || priority === 'All' || priority === rowPriority;
+            const matchStatus = status === 'Filter by Status' || status === 'All' || rowStatus === status.toLowerCase();
 
             let matchDate = true;
             if (dateFilter === 'Today') matchDate = isToday;
             if (dateFilter === 'Backlog') matchDate = !isToday;
 
-            if (matchSearch && matchPriority && matchDate) {
+            if (matchSearch && matchPriority && matchStatus && matchDate) {
                 matchedRows.push(row);
                 row.setAttribute('data-matched', 'true');
                 visibleCount++;
@@ -652,65 +694,97 @@ $currentTab = $_GET['tab'] ?? 'completed';
         controls.appendChild(createButton('Next &rsaquo;', currentMainPage + 1, currentMainPage >= totalPages));
     }
 
+    let pendingQueueHighlight = new window.URLSearchParams(window.location.search).get('highlight') ||
+                                new window.URLSearchParams(window.location.search).get('highlight_case') ||
+                                new window.URLSearchParams(window.location.search).get('case_id');
+    let highlightHandled = false;
+
     function initPatientQueue() {
-        restoreFiltersFromSession();
-        applyFilters();
+        const highlightId = pendingQueueHighlight ||
+                            new window.URLSearchParams(window.location.search).get('highlight') ||
+                            new window.URLSearchParams(window.location.search).get('highlight_case') ||
+                            new window.URLSearchParams(window.location.search).get('case_id');
 
-        // ── Highlight row from notification ───────────────────────────────
-        const params = new window.URLSearchParams(window.location.search);
-        const highlightId = params.get('highlight');
-        if (highlightId) {
-            // Clean up the URL right away to prevent background polling from re-triggering highlight
-            try {
-                const cleanUrl = new URL(window.location.href);
-                cleanUrl.searchParams.delete('highlight');
-                window.history.replaceState({}, document.title, cleanUrl.toString());
-                if (window.__APP__) {
-                    window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
-                }
-            } catch (e) {}
+        if (highlightId && !highlightHandled) {
+            const { searchInput, filterPriority, filterStatus, filterDate, tbody } = getQueueInputs();
+            if (searchInput) searchInput.value = '';
+            if (filterPriority) filterPriority.value = 'All';
+            if (filterStatus) filterStatus.value = 'All';
+            if (filterDate) filterDate.value = 'All';
+            applyFilters();
 
-            const rows = document.querySelectorAll('#table-body tr.record-row');
+            const rows = Array.from((tbody || document).querySelectorAll('tr.record-row'));
             let targetRow = null;
-            
-            rows.forEach(row => {
-                if ((row.dataset.id || '').toLowerCase() === highlightId.toLowerCase()) {
+            const norm = str => (str || '').toLowerCase().replace(/[\s\-_]/g, '');
+            const hlNorm = norm(highlightId);
+
+            // 1. Exact match first
+            for (const row of rows) {
+                const cNum = norm(row.dataset.id || '');
+                const cId = norm(row.dataset.caseId || '');
+                const pNum = norm(row.dataset.patient || '');
+                if (cNum === hlNorm || cId === hlNorm || pNum === hlNorm) {
                     targetRow = row;
+                    break;
                 }
-            });
-            
+            }
+
+            // 2. Substring/prefix fallback if not found
+            if (!targetRow) {
+                for (const row of rows) {
+                    const cNum = norm(row.dataset.id || '');
+                    const cId = norm(row.dataset.caseId || '');
+                    const pNum = norm(row.dataset.patient || '');
+                    if ((cNum && hlNorm.includes(cNum)) || (hlNorm && cNum.includes(hlNorm)) ||
+                        (pNum && hlNorm.includes(pNum)) || (hlNorm && pNum.includes(hlNorm))) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
             if (targetRow) {
-                const matchedRows = Array.from(rows).filter(r => r.hasAttribute('data-matched'));
+                highlightHandled = true;
+                window.__hasExecutedHighlight = true;
+
+                // Re-query matched rows in current sorted order from tbody
+                const matchedRows = Array.from((tbody || document).querySelectorAll('tr.record-row')).filter(r => r.hasAttribute('data-matched'));
                 const targetIndex = matchedRows.indexOf(targetRow);
                 if (targetIndex !== -1) {
                     currentMainPage = Math.floor(targetIndex / mainItemsPerPage) + 1;
                     saveQueueState();
                     paginateMain(matchedRows);
                 }
-                
-                const tableWrapper = targetRow.closest('.overflow-y-auto');
-                if (tableWrapper) {
-                    const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
-                    tableWrapper.scrollTo({ top: rowTop - 40, behavior: 'smooth' });
-                } else {
-                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
 
-                targetRow.style.transition = 'background-color 0.4s ease';
-                targetRow.style.backgroundColor = '#fef08a';
+                targetRow.style.display = '';
+
                 setTimeout(() => {
-                    targetRow.style.backgroundColor = '#fde047';
+                    const tableWrapper = targetRow.closest('.overflow-y-auto');
+                    if (tableWrapper) {
+                        const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
+                        tableWrapper.scrollTo({ top: Math.max(0, rowTop - 40), behavior: 'smooth' });
+                    } else {
+                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+
+                    targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400', 'ring-offset-1');
+                    targetRow.style.transition = 'background-color 0.4s ease';
+                    targetRow.style.backgroundColor = '#fef08a';
                     setTimeout(() => {
-                        targetRow.style.backgroundColor = '#fef08a';
+                        targetRow.style.backgroundColor = '#fde047';
                         setTimeout(() => {
-                            targetRow.style.backgroundColor = '#fde047';
+                            targetRow.style.backgroundColor = '#fef08a';
                             setTimeout(() => {
-                                targetRow.style.transition = 'background-color 1.5s ease';
-                                targetRow.style.backgroundColor = '';
+                                targetRow.style.backgroundColor = '#fde047';
+                                setTimeout(() => {
+                                    targetRow.style.transition = 'background-color 1.5s ease';
+                                    targetRow.style.backgroundColor = '';
+                                    targetRow.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
+                                }, 400);
                             }, 300);
                         }, 300);
-                    }, 300);
-                }, 200);
+                    }, 200);
+                }, 50);
 
                 // Remove existing banner if present
                 const existingBanner = document.getElementById('highlight-banner');
@@ -729,27 +803,41 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     banner.style.opacity = '0';
                     setTimeout(() => banner.remove(), 500);
                 }, 6000);
+
+                // Clean up URL after successful match
+                pendingQueueHighlight = null;
+                try {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('highlight');
+                    cleanUrl.searchParams.delete('highlight_case');
+                    cleanUrl.searchParams.delete('case_id');
+                    cleanUrl.searchParams.delete('is_new');
+                    window.history.replaceState({}, document.title, cleanUrl.toString());
+                    if (window.__APP__) {
+                        window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
+                    }
+                } catch (e) {}
+                return;
             }
         }
+
+        restoreFiltersFromSession();
+        applyFilters();
     }
 
-    // Initial trigger
-    initPatientQueue();
-
+    // Initialize cleanly
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initPatientQueue, 20);
+            initPatientQueue();
         });
     } else {
-        setTimeout(initPatientQueue, 20);
+        initPatientQueue();
     }
 
-    window.addEventListener('load', () => {
-        setTimeout(initPatientQueue, 50);
-    });
-
     window.addEventListener('pageshow', () => {
-        initPatientQueue();
+        if (!highlightHandled) {
+            initPatientQueue();
+        }
     });
 
     // Re-apply filters when real-time polling updates the table content
@@ -766,10 +854,18 @@ $currentTab = $_GET['tab'] ?? 'completed';
 <!-- Prominent Spinning Loader -->
 <div id="release-loading-overlay"
     class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
-    <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mb-4"></div>
-    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing the results...
-    </p>
+    <div id="release-spinner-container">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mb-4"></div>
+    </div>
+    <div id="release-success-icon" class="hidden mb-4">
+        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+    </div>
+    <h3 id="release-title-text" class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the results...</p>
 </div>
 
 <script>
@@ -785,19 +881,14 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         This will revert the report to draft status (Under Reading) so the radiologist can update findings and impressions.
                     </div>
                     <div class="text-left mb-2">
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Quick Reason Presets:
+                        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                            RadTech Notes <span class="text-red-500">*</span>:
                         </label>
-                        <div class="flex flex-wrap gap-1.5 mb-3">
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Clarification needed on findings/impression.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Findings Clarification</button>
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Patient clinical history/demographics need update.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Patient Info/History</button>
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Additional X-ray view/projection uploaded.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Additional View</button>
-                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Typographical error in report findings.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Typo in Report</button>
-                        </div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Reason for Re-Edit <span class="text-red-500">*</span>:
-                        </label>
-                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition outline-none resize-none" placeholder="Explain specifically what needs to be changed or reviewed..."></textarea>
+                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" onfocus="if(!this.dataset.error){this.style.borderColor='#d97706';}" onblur="if(!this.dataset.error){this.style.borderColor='#d1d5db';}" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
+                        <p id="swal-reedit-error" class="hidden text-xs text-red-600 mt-2 font-medium items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-red-500 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <span>Please enter notes for the radiologist.</span>
+                        </p>
                     </div>
                 `,
                 icon: 'question',
@@ -807,14 +898,43 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 confirmButtonColor: '#d97706',
                 cancelButtonColor: '#6b7280',
                 customClass: {
-                    popup: 'rounded-2xl p-5 max-w-lg',
-                    confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                    popup: 'rounded-2xl p-5 max-w-lg font-sans',
+                    confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm',
                     cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
                 },
+                didOpen: () => {
+                    const textarea = document.getElementById('swal-reedit-reason');
+                    const errEl = document.getElementById('swal-reedit-error');
+                    if (textarea) {
+                        textarea.focus();
+                        textarea.addEventListener('input', () => {
+                            if (textarea.value.trim().length > 0) {
+                                textarea.dataset.error = '';
+                                textarea.style.borderColor = '#d97706';
+                                textarea.style.backgroundColor = '#ffffff';
+                                if (errEl) {
+                                    errEl.classList.add('hidden');
+                                    errEl.classList.remove('flex');
+                                }
+                            }
+                        });
+                    }
+                },
                 preConfirm: () => {
-                    const text = document.getElementById('swal-reedit-reason').value.trim();
+                    const textarea = document.getElementById('swal-reedit-reason');
+                    const errEl = document.getElementById('swal-reedit-error');
+                    const text = textarea ? textarea.value.trim() : '';
                     if (!text) {
-                        Swal.showValidationMessage('Please enter a reason so the radiologist knows what to review.');
+                        if (textarea) {
+                            textarea.dataset.error = '1';
+                            textarea.style.borderColor = '#ef4444';
+                            textarea.style.backgroundColor = '#fef2f2';
+                            textarea.focus();
+                        }
+                        if (errEl) {
+                            errEl.classList.remove('hidden');
+                            errEl.classList.add('flex');
+                        }
                         return false;
                     }
                     return text;
@@ -991,7 +1111,23 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     }
 
                     if (result.success) {
-                        // Success! Refresh page to show success flash message
+                        const spinner = document.getElementById('release-spinner-container');
+                        const successIcon = document.getElementById('release-success-icon');
+                        const titleEl = document.getElementById('release-title-text');
+                        const statusTextEl = document.getElementById('release-status-text');
+
+                        if (spinner) spinner.classList.add('hidden');
+                        if (successIcon) successIcon.classList.remove('hidden');
+                        if (titleEl) {
+                            titleEl.textContent = 'Result Released!';
+                            titleEl.className = 'text-xl font-bold text-green-600 dark:text-green-400';
+                        }
+                        if (statusTextEl) {
+                            statusTextEl.textContent = 'Case moved to X-ray Patient Records.';
+                            statusTextEl.className = 'text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
+                        }
+
+                        await new Promise(r => setTimeout(r, 1200));
                         window.location.reload();
                     } else {
                         throw new Error(result.message || 'Server rejected the upload.');
@@ -1016,6 +1152,32 @@ $currentTab = $_GET['tab'] ?? 'completed';
     }
 </script>
 
+<!-- Disputes Search and Filter Controls -->
+<div class="mt-6 flex flex-col gap-4 <?= $currentTab !== 'disputes' ? 'hidden' : '' ?>" id="disputes-controls-bar">
+    <div class="flex gap-4 items-center">
+        <input type="text" id="disputes-search-input" placeholder="Search by patient name or case number..."
+            class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+        
+        <select id="disputes-filter-category"
+            class="w-52 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="All">All Corrections</option>
+            <option value="Patient Info Error">Patient Info Error</option>
+            <option value="Typographical Error">Typographical Error</option>
+            <option value="Template Rename">Template Rename</option>
+            <option value="Info & Rename">Info & Rename</option>
+            <option value="Typo & Info">Typo & Info</option>
+            <option value="Exam Details Error">Exam Details Error</option>
+            <option value="Other Concern">Other Concern</option>
+        </select>
+
+        <select id="disputes-sort-date"
+            class="w-44 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="Newest">Newest Request</option>
+            <option value="Oldest">Oldest Request</option>
+        </select>
+    </div>
+</div>
+
 <div id="disputes-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab !== 'disputes' ? 'hidden' : '' ?>">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -1036,88 +1198,96 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </tr>
                 <?php else: ?>
                     <?php foreach ($disputes as $d): ?>
-                        <tr class="hover:bg-gray-50 transition-colors dispute-table-row" data-id="<?= htmlspecialchars($d['case_number']) ?>" data-dispute-id="<?= $d['id'] ?>" data-case="<?= htmlspecialchars($d['case_number']) ?>">
+                        <?php
+                        $fullText = $d['description'] ?? '';
+                        $cat = $d['dispute_category'] ?? '';
+                        $catLabel = 'Correction Request';
+                        $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
+                        $catIcon = 'alert-circle';
+
+                        if ($cat === 'findings_error') {
+                            $catLabel = 'Typographical Error';
+                            $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                            $catIcon = 'file-text';
+                        } elseif ($cat === 'demographic_error') {
+                            $catLabel = 'Patient Info Error';
+                            $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
+                            $catIcon = 'user';
+                        } elseif ($cat === 'template_error') {
+                            $catLabel = 'Template Rename';
+                            $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                            $catIcon = 'edit-2';
+                        } elseif ($cat === 'both_error') {
+                            $catLabel = 'Typo & Info';
+                            $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
+                            $catIcon = 'alert-triangle';
+                        } elseif ($cat === 'both_template_error') {
+                            $catLabel = 'Info & Rename';
+                            $catBadgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-200';
+                            $catIcon = 'layers';
+                        } elseif ($cat === 'other' || $cat === 'other_error') {
+                            $catLabel = 'Other Concern';
+                            $catBadgeClass = 'text-gray-700 bg-gray-50 border-gray-200';
+                            $catIcon = 'help-circle';
+                        } elseif ($cat === 'exam_details_error') {
+                            $catLabel = 'Exam Details Error';
+                            $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
+                            $catIcon = 'clipboard';
+                        } else {
+                            $descLower = strtolower($fullText);
+                            if (strpos($descLower, 'template rename') !== false && (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false)) {
+                                $catLabel = 'Info & Rename';
+                                $catBadgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-200';
+                                $catIcon = 'layers';
+                            } elseif (strpos($descLower, 'template rename') !== false || strpos($descLower, 'correct template') !== false) {
+                                $catLabel = 'Template Rename';
+                                $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                                $catIcon = 'edit-2';
+                            } elseif ((strpos($descLower, 'findings') !== false || strpos($descLower, 'typo') !== false) && strpos($descLower, 'patient info') !== false) {
+                                $catLabel = 'Typo & Info';
+                                $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
+                            } elseif (strpos($descLower, 'findings') !== false || strpos($descLower, 'typo') !== false) {
+                                $catLabel = 'Typographical Error';
+                                $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
+                                $catIcon = 'file-text';
+                            } elseif (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false) {
+                                $catLabel = 'Patient Info Error';
+                                $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
+                                $catIcon = 'user';
+                            } elseif (strpos($descLower, 'other') !== false) {
+                                $catLabel = 'Other Concern';
+                                $catBadgeClass = 'text-gray-700 bg-gray-50 border-gray-200';
+                                $catIcon = 'help-circle';
+                            }
+                        }
+
+                        $disputePayload = [
+                            'id' => $d['id'],
+                            'case_number' => $d['case_number'],
+                            'patient_name' => $d['first_name'] . ' ' . $d['last_name'],
+                            'patient_number' => $d['patient_number'] ?? '',
+                            'description' => $fullText,
+                            'status' => $d['status'],
+                            'category' => $d['dispute_category'] ?? '',
+                            'created_at' => date('M d, Y h:i A', strtotime($d['created_at']))
+                        ];
+                        $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
+                        ?>
+                        <tr class="hover:bg-gray-50 transition-colors dispute-table-row" 
+                            data-id="<?= htmlspecialchars($d['case_number']) ?>" 
+                            data-dispute-id="<?= $d['id'] ?>" 
+                            data-case="<?= htmlspecialchars($d['case_number']) ?>"
+                            data-name="<?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?>"
+                            data-patient-number="<?= htmlspecialchars($d['patient_number'] ?? '') ?>"
+                            data-correction="<?= htmlspecialchars($catLabel) ?>"
+                            data-date="<?= htmlspecialchars($d['created_at']) ?>"
+                            data-timestamp="<?= strtotime($d['created_at']) ?: 0 ?>">
                             <td class="py-3 px-4 font-medium"><?= htmlspecialchars($d['case_number']) ?></td>
                             <td class="py-3 px-4">
                                 <div class="font-medium"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
                                 <div class="text-xs text-gray-500"><?= htmlspecialchars($d['patient_number'] ?? '') ?></div>
                             </td>
                             <td class="py-3 px-4 max-w-[220px] align-middle">
-                                <?php
-                                $fullText = $d['description'] ?? '';
-                                $cat = $d['dispute_category'] ?? '';
-                                $catLabel = 'Correction Request';
-                                $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
-                                $catIcon = 'alert-circle';
-
-                                if ($cat === 'findings_error') {
-                                    $catLabel = 'Typographical Error';
-                                    $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
-                                    $catIcon = 'file-text';
-                                } elseif ($cat === 'demographic_error') {
-                                    $catLabel = 'Patient Info Error';
-                                    $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
-                                    $catIcon = 'user';
-                                } elseif ($cat === 'template_error') {
-                                    $catLabel = 'Template Rename';
-                                    $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
-                                    $catIcon = 'edit-2';
-                                } elseif ($cat === 'both_error') {
-                                    $catLabel = 'Typo & Info';
-                                    $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
-                                    $catIcon = 'alert-triangle';
-                                } elseif ($cat === 'both_template_error') {
-                                    $catLabel = 'Info & Rename';
-                                    $catBadgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-200';
-                                    $catIcon = 'layers';
-                                } elseif ($cat === 'other' || $cat === 'other_error') {
-                                    $catLabel = 'Other Concern';
-                                    $catBadgeClass = 'text-gray-700 bg-gray-50 border-gray-200';
-                                    $catIcon = 'help-circle';
-                                } elseif ($cat === 'exam_details_error') {
-                                    $catLabel = 'Exam Details Error';
-                                    $catBadgeClass = 'text-amber-700 bg-amber-50 border-amber-200';
-                                    $catIcon = 'clipboard';
-                                } else {
-                                    $descLower = strtolower($fullText);
-                                    if (strpos($descLower, 'template rename') !== false && (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false)) {
-                                        $catLabel = 'Info & Rename';
-                                        $catBadgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-200';
-                                        $catIcon = 'layers';
-                                    } elseif (strpos($descLower, 'template rename') !== false || strpos($descLower, 'correct template') !== false) {
-                                        $catLabel = 'Template Rename';
-                                        $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
-                                        $catIcon = 'edit-2';
-                                    } elseif ((strpos($descLower, 'findings') !== false || strpos($descLower, 'typo') !== false) && strpos($descLower, 'patient info') !== false) {
-                                        $catLabel = 'Typo & Info';
-                                        $catBadgeClass = 'text-rose-700 bg-rose-50 border-rose-200';
-                                    } elseif (strpos($descLower, 'findings') !== false || strpos($descLower, 'typo') !== false) {
-                                        $catLabel = 'Typographical Error';
-                                        $catBadgeClass = 'text-purple-700 bg-purple-50 border-purple-200';
-                                        $catIcon = 'file-text';
-                                    } elseif (strpos($descLower, 'patient info') !== false || strpos($descLower, 'name') !== false) {
-                                        $catLabel = 'Patient Info Error';
-                                        $catBadgeClass = 'text-sky-700 bg-sky-50 border-sky-200';
-                                        $catIcon = 'user';
-                                    } elseif (strpos($descLower, 'other') !== false) {
-                                        $catLabel = 'Other Concern';
-                                        $catBadgeClass = 'text-gray-700 bg-gray-50 border-gray-200';
-                                        $catIcon = 'help-circle';
-                                    }
-                                }
-
-                                $disputePayload = [
-                                    'id' => $d['id'],
-                                    'case_number' => $d['case_number'],
-                                    'patient_name' => $d['first_name'] . ' ' . $d['last_name'],
-                                    'patient_number' => $d['patient_number'] ?? '',
-                                    'description' => $fullText,
-                                    'status' => $d['status'],
-                                    'category' => $d['dispute_category'] ?? '',
-                                    'created_at' => date('M d, Y h:i A', strtotime($d['created_at']))
-                                ];
-                                $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
-                                ?>
                                 <div class="flex flex-col items-start gap-1">
                                     <span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border <?= $catBadgeClass ?> shadow-2xs">
                                         <?= htmlspecialchars($catLabel) ?>
@@ -1249,22 +1419,78 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 <script>
-    // Disputes Pagination Logic
+    // Disputes Pagination, Search, and Filter Logic
     let currentDisputesPage = 1;
     const disputesItemsPerPage = 7;
 
-    function paginateDisputes(targetTbody = null) {
+    function applyDisputesFilter(targetTbody = null) {
         const tbody = targetTbody || document.getElementById('disputes-table-body');
         if (!tbody) return;
 
-        let rows = Array.from(tbody.querySelectorAll('tr:not(#disputes-empty-msg-row)'));
-        
-        // Exclude the "No patient error reports found." row if it exists
-        if (rows.length === 1 && rows[0].querySelector('td[colspan="6"]')) {
+        const searchInput = document.getElementById('disputes-search-input');
+        const filterCat = document.getElementById('disputes-filter-category');
+        const sortDate = document.getElementById('disputes-sort-date');
+
+        const searchVal = (searchInput?.value || '').toLowerCase().trim();
+        const catVal = filterCat?.value || 'All';
+        const sortVal = sortDate?.value || 'Newest';
+
+        let rows = Array.from(tbody.querySelectorAll('tr.dispute-table-row'));
+        if (rows.length === 0) {
+            renderDisputesPaginationControls(0, 0, 0, 0, []);
             return;
         }
 
-        const totalRecords = rows.length;
+        // 1. Sort rows by date (Newest / Oldest)
+        rows.sort((a, b) => {
+            const timeA = parseInt(a.dataset.timestamp || '0', 10);
+            const timeB = parseInt(b.dataset.timestamp || '0', 10);
+            return sortVal === 'Newest' ? timeB - timeA : timeA - timeB;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+
+        // 2. Filter rows
+        let matchedRows = [];
+        rows.forEach(row => {
+            const caseNum = (row.dataset.case || row.dataset.id || '').toLowerCase();
+            const patientName = (row.dataset.name || '').toLowerCase();
+            const patientNum = (row.dataset.patientNumber || '').toLowerCase();
+            const correctionType = (row.dataset.correction || '').trim();
+
+            const matchesSearch = !searchVal || 
+                                  caseNum.includes(searchVal) || 
+                                  patientName.includes(searchVal) || 
+                                  patientNum.includes(searchVal);
+            const matchesCategory = (catVal === 'All') || (correctionType === catVal);
+
+            if (matchesSearch && matchesCategory) {
+                matchedRows.push(row);
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // 3. Handle empty state row if no matched results
+        let emptyFilterRow = tbody.querySelector('#disputes-empty-filter-row');
+        if (matchedRows.length === 0) {
+            if (!emptyFilterRow) {
+                emptyFilterRow = document.createElement('tr');
+                emptyFilterRow.id = 'disputes-empty-filter-row';
+                emptyFilterRow.className = 'disputes-empty-filter-row';
+                emptyFilterRow.innerHTML = '<td colspan="6" class="text-center py-8 text-gray-500">No matching patient error reports found.</td>';
+                tbody.appendChild(emptyFilterRow);
+            }
+            emptyFilterRow.style.display = '';
+        } else {
+            if (emptyFilterRow) emptyFilterRow.style.display = 'none';
+        }
+
+        // 4. Paginate matched rows
+        paginateDisputesFiltered(matchedRows, tbody);
+    }
+
+    function paginateDisputesFiltered(matchedRows, targetTbody = null) {
+        const totalRecords = matchedRows.length;
         let totalPages = Math.ceil(totalRecords / disputesItemsPerPage);
         
         if (currentDisputesPage > totalPages && totalPages > 0) currentDisputesPage = totalPages;
@@ -1273,14 +1499,18 @@ $currentTab = $_GET['tab'] ?? 'completed';
         const start = (currentDisputesPage - 1) * disputesItemsPerPage;
         const end = Math.min(start + disputesItemsPerPage, totalRecords);
 
-        rows.forEach((row, idx) => {
+        matchedRows.forEach((row, idx) => {
             row.style.display = (idx >= start && idx < end) ? '' : 'none';
         });
 
-        renderDisputesPaginationControls(totalPages, totalRecords, start, end);
+        renderDisputesPaginationControls(totalPages, totalRecords, start, end, matchedRows);
     }
 
-    function renderDisputesPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
+    function paginateDisputes(targetTbody = null) {
+        applyDisputesFilter(targetTbody);
+    }
+
+    function renderDisputesPaginationControls(totalPages, totalRecords, startIdx, endIdx, matchedRows = null) {
         const container = document.getElementById('disputes-pagination-container');
         const controls = document.getElementById('disputes-pagination-controls');
         const startSpan = document.getElementById('disputes-start');
@@ -1313,7 +1543,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 btn.onclick = () => {
                     currentDisputesPage = page;
                     try { sessionStorage.setItem('radtech_disputes_page', page); } catch(e) {}
-                    paginateDisputes();
+                    if (matchedRows) {
+                        paginateDisputesFiltered(matchedRows);
+                    } else {
+                        paginateDisputes();
+                    }
                     const tableContainer = document.querySelector('#disputes-table-card .overflow-x-auto');
                     if (tableContainer) tableContainer.scrollTo({ top: 0, behavior: 'smooth' });
                 };
@@ -1354,6 +1588,21 @@ $currentTab = $_GET['tab'] ?? 'completed';
         
         controls.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
     }
+
+    // Event listeners for disputes search, filter, and sorting
+    document.addEventListener('input', (e) => {
+        if (e.target && e.target.id === 'disputes-search-input') {
+            currentDisputesPage = 1;
+            applyDisputesFilter();
+        }
+    });
+
+    document.addEventListener('change', (e) => {
+        if (e.target && (e.target.id === 'disputes-filter-category' || e.target.id === 'disputes-sort-date')) {
+            currentDisputesPage = 1;
+            applyDisputesFilter();
+        }
+    });
 
     function handleDisputesHighlight() {
         const params = new URLSearchParams(window.location.search);
@@ -1584,7 +1833,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             `).join('')}
                         </div>
                         <p class="text-[11px] text-sky-700 leading-relaxed pt-0.5 font-normal">
-                            The patient indicated that the selected demographic detail(s) are incorrect on their official report. You can correct these using the <strong>Fix Information</strong> action.
+                            The patient reported incorrect personal details (e.g., name, age, or sex). Click the green <strong>Fix Patient Information</strong> button in the Actions column to update and correct these details.
                         </p>
                     </div>
                 `;
@@ -1594,10 +1843,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 cardsHtml += `
                     <div class="p-4 bg-purple-50/80 border border-purple-200 rounded-xl space-y-2 shadow-2xs">
                         <div class="flex items-center gap-2 text-xs font-bold text-purple-900 uppercase tracking-wider">
-                            <i data-lucide="file-edit" class="w-4 h-4 text-gray-900"></i>
+                            <i data-lucide="file-edit" class="w-4 h-4 text-purple-700"></i>
                             <span>Template Rename Request:</span>
                         </div>
                         <div class="p-3 bg-white border border-purple-200/80 rounded-lg text-xs text-gray-800 font-medium leading-relaxed whitespace-pre-line shadow-2xs">${templateRename.trim()}</div>
+                        <p class="text-[11px] text-purple-700 leading-relaxed font-normal">
+                            The patient requested to correct the exam title or template on the printed result. Click the amber <strong>Edit / Amend Report</strong> button to update it.
+                        </p>
                     </div>
                 `;
             }
@@ -1607,11 +1859,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2 shadow-2xs">
                         <div class="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider">
                             <i data-lucide="file-text" class="w-4 h-4 text-gray-800"></i>
-                            <span>Reported Typographical Error:</span>
+                            <span>Reported Typographical / Findings Error:</span>
                         </div>
                         <div class="p-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 font-medium leading-relaxed whitespace-pre-line shadow-2xs">${findings.trim()}</div>
                         <p class="text-[11px] text-gray-700 leading-relaxed font-normal">
-                            This typographical error can be corrected directly by RadTech via Edit / Amend Report.
+                            The patient reported a typographical or text error in the findings/impression. Click the amber <strong>Edit / Amend Report</strong> button to correct the report.
                         </p>
                     </div>
                 `;
@@ -1758,7 +2010,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </div>
 
                     <div id="row-fix-old-sex" class="hidden">
-                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex / Gender:</div>
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex:</div>
                         <div id="fix-old-sex" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
                     </div>
                 </div>
@@ -1785,7 +2037,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </div>
 
                     <div id="row-fix-new-sex" class="hidden">
-                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex / Gender:</div>
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex:</div>
                         <div id="fix-new-sex" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
                     </div>
                 </div>
@@ -1872,7 +2124,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </div>
 
                     <div id="row-ver-old-sex" class="hidden">
-                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex / Gender:</div>
+                        <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex:</div>
                         <div id="ver-old-sex" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
                     </div>
                 </div>
@@ -1899,7 +2151,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </div>
 
                     <div id="row-ver-new-sex" class="hidden">
-                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex / Gender:</div>
+                        <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex:</div>
                         <div id="ver-new-sex" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
                     </div>
                 </div>
@@ -2649,6 +2901,9 @@ function submitResolution(e) {
 }
 
 // Real-time polling for RadTech Patient Lists & Error Reports
+let lastDisputesRawHtml = document.getElementById('disputes-table-body')?.innerHTML.trim() || '';
+let lastQueueRawHtml = document.getElementById('table-body')?.innerHTML.trim() || '';
+
 setInterval(() => {
     if (document.visibilityState === 'hidden') return;
 
@@ -2671,10 +2926,14 @@ setInterval(() => {
                 
                 const newTbody = doc.getElementById('disputes-table-body');
                 const oldTbody = document.getElementById('disputes-table-body');
-                if (newTbody && oldTbody && newTbody.innerHTML !== oldTbody.innerHTML) {
-                    paginateDisputes(newTbody);
-                    oldTbody.innerHTML = newTbody.innerHTML;
-                    if (window.lucide) lucide.createIcons();
+                if (newTbody && oldTbody) {
+                    const newRawHtml = newTbody.innerHTML.trim();
+                    if (newRawHtml !== lastDisputesRawHtml) {
+                        lastDisputesRawHtml = newRawHtml;
+                        oldTbody.innerHTML = newRawHtml;
+                        applyDisputesFilter();
+                        if (window.lucide) lucide.createIcons();
+                    }
                 }
 
                 const newBadge = doc.getElementById('radtech-disputes-tab-badge');
@@ -2682,6 +2941,8 @@ setInterval(() => {
                 if (newBadge && curBadge) {
                     curBadge.innerHTML = newBadge.innerHTML;
                     if (newBadge.title) curBadge.title = newBadge.title;
+                } else if (!newBadge && curBadge) {
+                    curBadge.remove();
                 }
             })
             .catch(() => {});
@@ -2694,12 +2955,16 @@ setInterval(() => {
                 
                 const newTbody = doc.getElementById('table-body');
                 const oldTbody = document.getElementById('table-body');
-                if (newTbody && oldTbody && newTbody.innerHTML !== oldTbody.innerHTML) {
-                    oldTbody.innerHTML = newTbody.innerHTML;
-                    if (typeof applyFilters === 'function') {
-                        applyFilters();
+                if (newTbody && oldTbody) {
+                    const newRawHtml = newTbody.innerHTML.trim();
+                    if (newRawHtml !== lastQueueRawHtml) {
+                        lastQueueRawHtml = newRawHtml;
+                        oldTbody.innerHTML = newRawHtml;
+                        if (typeof applyFilters === 'function') {
+                            applyFilters();
+                        }
+                        if (window.lucide) lucide.createIcons();
                     }
-                    if (window.lucide) lucide.createIcons();
                 }
 
                 const newBadge = doc.getElementById('radtech-disputes-tab-badge');
@@ -2707,6 +2972,8 @@ setInterval(() => {
                 if (newBadge && curBadge) {
                     curBadge.innerHTML = newBadge.innerHTML;
                     if (newBadge.title) curBadge.title = newBadge.title;
+                } else if (!newBadge && curBadge) {
+                    curBadge.remove();
                 }
             })
             .catch(() => {});

@@ -69,7 +69,7 @@ foreach ($allServices as $service) {
 <div class="flex items-center justify-between">
     <div>
         <h2 class="text-xl font-semibold text-gray-900">Patient List</h2>
-        <p class="text-sm text-gray-500 mt-1">Manage approvals and today's examination queue</p>
+        <p class="text-sm text-gray-500 mt-1">Manage patient requests and today's examination queue</p>
     </div>
 </div>
 
@@ -117,7 +117,7 @@ foreach ($allServices as $service) {
         </a>
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700">
-            Pending Approval
+            Patient Requests
         </a>
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
@@ -168,7 +168,7 @@ foreach ($allServices as $service) {
                 <?php if (count($pendingPatients) === 0): ?>
                     <tr>
                         <td colspan="7" class="text-center py-8 text-gray-500">
-                            No pending approvals found.
+                            No patient requests found.
                         </td>
                     </tr>
                 <?php else: ?>
@@ -237,33 +237,30 @@ foreach ($allServices as $service) {
                                             class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
                                     </button>
                                     
-                                    <?php if (in_array($patient['status'], ['Pending Approval', 'Pending Payment'])): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'], ENT_QUOTES) ?>', '<?= ($patient['status'] === 'Pending Payment') ? htmlspecialchars($patient['exam_type'], ENT_QUOTES) : '' ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>')"
-                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Exam">
+                                    <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>', false)"
+                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Examination">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
+                                        </button>
+                                    <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>', true)"
+                                            class="text-sm font-medium text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View Assigned Examination Details (Read-Only)">
+                                            <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 px-1 py-1 rounded-md border border-gray-300"></i>
                                         </button>
                                     <?php endif; ?>
 
-                                        <?php if ($patient['status'] === 'Payment Verified'): ?>
-                                            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval&action=approve&id=<?= $patient['id'] ?>"
-                                                onclick="confirmAction('Confirm Approval', 'Would you like to confirm approving this patient and moving them to Today\'s Queue?', this.href, 'Yes, Proceed', false, event)"
-                                                class="text-sm font-medium text-green-600 hover:text-green-700 transition"
-                                                title="Approve">
-                                                <i data-lucide="circle-check-big"
-                                                    class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
-                                            </a>
-                                        <?php else: ?>
-                                            <button disabled class="text-sm font-medium text-gray-400 cursor-not-allowed" title="Waiting for Payment Verification">
-                                                <i data-lucide="circle-check-big" class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                        
-                                    <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled', 'Payment Verified'])): ?>
+                                    <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
                                         <button type="button"
                                             onclick="promptRejectRequest(<?= (int)$patient['id'] ?>, '<?= htmlspecialchars($patient['request_number'] ?? ('REQ-' . str_pad($patient['id'], 5, '0', STR_PAD_LEFT)), ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>')"
                                             class="text-sm font-medium text-red-600 hover:text-red-700 transition cursor-pointer" title="Reject Request">
                                             <i data-lucide="circle-x"
                                                 class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
+                                        </button>
+                                    <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
+                                        <button disabled
+                                            class="text-sm font-medium text-gray-400 cursor-not-allowed opacity-60" title="Cannot reject request in payment status">
+                                            <i data-lucide="circle-x"
+                                                class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 px-1 py-1 rounded-md border border-gray-300"></i>
                                         </button>
                                     <?php endif; ?>
                                 </div>
@@ -289,12 +286,12 @@ foreach ($allServices as $service) {
 <div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
     <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 border shadow-2xl rounded-2xl bg-white">
         <div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
-            <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200">
+            <div id="assignModalHeaderIcon" class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200">
                 <i data-lucide="clipboard-list" class="w-6 h-6"></i>
             </div>
             <div>
-                <h3 class="text-lg font-bold text-gray-900">Assign Examination</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Select procedure(s) and specify PhilHealth coverage</p>
+                <h3 id="assignModalTitle" class="text-lg font-bold text-gray-900">Assign Examination</h3>
+                <p id="assignModalSubtitle" class="text-xs text-gray-500 mt-0.5">Select procedure(s) and specify PhilHealth coverage</p>
             </div>
         </div>
         
@@ -308,50 +305,52 @@ foreach ($allServices as $service) {
         <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);" class="space-y-4">
             <!-- Exam Selector -->
             <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Select Examination Procedure(s) <span class="text-red-500">*</span></label>
+                <label id="assignExamLabel" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Select Examination Procedure(s) <span class="text-red-500" id="assignExamRequiredAsterisk">*</span></label>
                 <?php 
                 $examInputName = 'exam_type';
                 $placeholderText = 'Select procedure(s)...';
                 include basePath('views/components/exam-selector.php'); 
                 ?>
-                <div id="assignAllowedBadge" class="hidden text-xs text-indigo-700 flex items-center gap-1.5 mt-2 bg-indigo-50 border border-indigo-100 p-2.5 rounded-xl">
-                    <i data-lucide="info" class="w-4 h-4 shrink-0 text-indigo-600"></i>
-                    <span id="assignAllowedBadgeText">Choices filtered to requested body part(s)</span>
-                </div>
-                <div id="assignExamWarning" class="hidden mt-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-sm">
-                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-                    <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
+                <div class="space-y-3 mt-3">
+                    <div id="assignAllowedBadge" class="hidden text-xs text-indigo-700 flex items-center gap-2 bg-indigo-50/90 border border-indigo-100 p-2.5 rounded-xl shadow-2xs">
+                        <i data-lucide="info" class="w-4 h-4 shrink-0 text-indigo-600"></i>
+                        <span id="assignAllowedBadgeText">Choices filtered to requested body part(s)</span>
+                    </div>
+                    <div id="assignExamWarning" class="hidden p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-2xs">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                        <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- PhilHealth Coverage Section -->
-            <div class="pt-3 border-t border-gray-100 space-y-2.5">
+            <div class="pt-3.5 border-t border-gray-100 space-y-3">
                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">PhilHealth Coverage</label>
                 
-                <div class="grid grid-cols-2 gap-2">
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/60 has-[:checked]:text-blue-900">
-                        <input type="radio" name="philhealth_status" value="Without PhilHealth Card" id="assign_ph_without" onchange="toggleAssignPhilHealth(false)" checked class="text-blue-600 focus:ring-blue-500">
-                        <span class="text-xs font-medium">Without PhilHealth</span>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30">
+                        <input type="radio" name="philhealth_status" value="Without PhilHealth Card" id="assign_ph_without" onchange="toggleAssignPhilHealth(false)" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-semibold">Without PhilHealth</span>
                     </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/60 has-[:checked]:text-blue-900">
-                        <input type="radio" name="philhealth_status" value="With PhilHealth Card" id="assign_ph_with" onchange="toggleAssignPhilHealth(true)" class="text-blue-600 focus:ring-blue-500">
-                        <span class="text-xs font-medium">With PhilHealth Card</span>
+                    <label class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30">
+                        <input type="radio" name="philhealth_status" value="With PhilHealth Card" id="assign_ph_with" onchange="toggleAssignPhilHealth(true)" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-semibold">With PhilHealth Card</span>
                     </label>
                 </div>
 
                 <!-- Conditional PhilHealth Details Box -->
-                <div id="assign_philhealth_details" class="hidden p-3.5 bg-blue-50/70 border border-blue-100 rounded-xl space-y-2.5">
+                <div id="assign_philhealth_details" class="hidden p-4 sm:p-5 bg-blue-50/50 border border-blue-200/80 rounded-2xl space-y-3.5 shadow-2xs">
                     <div>
-                        <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">PhilHealth ID Number <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500">*</span></label>
                         <input type="text" name="philhealth_id" id="assign_philhealth_id" inputmode="numeric" maxlength="14"
                             oninput="formatPhilHealthInput(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
                             placeholder="XX-XXXXXXXXX-X"
-                            class="w-full text-xs font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-2 outline-none transition">
+                            class="w-full text-sm font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Patient's Relation to ID <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
                         <select name="philhealth_relation" id="assign_philhealth_relation" onchange="checkAssignPhilHealthDup(); recalculateAssignPricing();"
-                            class="w-full text-xs text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-2 outline-none transition">
+                            class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                             <option value="">-- Select relation --</option>
                             <option value="Principal Member" id="assign-opt-owner">Principal Member</option>
                             <option value="Qualified Dependent" id="assign-opt-family">Qualified Dependent</option>
@@ -364,9 +363,9 @@ foreach ($allServices as $service) {
             <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
             
             <div class="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
-                <button type="button" onclick="closeAssignModal()"
+                <button type="button" id="assignCancelBtn" onclick="closeAssignModal()"
                     class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Cancel</button>
-                <button type="submit"
+                <button type="submit" id="assignSubmitBtn"
                     class="px-5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 transition shadow-md shadow-indigo-600/20 cursor-pointer">Assign Examination</button>
             </div>
         </form>
@@ -419,31 +418,6 @@ foreach ($allServices as $service) {
                     <label class="block text-sm font-medium text-gray-700">Home Address</label>
                     <input type="text" id="modalAddress"
                         class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">PhilHealth Status</label>
-                    <select id="modalPhilHealth" onchange="togglePhilHealthId()"
-                        class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full" required>
-                        <option value="With PhilHealth Card">With PhilHealth Card</option>
-                        <option value="Without PhilHealth Card">Without PhilHealth Card</option>
-                    </select>
-                </div>
-                <div id="philHealthIdField" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700">PhilHealth ID Number</label>
-                    <input type="text" id="modalPhilHealthId" inputmode="numeric" maxlength="14"
-                        oninput="formatPhilHealthInput(this); checkModalPhilHealthId();"
-                        class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full" placeholder="XX-XXXXXXXXX-X">
-                    
-                    <div id="modalPhilHealthRelationContainer" class="mt-3">
-                        <label class="block text-sm font-medium text-gray-700">Patient's Relation to ID</label>
-                        <select id="modalPhilHealthRelation"
-                            class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded w-full">
-                            <option value="" disabled selected>Select relation</option>
-                            <option value="Principal Member" id="modal-opt-owner">Principal Member</option>
-                            <option value="Qualified Dependent" id="modal-opt-family">Qualified Dependent</option>
-                        </select>
-                        <p id="modal-philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
-                    </div>
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-4">
@@ -637,7 +611,7 @@ foreach ($allServices as $service) {
                     </div>
                     <div>
                         <label for="swal-rad-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
-                        <textarea id="swal-rad-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-gray-800 transition" placeholder="State why this request is being rejected so the patient understands..."></textarea>
+                        <textarea id="swal-rad-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:border-red-500 focus:outline-none outline-none text-gray-800 transition" placeholder="State why this request is being rejected so the patient understands..."></textarea>
                     </div>
                 </div>
             `,

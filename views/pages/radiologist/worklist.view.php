@@ -95,26 +95,30 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
     <nav class="flex gap-4">
         <!-- Tab 1: Pending Worklist -->
         <button type="button" id="tab-rad-worklist-btn" onclick="switchRadTab('worklist')"
-                class="pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
+            class="pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
             Pending Worklist
             <?php
             $wlCount = count($pendingRecords);
             $wlDisplay = $wlCount > 99 ? '99+' : $wlCount;
             ?>
-            <span id="worklist-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $wlCount ?>">
+            <span id="worklist-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200"
+                style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;"
+                title="<?= $wlCount ?>">
                 <?= $wlDisplay ?>
             </span>
         </button>
 
         <!-- Tab 2: Pending Release -->
         <button type="button" id="tab-rad-release-btn" onclick="switchRadTab('release')"
-                class="pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2">
+            class="pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2">
             Pending Release
             <?php
             $relCount = count($releaseRecords);
             $relDisplay = $relCount > 99 ? '99+' : $relCount;
             ?>
-            <span id="release-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $relCount ?>">
+            <span id="release-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200"
+                style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;"
+                title="<?= $relCount ?>">
                 <?= $relDisplay ?>
             </span>
         </button>
@@ -147,19 +151,31 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 
         <!-- Filter by Priority -->
         <select id="filterPriority"
-            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            class="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
             <option value="">All Priorities</option>
             <option value="STAT">STAT</option>
             <option value="Urgent">Urgent</option>
             <option value="Routine">Routine</option>
         </select>
 
+        <!-- Filter by Status -->
+        <?php $urlStatusFilter = $_GET['status'] ?? $_GET['filterStatus'] ?? ''; ?>
+        <select id="filterStatus"
+            class="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            <option value="">All Statuses</option>
+            <option value="For Revision" <?= $urlStatusFilter === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
+            <option value="Pending" <?= $urlStatusFilter === 'Pending' ? 'selected' : '' ?>>Pending</option>
+            <option value="In Progress" <?= $urlStatusFilter === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
+            <option value="Overdue" <?= $urlStatusFilter === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
+        </select>
+
         <!-- Filter by Date -->
         <?php $urlDateFilter = $_GET['date'] ?? $_GET['filterDate'] ?? (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) ? 'All' : 'Today'); ?>
         <select id="filterDate"
-            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            class="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
             <option value="All" <?= $urlDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
-            <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's Cases</option>
+            <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's
+                Cases</option>
             <option value="Backlog" <?= $urlDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
         </select>
 
@@ -216,14 +232,52 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                             $isEmergency = ($pUpper === 'STAT') ? 1 : 0;
                             $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
                             $isToday = (date('Y-m-d', strtotime($rowDate)) === date('Y-m-d'));
+
+                            $rawStatus = $row['status'] ?? 'Pending';
+                            $displayStatus = $rawStatus;
+                            $sBorder = '1.5px solid #facc15';
+                            $sBg = '#fefce8';
+                            $sColor = '#a16207';
+                            $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
+
+                            if ($rawStatus === 'Pending') {
+                                if ($isOverdue) {
+                                    $displayStatus = 'Overdue';
+                                    $sBorder = '1.5px solid #f87171';
+                                    $sBg = '#fef2f2';
+                                    $sColor = '#b91c1c';
+                                } else {
+                                    $displayStatus = 'Pending';
+                                    $sBorder = '1.5px solid #facc15';
+                                    $sBg = '#fefce8';
+                                    $sColor = '#a16207';
+                                }
+                            } elseif ($rawStatus === 'Under Reading') {
+                                if (!empty($row['re_edit_reason'])) {
+                                    $displayStatus = 'For Revision';
+                                    $sBorder = '1.5px solid #f87171';
+                                    $sBg = '#fef2f2';
+                                    $sColor = '#b91c1c';
+                                } else {
+                                    $displayStatus = 'In Progress';
+                                    $sBorder = '1.5px solid #60a5fa';
+                                    $sBg = '#eff6ff';
+                                    $sColor = '#1d4ed8';
+                                }
+                            } elseif ($rawStatus === 'For Revision') {
+                                $displayStatus = 'For Revision';
+                                $sBorder = '1.5px solid #f87171';
+                                $sBg = '#fef2f2';
+                                $sColor = '#b91c1c';
+                            }
                             ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
                                 data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
-                                data-pweight="<?= $pWeight ?>"
-                                data-is-today="<?= $isToday ? 'true' : 'false' ?>"
+                                data-status="<?= htmlspecialchars($displayStatus) ?>"
+                                data-pweight="<?= $pWeight ?>" data-is-today="<?= $isToday ? 'true' : 'false' ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
@@ -245,11 +299,13 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                     $pCount = count($pExams);
                                     ?>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="truncate max-w-[130px]" title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
+                                        <span class="truncate max-w-[130px]"
+                                            title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
                                             <?= htmlspecialchars($pFirstExam) ?>
                                         </span>
                                         <?php if ($pCount > 1): ?>
-                                            <span class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
+                                            <span
+                                                class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
                                                 title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
                                                 <?= $pCount ?>+
                                             </span>
@@ -274,75 +330,20 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="flex flex-col gap-1 items-start">
                                         <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
-                                        <span class="text-sm text-gray-600"><?= date('M d, Y', strtotime($submitDate)) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($submitDate)) ?></span></span>
+                                        <span class="text-sm text-gray-600"><?= date('M d, Y', strtotime($submitDate)) ?> <span
+                                                class="opacity-70 ml-1"><?= date('h:i A', strtotime($submitDate)) ?></span></span>
                                         <?php if (!$isToday): ?>
-                                            <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                            <span
+                                                class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200"
+                                                title="This case was carried over from a previous day">BACKLOG</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
                                 <td class="py-3 px-3">
-                                    <?php
-                                    $rawStatus = $row['status'] ?? 'Pending';
-                                    $displayStatus = $rawStatus;
-                                    $sBorder = '1.5px solid #facc15';
-                                    $sBg = '#fefce8';
-                                    $sColor = '#a16207';
-                                    $isOverdue = (time() - strtotime($row['created_at'])) >= 3 * 3600;
-
-                                    if ($rawStatus === 'Pending') {
-                                        if ($isOverdue) {
-                                            $displayStatus = 'Overdue';
-                                            $sBorder = '1.5px solid #f87171';
-                                            $sBg = '#fef2f2';
-                                            $sColor = '#b91c1c';
-                                        } else {
-                                            $displayStatus = 'Pending';
-                                            $sBorder = '1.5px solid #facc15';
-                                            $sBg = '#fefce8';
-                                            $sColor = '#a16207';
-                                        }
-                                    } elseif ($rawStatus === 'Under Reading') {
-                                        if (!empty($row['re_edit_reason'])) {
-                                            $displayStatus = 'For Revision';
-                                            $sBorder = '1.5px solid #f87171';
-                                            $sBg = '#fef2f2';
-                                            $sColor = '#b91c1c';
-                                        } else {
-                                            $displayStatus = 'In Progress';
-                                            $sBorder = '1.5px solid #60a5fa';
-                                            $sBg = '#eff6ff';
-                                            $sColor = '#1d4ed8';
-                                        }
-                                    } elseif ($rawStatus === 'For Revision') {
-                                        $displayStatus = 'For Revision';
-                                        $sBorder = '1.5px solid #f87171';
-                                        $sBg = '#fef2f2';
-                                        $sColor = '#b91c1c';
-                                    }
-                                    ?>
-                                    <div class="flex flex-col items-start gap-1">
-                                        <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold"
-                                            style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
-                                            <?= htmlspecialchars($displayStatus) ?>
-                                        </span>
-                                        <?php if (!empty($row['re_edit_reason'])): ?>
-                                            <?php 
-                                            $ptNo = !empty($row['patient_number']) ? ' (' . $row['patient_number'] . ')' : '';
-                                            $fullPatientInfo = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) . $ptNo;
-                                            $dateSubmitted = !empty($row['status_timestamp']) ? $row['status_timestamp'] : (!empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']);
-                                            $dateFormatted = date('M d, Y h:i A', strtotime($dateSubmitted));
-                                            ?>
-                                            <button type="button" 
-                                                onclick="window.showReEditModal(this, event)"
-                                                data-case="<?= htmlspecialchars($row['case_number'] ?? '') ?>"
-                                                data-patient="<?= htmlspecialchars($fullPatientInfo) ?>"
-                                                data-date="<?= htmlspecialchars($dateFormatted) ?>"
-                                                data-reason="<?= htmlspecialchars($row['re_edit_reason']) ?>"
-                                                class="text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition underline underline-offset-2 flex items-center gap-1 cursor-pointer">
-                                                See error
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                                        <?= htmlspecialchars($displayStatus) ?>
+                                    </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
@@ -358,7 +359,8 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         </div>
 
         <!-- Pagination footer for Pending Worklist -->
-        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+        <div
+            class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
             <!-- Record count -->
             <span id="worklist-record-count" class="text-xs text-gray-500 font-medium"></span>
 
@@ -370,7 +372,8 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
     </div>
 
     <!-- TABLE CARD 2: Pending Release -->
-    <div id="release-table-card" class="hidden rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+    <div id="release-table-card"
+        class="hidden rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
         <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
             <table class="w-full text-sm">
                 <thead class="sticky top-0 z-10">
@@ -416,8 +419,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
-                                data-pweight="<?= $pWeight ?>"
-                                data-is-today="<?= $isToday ? 'true' : 'false' ?>"
+                                data-pweight="<?= $pWeight ?>" data-is-today="<?= $isToday ? 'true' : 'false' ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
@@ -439,11 +441,13 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                     $pCount = count($pExams);
                                     ?>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="truncate max-w-[130px]" title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
+                                        <span class="truncate max-w-[130px]"
+                                            title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
                                             <?= htmlspecialchars($pFirstExam) ?>
                                         </span>
                                         <?php if ($pCount > 1): ?>
-                                            <span class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
+                                            <span
+                                                class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
                                                 title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
                                                 <?= $pCount ?>+
                                             </span>
@@ -468,9 +472,12 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="flex flex-col gap-1 items-start">
                                         <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
-                                        <span class="text-sm text-gray-600"><?= date('M d, Y', strtotime($submitDate)) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($submitDate)) ?></span></span>
+                                        <span class="text-sm text-gray-600"><?= date('M d, Y', strtotime($submitDate)) ?> <span
+                                                class="opacity-70 ml-1"><?= date('h:i A', strtotime($submitDate)) ?></span></span>
                                         <?php if (!$isToday): ?>
-                                            <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                            <span
+                                                class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200"
+                                                title="This case was carried over from a previous day">BACKLOG</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -506,7 +513,8 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         </div>
 
         <!-- Pagination footer for Pending Release -->
-        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+        <div
+            class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
             <!-- Record count -->
             <span id="release-record-count" class="text-xs text-gray-500 font-medium"></span>
 
@@ -518,113 +526,9 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
     </div>
 </div>
 
-<!-- RE-EDIT DETAILS MODAL (Matching Correction Request Details design) -->
-<div id="reedit-details-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" onclick="if(event.target === this) window.closeReEditDetailsModal()">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
-        <!-- Header -->
-        <div class="flex items-start justify-between border-b border-gray-100 pb-3">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
-                    <i data-lucide="file-warning" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-gray-900 text-base">Re-Edit Request Details</h3>
-                    <p id="redm-subtitle" class="text-xs text-gray-500 mt-0.5 font-medium"></p>
-                </div>
-            </div>
-            <button type="button" onclick="window.closeReEditDetailsModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <!-- Meta Summary Bar -->
-        <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
-            <div class="flex items-center gap-1.5">
-                <span class="text-gray-500 font-medium">Status:</span>
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                    For Revision
-                </span>
-            </div>
-            <div class="text-gray-500 flex items-center gap-1.5 font-medium">
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-                <span id="redm-date-text"></span>
-            </div>
-        </div>
-
-        <!-- Content Card -->
-        <div class="p-4 rounded-xl bg-white border border-gray-200/90 shadow-2xs space-y-2">
-            <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                <i data-lucide="message-square" class="w-4 h-4 text-amber-600"></i>
-                RadTech Note / Re-Edit Reason:
-            </div>
-            <div class="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/80 text-xs text-amber-950 font-medium leading-relaxed italic break-words">
-                <span id="redm-reason-text"></span>
-            </div>
-            <p class="text-[11px] text-gray-500 pt-1">
-                The RadTech indicated that revisions are required for this case. You can update the findings and resubmit the report.
-            </p>
-        </div>
-
-        <!-- Modal Footer -->
-        <div class="pt-3 border-t border-gray-100 flex items-center justify-end">
-            <button type="button" onclick="window.closeReEditDetailsModal()" 
-                    class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer shadow-2xs">
-                Close
-            </button>
-        </div>
-    </div>
-</div>
-
 <script>
-    // Modal handler for Re-Edit Reason (Matching Correction Request Details)
-    window.showReEditModal = function(btn, event) {
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        const caseNo = (btn && btn.getAttribute('data-case')) || '';
-        const patientInfo = (btn && btn.getAttribute('data-patient')) || '';
-        const dateStr = (btn && btn.getAttribute('data-date')) || '';
-        const reason = (btn && btn.getAttribute('data-reason')) || 'No reason provided.';
-
-        const modal = document.getElementById('reedit-details-modal');
-        const subtitle = document.getElementById('redm-subtitle');
-        const reasonText = document.getElementById('redm-reason-text');
-        const dateText = document.getElementById('redm-date-text');
-
-        if (subtitle) {
-            subtitle.textContent = 'Case #' + caseNo + (patientInfo ? ' • ' + patientInfo : '');
-        }
-        if (reasonText) {
-            reasonText.textContent = '"' + reason + '"';
-        }
-        if (dateText) {
-            dateText.textContent = dateStr;
-        }
-
-        if (modal) {
-            modal.classList.remove('hidden');
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        }
-    };
-
-    window.closeReEditDetailsModal = function() {
-        const modal = document.getElementById('reedit-details-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-    };
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            window.closeReEditDetailsModal();
-        }
-    });
-
     // Tab Switching for Radiologist: Pending Worklist vs Pending Release
-    window.switchRadTab = function(tab) {
+    window.switchRadTab = function (tab) {
         sessionStorage.setItem('Citilife_radWorklist_tab', tab);
         const workCard = document.getElementById('worklist-table-card');
         const relCard = document.getElementById('release-table-card');
@@ -687,6 +591,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         const searchInput = document.getElementById('searchInput');
         const filterBranch = document.getElementById('filterBranch');
         const filterPriority = document.getElementById('filterPriority');
+        const filterStatus = document.getElementById('filterStatus');
         const filterDate = document.getElementById('filterDate');
         const sortOption = document.getElementById('sortOption');
 
@@ -704,6 +609,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             if (searchInput) sessionStorage.setItem('Citilife_radWorklist_search', searchInput.value);
             if (filterBranch) sessionStorage.setItem('Citilife_radWorklist_branch', filterBranch.value);
             if (filterPriority) sessionStorage.setItem('Citilife_radWorklist_priority', filterPriority.value);
+            if (filterStatus) sessionStorage.setItem('Citilife_radWorklist_status', filterStatus.value);
             if (filterDate) sessionStorage.setItem('Citilife_radWorklist_date', filterDate.value);
             if (sortOption) sessionStorage.setItem('Citilife_radWorklist_sort', sortOption.value);
             sessionStorage.setItem('Citilife_radWorklist_page', currentPage);
@@ -714,40 +620,55 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             const params = new URLSearchParams(window.location.search);
             const hasHighlight = params.has('highlight_case') || params.has('highlight') || params.has('case_id');
 
-            if (params.has('branch')) {
-                if (filterBranch) filterBranch.value = params.get('branch');
-            } else if (filterBranch) {
-                const savedBranch = sessionStorage.getItem('Citilife_radWorklist_branch');
-                if (savedBranch !== null) filterBranch.value = savedBranch;
-            }
+            if (hasHighlight) {
+                if (filterDate) filterDate.value = 'All';
+                if (filterBranch) filterBranch.value = '';
+                if (filterPriority) filterPriority.value = '';
+                if (filterStatus) filterStatus.value = '';
+                if (searchInput) searchInput.value = '';
+            } else {
+                if (params.has('branch')) {
+                    if (filterBranch) filterBranch.value = params.get('branch');
+                } else if (filterBranch) {
+                    const savedBranch = sessionStorage.getItem('Citilife_radWorklist_branch');
+                    if (savedBranch !== null) filterBranch.value = savedBranch;
+                }
 
-            if (params.has('priority')) {
-                if (filterPriority) filterPriority.value = params.get('priority');
-            } else if (filterPriority) {
-                const savedPriority = sessionStorage.getItem('Citilife_radWorklist_priority');
-                if (savedPriority !== null) filterPriority.value = savedPriority;
-            }
+                if (params.has('priority')) {
+                    if (filterPriority) filterPriority.value = params.get('priority');
+                } else if (filterPriority) {
+                    const savedPriority = sessionStorage.getItem('Citilife_radWorklist_priority');
+                    if (savedPriority !== null) filterPriority.value = savedPriority;
+                }
 
-            if (params.has('date') || params.has('filterDate')) {
-                const dParam = params.get('date') || params.get('filterDate');
-                if (filterDate) filterDate.value = dParam;
-            } else if (filterDate) {
-                const savedDate = sessionStorage.getItem('Citilife_radWorklist_date');
-                if (savedDate !== null && !params.has('status')) filterDate.value = savedDate;
-            }
+                if (params.has('status') || params.has('filterStatus')) {
+                    if (filterStatus) filterStatus.value = params.get('status') || params.get('filterStatus');
+                } else if (filterStatus) {
+                    const savedStatus = sessionStorage.getItem('Citilife_radWorklist_status');
+                    if (savedStatus !== null) filterStatus.value = savedStatus;
+                }
 
-            if (params.has('sort')) {
-                if (sortOption) sortOption.value = params.get('sort');
-            } else if (sortOption) {
-                const savedSort = sessionStorage.getItem('Citilife_radWorklist_sort');
-                if (savedSort !== null) sortOption.value = savedSort;
-            }
+                if (params.has('date') || params.has('filterDate')) {
+                    const dParam = params.get('date') || params.get('filterDate');
+                    if (filterDate) filterDate.value = dParam;
+                } else if (filterDate) {
+                    const savedDate = sessionStorage.getItem('Citilife_radWorklist_date');
+                    if (savedDate !== null && !params.has('status')) filterDate.value = savedDate;
+                }
 
-            if (params.has('search')) {
-                if (searchInput) searchInput.value = params.get('search');
-            } else if (searchInput) {
-                const savedSearch = sessionStorage.getItem('Citilife_radWorklist_search');
-                if (savedSearch !== null) searchInput.value = savedSearch;
+                if (params.has('sort')) {
+                    if (sortOption) sortOption.value = params.get('sort');
+                } else if (sortOption) {
+                    const savedSort = sessionStorage.getItem('Citilife_radWorklist_sort');
+                    if (savedSort !== null) sortOption.value = savedSort;
+                }
+
+                if (params.has('search')) {
+                    if (searchInput) searchInput.value = params.get('search');
+                } else if (searchInput) {
+                    const savedSearch = sessionStorage.getItem('Citilife_radWorklist_search');
+                    if (savedSearch !== null) searchInput.value = savedSearch;
+                }
             }
 
             if (!hasHighlight) {
@@ -774,6 +695,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
             const branchValue = filterBranch ? filterBranch.value : '';
             const priorityValue = filterPriority ? filterPriority.value : '';
+            const statusValue = filterStatus ? filterStatus.value : '';
             const dateValue = filterDate ? filterDate.value : 'All';
             const sortValue = sortOption ? sortOption.value : 'date_desc';
 
@@ -828,6 +750,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     mappedPriority = 'Routine';
                 }
                 const matchesPriority = priorityValue === '' || rowPriority === priorityValue || mappedPriority === priorityValue;
+                const matchesStatus = statusValue === '' || (row.dataset.status || '') === statusValue;
 
                 const isToday = row.dataset.isToday === 'true';
                 let matchesDate = true;
@@ -837,7 +760,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     matchesDate = !isToday;
                 }
 
-                if (matchesSearch && matchesBranch && matchesPriority && matchesDate) {
+                if (matchesSearch && matchesBranch && matchesPriority && matchesStatus && matchesDate) {
                     filteredRows.push(row);
                 } else {
                     row.style.display = 'none';
@@ -970,7 +893,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         }
 
         // --- Pending Release Table Logic ---
-        window.updateReleaseTable = function() {
+        window.updateReleaseTable = function () {
             if (!releaseTbody) return;
 
             const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -1183,6 +1106,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
         if (filterBranch) filterBranch.addEventListener('change', onFilterSortChange);
         if (filterPriority) filterPriority.addEventListener('change', onFilterSortChange);
+        if (filterStatus) filterStatus.addEventListener('change', onFilterSortChange);
         if (filterDate) filterDate.addEventListener('change', onFilterSortChange);
         if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
 
@@ -1193,7 +1117,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 
             // Search in Pending Worklist
             const mainRows = document.querySelectorAll('.record-row');
-            let targetRow = Array.from(mainRows).find(r => 
+            let targetRow = Array.from(mainRows).find(r =>
                 (r.dataset.id || '').toLowerCase() === highlightCase.toLowerCase() ||
                 (r.dataset.caseId || '').toLowerCase() === highlightCase.toLowerCase()
             );
@@ -1202,7 +1126,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             if (!targetRow) {
                 // Search in Pending Release
                 const relRows = document.querySelectorAll('.release-record-row');
-                targetRow = Array.from(relRows).find(r => 
+                targetRow = Array.from(relRows).find(r =>
                     (r.dataset.id || '').toLowerCase() === highlightCase.toLowerCase() ||
                     (r.dataset.caseId || '').toLowerCase() === highlightCase.toLowerCase()
                 );

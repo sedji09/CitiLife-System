@@ -924,7 +924,7 @@ window.submitDisputeForm = function (e) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Required Field',
-                    text: 'Please select your correct Sex / Gender.',
+                    text: 'Please select your correct Sex.',
                     confirmButtonColor: '#dc2626'
                 });
                 return;

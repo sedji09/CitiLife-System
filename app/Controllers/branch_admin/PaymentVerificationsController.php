@@ -38,27 +38,38 @@ class PaymentVerificationsController
                 $auditLogModel = new \AuditLogModel($pdo);
 
                 if ($_POST['action'] === 'verify') {
-                    try {
-                        $pdo->beginTransaction();
-                        
-                        // Update payment status
-                        $stmt = $pdo->prepare("UPDATE payments SET status = 'Verified', verified_by = ? WHERE id = ?");
-                        $stmt->execute([$currentUserId, $paymentId]);
-                        
-                        // Get request details associated with this payment
-                        $stmtReq = $pdo->prepare("SELECT * FROM requests WHERE id = (SELECT request_id FROM payments WHERE id = ?)");
-                        $stmtReq->execute([$paymentId]);
-                        $reqData = $stmtReq->fetch();
-                        
-                        if ($reqData) {
+                    $maxAttempts = 3;
+                    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                        try {
+                            $pdo->beginTransaction();
+                            
+                            // 1. Lock payment and request rows atomically
+                            $stmtPayReq = $pdo->prepare("
+                                SELECT p.id as payment_id, p.status as payment_status, r.* 
+                                FROM payments p 
+                                JOIN requests r ON p.request_id = r.id 
+                                WHERE p.id = ? 
+                                FOR UPDATE
+                            ");
+                            $stmtPayReq->execute([$paymentId]);
+                            $reqData = $stmtPayReq->fetch();
+                            
+                            if (!$reqData) {
+                                throw new \Exception("Payment or associated request not found.");
+                            }
+
+                            // Update payment status
+                            $stmt = $pdo->prepare("UPDATE payments SET status = 'Verified', verified_by = ? WHERE id = ?");
+                            $stmt->execute([$currentUserId, $paymentId]);
+                            
                             $reqId = $reqData['id'];
                             $reqBranchId = $reqData['branch_id'] ?: $branchId;
                             
-                            // 1. Update request status to Approved
+                            // 2. Update request status to Approved
                             $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?");
                             $stmtCase->execute([$reqId]);
                             
-                            // 2. Generate case number and insert into cases table (moves directly to RadTech Patient Queue)
+                            // 3. Generate case number and insert into cases table (moves directly to RadTech Patient Queue)
                             require_once __DIR__ . '/../../Models/CaseModel.php';
                             $caseModel = new \CaseModel($pdo);
                             $caseNumber = $caseModel->generateCaseNumber($reqBranchId);
@@ -79,7 +90,11 @@ class PaymentVerificationsController
                             ]);
                             $newCaseId = $pdo->lastInsertId();
                             
-                            // 3. Send notifications
+                            // 4. Record audit log
+                            $details = "Verified payment ID: {$paymentId} for Request #{$reqData['request_number']}. Created Case #{$caseNumber} (ID: {$newCaseId}) and moved directly to RadTech Patient Queue.";
+                            $auditLogModel->addLog($currentUserId, 'Approved & Created Case', 'Payment Verifications', 'Case', $newCaseId, $details, $reqBranchId);
+
+                            // 5. Send notifications
                             require_once __DIR__ . '/../../Models/NotificationModel.php';
                             $notifModel = new \NotificationModel($pdo);
                             
@@ -101,55 +116,65 @@ class PaymentVerificationsController
                                     $patUser['user_id'],
                                     'patient'
                                 );
-                                
-                                // Send Email to Patient if available
-                                if (!empty($patUser['email'])) {
-                                    require_once __DIR__ . '/../../Helpers/mailer_helper.php';
-                                    $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                                    $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
-                                    $patientName = $patUser['name'] ?: 'Patient';
-                                    $subject = "Your X-ray Request ({$caseNumber}) is Approved - Citilife System";
-                                    $emailBody = renderNotificationEmail(
-                                        $patientName,
-                                        "Payment Verified & Request Approved",
-                                        "Good news! Your payment has been verified by the clinic cashier and your request is now approved. You may proceed to the X-ray room for your examination.",
-                                        [
-                                            'Case Number' => htmlspecialchars($caseNumber),
-                                            'Request Number' => htmlspecialchars($reqData['request_number']),
-                                            'Examination' => htmlspecialchars($reqData['exam_type'] ?: 'N/A'),
-                                            'Status' => '<span style="color: #1a7f37; font-weight: 600;">Approved &amp; Queued</span>'
-                                        ],
-                                        "View Case Status",
-                                        $portalUrl,
-                                        "You're receiving this notification regarding your X-ray examination at Citilife.",
-                                        "#16a34a"
-                                    );
-                                    sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
-                                }
                             }
                             
                             // Send Notification to RadTech team at this branch
                             $notifModel->add(
                                 "New Patient in Queue",
                                 "Case #{$caseNumber} ({$reqData['exam_type']}) payment verified and approved. Ready for X-ray examination.",
-                                "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists",
+                                "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($caseNumber),
                                 null,
                                 'radtech',
                                 $reqBranchId
                             );
                             
-                            $details = "Verified payment ID: {$paymentId} for Request #{$reqData['request_number']}. Created Case #{$caseNumber} (ID: {$newCaseId}) and moved directly to RadTech Patient Queue.";
-                            $auditLogModel->addLog($currentUserId, 'Approved & Created Case', 'Payment Verifications', 'Case', $newCaseId, $details, $reqBranchId);
-                            
-                            $_SESSION['flash_success'] = "Payment verified successfully. Request #{$reqData['request_number']} is approved and has moved directly to RadTech's Patient Queue (Case #{$caseNumber}).";
-                        } else {
-                            $_SESSION['flash_success'] = "Payment verified successfully.";
+                            $pdo->commit();
+
+                            // Send Email to Patient if available (outside transaction)
+                            if ($patUser && !empty($patUser['email'])) {
+                                require_once __DIR__ . '/../../Helpers/mailer_helper.php';
+                                $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+                                $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                                $patientName = $patUser['name'] ?: 'Patient';
+                                $subject = "Your X-ray Request ({$caseNumber}) is Approved - Citilife System";
+                                $emailBody = renderNotificationEmail(
+                                    $patientName,
+                                    "Payment Verified & Request Approved",
+                                    "Good news! Your payment has been verified by the branch admin and your request is now approved. You may proceed to the X-ray room for your examination.",
+                                    [
+                                        'Case Number' => htmlspecialchars($caseNumber),
+                                        'Request Number' => htmlspecialchars($reqData['request_number']),
+                                        'Examination' => htmlspecialchars($reqData['exam_type'] ?: 'N/A'),
+                                        'Status' => '<span style="color: #1a7f37; font-weight: 600;">Approved &amp; Queued</span>'
+                                    ],
+                                    "View Case Status",
+                                    $portalUrl,
+                                    "You're receiving this notification regarding your X-ray examination at Citilife.",
+                                    "#16a34a"
+                                );
+                                sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
+                            }
+
+                            $_SESSION['flash_success'] = "Payment verified successfully. Request has been approved and moved to the patient queue.";
+                            break; // Exit retry loop on success
+                        } catch (\PDOException $e) {
+                            if ($pdo->inTransaction()) {
+                                $pdo->rollBack();
+                            }
+                            $isDeadlock = ($e->getCode() == 40001 || strpos($e->getMessage(), '1213') !== false || stripos($e->getMessage(), 'deadlock') !== false);
+                            if ($isDeadlock && $attempt < $maxAttempts) {
+                                usleep(150000); // wait 150ms before retry
+                                continue;
+                            }
+                            $_SESSION['flash_error'] = "Error verifying payment: " . $e->getMessage();
+                            break;
+                        } catch (\Exception $e) {
+                            if ($pdo->inTransaction()) {
+                                $pdo->rollBack();
+                            }
+                            $_SESSION['flash_error'] = "Error verifying payment: " . $e->getMessage();
+                            break;
                         }
-                        
-                        $pdo->commit();
-                    } catch (\Exception $e) {
-                        $pdo->rollBack();
-                        $_SESSION['flash_error'] = "Error verifying payment: " . $e->getMessage();
                     }
                     header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");
                     exit;
@@ -208,7 +233,9 @@ class PaymentVerificationsController
                         $pdo->commit();
                         $_SESSION['flash_success'] = "Payment rejected. Request has returned to the patient with your reason so they can resubmit the correct reference number and receipt screenshot.";
                     } catch (\Exception $e) {
-                        $pdo->rollBack();
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
                         $_SESSION['flash_error'] = "Error rejecting payment: " . $e->getMessage();
                     }
                     header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");

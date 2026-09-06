@@ -4,14 +4,14 @@ let currentOriginalRelation = '';
 window.currentEditingPatientId = null;
 
 function setModalInputsDisabled(disabled) {
-    document.getElementById('modalName').disabled = disabled;
-    document.getElementById('modalBirthdate').disabled = disabled;
-    document.getElementById('modalSex').disabled = disabled;
-    document.getElementById('modalContact').disabled = disabled;
-    document.getElementById('modalAddress').disabled = disabled;
-    document.getElementById('modalPhilHealth').disabled = disabled;
-    document.getElementById('modalPhilHealthId').disabled = disabled;
-    document.getElementById('modalPhilHealthRelation').disabled = disabled;
+    if (document.getElementById('modalName')) document.getElementById('modalName').disabled = disabled;
+    if (document.getElementById('modalBirthdate')) document.getElementById('modalBirthdate').disabled = disabled;
+    if (document.getElementById('modalSex')) document.getElementById('modalSex').disabled = disabled;
+    if (document.getElementById('modalContact')) document.getElementById('modalContact').disabled = disabled;
+    if (document.getElementById('modalAddress')) document.getElementById('modalAddress').disabled = disabled;
+    if (document.getElementById('modalPhilHealth')) document.getElementById('modalPhilHealth').disabled = disabled;
+    if (document.getElementById('modalPhilHealthId')) document.getElementById('modalPhilHealthId').disabled = disabled;
+    if (document.getElementById('modalPhilHealthRelation')) document.getElementById('modalPhilHealthRelation').disabled = disabled;
 
     const okBtn = document.getElementById('modalOkBtn');
     if (okBtn) {
@@ -23,58 +23,68 @@ function setModalInputsDisabled(disabled) {
     }
 }
 
-function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId, philhealthRelation = '') {
+function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealth = '', philhealthId = '', philhealthRelation = '') {
     window.currentEditingPatientId = id;
     currentEditId = id;
     setModalInputsDisabled(false);
-    document.getElementById('modalName').value = name;
+    if (document.getElementById('modalName')) document.getElementById('modalName').value = name;
     // Set the datepicker date (use the picker if available, fallback to direct value)
     const modalBirthdateInput = document.getElementById('modalBirthdate');
-    modalBirthdateInput.value = birthdate;
-    if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
-        modalDatePicker.setDate(birthdate);
+    if (modalBirthdateInput) {
+        modalBirthdateInput.value = birthdate;
+        if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+            modalDatePicker.setDate(birthdate);
+        }
     }
-    document.getElementById('modalSex').value = sex;
-    document.getElementById('modalContact').value = contact;
-    document.getElementById('modalAddress').value = homeAddress || '';
-    document.getElementById('modalPhilHealth').value = philhealth;
-    document.getElementById('modalPhilHealthId').value = philhealthId || '';
-    document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
+    if (document.getElementById('modalSex')) document.getElementById('modalSex').value = sex;
+    if (document.getElementById('modalContact')) document.getElementById('modalContact').value = contact;
+    if (document.getElementById('modalAddress')) document.getElementById('modalAddress').value = homeAddress || '';
+    if (document.getElementById('modalPhilHealth')) document.getElementById('modalPhilHealth').value = philhealth;
+    if (document.getElementById('modalPhilHealthId')) document.getElementById('modalPhilHealthId').value = philhealthId || '';
+    if (document.getElementById('modalPhilHealthRelation')) document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
     
     currentOriginalPhilHealthId = philhealthId || '';
     currentOriginalRelation = philhealthRelation || '';
     
-    document.getElementById('editModal').classList.remove('hidden');
-    togglePhilHealthId();
-    if (philhealth === 'With PhilHealth Card' && philhealthId) {
-        checkModalPhilHealthId();
+    const editModal = document.getElementById('editModal');
+    if (editModal) editModal.classList.remove('hidden');
+    if (document.getElementById('modalPhilHealth')) {
+        togglePhilHealthId();
+        if (philhealth === 'With PhilHealth Card' && philhealthId) {
+            checkModalPhilHealthId();
+        }
     }
 }
 
-function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealth, philhealthId, philhealthRelation = '') {
+function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealth = '', philhealthId = '', philhealthRelation = '') {
     currentEditId = id;
     setModalInputsDisabled(true);
-    document.getElementById('modalName').value = name;
+    if (document.getElementById('modalName')) document.getElementById('modalName').value = name;
     // Set the datepicker date (use the picker if available, fallback to direct value)
     const modalBirthdateInput = document.getElementById('modalBirthdate');
-    modalBirthdateInput.value = birthdate;
-    if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
-        modalDatePicker.setDate(birthdate);
+    if (modalBirthdateInput) {
+        modalBirthdateInput.value = birthdate;
+        if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+            modalDatePicker.setDate(birthdate);
+        }
     }
-    document.getElementById('modalSex').value = sex;
-    document.getElementById('modalContact').value = contact;
-    document.getElementById('modalAddress').value = homeAddress || '';
-    document.getElementById('modalPhilHealth').value = philhealth;
-    document.getElementById('modalPhilHealthId').value = philhealthId || '';
-    document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
+    if (document.getElementById('modalSex')) document.getElementById('modalSex').value = sex;
+    if (document.getElementById('modalContact')) document.getElementById('modalContact').value = contact;
+    if (document.getElementById('modalAddress')) document.getElementById('modalAddress').value = homeAddress || '';
+    if (document.getElementById('modalPhilHealth')) document.getElementById('modalPhilHealth').value = philhealth;
+    if (document.getElementById('modalPhilHealthId')) document.getElementById('modalPhilHealthId').value = philhealthId || '';
+    if (document.getElementById('modalPhilHealthRelation')) document.getElementById('modalPhilHealthRelation').value = philhealthRelation || '';
     
     currentOriginalPhilHealthId = philhealthId || '';
     currentOriginalRelation = philhealthRelation || '';
     
-    document.getElementById('editModal').classList.remove('hidden');
-    togglePhilHealthId();
-    if (philhealth === 'With PhilHealth Card' && philhealthId) {
-        checkModalPhilHealthId();
+    const editModal = document.getElementById('editModal');
+    if (editModal) editModal.classList.remove('hidden');
+    if (document.getElementById('modalPhilHealth')) {
+        togglePhilHealthId();
+        if (philhealth === 'With PhilHealth Card' && philhealthId) {
+            checkModalPhilHealthId();
+        }
     }
 }
 
@@ -489,53 +499,28 @@ function checkAssignPhilHealthDup(immediate = false) {
                 if (msgEl) {
                     if (familyBlockedForOwner) {
                         msgEl.innerHTML = `
-                            <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium leading-relaxed flex items-start gap-2 shadow-sm">
-                                <svg class="w-4 h-4 text-red-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                                <div>
-                                    <span class="font-bold text-red-800 uppercase tracking-wide text-[11px] block mb-0.5">PhilHealth ID Cannot Be Applied</span>
-                                    The patient (<strong>${escapeHtmlApproval(data.current_patient_name || window.currentAssignPatientName || 'this patient')}</strong>) is registered as the Principal Member of this PhilHealth card. The cardholder cannot be registered as their own Qualified Dependent.
-                                    <span class="text-gray-600 text-[11px] block mt-1 font-normal">
-                                        To proceed with standard pricing without a PhilHealth discount, please select <strong class="text-gray-900">"Without PhilHealth"</strong> above.
-                                    </span>
-                                </div>
-                            </div>`;
+                            <p class="text-xs text-red-600 font-medium leading-normal">
+                                The patient (<strong>${escapeHtmlApproval(data.current_patient_name || window.currentAssignPatientName || 'this patient')}</strong>) is registered as the Principal Member of this PhilHealth card and cannot be registered as a Qualified Dependent. Please select <strong>"Without PhilHealth"</strong> above to proceed.
+                            </p>`;
                         msgEl.classList.remove('hidden');
                     } else if (ownerUsed && familyUsed) {
                         msgEl.innerHTML = `
-                            <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium leading-relaxed flex items-start gap-2 shadow-sm">
-                                <svg class="w-4 h-4 text-red-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                                <div>
-                                    <span class="font-bold text-red-800 uppercase tracking-wide text-[11px] block mb-0.5">Fully Utilized PhilHealth ID</span>
-                                    Both Principal Member and Qualified Dependent coverage have already been registered for this PhilHealth ID. Please select "Without PhilHealth" or provide another ID.
-                                </div>
-                            </div>`;
+                            <p class="text-xs text-red-600 font-medium leading-normal">
+                                Both Principal Member and Qualified Dependent coverage have already been registered for this PhilHealth ID. Please select "Without PhilHealth" or provide another ID.
+                            </p>`;
                         msgEl.classList.remove('hidden');
                     } else if (ownerUsed) {
                         msgEl.innerHTML = `
-                            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium leading-normal flex items-start gap-2">
-                                <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                                <div>
-                                    <strong>Principal Member</strong> is already registered to ${escapeHtmlApproval(data.owner_patient_name || 'prior patient')} (${data.owner_used_date || 'Used'}).<br>
-                                    <span class="text-emerald-700 font-semibold">Qualified Dependent is available</span> for family members.
-                                </div>
+                            <div class="text-xs leading-normal space-y-0.5">
+                                <p class="text-red-600 font-medium">Principal Member is already registered to ${escapeHtmlApproval(data.owner_patient_name || 'prior patient')} (${data.owner_used_date || 'Used'}).</p>
+                                <p class="text-emerald-700 font-semibold">Qualified Dependent is available for family members.</p>
                             </div>`;
                         msgEl.classList.remove('hidden');
                     } else if (familyUsed) {
                         msgEl.innerHTML = `
-                            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium leading-normal flex items-start gap-2">
-                                <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                                <div>
-                                    <strong>Qualified Dependent</strong> is already registered (${data.family_used_date || 'Used'}).<br>
-                                    <span class="text-emerald-700 font-semibold">Principal Member is still available</span> for the cardholder.
-                                </div>
+                            <div class="text-xs leading-normal space-y-0.5">
+                                <p class="text-red-600 font-medium">Qualified Dependent is already registered (${data.family_used_date || 'Used'}).</p>
+                                <p class="text-emerald-700 font-semibold">Principal Member is still available for the cardholder.</p>
                             </div>`;
                         msgEl.classList.remove('hidden');
                     } else {
@@ -556,7 +541,26 @@ function checkAssignPhilHealthDup(immediate = false) {
     }
 }
 
-function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthStatus = '', philhealthId = '', philhealthRelation = '', patientId = 0, patientName = '') {
+function closeAssignModal() {
+    const modal = document.getElementById('assignModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const form = document.getElementById('assignForm');
+        if (form) {
+            const examContainer = form.querySelector('.exam-ms-component');
+            if (examContainer) {
+                examContainer.removeAttribute('data-readonly');
+                const searchInput = examContainer.querySelector('.exam-ms-input');
+                if (searchInput) searchInput.style.display = '';
+            }
+        }
+    }
+    window.currentAssignRequestId = null;
+    window.currentAssignPatientId = null;
+    window.currentAssignPatientName = '';
+}
+
+function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthStatus = '', philhealthId = '', philhealthRelation = '', patientId = 0, patientName = '', isReadOnly = false) {
     window.currentAssignRequestId = id;
     window.currentAssignPatientId = patientId || 0;
     window.currentAssignPatientName = patientName || '';
@@ -572,16 +576,28 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
     const form = document.getElementById('assignForm');
     form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
 
-    // Filter choices inside the single dropdown to match all requested body parts
-    filterAssignModalExams(requestedBodyPart);
+    const examContainer = form ? form.querySelector('.exam-ms-component') : null;
+    const searchInput = examContainer ? examContainer.querySelector('.exam-ms-input') : null;
+    const msBox = examContainer ? examContainer.querySelector('.exam-ms-box') : null;
+
+    if (isReadOnly) {
+        if (examContainer) {
+            examContainer.setAttribute('data-readonly', 'true');
+        }
+    } else {
+        if (examContainer) {
+            examContainer.removeAttribute('data-readonly');
+        }
+        // Filter choices inside the single dropdown to match all requested body parts
+        filterAssignModalExams(requestedBodyPart);
+    }
 
     // Set or reset selected exams in the single multi-select component
-    const hiddenInput = form.querySelector('.exam-ms-hidden-input');
+    const hiddenInput = form ? form.querySelector('.exam-ms-hidden-input') : null;
     if (hiddenInput) {
         hiddenInput.value = assignedExam || '';
-        const container = hiddenInput.closest('.exam-ms-component');
-        if (container && typeof renderChips === 'function') {
-            renderChips(container);
+        if (examContainer && typeof renderChips === 'function') {
+            renderChips(examContainer);
         }
     }
 
@@ -616,9 +632,79 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
     checkLiveExamCategoryMatch();
     recalculateAssignPricing();
 
-    // Immediately run validation check if With PhilHealth Card and ID is 12 digits
-    if (hasCard && idInput && idInput.value.replace(/\D/g, '').length === 12) {
-        checkAssignPhilHealthDup(true);
+    // Configure Read-Only vs Editable mode UI elements
+    const modalTitle = document.getElementById('assignModalTitle');
+    const modalSubtitle = document.getElementById('assignModalSubtitle');
+    const modalIconBox = document.getElementById('assignModalHeaderIcon');
+    const examLabel = document.getElementById('assignExamLabel');
+    const requiredAsterisk = document.getElementById('assignExamRequiredAsterisk');
+    const submitBtn = document.getElementById('assignSubmitBtn');
+    const cancelBtn = document.getElementById('assignCancelBtn');
+    const badge = document.getElementById('assignAllowedBadge');
+    const warningBox = document.getElementById('assignExamWarning');
+
+    const phWithout = document.getElementById('assign_ph_without');
+    const phWith = document.getElementById('assign_ph_with');
+
+    if (isReadOnly) {
+        if (modalTitle) modalTitle.innerText = 'Assigned Examination Details';
+        if (modalSubtitle) modalSubtitle.innerText = 'Assigned procedure(s) and PhilHealth coverage summary (Read-Only)';
+        if (modalIconBox) {
+            modalIconBox.className = 'bg-blue-100 text-blue-600 p-2.5 rounded-lg border border-blue-200';
+            modalIconBox.innerHTML = '<i data-lucide="clipboard-check" class="w-6 h-6"></i>';
+        }
+        if (examLabel) examLabel.innerText = 'Assigned Examination Procedure(s)';
+        if (requiredAsterisk) requiredAsterisk.classList.add('hidden');
+        if (submitBtn) submitBtn.style.display = 'none';
+        if (cancelBtn) {
+            cancelBtn.innerText = 'Close';
+            cancelBtn.className = 'px-5 py-2 bg-gray-600 text-white text-xs font-semibold rounded-xl hover:bg-gray-700 transition cursor-pointer shadow-sm';
+        }
+        if (badge) badge.classList.add('hidden');
+        if (warningBox) warningBox.classList.add('hidden');
+
+        // Disable PhilHealth radios and inputs
+        if (phWithout) phWithout.disabled = true;
+        if (phWith) phWith.disabled = true;
+        if (idInput) idInput.disabled = true;
+        if (relSelect) relSelect.disabled = true;
+
+        if (searchInput) searchInput.style.display = 'none';
+        if (msBox) {
+            msBox.style.cursor = 'default';
+            msBox.classList.remove('cursor-text');
+        }
+    } else {
+        if (modalTitle) modalTitle.innerText = 'Assign Examination';
+        if (modalSubtitle) modalSubtitle.innerText = 'Select procedure(s) and specify PhilHealth coverage';
+        if (modalIconBox) {
+            modalIconBox.className = 'bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200';
+            modalIconBox.innerHTML = '<i data-lucide="clipboard-list" class="w-6 h-6"></i>';
+        }
+        if (examLabel) examLabel.innerText = 'Select Examination Procedure(s) ';
+        if (requiredAsterisk) requiredAsterisk.classList.remove('hidden');
+        if (submitBtn) submitBtn.style.display = 'block';
+        if (cancelBtn) {
+            cancelBtn.innerText = 'Cancel';
+            cancelBtn.className = 'px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer';
+        }
+
+        // Enable PhilHealth radios and inputs
+        if (phWithout) phWithout.disabled = false;
+        if (phWith) phWith.disabled = false;
+        if (idInput) idInput.disabled = false;
+        if (relSelect) relSelect.disabled = false;
+
+        if (searchInput) searchInput.style.display = '';
+        if (msBox) {
+            msBox.style.cursor = '';
+            msBox.classList.add('cursor-text');
+        }
+
+        // Immediately run validation check if With PhilHealth Card and ID is 12 digits
+        if (hasCard && idInput && idInput.value.replace(/\D/g, '').length === 12) {
+            checkAssignPhilHealthDup(true);
+        }
     }
 
     if (window.lucide) {
@@ -861,19 +947,25 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function togglePhilHealthId() {
-    const status = document.getElementById('modalPhilHealth').value;
+    const phEl = document.getElementById('modalPhilHealth');
+    if (!phEl) return;
+    const status = phEl.value;
     const idField = document.getElementById('philHealthIdField');
     const idInput = document.getElementById('modalPhilHealthId');
     const relSelect = document.getElementById('modalPhilHealthRelation');
     if (status === 'With PhilHealth Card') {
-        idField.classList.remove('hidden');
-        relSelect.required = true;
+        if (idField) idField.classList.remove('hidden');
+        if (relSelect) relSelect.required = true;
     } else {
-        idField.classList.add('hidden');
-        idInput.value = '';
-        idInput.setCustomValidity('');
-        relSelect.value = '';
-        relSelect.required = false;
+        if (idField) idField.classList.add('hidden');
+        if (idInput) {
+            idInput.value = '';
+            idInput.setCustomValidity('');
+        }
+        if (relSelect) {
+            relSelect.value = '';
+            relSelect.required = false;
+        }
     }
 }
 

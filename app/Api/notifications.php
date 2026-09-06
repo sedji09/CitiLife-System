@@ -31,49 +31,78 @@ if (!defined('PROJECT_DIR')) {
     define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'Citilife-System');
 }
 
-// Auto-insert overdue case notifications (Pending or Under Reading for 3+ hours)
-try {
-    $insertQuery = "
-        INSERT INTO notifications (user_id, role, branch_id, title, message, link, is_read, created_at)
-        SELECT 
-            c.radiologist_id AS user_id,
-            'radiologist' AS role,
-            NULL AS branch_id,
-            'Overdue Case Alert' AS title,
-            CONCAT('Case ', c.case_number, ' has been pending/under reading for over 3 hours.') AS message,
-            CONCAT('/', :projectDir, '/index.php?role=radiologist&page=case-review&id=', c.id, '&branch_id=', IFNULL(c.branch_id, '')) AS link,
-            0 AS is_read,
-            NOW() AS created_at
-        FROM cases c
-        WHERE c.status IN ('Pending', 'Under Reading')
-          AND c.image_status = 'Uploaded'
-          AND TIMESTAMPDIFF(HOUR, c.created_at, NOW()) >= 3
-          AND NOT EXISTS (
-              SELECT 1 FROM result_disputes rd
-              WHERE rd.case_id = c.id
-                AND rd.status NOT IN ('Resolved', 'Rejected')
-          )
-          AND NOT EXISTS (
-              SELECT 1 FROM notifications n
-              WHERE n.title = 'Overdue Case Alert'
-                AND n.link LIKE CONCAT('%page=case-review&id=', c.id, '%')
-          )
-    ";
-    $stmtInsert = $pdo->prepare($insertQuery);
-    $stmtInsert->execute(['projectDir' => PROJECT_DIR]);
+// Auto-insert and dismiss overdue case notifications (only for radiologist/admin_central, throttled to at most once every 60 seconds)
+if (in_array($_SESSION['role'] ?? '', ['radiologist', 'admin_central'])) {
+    if (!isset($_SESSION['last_overdue_check']) || (time() - $_SESSION['last_overdue_check'] > 60)) {
+        $_SESSION['last_overdue_check'] = time();
+        try {
+            $insertQuery = "
+                INSERT INTO notifications (user_id, role, branch_id, title, message, link, is_read, created_at)
+                SELECT 
+                    c.radiologist_id AS user_id,
+                    'radiologist' AS role,
+                    NULL AS branch_id,
+                    'Overdue Case Alert' AS title,
+                    CONCAT('Case ', c.case_number, ' has been pending/under reading for over 3 hours.') AS message,
+                    CONCAT('/', :projectDir, '/index.php?role=radiologist&page=case-review&id=', c.id, '&branch_id=', IFNULL(c.branch_id, '')) AS link,
+                    0 AS is_read,
+                    NOW() AS created_at
+                FROM cases c
+                WHERE c.status IN ('Pending', 'Under Reading')
+                  AND c.image_status = 'Uploaded'
+                  AND TIMESTAMPDIFF(HOUR, c.created_at, NOW()) >= 3
+                  AND NOT EXISTS (
+                      SELECT 1 FROM result_disputes rd
+                      WHERE rd.case_id = c.id
+                        AND rd.status NOT IN ('Resolved', 'Rejected')
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM notifications n
+                      WHERE n.title = 'Overdue Case Alert'
+                        AND n.link LIKE CONCAT('%page=case-review&id=', c.id, '%')
+                  )
+            ";
+            $stmtInsert = $pdo->prepare($insertQuery);
+            $stmtInsert->execute(['projectDir' => PROJECT_DIR]);
 
-    // Auto-dismiss overdue notifications for cases that are no longer pending or under reading
-    $updateQuery = "
-        UPDATE notifications n
-        JOIN cases c ON n.link LIKE CONCAT('%page=case-review&id=', c.id, '%')
-        SET n.is_read = 1
-        WHERE n.title = 'Overdue Case Alert'
-          AND n.is_read = 0
-          AND c.status NOT IN ('Pending', 'Under Reading')
-    ";
-    $pdo->exec($updateQuery);
-} catch (Exception $e) {
-    error_log("Error in overdue case notifier: " . $e->getMessage());
+            // Auto-dismiss overdue notifications for cases that are no longer pending or under reading
+            $stmtOverdue = $pdo->query("SELECT id, link FROM notifications WHERE title = 'Overdue Case Alert' AND is_read = 0");
+            $overdueNotifs = $stmtOverdue->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($overdueNotifs)) {
+                $caseIds = [];
+                $notifMap = [];
+                foreach ($overdueNotifs as $on) {
+                    if (preg_match('/page=case-review&id=(\d+)/', $on['link'], $m)) {
+                        $cid = (int)$m[1];
+                        $caseIds[] = $cid;
+                        $notifMap[$cid][] = (int)$on['id'];
+                    }
+                }
+                if (!empty($caseIds)) {
+                    $inClause = implode(',', array_fill(0, count($caseIds), '?'));
+                    $stmtChecked = $pdo->prepare("SELECT id FROM cases WHERE id IN ($inClause) AND status NOT IN ('Pending', 'Under Reading')");
+                    $stmtChecked->execute($caseIds);
+                    $doneCaseIds = $stmtChecked->fetchAll(PDO::FETCH_COLUMN);
+
+                    $toDismiss = [];
+                    foreach ($doneCaseIds as $dcId) {
+                        if (!empty($notifMap[$dcId])) {
+                            foreach ($notifMap[$dcId] as $nid) {
+                                $toDismiss[] = $nid;
+                            }
+                        }
+                    }
+                    if (!empty($toDismiss)) {
+                        $dClause = implode(',', array_fill(0, count($toDismiss), '?'));
+                        $stmtD = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id IN ($dClause)");
+                        $stmtD->execute($toDismiss);
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error in overdue case notifier: " . $e->getMessage());
+        }
+    }
 }
 
 $role     = $_SESSION['role'];

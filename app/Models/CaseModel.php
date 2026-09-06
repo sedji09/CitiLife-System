@@ -301,6 +301,7 @@ class CaseModel
         ];
 
         $cDataBefore = $this->getCaseById($caseId);
+        $wasForRevision = ($cDataBefore && ($cDataBefore['status'] === 'For Revision' || !empty($cDataBefore['re_edit_reason'])));
         $wasAlreadySubmitted = ($cDataBefore && !empty($cDataBefore['date_completed']));
 
         if ($this->saveFinding($caseId, $radiologistId, $saveData, $isFinal)) {
@@ -310,8 +311,27 @@ class CaseModel
             if ($isFinal && $cData && !empty($cData['branch_id'])) {
                 // Determine branch name/code for the message
                 $branchLabel = str_replace(' Branch', '', $cData['branch_name']);
+                $patientName = trim(($cData['first_name'] ?? '') . ' ' . ($cData['last_name'] ?? '')) ?: 'Patient';
 
-                if ($wasAlreadySubmitted) {
+                if ($wasForRevision) {
+                    $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
+
+                    // Notify RadTech that revised report has been submitted back
+                    $notificationModel->add(
+                        "Revised Report Submitted",
+                        "Radiologist has revised and re-submitted the report for Case #{$cData['case_number']} ({$patientName} - {$branchLabel}). Ready for review & release.",
+                        $link,
+                        null,
+                        'radtech',
+                        $cData['branch_id']
+                    );
+
+                    // Auto-dismiss the pending radiologist revision notification for this case
+                    try {
+                        $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title = 'Case Returned for Revision' AND link LIKE ? AND is_read = 0");
+                        $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
+                    } catch (\Exception $e) {}
+                } elseif ($wasAlreadySubmitted) {
                     // Check if dispute ticket exists for this case to link directly to disputes tab
                     require_once __DIR__ . '/ResultDisputeModel.php';
                     $disputeMdl = new ResultDisputeModel($this->pdo);
@@ -789,15 +809,18 @@ class CaseModel
         $year = date('Y');
         $bId = $branchId ?: 1;
 
-        $this->pdo->prepare("INSERT IGNORE INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 0)")->execute([$bId, $year]);
-
         // Transaction safety for generating numbers
         $stmt = $this->pdo->prepare("SELECT current_number FROM branch_case_sequences WHERE branch_id = ? AND year = ? FOR UPDATE");
         $stmt->execute([$bId, $year]);
-        $current = (int) $stmt->fetchColumn();
-        $next = $current + 1;
+        $current = $stmt->fetchColumn();
 
-        $this->pdo->prepare("UPDATE branch_case_sequences SET current_number = ? WHERE branch_id = ? AND year = ?")->execute([$next, $bId, $year]);
+        if ($current === false) {
+            $this->pdo->prepare("INSERT INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 1)")->execute([$bId, $year]);
+            $next = 1;
+        } else {
+            $next = ((int) $current) + 1;
+            $this->pdo->prepare("UPDATE branch_case_sequences SET current_number = ? WHERE branch_id = ? AND year = ?")->execute([$next, $bId, $year]);
+        }
 
         return "{$branchCode}{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
     }
@@ -808,14 +831,18 @@ class CaseModel
     public function generateRequestNumber()
     {
         $year = date('Y');
-        $this->pdo->prepare("INSERT IGNORE INTO request_sequences (year, current_number) VALUES (?, 0)")->execute([$year]);
 
         $stmt = $this->pdo->prepare("SELECT current_number FROM request_sequences WHERE year = ? FOR UPDATE");
         $stmt->execute([$year]);
-        $current = (int) $stmt->fetchColumn();
-        $next = $current + 1;
+        $current = $stmt->fetchColumn();
 
-        $this->pdo->prepare("UPDATE request_sequences SET current_number = ? WHERE year = ?")->execute([$next, $year]);
+        if ($current === false) {
+            $this->pdo->prepare("INSERT INTO request_sequences (year, current_number) VALUES (?, 1)")->execute([$year]);
+            $next = 1;
+        } else {
+            $next = ((int) $current) + 1;
+            $this->pdo->prepare("UPDATE request_sequences SET current_number = ? WHERE year = ?")->execute([$next, $year]);
+        }
 
         return "REQ-{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
     }

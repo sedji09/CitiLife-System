@@ -862,7 +862,7 @@ $statusBadge = [
                                 class="flex items-center gap-2 cursor-pointer bg-white p-2 rounded-lg border border-gray-200 hover:border-red-300 transition">
                                 <input type="checkbox" id="chk-sex" class="rounded text-red-600 focus:ring-red-500"
                                     onchange="toggleCorrectionInputs()">
-                                <span class="font-medium">Sex / Gender</span>
+                                <span class="font-medium">Sex</span>
                             </label>
                         </div>
 
@@ -909,14 +909,14 @@ $statusBadge = [
                                 </div>
                             </div>
 
-                            <!-- Sex / Gender Input -->
+                            <!-- Sex Input -->
                             <div id="field-correct-sex" class="hidden">
                                 <label class="block text-[11px] font-bold text-gray-700 mb-1">
-                                    Correct Sex / Gender <span class="text-red-500">*</span>
+                                    Correct Sex <span class="text-red-500">*</span>
                                 </label>
                                 <select id="input-correct-sex"
                                     class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
-                                    <option value="" disabled selected>-- Select Correct Sex / Gender --</option>
+                                    <option value="" disabled selected>-- Select Correct Sex --</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                 </select>

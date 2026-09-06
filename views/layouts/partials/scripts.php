@@ -1272,7 +1272,8 @@
                   }
                   if (this.notifSystem) {
                     newNotifs.forEach(n => {
-                      this.showToast(n.title, n.message, 'info', n.link, n.id);
+                      const category = this.getNotificationCategory(n);
+                      this.showToast(n.title, n.message, category, n.link, n.id);
                     });
                   }
                 }
@@ -1283,41 +1284,96 @@
           })
           .catch(err => console.error('Error fetching notifications:', err));
       },
-      showToast(title, message, type = 'info', link = '#', notificationId = null) {
+      showToast(title, message, type = null, link = '#', notificationId = null) {
         const id = Date.now() + Math.random();
-        this.toasts.push({ id, title, message, type, link, notificationId });
+        const finalType = type || this.getNotificationCategory({ title, message });
+        this.toasts.push({ id, title, message, type: finalType, link, notificationId });
         nextTick(() => this.renderIcons());
         setTimeout(() => {
           this.dismissToast(id);
         }, 5000); // auto dismiss after 5s
       },
-      getToastIcon(toast) {
-        const title = (toast.title || '').toLowerCase();
-        const message = (toast.message || '').toLowerCase();
+      getNotificationCategory(item) {
+        if (!item) return 'info';
 
-        if (toast.type === 'success') return 'check-circle';
-        if (toast.type === 'error') return 'alert-circle';
+        const type = (item.type || '').toLowerCase();
+        if (type === 'success') return 'success';
+        if (type === 'error' || type === 'danger') return 'danger';
+        if (type === 'warning' || type === 'warn') return 'warning';
+        if (type === 'purple') return 'purple';
 
-        // Case notifications
-        if (title.includes('case') || title.includes('kaso') || message.includes('case') || message.includes('kaso') || title.includes('xray') || message.includes('xray')) {
-          return 'activity'; // pulse waveform for medical cases
+        const title = (item.title || '').toLowerCase();
+        const message = (item.message || '').toLowerCase();
+        const combined = `${title} ${message}`;
+
+        // 1. SUCCESS / GREEN (Completed, Approved, Released, Resolved, Verified, Success)
+        if (
+          combined.includes('approved') ||
+          combined.includes('released') ||
+          combined.includes('resolved') ||
+          combined.includes('verified') ||
+          combined.includes('success') ||
+          (combined.includes('completed') && !combined.includes('reading completed'))
+        ) {
+          return 'success';
         }
 
-        // Default
-        return 'bell';
-      },
-      getToastStyle(toast) {
-        const icon = this.getToastIcon(toast);
-        if (toast.type === 'success') {
-          return { bg: '#f0fdf4', color: '#16a34a' }; // Green
+        // 2. VIOLET / PURPLE (Report Ready, Edited Report Ready, Report Updated)
+        if (
+          combined.includes('report ready') ||
+          combined.includes('report updated') ||
+          combined.includes('edited report')
+        ) {
+          return 'purple';
         }
-        if (toast.type === 'error') {
-          return { bg: '#fef2f2', color: '#dc2626' }; // Red
+
+        // 3. DANGER / RED (Rejected, Denied, Cancelled, Lockout, Critical, Failed, Error)
+        if (
+          combined.includes('reject') ||
+          combined.includes('denied') ||
+          combined.includes('cancel') ||
+          combined.includes('lockout') ||
+          combined.includes('critical') ||
+          combined.includes('failed') ||
+          combined.includes('error')
+        ) {
+          return 'danger';
         }
-        if (icon === 'activity') {
-          return { bg: '#fff5f5', color: '#dc2626' }; // Soft red matching Citilife brand!
+
+        // 4. WARNING / AMBER / ORANGE (Payment Required, Pending Payment, Payment, Overdue, Error Report, Dispute, Escalated, Feedback, Alert, Warning)
+        if (
+          combined.includes('overdue') ||
+          combined.includes('error report') ||
+          combined.includes('dispute') ||
+          combined.includes('escalat') ||
+          combined.includes('feedback') ||
+          combined.includes('alert') ||
+          combined.includes('warning') ||
+          combined.includes('payment') ||
+          combined.includes('bayad') ||
+          combined.includes('amount due')
+        ) {
+          return 'warning';
         }
-        return { bg: '#eff6ff', color: '#3b82f6' }; // Blue
+
+        // 5. INFO / BLUE (New X-ray, Reading, Request, Registration, Account, etc.)
+        if (
+          combined.includes('x-ray') ||
+          combined.includes('xray') ||
+          combined.includes('image') ||
+          combined.includes('upload') ||
+          combined.includes('report') ||
+          combined.includes('reading') ||
+          combined.includes('request') ||
+          combined.includes('registration') ||
+          combined.includes('account') ||
+          combined.includes('case') ||
+          combined.includes('kaso')
+        ) {
+          return 'info';
+        }
+
+        return 'danger';
       },
       getNotificationCircleClass(item) {
         if (!item) return 'notif-color-read';
@@ -1325,64 +1381,40 @@
           return 'notif-color-read';
         }
 
-        const title = (item.title || '').toLowerCase();
-
-        // 1. SUCCESS / GREEN (Completed, Approved, Released, Resolved, Verified)
-        if (
-          title.includes('approved') ||
-          title.includes('released') ||
-          title.includes('resolved') ||
-          title.includes('verified') ||
-          (title.includes('completed') && !title.includes('reading completed'))
-        ) {
-          return 'notif-color-success';
+        const category = this.getNotificationCategory(item);
+        if (category === 'success') return 'notif-color-success';
+        if (category === 'purple') return 'notif-color-purple';
+        if (category === 'danger') return 'notif-color-danger';
+        if (category === 'warning') return 'notif-color-warning';
+        return 'notif-color-info';
+      },
+      getToastClass(toast) {
+        const category = this.getNotificationCategory(toast);
+        if (category === 'success') return 'notif-color-success';
+        if (category === 'purple') return 'notif-color-purple';
+        if (category === 'danger') return 'notif-color-danger';
+        if (category === 'warning') return 'notif-color-warning';
+        return 'notif-color-info';
+      },
+      getToastIcon(toast) {
+        if (toast && toast.icon) return toast.icon;
+        return 'bell';
+      },
+      getToastStyle(toast) {
+        const category = this.getNotificationCategory(toast);
+        if (category === 'success') {
+          return { bg: '#d1fae5', color: '#059669' };
         }
-
-        // 2. VIOLET / PURPLE (Report Ready, Edited Report Ready, Report Updated)
-        if (title.includes('report ready') || title.includes('report updated')) {
-          return 'notif-color-purple';
+        if (category === 'purple') {
+          return { bg: '#ede9fe', color: '#7c3aed' };
         }
-
-        // 3. DANGER / RED (Rejected, Denied, Cancelled, Lockout, Critical)
-        if (
-          title.includes('reject') ||
-          title.includes('denied') ||
-          title.includes('cancel') ||
-          title.includes('lockout') ||
-          title.includes('critical')
-        ) {
-          return 'notif-color-danger';
+        if (category === 'danger') {
+          return { bg: '#fee2e2', color: '#dc2626' };
         }
-
-        // 3. WARNING / AMBER / ORANGE (Overdue, Error Report, Dispute, Escalated, Feedback, Alert)
-        if (
-          title.includes('overdue') ||
-          title.includes('error report') ||
-          title.includes('dispute') ||
-          title.includes('escalat') ||
-          title.includes('feedback') ||
-          title.includes('alert') ||
-          title.includes('warning')
-        ) {
-          return 'notif-color-warning';
+        if (category === 'warning') {
+          return { bg: '#fef3c7', color: '#d97706' };
         }
-
-        // 4. INFO / BLUE (New X-ray, Report Ready, Reading, Payment, Request, etc.)
-        if (
-          title.includes('x-ray') ||
-          title.includes('image') ||
-          title.includes('upload') ||
-          title.includes('report') ||
-          title.includes('reading') ||
-          title.includes('payment') ||
-          title.includes('request') ||
-          title.includes('registration') ||
-          title.includes('account')
-        ) {
-          return 'notif-color-info';
-        }
-
-        return 'notif-color-danger';
+        return { bg: '#dbeafe', color: '#2563eb' };
       },
       dismissToast(id) {
         this.toasts = this.toasts.filter(t => t.id !== id);

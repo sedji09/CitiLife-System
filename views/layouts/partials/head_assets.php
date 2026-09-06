@@ -337,9 +337,9 @@
     body.theme-dark input:focus,
     body.theme-dark textarea:focus,
     body.theme-dark select:focus {
-      border-color: #ef4444 !important;
-      outline: none;
-      --tw-ring-color: #ef4444 !important;
+      border-color: #6366f1 !important;
+      outline: none !important;
+      --tw-ring-color: rgba(99, 102, 241, 0.25) !important;
     }
 
     /* Fix Date Picker Icon Visibility */
@@ -635,20 +635,87 @@
       animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* Toast Dark Theme styling */
-    body.theme-dark .toast-item {
-      background: rgba(31, 41, 55, 0.85) !important;
-      border-color: rgba(255, 255, 255, 0.08) !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+    /* ===== Toast Notification Light Theme Cards ===== */
+    .toast-card-success {
+      background-color: #f0fdf4 !important;
+      border: 1px solid #bbf7d0 !important;
     }
+    .toast-card-success .toast-title { color: #14532d !important; }
+    .toast-card-success .toast-msg { color: #166534 !important; }
+    .toast-card-success .toast-close { color: #15803d !important; }
 
-    body.theme-dark .toast-title {
-      color: #f3f4f6 !important;
+    .toast-card-info {
+      background-color: #eff6ff !important;
+      border: 1px solid #bfdbfe !important;
     }
+    .toast-card-info .toast-title { color: #1e3a8a !important; }
+    .toast-card-info .toast-msg { color: #1d4ed8 !important; }
+    .toast-card-info .toast-close { color: #2563eb !important; }
 
-    body.theme-dark .toast-msg {
-      color: #9ca3af !important;
+    .toast-card-purple {
+      background-color: #faf5ff !important;
+      border: 1px solid #e9d5ff !important;
     }
+    .toast-card-purple .toast-title { color: #581c87 !important; }
+    .toast-card-purple .toast-msg { color: #6b21a8 !important; }
+    .toast-card-purple .toast-close { color: #7e22ce !important; }
+
+    .toast-card-danger {
+      background-color: #fef2f2 !important;
+      border: 1px solid #fecaca !important;
+    }
+    .toast-card-danger .toast-title { color: #7f1d1d !important; }
+    .toast-card-danger .toast-msg { color: #991b1b !important; }
+    .toast-card-danger .toast-close { color: #b91c1c !important; }
+
+    .toast-card-warning {
+      background-color: #fffbeb !important;
+      border: 1px solid #fde68a !important;
+    }
+    .toast-card-warning .toast-title { color: #713f12 !important; }
+    .toast-card-warning .toast-msg { color: #854d0e !important; }
+    .toast-card-warning .toast-close { color: #a16207 !important; }
+
+    /* Dark Mode Toast Cards */
+    body.theme-dark .toast-card-success {
+      background-color: #064e3b !important;
+      border-color: #047857 !important;
+    }
+    body.theme-dark .toast-card-success .toast-title { color: #ecfdf5 !important; }
+    body.theme-dark .toast-card-success .toast-msg { color: #a7f3d0 !important; }
+    body.theme-dark .toast-card-success .toast-close { color: #6ee7b7 !important; }
+
+    body.theme-dark .toast-card-info {
+      background-color: #1e3a8a !important;
+      border-color: #1d4ed8 !important;
+    }
+    body.theme-dark .toast-card-info .toast-title { color: #eff6ff !important; }
+    body.theme-dark .toast-card-info .toast-msg { color: #bfdbfe !important; }
+    body.theme-dark .toast-card-info .toast-close { color: #93c5fd !important; }
+
+    body.theme-dark .toast-card-purple {
+      background-color: #4c1d95 !important;
+      border-color: #6d28d9 !important;
+    }
+    body.theme-dark .toast-card-purple .toast-title { color: #faf5ff !important; }
+    body.theme-dark .toast-card-purple .toast-msg { color: #e9d5ff !important; }
+    body.theme-dark .toast-card-purple .toast-close { color: #c4b5fd !important; }
+
+    body.theme-dark .toast-card-danger {
+      background-color: #7f1d1d !important;
+      border-color: #b91c1c !important;
+    }
+    body.theme-dark .toast-card-danger .toast-title { color: #fef2f2 !important; }
+    body.theme-dark .toast-card-danger .toast-msg { color: #fecaca !important; }
+    body.theme-dark .toast-card-danger .toast-close { color: #fca5a5 !important; }
+
+    body.theme-dark .toast-card-warning {
+      background-color: #78350f !important;
+      border-color: #b45309 !important;
+    }
+    body.theme-dark .toast-card-warning .toast-title { color: #fffbeb !important; }
+    body.theme-dark .toast-card-warning .toast-msg { color: #fde68a !important; }
+    body.theme-dark .toast-card-warning .toast-close { color: #fcd34d !important; }
 
     /* Prevent Vue FOUC flashes */
     [v-cloak] {

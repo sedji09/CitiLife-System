@@ -64,9 +64,9 @@ class ReEditController
                 exit;
             }
 
-            // Validate status: case should be Report Ready
-            if ($case['status'] !== 'Report Ready') {
-                echo json_encode(['success' => false, 'message' => 'Only cases with "Report Ready" status can be reverted to draft.']);
+            // Validate status: case should be Report Ready and not released
+            if ($case['status'] !== 'Report Ready' || (!empty($case['released']) && (int)$case['released'] === 1)) {
+                echo json_encode(['success' => false, 'message' => 'Only unreleased cases with "Report Ready" status can be reverted to draft.']);
                 exit;
             }
 
@@ -87,18 +87,25 @@ class ReEditController
                 $case['branch_id'] ?? $branchId
             );
 
-            // Notify Radiologist if assigned
-            if (!empty($case['radiologist_id'])) {
-                $link = (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . "/index.php?page=case-review&id={$caseId}";
-                $notificationModel->add(
-                    'Case Re-Edit Requested',
-                    "RadTech requested re-edit for Case #{$caseNumber} ({$patientName}). Reason: \"{$reason}\"",
-                    $link,
-                    (int) $case['radiologist_id'],
-                    'radiologist',
-                    $case['branch_id'] ?? null
-                );
-            }
+            // Notify Radiologist (assigned or all radiologists)
+            $projectPrefix = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
+            $link = "{$projectPrefix}/index.php?role=radiologist&page=worklist&highlight=" . urlencode($caseNumber);
+            $assignedRadId = !empty($case['radiologist_id']) ? (int) $case['radiologist_id'] : null;
+
+            $notificationModel->add(
+                'Case Returned for Revision',
+                "RadTech returned Case #{$caseNumber} ({$patientName}) for revision. Notes: \"{$reason}\"",
+                $link,
+                $assignedRadId,
+                'radiologist',
+                null
+            );
+
+            // Auto-dismiss previous "Report Ready" / "Revised Report Submitted" notifications for this case
+            try {
+                $stmtDismiss = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title IN ('Report Ready', 'Edited Report Ready', 'Revised Report Submitted') AND link LIKE ? AND is_read = 0");
+                $stmtDismiss->execute(["%{$caseNumber}%"]);
+            } catch (\Exception $e) {}
 
             echo json_encode([
                 'success' => true,

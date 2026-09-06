@@ -560,10 +560,18 @@ setInterval(() => {
 <!-- Prominent Spinning Loader -->
 <div id="release-loading-overlay"
     class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
-    <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mb-4"></div>
-    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center">Preparing the results...
-    </p>
+    <div id="release-spinner-container">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mb-4"></div>
+    </div>
+    <div id="release-success-icon" class="hidden mb-4">
+        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+    </div>
+    <h3 id="release-title-text" class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the results...</p>
 </div>
 
 <script>
@@ -651,7 +659,23 @@ setInterval(() => {
                     const result = await response.json();
 
                     if (result.success) {
-                        // Success! Refresh page to show success flash message
+                        const spinner = document.getElementById('release-spinner-container');
+                        const successIcon = document.getElementById('release-success-icon');
+                        const titleEl = document.getElementById('release-title-text');
+                        const statusTextEl = document.getElementById('release-status-text');
+
+                        if (spinner) spinner.classList.add('hidden');
+                        if (successIcon) successIcon.classList.remove('hidden');
+                        if (titleEl) {
+                            titleEl.textContent = 'Result Released!';
+                            titleEl.className = 'text-xl font-bold text-green-600 dark:text-green-400';
+                        }
+                        if (statusTextEl) {
+                            statusTextEl.textContent = 'Case moved to X-ray Patient Records.';
+                            statusTextEl.className = 'text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
+                        }
+
+                        await new Promise(r => setTimeout(r, 1200));
                         window.location.reload();
                     } else {
                         throw new Error(result.message || 'Server rejected the upload.');
