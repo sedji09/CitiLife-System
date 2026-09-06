@@ -262,6 +262,11 @@
                                                 class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400">
                                                 <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected
                                             </span>
+                                            <?php if (!empty($payment['rejection_reason'])): ?>
+                                                <div class="text-xs text-red-600 mt-1.5 max-w-xs break-words" title="<?= htmlspecialchars($payment['rejection_reason']) ?>">
+                                                    <span class="font-semibold">Reason:</span> <?= htmlspecialchars($payment['rejection_reason']) ?>
+                                                </div>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-6 py-4 text-gray-500">
@@ -487,7 +492,8 @@
 
         const statusBadge = (payment.status === 'Verified')
             ? `<span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Verified</span>`
-            : `<span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected</span>`;
+            : `<span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-400"><i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Rejected</span>`
+            + (payment.rejection_reason ? `<div class="text-xs text-red-600 mt-1.5 max-w-xs break-words" title="${escapeHtml(payment.rejection_reason)}"><span class="font-semibold">Reason:</span> ${escapeHtml(payment.rejection_reason)}</div>` : '');
 
         tr.innerHTML = `
             <td class="px-6 py-4">
@@ -796,12 +802,12 @@
         if (action === 'verify') {
             Swal.fire({
                 icon: 'warning',
-                title: 'Confirm Approval',
-                text: 'Would you like to confirm verifying this payment? The patient will be able to proceed to X-ray.',
+                title: 'Confirm Payment Verification',
+                text: 'Would you like to confirm verifying this payment? The patient will be approved and moved directly to the RadTech Patient Queue for X-ray.',
                 showCancelButton: true,
-                confirmButtonColor: '#3b82f6',
+                confirmButtonColor: '#16a34a',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, Proceed',
+                confirmButtonText: 'Yes, Verify & Queue',
                 cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -811,15 +817,63 @@
         } else if (action === 'reject') {
             Swal.fire({
                 icon: 'warning',
-                title: 'Confirm Rejection',
-                text: 'Would you like to confirm rejecting this payment? The patient will need to resubmit their proof of payment.',
+                title: 'Reject Payment Confirmation',
+                html: `
+                    <div class="text-left">
+                        <p class="text-sm text-gray-600 mb-3 leading-relaxed">The request will be returned to the patient so they can resubmit the correct reference number and receipt screenshot.</p>
+                        <div class="mb-3">
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Quick Select Reason:</label>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRejectReason('Invalid Reference Number (does not match receipt)')">Invalid Ref #</button>
+                                <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRejectReason('Blurry / unreadable receipt screenshot. Please upload a clear image.')">Blurry Screenshot</button>
+                                <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRejectReason('Incorrect payment amount sent. Please pay the exact amount due.')">Amount Mismatch</button>
+                                <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRejectReason('Receipt screenshot does not match CitiLife branch GCash transaction.')">Receipt Mismatch</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="swal-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
+                            <textarea id="swal-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-gray-800 transition" placeholder="State why this payment is being rejected so the patient knows what to fix..."></textarea>
+                        </div>
+                    </div>
+                `,
                 showCancelButton: true,
                 confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, Reject',
-                cancelButtonText: 'Cancel'
+                confirmButtonText: 'Confirm Rejection',
+                cancelButtonText: 'Cancel',
+                focusConfirm: false,
+                customClass: {
+                    popup: 'rounded-2xl text-left'
+                },
+                didOpen: () => {
+                    window.setRejectReason = function(reason) {
+                        const textarea = document.getElementById('swal-rejection-reason');
+                        if (textarea) {
+                            textarea.value = reason;
+                            textarea.focus();
+                        }
+                    };
+                    const textarea = document.getElementById('swal-rejection-reason');
+                    if (textarea) textarea.focus();
+                },
+                preConfirm: () => {
+                    const reason = (document.getElementById('swal-rejection-reason')?.value || '').trim();
+                    if (!reason) {
+                        Swal.showValidationMessage('Please provide a reason for rejecting this payment.');
+                        return false;
+                    }
+                    return reason;
+                }
             }).then((result) => {
-                if (result.isConfirmed) {
+                if (result.isConfirmed && result.value) {
+                    let reasonInput = form.querySelector('input[name="rejection_reason"]');
+                    if (!reasonInput) {
+                        reasonInput = document.createElement('input');
+                        reasonInput.type = 'hidden';
+                        reasonInput.name = 'rejection_reason';
+                        form.appendChild(reasonInput);
+                    }
+                    reasonInput.value = result.value;
                     form.submit();
                 }
             });

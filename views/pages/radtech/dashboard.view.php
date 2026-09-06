@@ -304,11 +304,12 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
         <?php foreach ($radiologistsWorkload as $rad): ?>
           <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition flex flex-col">
             <div class="flex items-center gap-3 mb-3">
-              <?php if (!empty($rad['avatar'])): ?>
-                <img src="<?= htmlspecialchars($rad['avatar']) ?>" alt="Profile" class="h-10 w-10 rounded-full object-cover shrink-0 border border-gray-200">
+              <?php $radAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($rad['avatar']) : $rad['avatar']; ?>
+              <?php if (!empty($radAvatarUrl)): ?>
+                <img src="<?= htmlspecialchars($radAvatarUrl) ?>" alt="Profile" class="h-10 w-10 rounded-full object-cover shrink-0 border border-gray-200">
               <?php else: ?>
                 <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
-                  <?= htmlspecialchars(strtoupper(substr($rad['radiologist_name'], 0, 1))) ?>
+                  <?= htmlspecialchars(strtoupper(substr($rad['radiologist_name'] ?? 'R', 0, 1))) ?>
                 </div>
               <?php endif; ?>
               <div class="min-w-0">

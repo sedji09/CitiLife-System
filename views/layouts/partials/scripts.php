@@ -1129,6 +1129,8 @@
                 this.userAvatar = data.avatar;
                 window.__APP__.userAvatar = data.avatar;
               }
+              this.uploadFile = null;
+              this.uploadPreview = null;
 
               if (this.role === 'patient') {
                 window.__APP__.userFirstName = data.first_name;

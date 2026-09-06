@@ -160,6 +160,96 @@ class PatientDetailsController
             }
         }
 
+        // 2.5 Handle Update Patient Info (from Edit Patient Modal on Upload X-Ray page)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_patient_info'])) {
+            try {
+                $patientId   = (int)($_POST['patient_id'] ?? 0);
+                $firstName   = trim($_POST['first_name'] ?? '');
+                $middleName  = trim($_POST['middle_name'] ?? '');
+                $lastName    = trim($_POST['last_name'] ?? '');
+                $birthdate   = trim($_POST['birthdate'] ?? '');
+                $sex         = trim($_POST['sex'] ?? '');
+                $contact     = trim($_POST['contact_number'] ?? '');
+                $homeAddress = trim($_POST['home_address'] ?? '');
+                $philhealthStatus = trim($_POST['philhealth_status'] ?? 'Without PhilHealth Card');
+                $philhealthId = trim($_POST['philhealth_id'] ?? '');
+                $philhealthRelation = trim($_POST['philhealth_relation'] ?? '');
+
+                if (!$patientId || !$firstName || !$lastName || !$birthdate || !$sex || !$contact) {
+                    throw new Exception("Please provide all required patient details (First Name, Last Name, Birthdate, Sex, Contact Number).");
+                }
+
+                $hasPhilHealth = ($philhealthStatus === 'With PhilHealth Card');
+                $philhealthIdToSave = $hasPhilHealth ? $philhealthId : null;
+                $philhealthRelationToSave = $hasPhilHealth ? $philhealthRelation : null;
+
+                // Validate PhilHealth uniqueness if supplied
+                if ($hasPhilHealth && $philhealthIdToSave && $philhealthRelationToSave) {
+                    $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected' AND patient_id != :pat_id";
+                    $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Rejected' AND patient_id != :pat_id";
+                    $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
+                    $stmtOwner->execute([':id' => $philhealthIdToSave, ':pat_id' => $patientId]);
+                    if ($philhealthRelationToSave === 'Principal Member' && $stmtOwner->fetchColumn()) {
+                        throw new Exception("This PhilHealth ID is already registered to another Principal Member.");
+                    }
+
+                    $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected' AND patient_id != :pat_id";
+                    $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected' AND patient_id != :pat_id";
+                    $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
+                    $stmtFamily->execute([':id' => $philhealthIdToSave, ':pat_id' => $patientId]);
+                    if ($philhealthRelationToSave === 'Qualified Dependent' && $stmtFamily->fetchColumn()) {
+                        throw new Exception("This PhilHealth ID is already registered to another Qualified Dependent.");
+                    }
+                }
+
+                // Update patient record
+                require_once __DIR__ . '/../../Models/PatientModel.php';
+                $patMdl = new \PatientModel($pdo);
+                $patMdl->updatePatient($patientId, [
+                    'first_name'     => $firstName,
+                    'middle_name'    => $middleName ?: null,
+                    'last_name'      => $lastName,
+                    'birthdate'      => $birthdate,
+                    'sex'            => $sex,
+                    'contact_number' => $contact,
+                    'home_address'   => $homeAddress
+                ]);
+
+                // Update case philhealth columns
+                $stmtCaseUp = $pdo->prepare("UPDATE cases SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ? WHERE id = ?");
+                $stmtCaseUp->execute([$philhealthStatus, $philhealthIdToSave, $philhealthRelationToSave, $caseId]);
+
+                // Also update corresponding request if linked
+                $stmtReqCheck = $pdo->prepare("SELECT request_id FROM cases WHERE id = ?");
+                $stmtReqCheck->execute([$caseId]);
+                $linkedReqId = $stmtReqCheck->fetchColumn();
+                if ($linkedReqId) {
+                    $stmtReqUp = $pdo->prepare("UPDATE requests SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ? WHERE id = ?");
+                    $stmtReqUp->execute([$philhealthStatus, $philhealthIdToSave, $philhealthRelationToSave, $linkedReqId]);
+                }
+
+                // If AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Patient information updated successfully.']);
+                    exit;
+                }
+
+                $_SESSION['flash_success'] = 'Patient information updated successfully.';
+                $fromParam = $_GET['from'] ?? '';
+                $redirectUrl = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . $caseId . ($fromParam ? "&from=" . urlencode($fromParam) : "");
+                header("Location: " . $redirectUrl);
+                exit;
+            } catch (\Throwable $e) {
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                    exit;
+                }
+                $errorMsg = "Error updating patient info: " . $e->getMessage();
+            }
+        }
+
         // 3. Handle Submit to Radiologist
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_radiologist'])) {
             try {

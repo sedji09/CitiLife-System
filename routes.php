@@ -128,6 +128,8 @@ $router->get('/test-env', function() {
 $router->get('/test-email', 'app/Api/test_email.php');
 
 $router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
+$router->post('/radtech/re-edit-case', 'App\Controllers\radtech\ReEditController@handle', ['auth']);
+$router->post('/app/api/re_edit_case.php', 'App\Controllers\radtech\ReEditController@handle', ['auth']);
 $router->get('/app/api/messages.php', 'app/Api/messages.php');
 $router->post('/app/api/messages.php', 'app/Api/messages.php');
 $router->post('/app/api/update_profile.php', 'app/Api/update_profile.php');

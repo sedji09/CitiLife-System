@@ -1,5 +1,5 @@
 <!-- Topbar -->
-<div class="bg-white border-b px-6 py-4 relative <?= $isPatient ? 'hidden md:block' : '' ?>">
+<div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-30 shadow-sm <?= $isPatient ? 'hidden md:block' : '' ?>">
   <div class="flex items-center justify-between gap-4">
     <div>
       <?php if ($role !== 'patient'): ?>

@@ -144,9 +144,10 @@
                                         <div class="flex items-center gap-3">
                                             <div
                                                 class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
-                                                <?php if (!empty($u['avatar'])): ?>
-                                                    <img src="<?= htmlspecialchars($u['avatar']) ?>" alt="Avatar"
-                                                        class="h-full w-full object-cover">
+                                                 <?php $uAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($u['avatar']) : $u['avatar']; ?>
+                                                 <?php if (!empty($uAvatarUrl)): ?>
+                                                     <img src="<?= htmlspecialchars($uAvatarUrl) ?>" alt="Avatar"
+                                                         class="h-full w-full object-cover">
                                                 <?php else: ?>
                                                     <?= substr($u['email'], 0, 2) ?>
                                                 <?php endif; ?>
@@ -274,13 +275,9 @@
                 </div>
             </div>
 
-            <div>
-                <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Initial Password</label>
-                <div class="relative">
-                    <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="text" id="password" name="password" required readonly
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-100 text-gray-600 text-sm focus:outline-none transition-all cursor-not-allowed">
-                </div>
+            <div class="p-3 bg-blue-50/80 border border-blue-100 rounded-xl text-xs text-blue-800 flex items-center gap-2.5">
+                <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0"></i>
+                <span>An initial password will be automatically generated and sent directly to the staff member's email address.</span>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -448,12 +445,14 @@
     function openAddUserModal() {
         // Clear inputs to prevent lingering values or autofill
         document.getElementById('email').value = '';
-        document.getElementById('password').value = generateRandomPassword();
+        const passEl = document.getElementById('password');
+        if (passEl) passEl.value = generateRandomPassword();
         document.getElementById('role').value = '';
         document.getElementById('branch_id').value = '';
 
         document.getElementById('addUserModal').classList.remove('hidden');
         applyUserModalTheme('addUserModal');
+        if (window.lucide) window.lucide.createIcons();
     }
 
     function closeAddUserModal() {

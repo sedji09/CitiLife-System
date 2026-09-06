@@ -36,15 +36,17 @@ if ($myBranchId) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestId = $_POST['request_id'] ?? null;
     $action = $_POST['action'] ?? '';
+    $rejectionReason = trim($_POST['rejection_reason'] ?? '');
 
     try {
-        $result = $recordModel->processRequestAction($requestId, $action, $myBranchName, $notificationModel);
+        $result = $recordModel->processRequestAction($requestId, $action, $myBranchName, $notificationModel, $rejectionReason);
         $message = $result['message'];
         $messageType = $result['success'] ? 'success' : 'error';
         
         if ($result['success']) {
-            $logAction = ($action === 'Approve') ? "Information request approved" : "Information request rejected";
-            $auditLogModel->addLog($currentUserId, $logAction, 'Record Requests', 'Request', $requestId, "Request ID: $requestId", $myBranchId);
+            $logAction = ($action === 'Approve') ? "Information request approved" : "Information request denied";
+            $auditDetails = "Request ID: $requestId" . ($action === 'Deny' ? " | Reason: $rejectionReason" : "");
+            $auditLogModel->addLog($currentUserId, $logAction, 'Record Requests', 'Request', $requestId, $auditDetails, $myBranchId);
         }
     } catch (\Exception $e) {
         $message = "Error: " . $e->getMessage();

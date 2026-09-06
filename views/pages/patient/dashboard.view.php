@@ -229,7 +229,9 @@ $statusDescriptions = [
     'Report Ready' => 'Your X-ray report is ready. Please visit the branch to collect your results.',
     'Released' => 'Your X-ray report has been released. You can now view your report result below.',
     'Completed' => 'Your X-ray examination has been completed. You can view your report result below.',
-    'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
+    'Rejected' => !empty($latestCase['rejection_reason']) 
+        ? 'Your request was rejected: "' . htmlspecialchars($latestCase['rejection_reason']) . '". Please review the details or submit a new request.' 
+        : 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
     'Cancelled' => 'You have cancelled this request.',
     // Error Correction Descriptions
     'Issue Reported' => 'Your error report has been received and queued for review by the RadTech team.',
@@ -811,7 +813,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 <?php endif; ?>
 
                 <!-- Status Summary Box -->
-                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box"
+                <div class="<?= $isRejected ? 'mt-0' : 'mt-4 sm:mt-5' ?> rounded-xl p-4 sm:p-5 border status-summary-box"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
                     <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
                         Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
@@ -821,6 +823,25 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
                     <?php endif; ?>
                 </div>
+
+                <?php if (($latestCase['status'] ?? '') === 'Pending Payment' && !empty($latestCase['rejection_reason'])): ?>
+                    <!-- Payment Issue Notice -->
+                    <div class="mt-4 rounded-2xl bg-red-50/95 border border-red-200 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
+                        <div class="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 stroke-[2.2]"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-bold text-red-900">Payment Submission Returned</h4>
+                            <p class="text-xs sm:text-sm text-red-800 mt-1 leading-relaxed">
+                                <span class="font-semibold">Reason from Clinic:</span>
+                                <span class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason']) ?>"</span>
+                            </p>
+                            <p class="text-xs text-red-700 mt-2">
+                                Please click the <strong>Pay Now</strong> button below to resubmit the correct Reference Number and a clear screenshot of your payment receipt.
+                            </p>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Separator Divider -->
                 <hr class="border-t border-gray-200" style="margin-top: 24px; margin-bottom: 24px; border-color: #e5e7eb;">
@@ -919,10 +940,24 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </div>
             </div>
 
-            <?php if ($canCancel || $isPendingPayment || $isCompletedOrReleased): ?>
+            <?php if ($canCancel || $isPendingPayment || $isCompletedOrReleased || ($latestCase['status'] ?? '') === 'Rejected'): ?>
                 <!-- Footer / Action Buttons -->
                 <div
-                    class="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-1.5 sm:gap-3">
+                    class="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center <?= (($latestCase['status'] ?? '') === 'Rejected') ? 'justify-between' : 'justify-end' ?> gap-2 sm:gap-3">
+                    <?php if (($latestCase['status'] ?? '') === 'Rejected'): ?>
+                        <div class="flex items-center min-w-0 text-left py-0.5">
+                            <div class="text-xs sm:text-sm text-red-800 leading-snug">
+                                <span class="font-bold text-red-900">Reason:</span>
+                                <span class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason'] ?: 'Request could not be approved at this time.') ?>"</span>
+                            </div>
+                        </div>
+                        <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=registration"
+                            class="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-5 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm hover:shadow active:scale-95 whitespace-nowrap shrink-0">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            Submit New Request
+                        </a>
+                    <?php endif; ?>
+
                     <?php if ($canCancel): ?>
                         <button type="button"
                             onclick="cancelCase(<?= $latestCase['id'] ?>, '<?= htmlspecialchars($latestCase['case_number']) ?>')"
@@ -933,7 +968,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
                     <?php if ($isPendingPayment): ?>
                         <button type="button"
-                            onclick="openPaymentModal(<?= $latestCase['id'] ?>, <?= $latestCase['amount_due'] ?? 0 ?>, <?= $latestCase['original_price'] ?? ($latestCase['amount_due'] ?? 0) ?>, <?= $latestCase['philhealth_discount'] ?? 0 ?>, '<?= htmlspecialchars($latestCase['gcash_qr_path'] ?? '') ?>', '<?= htmlspecialchars(addslashes($latestCase['exam_type'] ?? 'X-ray Exam')) ?>')"
+                            onclick="openPaymentModal(<?= $latestCase['id'] ?>, <?= $latestCase['amount_due'] ?? 0 ?>, <?= $latestCase['original_price'] ?? ($latestCase['amount_due'] ?? 0) ?>, <?= $latestCase['philhealth_discount'] ?? 0 ?>, '<?= htmlspecialchars($latestCase['gcash_qr_path'] ?? '') ?>', '<?= htmlspecialchars(addslashes($latestCase['exam_type'] ?? 'X-ray Exam')) ?>', '<?= htmlspecialchars(addslashes($latestCase['rejection_reason'] ?? '')) ?>')"
                             class="inline-flex items-center justify-center px-3.5 sm:px-5 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm hover:shadow active:scale-95 whitespace-nowrap">
                             Pay Now
                         </button>
@@ -1021,6 +1056,18 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-lg transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
+            </div>
+
+            <!-- Payment Rejection Notice if applicable -->
+            <div id="paymentRejectionAlert" class="hidden mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-left">
+                <div class="flex items-start gap-2.5">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
+                    <div>
+                        <h5 class="text-xs font-bold text-red-900 uppercase tracking-wider">Previous Submission Note</h5>
+                        <p id="paymentRejectionReasonText" class="text-xs text-red-800 mt-1 leading-relaxed font-medium"></p>
+                        <p class="text-xs text-red-600 mt-1">Please provide the correct Reference Number and upload a clear screenshot of your GCash receipt.</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Itemized Price Breakdown -->
@@ -1498,10 +1545,19 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     // Payment Modal Logic
     const examPrices = <?= $examPricesJson ?>;
 
-    function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath, examType) {
+    function openPaymentModal(caseId, amount, originalPrice, philhealthDiscount, gcashQrPath, examType, rejectionReason) {
         document.getElementById('paymentModal').classList.remove('hidden');
         document.getElementById('paymentCaseId').value = caseId;
         document.getElementById('paymentAmount').value = amount;
+
+        const rejectAlert = document.getElementById('paymentRejectionAlert');
+        const rejectText = document.getElementById('paymentRejectionReasonText');
+        if (rejectionReason && String(rejectionReason).trim() !== '') {
+            if (rejectAlert) rejectAlert.classList.remove('hidden');
+            if (rejectText) rejectText.textContent = '"' + rejectionReason + '"';
+        } else {
+            if (rejectAlert) rejectAlert.classList.add('hidden');
+        }
 
         const origPrice = parseFloat(originalPrice || amount);
         const disc = parseFloat(philhealthDiscount || 0);
@@ -1881,10 +1937,16 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     const newTimestampUnix = parseInt(data.timestamp_unix || '0', 10);
 
                     if (newStatus !== currentStatus && newTimestampUnix >= currentTimestampUnix) {
+                        const isError = data.workflow_type === 'error_correction';
+
+                        // If transitioning to/from payment states or rejected, refresh page cleanly so Pay Now button & alerts re-render
+                        if (['Pending Payment', 'Payment Verifying', 'Payment Verified', 'Rejected'].includes(newStatus) || ['Pending Payment', 'Payment Verifying'].includes(currentStatus)) {
+                            window.location.reload();
+                            return;
+                        }
+
                         currentStatus = newStatus;
                         currentTimestampUnix = newTimestampUnix;
-
-                        const isError = data.workflow_type === 'error_correction';
 
                         // Update stepper in-place (no reload)
                         updateStepperDOM(newStatus, isError, data.error_step, data);
@@ -1902,3 +1964,27 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         setInterval(pollTrackingStatus, 3000);
     })();
 </script>
+
+<?php if (!empty($_GET['password_reset'])): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Password Reset Successful',
+                text: 'Your password has been reset successfully and you are now logged in.',
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Continue to Portal',
+                customClass: {
+                    popup: 'rounded-2xl'
+                }
+            });
+            try {
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('password_reset');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
+            } catch (e) {}
+        }
+    });
+</script>
+<?php endif; ?>

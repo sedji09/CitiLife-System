@@ -125,14 +125,14 @@
                                     <form method="POST" action="" class="flex items-center justify-center gap-2">
                                         <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
                                         <button type="button" name="action" value="Approve"
-                                            class="p-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                            class="p-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
                                             onclick="confirmFormAction(this, 'Approve', 'Confirm Approval', 'Would you like to confirm approving this record request? This will allow the requesting branch to view this patient\'s records.', 'action', event)"
                                             title="Approve Request">
                                             <i data-lucide="check" class="w-4 h-4"></i>
                                         </button>
-                                        <button type="button" name="action" value="Deny"
-                                            class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                                            onclick="confirmFormAction(this, 'Deny', 'Confirm Denial', 'Would you like to confirm denying this record request?')"
+                                        <button type="button"
+                                            class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                                            onclick="promptDenyRecordRequest(<?= (int)$req['id'] ?>, '<?= htmlspecialchars($req['patient_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['patient_no'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['requester_branch_name'] ?? 'Requesting Branch', ENT_QUOTES) ?>')"
                                             title="Deny Request">
                                             <i data-lucide="x" class="w-4 h-4"></i>
                                         </button>
@@ -350,4 +350,107 @@
 
         renderPage();
     });
+
+    // ── Deny Record Request Modal with SweetAlert2 ─────────────────────────────────
+    function escapeHtmlRecord(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    window.promptDenyRecordRequest = function(requestId, patientName, caseNo, requesterBranch) {
+        if (typeof Swal === 'undefined') {
+            if (confirm(`Deny record request for ${patientName} (${caseNo}) from ${requesterBranch}?`)) {
+                const reason = prompt('Please enter the reason for denial:');
+                if (reason && reason.trim()) {
+                    submitDenyRecordRequest(requestId, reason.trim());
+                }
+            }
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Deny Record Request',
+            html: `
+                <div class="text-left">
+                    <p class="text-sm text-gray-600 mb-3 leading-relaxed">
+                        Are you sure you want to deny the record request for <strong class="text-gray-900">${escapeHtmlRecord(patientName)}</strong> (Case #${escapeHtmlRecord(caseNo)}) from <strong class="text-gray-900">${escapeHtmlRecord(requesterBranch)}</strong>? The requesting RadTech will be notified along with your reason.
+                    </p>
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Quick Select Reason:</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setDenyReason('Patient record restricted / Confidential record.')">Confidential Record</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setDenyReason('Incomplete patient authorization or consent provided.')">Incomplete Consent</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setDenyReason('Case record not found in our branch database.')">Case Not Found</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setDenyReason('Case number and patient name mismatch.')">Data Mismatch</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setDenyReason('Requires official physician or management authorization.')">Authorization Needed</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="swal-record-denial-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Denial <span class="text-red-500">*</span></label>
+                        <textarea id="swal-record-denial-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-gray-800 transition" placeholder="State why this record request is being denied..."></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Confirm Denial',
+            cancelButtonText: 'Cancel',
+            focusConfirm: false,
+            customClass: {
+                popup: 'rounded-2xl text-left'
+            },
+            didOpen: () => {
+                window.setDenyReason = function(reason) {
+                    const textarea = document.getElementById('swal-record-denial-reason');
+                    if (textarea) {
+                        textarea.value = reason;
+                        textarea.focus();
+                    }
+                };
+                const textarea = document.getElementById('swal-record-denial-reason');
+                if (textarea) textarea.focus();
+            },
+            preConfirm: () => {
+                const reason = (document.getElementById('swal-record-denial-reason')?.value || '').trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Please provide a reason for denying this record request.');
+                    return false;
+                }
+                return reason;
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                submitDenyRecordRequest(requestId, result.value);
+            }
+        });
+    };
+
+    function submitDenyRecordRequest(requestId, reason) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'request_id';
+        idInput.value = requestId;
+        form.appendChild(idInput);
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'Deny';
+        form.appendChild(actionInput);
+
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'rejection_reason';
+        reasonInput.value = reason;
+        form.appendChild(reasonInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
 </script>

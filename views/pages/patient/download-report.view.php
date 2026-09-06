@@ -164,6 +164,7 @@ if (!$isMultiExam) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radiology Report — <?= $caseNum ?></title>
+    <link rel="icon" type="image/png" href="<?= function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : ('/' . PROJECT_DIR . '/public/assets/img/logo/citilife-logo.png') ?>">
     <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <style>
         /* ── Google Fonts ── */

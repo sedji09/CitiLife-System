@@ -310,7 +310,256 @@ function checkLiveExamCategoryMatch() {
     }
 }
 
-function openAssignModal(id, requestedBodyPart, assignedExam = '') {
+function getAppBasePath() {
+    let bp = window.__APP__?.basePath || '';
+    if (!bp) return '/';
+    return bp.endsWith('/') ? bp : bp + '/';
+}
+
+window.currentAssignRequestId = null;
+window.currentAssignPatientId = null;
+window.currentAssignPatientName = '';
+let assignPhilHealthCheckTimeout = null;
+
+function toggleAssignPhilHealth(isWithCard) {
+    const withRadio = document.getElementById('assign_ph_with');
+    const withoutRadio = document.getElementById('assign_ph_without');
+    const detailsBox = document.getElementById('assign_philhealth_details');
+    const idInput = document.getElementById('assign_philhealth_id');
+    const relSelect = document.getElementById('assign_philhealth_relation');
+
+    if (withRadio && withoutRadio) {
+        withRadio.checked = isWithCard;
+        withoutRadio.checked = !isWithCard;
+    }
+
+    if (detailsBox) {
+        if (isWithCard) {
+            detailsBox.classList.remove('hidden');
+            if (idInput) idInput.required = true;
+            if (relSelect) relSelect.required = true;
+            checkAssignPhilHealthDup();
+        } else {
+            detailsBox.classList.add('hidden');
+            if (idInput) {
+                idInput.required = false;
+                idInput.setCustomValidity('');
+            }
+            if (relSelect) {
+                relSelect.required = false;
+                relSelect.disabled = false;
+            }
+        }
+    }
+    recalculateAssignPricing();
+}
+
+function recalculateAssignPricing() {
+    const form = document.getElementById('assignForm');
+    const hiddenInput = form ? form.querySelector('.exam-ms-hidden-input') : null;
+    const assignedStr = hiddenInput ? hiddenInput.value : '';
+    const assignedExams = assignedStr.split(',').map(s => s.trim()).filter(Boolean);
+
+    const isWithCard = document.getElementById('assign_ph_with')?.checked || false;
+    const relSelect = document.getElementById('assign_philhealth_relation');
+    const selectedOpt = relSelect ? relSelect.selectedOptions[0] : null;
+    // PhilHealth discount is only applied if With Card is selected AND a valid, non-disabled relation is selected
+    const isRelValid = isWithCard && relSelect && relSelect.value && (!selectedOpt || !selectedOpt.disabled);
+
+    const allServices = window.allActiveServices || [];
+
+    let originalPrice = 0.00;
+    let philhealthDiscount = 0.00;
+
+    assignedExams.forEach(examName => {
+        const srv = allServices.find(s => s.exam_type.toLowerCase() === examName.toLowerCase());
+        if (srv) {
+            const price = parseFloat(srv.price) || 0.00;
+            originalPrice += price;
+
+            if (isRelValid && (parseInt(srv.is_philhealth_covered) === 1 || srv.is_philhealth_covered === true)) {
+                const discount = parseFloat(srv.philhealth_discount) || 0.00;
+                philhealthDiscount += Math.min(discount, price);
+            }
+        }
+    });
+
+    const amountDue = Math.max(0.00, originalPrice - philhealthDiscount);
+
+    const origEl = document.getElementById('assign_calc_original_price');
+    const discEl = document.getElementById('assign_calc_discount');
+    const dueEl = document.getElementById('assign_calc_amount_due');
+    const hiddenPrice = document.getElementById('assign_exam_price');
+
+    if (origEl) origEl.textContent = '₱' + originalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (discEl) discEl.textContent = (philhealthDiscount > 0 ? '-₱' : '₱') + philhealthDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (dueEl) dueEl.textContent = '₱' + amountDue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (hiddenPrice) hiddenPrice.value = amountDue.toFixed(2);
+}
+
+function checkAssignPhilHealthDup(immediate = false) {
+    const idInput = document.getElementById('assign_philhealth_id');
+    const msgEl = document.getElementById('assign-philhealth-msg');
+    const ownerOpt = document.getElementById('assign-opt-owner');
+    const familyOpt = document.getElementById('assign-opt-family');
+    const relSelect = document.getElementById('assign_philhealth_relation');
+    const reqId = window.currentAssignRequestId || 0;
+    const patId = window.currentAssignPatientId || 0;
+
+    if (!idInput) return;
+    const val = idInput.value.trim();
+    const cleanDigits = val.replace(/\D/g, '');
+
+    if (cleanDigits.length < 12) {
+        if (msgEl) {
+            msgEl.classList.add('hidden');
+            msgEl.innerHTML = '';
+        }
+        if (ownerOpt) {
+            ownerOpt.disabled = false;
+            ownerOpt.innerText = 'Principal Member';
+        }
+        if (familyOpt) {
+            familyOpt.disabled = false;
+            familyOpt.innerText = 'Qualified Dependent';
+        }
+        if (relSelect) {
+            relSelect.disabled = false;
+        }
+        recalculateAssignPricing();
+        return;
+    }
+
+    const performCheck = () => {
+        const basePath = getAppBasePath();
+        const url = `${basePath}app/Api/check_philhealth.php?philhealth_id=${encodeURIComponent(val)}&exclude_request_id=${reqId}&patient_id=${patId}&t=${Date.now()}`;
+        fetch(url, { cache: 'no-store' })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+                if (idInput.value.trim() !== val) return;
+
+                const ownerUsed = Boolean(data.owner_used_by_other);
+                const familyUsed = Boolean(data.family_used_by_other);
+                const familyBlockedForOwner = Boolean(data.family_blocked_for_owner);
+
+                if (ownerOpt) {
+                    ownerOpt.disabled = ownerUsed;
+                    ownerOpt.innerText = ownerUsed
+                        ? `Principal Member - Unavailable (Already used ${data.owner_used_date || ''})`
+                        : 'Principal Member (Available)';
+                }
+
+                if (familyOpt) {
+                    if (familyBlockedForOwner) {
+                        familyOpt.disabled = true;
+                        familyOpt.innerText = 'Qualified Dependent - Unavailable (Not allowed for Cardholder)';
+                    } else if (familyUsed) {
+                        familyOpt.disabled = true;
+                        familyOpt.innerText = `Qualified Dependent - Unavailable (Already used ${data.family_used_date || ''})`;
+                    } else {
+                        familyOpt.disabled = false;
+                        familyOpt.innerText = 'Qualified Dependent (Available for Family Member)';
+                    }
+                }
+
+                // If currently selected relation is disabled, reset selection back to unselected
+                if (relSelect) {
+                    const curVal = relSelect.value;
+                    if (curVal === 'Principal Member' && ownerUsed) {
+                        relSelect.selectedIndex = 0;
+                        relSelect.value = '';
+                    } else if (curVal === 'Qualified Dependent' && (familyBlockedForOwner || familyUsed)) {
+                        relSelect.selectedIndex = 0;
+                        relSelect.value = '';
+                    }
+                }
+
+                // If both options are disabled, disable the entire dropdown
+                if (ownerOpt && familyOpt && relSelect) {
+                    if (ownerOpt.disabled && familyOpt.disabled) {
+                        relSelect.selectedIndex = 0;
+                        relSelect.value = '';
+                        relSelect.disabled = true;
+                    } else {
+                        relSelect.disabled = false;
+                    }
+                }
+
+                if (msgEl) {
+                    if (familyBlockedForOwner) {
+                        msgEl.innerHTML = `
+                            <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium leading-relaxed flex items-start gap-2 shadow-sm">
+                                <svg class="w-4 h-4 text-red-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <span class="font-bold text-red-800 uppercase tracking-wide text-[11px] block mb-0.5">PhilHealth ID Cannot Be Applied</span>
+                                    The patient (<strong>${escapeHtmlApproval(data.current_patient_name || window.currentAssignPatientName || 'this patient')}</strong>) is registered as the Principal Member of this PhilHealth card. The cardholder cannot be registered as their own Qualified Dependent.
+                                    <span class="text-gray-600 text-[11px] block mt-1 font-normal">
+                                        To proceed with standard pricing without a PhilHealth discount, please select <strong class="text-gray-900">"Without PhilHealth"</strong> above.
+                                    </span>
+                                </div>
+                            </div>`;
+                        msgEl.classList.remove('hidden');
+                    } else if (ownerUsed && familyUsed) {
+                        msgEl.innerHTML = `
+                            <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium leading-relaxed flex items-start gap-2 shadow-sm">
+                                <svg class="w-4 h-4 text-red-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <span class="font-bold text-red-800 uppercase tracking-wide text-[11px] block mb-0.5">Fully Utilized PhilHealth ID</span>
+                                    Both Principal Member and Qualified Dependent coverage have already been registered for this PhilHealth ID. Please select "Without PhilHealth" or provide another ID.
+                                </div>
+                            </div>`;
+                        msgEl.classList.remove('hidden');
+                    } else if (ownerUsed) {
+                        msgEl.innerHTML = `
+                            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium leading-normal flex items-start gap-2">
+                                <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <strong>Principal Member</strong> is already registered to ${escapeHtmlApproval(data.owner_patient_name || 'prior patient')} (${data.owner_used_date || 'Used'}).<br>
+                                    <span class="text-emerald-700 font-semibold">Qualified Dependent is available</span> for family members.
+                                </div>
+                            </div>`;
+                        msgEl.classList.remove('hidden');
+                    } else if (familyUsed) {
+                        msgEl.innerHTML = `
+                            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium leading-normal flex items-start gap-2">
+                                <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <div>
+                                    <strong>Qualified Dependent</strong> is already registered (${data.family_used_date || 'Used'}).<br>
+                                    <span class="text-emerald-700 font-semibold">Principal Member is still available</span> for the cardholder.
+                                </div>
+                            </div>`;
+                        msgEl.classList.remove('hidden');
+                    } else {
+                        msgEl.classList.add('hidden');
+                        msgEl.innerHTML = '';
+                    }
+                }
+                recalculateAssignPricing();
+            })
+            .catch(err => console.error("Error checking PhilHealth ID:", err));
+    };
+
+    clearTimeout(assignPhilHealthCheckTimeout);
+    if (immediate) {
+        performCheck();
+    } else {
+        assignPhilHealthCheckTimeout = setTimeout(performCheck, 200);
+    }
+}
+
+function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthStatus = '', philhealthId = '', philhealthRelation = '', patientId = 0, patientName = '') {
+    window.currentAssignRequestId = id;
+    window.currentAssignPatientId = patientId || 0;
+    window.currentAssignPatientName = patientName || '';
     document.getElementById('assignModal').classList.remove('hidden');
 
     const bodyPartEl = document.getElementById('assignBodyPart');
@@ -336,8 +585,41 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '') {
         }
     }
 
-    document.getElementById('assign_exam_price').value = '0';
+    // Reset relation dropdown options state
+    const ownerOpt = document.getElementById('assign-opt-owner');
+    const familyOpt = document.getElementById('assign-opt-family');
+    const msgEl = document.getElementById('assign-philhealth-msg');
+    const relSelect = document.getElementById('assign_philhealth_relation');
+    if (ownerOpt) {
+        ownerOpt.disabled = false;
+        ownerOpt.innerText = 'Principal Member';
+    }
+    if (familyOpt) {
+        familyOpt.disabled = false;
+        familyOpt.innerText = 'Qualified Dependent';
+    }
+    if (msgEl) {
+        msgEl.classList.add('hidden');
+        msgEl.innerHTML = '';
+    }
+    if (relSelect) {
+        relSelect.disabled = false;
+    }
+
+    // Set PhilHealth values
+    const hasCard = (philhealthStatus === 'With PhilHealth Card');
+    const idInput = document.getElementById('assign_philhealth_id');
+    if (idInput) idInput.value = philhealthId || '';
+    if (relSelect) relSelect.value = philhealthRelation || '';
+
+    toggleAssignPhilHealth(hasCard);
     checkLiveExamCategoryMatch();
+    recalculateAssignPricing();
+
+    // Immediately run validation check if With PhilHealth Card and ID is 12 digits
+    if (hasCard && idInput && idInput.value.replace(/\D/g, '').length === 12) {
+        checkAssignPhilHealthDup(true);
+    }
 
     if (window.lucide) {
         window.lucide.createIcons();
@@ -426,6 +708,105 @@ function validateAssignForm(e) {
         }
     }
 
+    // Check PhilHealth validation if "With PhilHealth Card" is selected
+    const isWithCard = document.getElementById('assign_ph_with')?.checked || false;
+    if (isWithCard) {
+        const idInput = document.getElementById('assign_philhealth_id');
+        const relSelect = document.getElementById('assign_philhealth_relation');
+        const ownerOpt = document.getElementById('assign-opt-owner');
+        const familyOpt = document.getElementById('assign-opt-family');
+
+        const cleanDigits = idInput ? idInput.value.replace(/\D/g, '') : '';
+        if (cleanDigits.length !== 12) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete PhilHealth ID',
+                    text: 'Please enter a complete 12-digit PhilHealth ID (XX-XXXXXXXXX-X).',
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-blue-600' }
+                });
+            } else {
+                alert('Please enter a complete 12-digit PhilHealth ID (XX-XXXXXXXXX-X).');
+            }
+            if (idInput) idInput.focus();
+            return false;
+        }
+
+        // Both options disabled check
+        if (ownerOpt?.disabled && familyOpt?.disabled) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'PhilHealth ID Not Applicable',
+                    html: `This PhilHealth ID cannot be applied to this patient.<br><br>Please select <strong>"Without PhilHealth"</strong> to proceed with standard pricing without a discount.`,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-red-600' }
+                });
+            } else {
+                alert('This PhilHealth ID cannot be applied to this patient.');
+            }
+            return false;
+        }
+
+        if (relSelect && !relSelect.value) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Relation Required',
+                    text: 'Please select patient\'s relation to the PhilHealth ID (Principal Member or Qualified Dependent).',
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-blue-600' }
+                });
+            } else {
+                alert('Please select patient\'s relation to the PhilHealth ID.');
+            }
+            relSelect.focus();
+            return false;
+        }
+
+        const selectedOpt = relSelect ? relSelect.selectedOptions[0] : null;
+        if (selectedOpt && selectedOpt.disabled) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Selected Relation Unavailable',
+                    text: 'The selected relation is disabled and cannot be used for this ID and patient. Please select an available option or choose "Without PhilHealth".',
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-red-600' }
+                });
+            } else {
+                alert('The selected relation is disabled and cannot be used for this ID and patient.');
+            }
+            relSelect.focus();
+            return false;
+        }
+
+        if (relSelect?.value === 'Qualified Dependent' && familyOpt?.disabled) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Qualified Dependent Unavailable',
+                    text: 'The cardholder cannot be registered as their own Qualified Dependent. Please choose "Without PhilHealth".',
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-red-600' }
+                });
+            } else {
+                alert('The cardholder cannot be registered as their own Qualified Dependent.');
+            }
+            return false;
+        }
+
+        if (relSelect?.value === 'Principal Member' && ownerOpt?.disabled) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Principal Member Unavailable',
+                    text: 'Principal Member has already been registered for this PhilHealth ID.',
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-red-600' }
+                });
+            } else {
+                alert('Principal Member has already been registered for this PhilHealth ID.');
+            }
+            return false;
+        }
+    }
+
     const doSubmit = function () {
         closeAssignModal();
         if (typeof Swal !== 'undefined') {
@@ -442,11 +823,11 @@ function validateAssignForm(e) {
     if (typeof confirmAction === 'function') {
         confirmAction(
             'Confirm Assignment',
-            'Are you sure you want to assign the selected examination(s) and request payment from the patient?',
+            'Are you sure you want to assign the selected examination(s)?',
             doSubmit
         );
     } else {
-        if (confirm('Are you sure you want to assign the selected examination(s) and request payment?')) {
+        if (confirm('Are you sure you want to assign the selected examination(s)?')) {
             doSubmit();
         }
     }
@@ -460,7 +841,10 @@ function closeAssignModal() {
 document.addEventListener('DOMContentLoaded', function () {
     const assignModal = document.getElementById('assignModal');
     if (assignModal) {
-        assignModal.addEventListener('exam-ms:change', checkLiveExamCategoryMatch);
+        assignModal.addEventListener('exam-ms:change', function () {
+            checkLiveExamCategoryMatch();
+            recalculateAssignPricing();
+        });
     }
 
     const assignSelect = document.getElementById('assign_exam_select');
@@ -471,6 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedOption && selectedOption.dataset.price) {
                 assignPriceInput.value = selectedOption.dataset.price;
             }
+            recalculateAssignPricing();
         });
     }
 });

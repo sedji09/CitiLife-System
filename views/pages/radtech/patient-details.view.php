@@ -218,9 +218,18 @@ $catBadgeLabel = match ($dCategory) {
 
         <!-- Patient Verification -->
         <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
-            <div class="mb-3 flex items-center gap-2">
-                <i data-lucide="user-check" class="h-5 w-5 text-green-600"></i>
-                <h3 class="text-lg font-semibold text-gray-800">Patient Verification</h3>
+            <div class="mb-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="user-check" class="h-5 w-5 text-green-600"></i>
+                    <h3 class="text-lg font-semibold text-gray-800">Patient Verification</h3>
+                </div>
+                <?php if ($userRole === 'radtech' && !($isReadOnly && empty($activeDispute) && ($caseDetails['image_status'] ?? '') === 'Uploaded')): ?>
+                    <button type="button" onclick="openEditPatientInfoModal()"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition shadow-2xs cursor-pointer">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-blue-600"></i>
+                        <span>Edit Patient Information</span>
+                    </button>
+                <?php endif; ?>
             </div>
             <div class="rounded-lg bg-red-50 border border-red-200 p-4">
                 <p class="text-xs font-medium italic text-red-700 mb-3">Note: CONFIRM IDENTITY BEFORE UPLOAD</p>
@@ -251,6 +260,11 @@ $catBadgeLabel = match ($dCategory) {
                             class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['contact_number'] ?? '—') ?></span>
                     </div>
                     <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Home Address</span>
+                        <span
+                            class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['home_address'] ?? '—') ?></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Branch</span>
                         <span
                             class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['branch_name'] ?? '—') ?></span>
@@ -259,7 +273,7 @@ $catBadgeLabel = match ($dCategory) {
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">PhilHealth Number</span>
                             <span
-                                class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['philhealth_id']) ?></span>
+                                class="font-medium text-gray-900"><?= htmlspecialchars($caseDetails['philhealth_id']) ?><?= !empty($caseDetails['philhealth_relation']) ? ' (' . htmlspecialchars($caseDetails['philhealth_relation']) . ')' : '' ?></span>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -408,8 +422,7 @@ $catBadgeLabel = match ($dCategory) {
                      ═════════════════════════════════════════════════════════════════ -->
                 <?php
                 $isEdited = (isset($_GET['saved']) && $_GET['saved'] == '1')
-                    || (!empty($caseDetails['is_amended']) && (int)$caseDetails['is_amended'] === 1)
-                    || in_array($activeDispute['status'] ?? '', ['Resolved', 'Correction Completed']);
+                    || in_array($activeDispute['status'] ?? '', ['Resolved', 'Correction Completed', 'Pending RadTech Verification']);
                 ?>
                 <div class="rounded-xl border border-amber-300 bg-white shadow-sm flex flex-col h-full overflow-hidden">
                     <!-- Header -->
@@ -1026,6 +1039,20 @@ $catBadgeLabel = match ($dCategory) {
 
         <?php if (empty($activeDispute)): ?>
                 <?php if ($isReportReady): ?>
+                        <button type="button" onclick="triggerReEdit(<?= $caseId ?>, this, event)"
+                            class="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-yellow-50 px-5 py-2.5 text-sm font-semibold text-yellow-800 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition shadow-sm"
+                            title="Revert report to draft so radiologist can edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
+                                <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
+                                <polyline points="7.5 9.5 11 12 7.5 14.5"/>
+                                <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
+                                <polyline points="6.5 22.5 3 20 6.5 17.5"/>
+                            </svg>
+                            Allow Re-edit
+                        </button>
                         <a href="javascript:void(0)"
                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
                             class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
@@ -1043,6 +1070,359 @@ $catBadgeLabel = match ($dCategory) {
     </div>
 </form>
 <?php endif; ?>
+
+<!-- Edit Patient Information Modal (RadTech) -->
+<div id="edit-patient-info-modal" class="fixed inset-0 z-[9999] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-100 my-8 overflow-hidden transform transition-all">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                    <i data-lucide="user-pen" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Edit Patient Information</h3>
+                    <p class="text-xs text-gray-500">Correct demographic and PhilHealth details in person</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeEditPatientInfoModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-white/80 transition flex items-center justify-center cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Modal Form -->
+        <form method="POST" action="" id="edit-patient-info-form" onsubmit="return submitEditPatientInfo(event);" class="p-6 space-y-4">
+            <input type="hidden" name="update_patient_info" value="1">
+            <input type="hidden" name="patient_id" value="<?= (int)($caseDetails['patient_id'] ?? 0) ?>">
+            <input type="hidden" name="case_id" value="<?= (int)($caseDetails['id'] ?? 0) ?>">
+
+            <!-- First & Last Name -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">First Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="first_name" id="modal_pat_first_name" required
+                        value="<?= htmlspecialchars($caseDetails['first_name'] ?? '') ?>"
+                        class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Last Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="last_name" id="modal_pat_last_name" required
+                        value="<?= htmlspecialchars($caseDetails['last_name'] ?? '') ?>"
+                        class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+                </div>
+            </div>
+
+            <!-- Middle Name (Optional) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Middle Name <span class="text-gray-400 font-normal text-[11px]">(Optional)</span></label>
+                <input type="text" name="middle_name" id="modal_pat_middle_name"
+                    value="<?= htmlspecialchars($caseDetails['middle_name'] ?? '') ?>"
+                    placeholder="Middle name or initial"
+                    class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+            </div>
+
+            <!-- Birthdate & Sex -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Birthdate <span class="text-red-500">*</span></label>
+                        <span id="modal_pat_calc_age" class="text-xs text-blue-600 font-semibold"><?= !empty($caseDetails['age']) ? $caseDetails['age'] . ' yrs old' : '' ?></span>
+                    </div>
+                    <input type="date" name="birthdate" id="modal_pat_birthdate" required
+                        value="<?= htmlspecialchars($caseDetails['birthdate'] ?? '') ?>"
+                        max="<?= date('Y-m-d') ?>"
+                        onchange="updateModalPatientAge()"
+                        class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Sex <span class="text-red-500">*</span></label>
+                    <select name="sex" id="modal_pat_sex" required
+                        class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+                        <option value="Male" <?= ($caseDetails['sex'] ?? '') === 'Male' ? 'selected' : '' ?>>Male</option>
+                        <option value="Female" <?= ($caseDetails['sex'] ?? '') === 'Female' ? 'selected' : '' ?>>Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Contact Number -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Contact Number <span class="text-red-500">*</span></label>
+                <input type="tel" name="contact_number" id="modal_pat_contact" required maxlength="11" pattern="09[0-9]{9}"
+                    value="<?= htmlspecialchars($caseDetails['contact_number'] ?? '') ?>"
+                    placeholder="09XXXXXXXXX"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);"
+                    class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+            </div>
+
+            <!-- Home Address -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Home Address</label>
+                <input type="text" name="home_address" id="modal_pat_address"
+                    value="<?= htmlspecialchars($caseDetails['home_address'] ?? '') ?>"
+                    placeholder="House / Unit / Street, Barangay, City / Municipality"
+                    class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+            </div>
+
+            <!-- PhilHealth Status -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">PhilHealth Status <span class="text-red-500">*</span></label>
+                <select name="philhealth_status" id="modal_pat_philhealth_status" onchange="togglePhilHealthModalFields()"
+                    class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 outline-none transition">
+                    <option value="Without PhilHealth Card" <?= ($caseDetails['philhealth_status'] ?? '') !== 'With PhilHealth Card' ? 'selected' : '' ?>>Without PhilHealth Card</option>
+                    <option value="With PhilHealth Card" <?= ($caseDetails['philhealth_status'] ?? '') === 'With PhilHealth Card' ? 'selected' : '' ?>>With PhilHealth Card</option>
+                </select>
+            </div>
+
+            <!-- PhilHealth ID Container (Conditional) -->
+            <div id="modal_pat_philhealth_container" class="<?= ($caseDetails['philhealth_status'] ?? '') === 'With PhilHealth Card' ? '' : 'hidden' ?> p-4 bg-blue-50/70 border border-blue-100 rounded-xl space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">PhilHealth ID Number <span class="text-red-500">*</span></label>
+                    <input type="text" name="philhealth_id" id="modal_pat_philhealth_id" inputmode="numeric" maxlength="14"
+                        value="<?= htmlspecialchars($caseDetails['philhealth_id'] ?? '') ?>"
+                        oninput="formatPhilHealthInput(this); checkPatPhilHealthModalDup();"
+                        placeholder="XX-XXXXXXXXX-X"
+                        class="w-full text-sm font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-2.5 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Patient's Relation to ID <span class="text-red-500">*</span></label>
+                    <select name="philhealth_relation" id="modal_pat_philhealth_relation"
+                        class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-2.5 outline-none transition">
+                        <option value="" disabled <?= empty($caseDetails['philhealth_relation']) ? 'selected' : '' ?>>Select relation</option>
+                        <option value="Principal Member" <?= ($caseDetails['philhealth_relation'] ?? '') === 'Principal Member' ? 'selected' : '' ?> id="pat-modal-opt-owner">Principal Member</option>
+                        <option value="Qualified Dependent" <?= ($caseDetails['philhealth_relation'] ?? '') === 'Qualified Dependent' ? 'selected' : '' ?> id="pat-modal-opt-family">Qualified Dependent</option>
+                    </select>
+                    <p id="pat-modal-philhealth-msg" class="text-xs text-red-600 mt-1.5 hidden font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                <button type="button" onclick="closeEditPatientInfoModal()"
+                    class="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" id="modal_pat_save_btn"
+                    class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md shadow-blue-600/20 transition cursor-pointer">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditPatientInfoModal() {
+        const modal = document.getElementById('edit-patient-info-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            togglePhilHealthModalFields();
+            updateModalPatientAge();
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+
+    function closeEditPatientInfoModal() {
+        const modal = document.getElementById('edit-patient-info-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    function togglePhilHealthModalFields() {
+        const statusSelect = document.getElementById('modal_pat_philhealth_status');
+        const container = document.getElementById('modal_pat_philhealth_container');
+        const idInput = document.getElementById('modal_pat_philhealth_id');
+        const relSelect = document.getElementById('modal_pat_philhealth_relation');
+
+        if (!statusSelect || !container) return;
+
+        const isWithCard = (statusSelect.value === 'With PhilHealth Card');
+        if (isWithCard) {
+            container.classList.remove('hidden');
+            if (idInput) idInput.required = true;
+            if (relSelect) relSelect.required = true;
+            checkPatPhilHealthModalDup();
+        } else {
+            container.classList.add('hidden');
+            if (idInput) idInput.required = false;
+            if (relSelect) relSelect.required = false;
+        }
+    }
+
+    function updateModalPatientAge() {
+        const bdayInput = document.getElementById('modal_pat_birthdate');
+        const ageLabel = document.getElementById('modal_pat_calc_age');
+        if (!bdayInput || !ageLabel || !bdayInput.value) return;
+
+        const bday = new Date(bdayInput.value);
+        if (isNaN(bday.getTime())) return;
+
+        const today = new Date();
+        let age = today.getFullYear() - bday.getFullYear();
+        const m = today.getMonth() - bday.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < bday.getDate())) {
+            age--;
+        }
+        if (age >= 0) {
+            ageLabel.textContent = age + (age === 1 ? ' yr old' : ' yrs old');
+        }
+    }
+
+    function formatPhilHealthInput(input) {
+        if (!input) return;
+        let value = input.value.replace(/\D/g, '');
+        if (value.length > 12) value = value.slice(0, 12);
+        let formatted = '';
+        if (value.length > 0) formatted += value.substring(0, Math.min(2, value.length));
+        if (value.length > 2) formatted += '-' + value.substring(2, Math.min(11, value.length));
+        if (value.length > 11) formatted += '-' + value.substring(11, 12);
+        input.value = formatted;
+    }
+
+    let patPhilHealthCheckTimeout = null;
+    function checkPatPhilHealthModalDup() {
+        const idInput = document.getElementById('modal_pat_philhealth_id');
+        const msgEl = document.getElementById('pat-modal-philhealth-msg');
+        const ownerOpt = document.getElementById('pat-modal-opt-owner');
+        const familyOpt = document.getElementById('pat-modal-opt-family');
+        const currentCaseId = <?= (int)($caseDetails['id'] ?? 0) ?>;
+
+        if (!idInput) return;
+        const val = idInput.value.trim();
+
+        if (val.length < 14) {
+            if (msgEl) msgEl.classList.add('hidden');
+            if (ownerOpt) ownerOpt.disabled = false;
+            if (familyOpt) familyOpt.disabled = false;
+            return;
+        }
+
+        clearTimeout(patPhilHealthCheckTimeout);
+        patPhilHealthCheckTimeout = setTimeout(() => {
+            const basePath = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>';
+            const url = `${basePath}app/Api/check_philhealth.php?philhealth_id=${encodeURIComponent(val)}&exclude_case_id=${currentCaseId}&t=${Date.now()}`;
+            fetch(url, { cache: 'no-store' })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+                    if (ownerOpt) ownerOpt.disabled = data.owner_used_by_other;
+                    if (familyOpt) familyOpt.disabled = data.family_used_by_other;
+
+                    if (msgEl) {
+                        if (data.owner_used_by_other && data.family_used_by_other) {
+                            msgEl.textContent = 'This PhilHealth ID is fully utilized for both Principal Member and Qualified Dependent.';
+                            msgEl.classList.remove('hidden');
+                        } else if (data.owner_used_by_other) {
+                            msgEl.textContent = 'Principal Member relation is already registered for this PhilHealth ID.';
+                            msgEl.classList.remove('hidden');
+                        } else if (data.family_used_by_other) {
+                            msgEl.textContent = 'Qualified Dependent relation is already registered for this PhilHealth ID.';
+                            msgEl.classList.remove('hidden');
+                        } else {
+                            msgEl.classList.add('hidden');
+                        }
+                    }
+                })
+                .catch(() => {});
+        }, 350);
+    }
+
+    async function submitEditPatientInfo(e) {
+        e.preventDefault();
+        const form = document.getElementById('edit-patient-info-form');
+        const saveBtn = document.getElementById('modal_pat_save_btn');
+        if (!form) return false;
+
+        const phoneInput = document.getElementById('modal_pat_contact');
+        if (phoneInput && !/^09\d{9}$/.test(phoneInput.value.trim())) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'warning', title: 'Invalid Contact Number', text: 'Contact number must be 11 digits starting with 09.' });
+            } else {
+                alert('Contact number must be 11 digits starting with 09.');
+            }
+            phoneInput.focus();
+            return false;
+        }
+
+        const statusSelect = document.getElementById('modal_pat_philhealth_status');
+        if (statusSelect && statusSelect.value === 'With PhilHealth Card') {
+            const idInput = document.getElementById('modal_pat_philhealth_id');
+            const relSelect = document.getElementById('modal_pat_philhealth_relation');
+            if (idInput && idInput.value.trim().length !== 14) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'Incomplete PhilHealth ID', text: 'Please enter a valid 12-digit PhilHealth ID (XX-XXXXXXXXX-X).' });
+                } else {
+                    alert('Please enter a valid 12-digit PhilHealth ID (XX-XXXXXXXXX-X).');
+                }
+                idInput.focus();
+                return false;
+            }
+            if (relSelect && !relSelect.value) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'Relation Required', text: 'Please select patient\'s relation to the PhilHealth ID.' });
+                } else {
+                    alert('Please select patient\'s relation to the PhilHealth ID.');
+                }
+                relSelect.focus();
+                return false;
+            }
+        }
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            saveBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Saving...';
+        }
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Updated Successfully',
+                        text: result.message || 'Patient information updated successfully.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: { popup: 'rounded-2xl' }
+                    });
+                }
+                window.location.reload();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Update Failed',
+                        text: result.message || 'Could not update patient information.',
+                        customClass: { popup: 'rounded-2xl' }
+                    });
+                } else {
+                    alert(result.message || 'Could not update patient information.');
+                }
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    saveBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Save Changes</span>';
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            }
+        } catch (err) {
+            // Fallback to normal form submit if AJAX fails
+            form.submit();
+        }
+        return false;
+    }
+</script>
 
 
 <?php if (!$isReadOnly): ?>
@@ -1526,4 +1906,131 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('beforeunload', () => clearInterval(pollInterval));
 })();
+
+async function triggerReEdit(caseId, btn, event = null) {
+    if (event) event.preventDefault();
+
+    let reason = '';
+    if (typeof Swal !== 'undefined') {
+        const { value: formValues, isConfirmed } = await Swal.fire({
+            title: 'Allow Radiologist to Re-edit?',
+            html: `
+                <div class="text-left text-sm text-gray-600 mb-3">
+                    This will revert the report to draft status (Under Reading) so the radiologist can update findings and impressions.
+                </div>
+                <div class="text-left mb-2">
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                        Quick Reason Presets:
+                    </label>
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Clarification needed on findings/impression.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Findings Clarification</button>
+                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Patient clinical history/demographics need update.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Patient Info/History</button>
+                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Additional X-ray view/projection uploaded.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Additional View</button>
+                        <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Typographical error in report findings.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Typo in Report</button>
+                    </div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                        Reason for Re-Edit <span class="text-red-500">*</span>:
+                    </label>
+                    <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition outline-none resize-none" placeholder="Explain specifically what needs to be changed or reviewed..."></textarea>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Allow Re-edit',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#d97706',
+            cancelButtonColor: '#6b7280',
+            customClass: {
+                popup: 'rounded-2xl p-5 max-w-lg',
+                confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
+            },
+            preConfirm: () => {
+                const text = document.getElementById('swal-reedit-reason').value.trim();
+                if (!text) {
+                    Swal.showValidationMessage('Please enter a reason so the radiologist knows what to review.');
+                    return false;
+                }
+                return text;
+            }
+        });
+
+        if (!isConfirmed || !formValues) return;
+        reason = formValues;
+    } else {
+        reason = prompt('Allow Radiologist to Re-edit? Please enter the reason:');
+        if (reason === null) return;
+        reason = reason.trim();
+        if (!reason) {
+            alert('A reason is required to allow re-edit.');
+            return;
+        }
+    }
+
+    const originalHTML = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    try {
+        const baseDir = '<?= defined("PROJECT_DIR") && PROJECT_DIR ? "/" . PROJECT_DIR : "" ?>';
+        const res = await fetch(`${baseDir}/radtech/re-edit-case`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `case_id=${encodeURIComponent(caseId)}&reason=${encodeURIComponent(reason)}`
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Reverted to Draft',
+                    text: data.message || 'Report reverted to draft successfully.',
+                    timer: 1800,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-2xl' }
+                });
+            } else {
+                alert(data.message || 'Report reverted to draft successfully.');
+            }
+            window.location.reload();
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Action Failed',
+                    text: data.message || 'Could not revert report.',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+            } else {
+                alert(data.message || 'Could not revert report.');
+            }
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerHTML = originalHTML;
+            }
+        }
+    } catch (err) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Network Error',
+                text: 'A network error occurred. Please try again.',
+                customClass: { popup: 'rounded-2xl' }
+            });
+        } else {
+            alert('A network error occurred. Please try again.');
+        }
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = originalHTML;
+        }
+    }
+}
 </script>

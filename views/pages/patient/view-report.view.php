@@ -185,6 +185,7 @@ if (!$isMultiExam) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>View Report — <?= $caseNum ?></title>
+    <link rel="icon" type="image/png" href="<?= function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : ('/' . PROJECT_DIR . '/public/assets/img/logo/citilife-logo.png') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&family=Inter:wght@400;600;700&display=swap');

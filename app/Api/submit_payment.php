@@ -103,8 +103,8 @@ try {
     $stmt = $pdo->prepare("INSERT INTO payments (request_id, original_amount, discount_amount, amount, payment_method, reference_number, proof_of_payment_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending Verification')");
     $stmt->execute([$caseId, $originalAmount, $discountAmount, $amount, $paymentMethod, $referenceNumber, $proofPath]);
     
-    // Update request status to Payment Verifying
-    $stmt = $pdo->prepare("UPDATE requests SET status = 'Payment Verifying' WHERE id = ?");
+    // Update request status to Payment Verifying and clear any previous rejection reason
+    $stmt = $pdo->prepare("UPDATE requests SET status = 'Payment Verifying', rejection_reason = NULL WHERE id = ?");
     $stmt->execute([$caseId]);
     
     $auditLogModel->addLog($userId, "Submitted Payment", 'X-ray Status', 'Payment', $pdo->lastInsertId(), "Submitted $paymentMethod payment for case #$caseId", $branchId);

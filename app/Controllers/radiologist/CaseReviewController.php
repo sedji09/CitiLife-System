@@ -66,36 +66,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $caseDetails['branch_id'] ?? null
                 );
 
+                if ($isFinal) {
+                    $redirectUrl = (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=radiologist&page=worklist';
+                    if (isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+                        if (ob_get_length()) ob_clean();
+                        header('Content-Type: application/json');
+                        echo json_encode([
+                            'success' => true,
+                            'message' => 'Report finalized and submitted successfully.',
+                            'redirect' => $redirectUrl
+                        ]);
+                        exit();
+                    }
+                    header("Location: " . $redirectUrl);
+                    exit();
+                }
+
                 // Re-fetch to get updated status
                 $caseDetails = $caseModel->getCaseById($caseId);
             } else {
                 $errorMsg = $result['message'];
+                if (isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+                    if (ob_get_length()) ob_clean();
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $errorMsg]);
+                    exit();
+                }
             }
         } catch (\Exception $e) {
             $errorMsg = "Failed to " . ($isFinal ? "submit final report: " : "save draft: ") . $e->getMessage();
-        }
-    } elseif (isset($_POST['revert_to_draft'])) {
-        try {
-            // we will implement revertToDraft in CaseModel
-            $caseModel->revertToDraft($caseId);
-
-            $patientName = trim(($caseDetails['first_name'] ?? '') . ' ' . ($caseDetails['last_name'] ?? '')) ?: 'Unknown Patient';
-            
-            $auditLogModel->addLog(
-                $radiologistId,
-                'Reverted Findings Report to Draft',
-                'Report Correction',
-                'Case',
-                $caseId,
-                "Patient: {$patientName} | Case #{$caseId} | Reverted to draft for editing",
-                $caseDetails['branch_id'] ?? null
-            );
-
-            // Re-fetch to get updated status
-            $caseDetails = $caseModel->getCaseById($caseId);
-            $successMsg = "Report reverted to draft. You can now edit the findings.";
-        } catch (\Exception $e) {
-            $errorMsg = "Failed to revert report: " . $e->getMessage();
+            if (isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+                if (ob_get_length()) ob_clean();
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $errorMsg]);
+                exit();
+            }
         }
     }
 }
@@ -130,7 +135,7 @@ if (!$caseDetails) {
 
     $fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
     $isCompleted = (($caseDetails['report_status'] ?? '') === 'Final' || in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']));
-    $isDraftLocked = (!$isCompleted && ($caseDetails['report_status'] ?? '') === 'Draft' && !empty($caseDetails['findings']));
+    $isDraftLocked = false;
 
     // ── Parse exam types ──────────────────────────────────────────────────────────
     $examTypeRaw = $caseDetails['exam_type'] ?? '';

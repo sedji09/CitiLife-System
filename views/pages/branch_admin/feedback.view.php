@@ -75,8 +75,9 @@
                     <div class="p-5 sm:p-6 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-0">
                         <div class="flex items-start gap-4">
                             <!-- Avatar -->
-                            <?php if (!empty($fb['avatar'])): ?>
-                                <img src="<?= htmlspecialchars($fb['avatar']) ?>" alt="Profile Picture" class="w-12 h-12 rounded-full object-cover shadow-sm border border-gray-200 shrink-0">
+                            <?php $fbAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($fb['avatar']) : $fb['avatar']; ?>
+                            <?php if (!empty($fbAvatarUrl)): ?>
+                                <img src="<?= htmlspecialchars($fbAvatarUrl) ?>" alt="Profile Picture" class="w-12 h-12 rounded-full object-cover shadow-sm border border-gray-200 shrink-0">
                             <?php else: ?>
                                 <div class="w-12 h-12 rounded-full bg-gradient-to-br from-red-100 to-red-50 text-red-600 flex items-center justify-center shrink-0 font-bold text-lg shadow-sm border border-red-100">
                                     <?= substr($fb['first_name'] ?? '?', 0, 1) ?>

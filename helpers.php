@@ -2,6 +2,19 @@
 
 date_default_timezone_set('Asia/Manila');
 
+if (!defined('PROJECT_DIR')) {
+    $folderName = basename(__DIR__);
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
+    if ((!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
+        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)) {
+        define('PROJECT_DIR', $folderName);
+    } else {
+        define('PROJECT_DIR', '');
+    }
+}
+
 if (!function_exists('basePath')) {
     /**
      * Get base path of the project
@@ -279,5 +292,72 @@ if (!function_exists('getSystemLogoUrl')) {
         return '/' . ltrim($relPath, '/') . $query;
     }
 }
+
+if (!function_exists('getAvatarUrl')) {
+    /**
+     * Get web URL for an avatar, normalizing any stored path format and checking file existence
+     *
+     * @param string|null $avatar
+     * @return string|null
+     */
+    function getAvatarUrl($avatar)
+    {
+        if (empty($avatar)) {
+            return null;
+        }
+
+        // Clean up query string if present and extract the clean filename (e.g. avatar_66_1788624970.jpg)
+        $cleanPath = explode('?', $avatar)[0];
+        $filename = basename($cleanPath);
+        if (empty($filename) || !preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $filename)) {
+            return null;
+        }
+
+        $relPath = 'public/uploads/avatars/' . $filename;
+        $fullPath = basePath($relPath);
+
+        // If file doesn't exist on disk, return null so initials avatar can display cleanly
+        if (!file_exists($fullPath)) {
+            return null;
+        }
+
+        $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
+        $v = filemtime($fullPath);
+        return $prefix . '/' . $relPath . '?v=' . $v;
+    }
+}
+
+if (!function_exists('getSignatureUrl')) {
+    /**
+     * Get web URL for a signature, normalizing any stored path format and checking file existence
+     *
+     * @param string|null $signature
+     * @return string|null
+     */
+    function getSignatureUrl($signature)
+    {
+        if (empty($signature)) {
+            return null;
+        }
+
+        $cleanPath = explode('?', $signature)[0];
+        $filename = basename($cleanPath);
+        if (empty($filename) || !preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $filename)) {
+            return null;
+        }
+
+        $relPath = 'public/uploads/signatures/' . $filename;
+        $fullPath = basePath($relPath);
+
+        if (!file_exists($fullPath)) {
+            return null;
+        }
+
+        $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
+        $v = filemtime($fullPath);
+        return $prefix . '/' . $relPath . '?v=' . $v;
+    }
+}
+
 
 

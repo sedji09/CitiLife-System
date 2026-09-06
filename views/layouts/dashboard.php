@@ -56,7 +56,7 @@ $displayInfo = $userModel->getDisplayInfo($userId, $sessionName, $userEmail);
 $userDisplayName = $displayInfo['displayName'];
 $initials = $displayInfo['initials'];
 $userAvatar = $displayInfo['avatar'];
-$userSignature = $currentUser['signature'] ?? '';
+$userSignature = function_exists('getSignatureUrl') ? getSignatureUrl($currentUser['signature'] ?? '') : ($currentUser['signature'] ?? '');
 $userProfessionalTitle = $currentUser['professional_title'] ?? '';
 $userFullNameReport = $currentUser['full_name_report'] ?? '';
 $userIsAvailable = $currentUser['is_available'] ?? 1;
@@ -156,6 +156,7 @@ $autoLogoutMinutes = function_exists('getSystemSetting') ? intval(getSystemSetti
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($appName) ?></title>
+  <link rel="icon" type="image/png" href="<?= $logoPath ?>">
   <?php require __DIR__ . '/partials/head_assets.php'; ?>
 </head>
 

@@ -12,10 +12,16 @@ if (file_exists(__DIR__ . '/../env.php')) {
 
 // Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
 if (!defined('PROJECT_DIR')) {
-    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/Citilife-System/public/index.php';
-    $parts = explode('/', $scriptPath);
-    // Find the first segment after root, standardizing to project folder name
-    define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'Citilife-System');
+    $folderName = basename(dirname(__DIR__));
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
+    if ((!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
+        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)) {
+        define('PROJECT_DIR', $folderName);
+    } else {
+        define('PROJECT_DIR', '');
+    }
 }
 
 // I-load muna ang Composer Autoloader
@@ -39,7 +45,7 @@ try {
     $database = new Database($dbConfig);
     // Expose global PDO instance for models and backward compatibility
     $pdo = $database->conn;
-    
+
     // Update last activity for real-time tracking
     if (isset($_SESSION['user_id'])) {
         $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$_SESSION['user_id']]);
@@ -64,7 +70,7 @@ try {
     // I-log ang totoong error sa server para ma-check mo later kung bakit nag-error
     error_log($e->getMessage());
     ob_clean();
-    
+
     // I-load ang 500 error view kapag may pumalyang code
     $router->error(500);
 }

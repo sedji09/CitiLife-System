@@ -45,45 +45,108 @@ class PaymentVerificationsController
                         $stmt = $pdo->prepare("UPDATE payments SET status = 'Verified', verified_by = ? WHERE id = ?");
                         $stmt->execute([$currentUserId, $paymentId]);
                         
-                        // Get request_id associated with this payment
-                        $stmtReq = $pdo->prepare("SELECT request_id FROM payments WHERE id = ?");
+                        // Get request details associated with this payment
+                        $stmtReq = $pdo->prepare("SELECT * FROM requests WHERE id = (SELECT request_id FROM payments WHERE id = ?)");
                         $stmtReq->execute([$paymentId]);
-                        $reqId = $stmtReq->fetchColumn();
+                        $reqData = $stmtReq->fetch();
                         
-                        if ($reqId) {
-                            // Update request status so RadTech can perform final approval
-                            $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Payment Verified' WHERE id = ?");
+                        if ($reqData) {
+                            $reqId = $reqData['id'];
+                            $reqBranchId = $reqData['branch_id'] ?: $branchId;
+                            
+                            // 1. Update request status to Approved
+                            $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?");
                             $stmtCase->execute([$reqId]);
                             
-                            // Send notification to patient
+                            // 2. Generate case number and insert into cases table (moves directly to RadTech Patient Queue)
+                            require_once __DIR__ . '/../../Models/CaseModel.php';
+                            $caseModel = new \CaseModel($pdo);
+                            $caseNumber = $caseModel->generateCaseNumber($reqBranchId);
+                            
+                            $stmtInsertCase = $pdo->prepare("
+                                INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
+                            ");
+                            $stmtInsertCase->execute([
+                                $caseNumber,
+                                $reqData['patient_id'],
+                                $reqBranchId,
+                                $reqData['exam_type'],
+                                $reqData['priority'],
+                                $reqData['philhealth_status'],
+                                $reqData['philhealth_id'],
+                                $reqId
+                            ]);
+                            $newCaseId = $pdo->lastInsertId();
+                            
+                            // 3. Send notifications
                             require_once __DIR__ . '/../../Models/NotificationModel.php';
                             $notifModel = new \NotificationModel($pdo);
                             
+                            // Send to Patient
                             $stmtPat = $pdo->prepare("
-                                SELECT u.id as user_id, r.request_number 
-                                FROM requests r 
-                                JOIN users u ON r.patient_id = u.patient_id 
-                                WHERE r.id = ? AND u.role = 'patient'
+                                SELECT u.id as user_id, u.email, u.name 
+                                FROM users u 
+                                WHERE u.patient_id = ? AND u.role = 'patient'
+                                LIMIT 1
                             ");
-                            $stmtPat->execute([$reqId]);
-                            $patData = $stmtPat->fetch();
+                            $stmtPat->execute([$reqData['patient_id']]);
+                            $patUser = $stmtPat->fetch();
                             
-                            if ($patData) {
+                            if ($patUser) {
                                 $notifModel->add(
-                                    "Payment Verified",
-                                    "Your payment for request {$patData['request_number']} has been successfully verified. Please wait for RadTech approval.",
+                                    "Request Approved",
+                                    "Your payment for request {$reqData['request_number']} has been verified and approved (Case #{$caseNumber}). Please proceed to the X-ray room for examination.",
                                     "/" . PROJECT_DIR . "/index.php?role=patient&page=dashboard",
-                                    $patData['user_id'],
+                                    $patUser['user_id'],
                                     'patient'
                                 );
+                                
+                                // Send Email to Patient if available
+                                if (!empty($patUser['email'])) {
+                                    require_once __DIR__ . '/../../Helpers/mailer_helper.php';
+                                    $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+                                    $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                                    $patientName = $patUser['name'] ?: 'Patient';
+                                    $subject = "Your X-ray Request ({$caseNumber}) is Approved - Citilife System";
+                                    $emailBody = renderNotificationEmail(
+                                        $patientName,
+                                        "Payment Verified & Request Approved",
+                                        "Good news! Your payment has been verified by the clinic cashier and your request is now approved. You may proceed to the X-ray room for your examination.",
+                                        [
+                                            'Case Number' => htmlspecialchars($caseNumber),
+                                            'Request Number' => htmlspecialchars($reqData['request_number']),
+                                            'Examination' => htmlspecialchars($reqData['exam_type'] ?: 'N/A'),
+                                            'Status' => '<span style="color: #1a7f37; font-weight: 600;">Approved &amp; Queued</span>'
+                                        ],
+                                        "View Case Status",
+                                        $portalUrl,
+                                        "You're receiving this notification regarding your X-ray examination at Citilife.",
+                                        "#16a34a"
+                                    );
+                                    sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
+                                }
                             }
+                            
+                            // Send Notification to RadTech team at this branch
+                            $notifModel->add(
+                                "New Patient in Queue",
+                                "Case #{$caseNumber} ({$reqData['exam_type']}) payment verified and approved. Ready for X-ray examination.",
+                                "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists",
+                                null,
+                                'radtech',
+                                $reqBranchId
+                            );
+                            
+                            $details = "Verified payment ID: {$paymentId} for Request #{$reqData['request_number']}. Created Case #{$caseNumber} (ID: {$newCaseId}) and moved directly to RadTech Patient Queue.";
+                            $auditLogModel->addLog($currentUserId, 'Approved & Created Case', 'Payment Verifications', 'Case', $newCaseId, $details, $reqBranchId);
+                            
+                            $_SESSION['flash_success'] = "Payment verified successfully. Request #{$reqData['request_number']} is approved and has moved directly to RadTech's Patient Queue (Case #{$caseNumber}).";
+                        } else {
+                            $_SESSION['flash_success'] = "Payment verified successfully.";
                         }
                         
-                        $details = "Verified payment ID: {$paymentId} for Request ID: " . ($reqId ?? 'Unknown');
-                        $auditLogModel->addLog($currentUserId, 'Verified Payment', 'Payment Verifications', 'Payment', $paymentId, $details, $branchId);
-                        
                         $pdo->commit();
-                        $_SESSION['flash_success'] = "Payment verified successfully. RadTech can now approve the request.";
                     } catch (\Exception $e) {
                         $pdo->rollBack();
                         $_SESSION['flash_error'] = "Error verifying payment: " . $e->getMessage();
@@ -91,20 +154,28 @@ class PaymentVerificationsController
                     header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");
                     exit;
                 } elseif ($_POST['action'] === 'reject') {
+                    $rejectionReason = trim($_POST['rejection_reason'] ?? '');
+                    if (empty($rejectionReason)) {
+                        $_SESSION['flash_error'] = "A reason is required to reject a payment confirmation.";
+                        header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");
+                        exit;
+                    }
+
                     try {
                         $pdo->beginTransaction();
                         
-                        $stmt = $pdo->prepare("UPDATE payments SET status = 'Rejected', verified_by = ? WHERE id = ?");
-                        $stmt->execute([$currentUserId, $paymentId]);
+                        $stmt = $pdo->prepare("UPDATE payments SET status = 'Rejected', rejection_reason = ?, verified_by = ? WHERE id = ?");
+                        $stmt->execute([$rejectionReason, $currentUserId, $paymentId]);
                         
-                        // Optionally reject the request too, or leave it for patient to re-upload
+                        // Get request_id associated with this payment
                         $stmtReq = $pdo->prepare("SELECT request_id FROM payments WHERE id = ?");
                         $stmtReq->execute([$paymentId]);
                         $reqId = $stmtReq->fetchColumn();
                         
                         if ($reqId) {
-                            $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = 'Payment Rejected' WHERE id = ?");
-                            $stmtCase->execute([$reqId]);
+                            // Revert request status to 'Pending Payment' so the patient can re-upload / resubmit
+                            $stmtCase = $pdo->prepare("UPDATE requests SET status = 'Pending Payment', rejection_reason = ? WHERE id = ?");
+                            $stmtCase->execute([$rejectionReason, $reqId]);
 
                             // Send notification to patient
                             require_once __DIR__ . '/../../Models/NotificationModel.php';
@@ -122,7 +193,7 @@ class PaymentVerificationsController
                             if ($patData) {
                                 $notifModel->add(
                                     "Payment Rejected",
-                                    "Your payment for request {$patData['request_number']} was rejected. Please re-upload proof of payment or contact the clinic.",
+                                    "Your payment for request {$patData['request_number']} was returned: \"{$rejectionReason}\". Please resubmit your payment details with the correct reference number and receipt screenshot.",
                                     "/" . PROJECT_DIR . "/index.php?role=patient&page=dashboard",
                                     $patData['user_id'],
                                     'patient'
@@ -130,11 +201,12 @@ class PaymentVerificationsController
                             }
                         }
                         
-                        $details = "Rejected payment ID: {$paymentId} for Request ID: " . ($reqId ?? 'Unknown');
+                        $reqNumStr = isset($patData['request_number']) ? " (Request: {$patData['request_number']})" : "";
+                        $details = "Rejected payment ID: {$paymentId}{$reqNumStr}. Reason: {$rejectionReason}";
                         $auditLogModel->addLog($currentUserId, 'Rejected Payment', 'Payment Verifications', 'Payment', $paymentId, $details, $branchId);
                         
                         $pdo->commit();
-                        $_SESSION['flash_success'] = "Payment rejected.";
+                        $_SESSION['flash_success'] = "Payment rejected. Request has returned to the patient with your reason so they can resubmit the correct reference number and receipt screenshot.";
                     } catch (\Exception $e) {
                         $pdo->rollBack();
                         $_SESSION['flash_error'] = "Error rejecting payment: " . $e->getMessage();
@@ -210,6 +282,7 @@ class PaymentVerificationsController
                         'amount' => (float)$p['amount'],
                         'payment_method' => $p['payment_method'],
                         'reference_number' => $p['reference_number'],
+                        'rejection_reason' => $p['rejection_reason'] ?? null,
                         'status' => $p['status'],
                         'updated_at' => $p['updated_at'],
                         'updated_at_formatted' => date('M d, Y h:i A', strtotime($p['updated_at'])),

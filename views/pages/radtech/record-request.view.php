@@ -93,14 +93,12 @@
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Case No.</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Patient Name
                         </th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Type</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Exam Date</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Form Branch
-                        </th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Date Requested
-                        </th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Status</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50">Action</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Exam Type</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Exam Date</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Form Branch</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Date Requested</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Status</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Action</th>
                     </tr>
                 </thead>
                 <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
@@ -150,7 +148,7 @@
                                         <span class="opacity-70"><?= date('h:i A', strtotime($req['created_at'])) ?></span>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <?php
                                     $sColor = 'yellow';
                                     if ($req['status'] === 'Approved')
@@ -163,7 +161,7 @@
                                         <?= htmlspecialchars($req['status']) ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="index.php?role=radtech&page=view-record-request&id=<?= $req['id'] ?>"
                                         class="<?= $req['status'] === 'Pending' ? 'text-gray-500 hover:text-gray-700' : 'text-blue-600 hover:text-blue-800' ?> focus:outline-none transition inline-flex items-center gap-1 text-sm font-medium">
                                         <i data-lucide="eye" class="w-4 h-4"></i>

@@ -34,8 +34,9 @@
                 <div
                     class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                     <div class="p-6 flex flex-col sm:flex-row items-center gap-6">
-                        <?php if (!empty($patient['avatar'])): ?>
-                            <img src="<?= htmlspecialchars($patient['avatar']) ?>" alt="Profile Picture"
+                        <?php $patientAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($patient['avatar']) : $patient['avatar']; ?>
+                        <?php if (!empty($patientAvatarUrl)): ?>
+                            <img src="<?= htmlspecialchars($patientAvatarUrl) ?>" alt="Profile Picture"
                                 class="h-24 w-24 rounded-2xl object-cover shadow-sm border border-gray-200 dark:border-gray-700 shrink-0">
                         <?php else: ?>
                             <div

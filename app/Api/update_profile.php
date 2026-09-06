@@ -3,6 +3,7 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 try {
+    require_once __DIR__ . '/../../helpers.php';
     require_once __DIR__ . '/../../config/database.php';
     global $pdo;
 
@@ -15,12 +16,6 @@ try {
     if (!isset($_SESSION['user_id'])) {
         echo json_encode(['success' => false, 'error' => 'Not authenticated']);
         exit;
-    }
-
-    if (!defined('PROJECT_DIR')) {
-        $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/Citilife-System/app/api/update_profile.php';
-        $parts = explode('/', $scriptPath);
-        define('PROJECT_DIR', (isset($parts[1]) && $parts[1] !== 'index.php') ? $parts[1] : 'Citilife-System');
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -59,7 +54,7 @@ try {
             } else {
                 $newName = trim($_POST['system_name'] ?? ($_POST['display_name'] ?? ''));
                 $password = $_POST['password'] ?? '';
-                
+
                 if (empty($newName)) {
                     echo json_encode(['success' => false, 'error' => 'Display name is required.']);
                     exit;
@@ -71,20 +66,18 @@ try {
                 $tmpPath = $_FILES['avatar']['tmp_name'];
                 $ext = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
                 $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                
+
                 if (in_array($ext, $allowed)) {
                     $uploadDir = __DIR__ . '/../../public/uploads/avatars/';
-                    if (!file_exists($uploadDir)) @mkdir($uploadDir, 0777, true);
-                    
+                    if (!file_exists($uploadDir))
+                        @mkdir($uploadDir, 0777, true);
+
                     $filename = 'avatar_' . $userId . '_' . time() . '.' . $ext;
                     $destPath = $uploadDir . $filename;
-                    
+
                     if (@move_uploaded_file($tmpPath, $destPath)) {
-                        if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
-                            $avatarPath = '/public/uploads/avatars/' . $filename;
-                        } else {
-                            $avatarPath = '/' . PROJECT_DIR . '/public/uploads/avatars/' . $filename;
-                        }
+                        $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
+                        $avatarPath = $prefix . '/public/uploads/avatars/' . $filename;
                     }
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Invalid image format.']);
@@ -138,11 +131,12 @@ try {
                 $_SESSION['name'] = $newName;
                 $_SESSION['email'] = $newEmail;
                 unset($_SESSION['email_change_verified']);
-                if ($avatarPath) $_SESSION['avatar'] = $avatarPath;
-                
+                if ($avatarPath)
+                    $_SESSION['avatar'] = $avatarPath;
+
                 $nameParts = explode(' ', $newName);
                 $initials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
-                
+
                 $response = [
                     'success' => true,
                     'name' => htmlspecialchars($newName),
@@ -150,7 +144,9 @@ try {
                     'initials' => htmlspecialchars($initials)
                 ];
                 if ($avatarPath) {
-                    $response['avatar'] = htmlspecialchars($avatarPath);
+                    $avatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($avatarPath) : $avatarPath;
+                    $_SESSION['avatar'] = $avatarUrl;
+                    $response['avatar'] = htmlspecialchars($avatarUrl);
                 }
                 if ($role === 'patient') {
                     $response['first_name'] = htmlspecialchars($firstName);
@@ -161,35 +157,34 @@ try {
                     $response['home_address'] = htmlspecialchars($homeAddress);
                 }
                 echo json_encode($response);
-            } catch(PDOException $e) {
-                if ($pdo->inTransaction()) $pdo->rollBack();
+            } catch (PDOException $e) {
+                if ($pdo->inTransaction())
+                    $pdo->rollBack();
                 echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
             }
         } else if ($action === 'update_radtech_settings') {
             $userId = $_SESSION['user_id'];
             $newName = trim($_POST['report_full_name'] ?? '');
             $professionalTitle = trim($_POST['professional_title'] ?? '');
-            $isAvailable = isset($_POST['is_available']) ? (int)$_POST['is_available'] : 1;
-            
+            $isAvailable = isset($_POST['is_available']) ? (int) $_POST['is_available'] : 1;
+
             $signaturePath = null;
             if (isset($_FILES['signature']) && $_FILES['signature']['error'] === UPLOAD_ERR_OK) {
                 $tmpPath = $_FILES['signature']['tmp_name'];
                 $ext = strtolower(pathinfo($_FILES['signature']['name'], PATHINFO_EXTENSION));
                 $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                
+
                 if (in_array($ext, $allowed)) {
                     $uploadDir = __DIR__ . '/../../public/uploads/signatures/';
-                    if (!file_exists($uploadDir)) @mkdir($uploadDir, 0777, true);
-                    
+                    if (!file_exists($uploadDir))
+                        @mkdir($uploadDir, 0777, true);
+
                     $filename = 'sig_' . $userId . '_' . time() . '.' . $ext;
                     $destPath = $uploadDir . $filename;
-                    
+
                     if (@move_uploaded_file($tmpPath, $destPath)) {
-                        if (getenv('RAILWAY_ENVIRONMENT') || getenv('MYSQLHOST') || isset($_ENV['MYSQLHOST'])) {
-                            $signaturePath = '/public/uploads/signatures/' . $filename;
-                        } else {
-                            $signaturePath = '/' . PROJECT_DIR . '/public/uploads/signatures/' . $filename;
-                        }
+                        $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
+                        $signaturePath = $prefix . '/public/uploads/signatures/' . $filename;
                     }
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Invalid image format for signature.']);
@@ -214,13 +209,15 @@ try {
                         'is_available' => $isAvailable === 1
                     ];
                     if ($signaturePath) {
-                        $response['signature'] = htmlspecialchars($signaturePath);
+                        $sigUrl = function_exists('getSignatureUrl') ? getSignatureUrl($signaturePath) : $signaturePath;
+                        $_SESSION['signature'] = $sigUrl;
+                        $response['signature'] = htmlspecialchars($sigUrl);
                     }
                     echo json_encode($response);
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Failed to update RadTech settings.']);
                 }
-            } catch(PDOException $e) {
+            } catch (PDOException $e) {
                 echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
             }
         } else {

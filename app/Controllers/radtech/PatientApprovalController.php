@@ -121,9 +121,16 @@ class PatientApprovalController
                     header("Location: " . $redirectBase . "/patient-approval");
                     exit;
                 }
-            } elseif ($_GET['action'] === 'reject' && isset($_GET['id'])) {
-                $requestId = (int)$_GET['id'];
-                $reason = $_POST['rejection_reason'] ?? '';
+            } elseif ((($_GET['action'] ?? '') === 'reject' || ($_POST['action'] ?? '') === 'reject') && (isset($_GET['id']) || isset($_POST['id']))) {
+                $requestId = (int)($_POST['id'] ?? $_GET['id']);
+                $reason = trim($_POST['rejection_reason'] ?? '');
+                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') : '';
+
+                if (empty($reason)) {
+                    $_SESSION['flash_error'] = "A reason is required to reject a patient request.";
+                    header("Location: " . $redirectBase . "/patient-approval");
+                    exit;
+                }
 
                 try {
                     $pdo->beginTransaction();
@@ -133,59 +140,61 @@ class PatientApprovalController
                     $stmtReq->execute([$requestId]);
                     $reqData = $stmtReq->fetch();
 
+                    if (!$reqData) {
+                        throw new \Exception("Request record not found.");
+                    }
+
+                    $reqNum = $reqData['request_number'] ?: ('REQ-' . str_pad($requestId, 5, '0', STR_PAD_LEFT));
+
                     $stmtUpdate = $pdo->prepare("UPDATE requests SET status = 'Rejected', rejection_reason = ? WHERE id = ?");
                     $stmtUpdate->execute([$reason, $requestId]);
                     
-                    $auditLogModel->addLog($currentUserId, "Rejected Patient Request", 'Patient Approval', 'Request', $requestId, "Rejected request with reason: " . ($reason ?: "No reason provided"), $branchId);
+                    $auditLogModel->addLog($currentUserId, "Rejected Patient Request", 'Patient Approval', 'Request', $requestId, "Rejected request #{$reqNum} with reason: {$reason}", $branchId);
                     
                     // Send notification and email to patient
-                    if ($reqData) {
-                        $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
-                        $stmtPat->execute([$reqData['patient_id']]);
-                        $patUser = $stmtPat->fetch();
-                        if ($patUser) {
-                            $reqNum = $reqData['request_number'] ?: ('REQ-' . str_pad($requestId, 5, '0', STR_PAD_LEFT));
-                            $notificationModel->add(
-                                "Request Rejected",
-                                "Your X-ray request ({$reqNum}) has been rejected." . ($reason ? " Reason: {$reason}" : " Please contact the clinic for more details or submit a new request."),
-                                "/" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') . "/index.php?role=patient&page=dashboard",
-                                $patUser['id'],
-                                'patient'
-                            );
+                    $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
+                    $stmtPat->execute([$reqData['patient_id']]);
+                    $patUser = $stmtPat->fetch();
+                    if ($patUser) {
+                        $notificationModel->add(
+                            "Request Rejected",
+                            "Your X-ray request ({$reqNum}) was rejected. Reason: \"{$reason}\". Please check your dashboard for details or submit a new request.",
+                            "/" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') . "/index.php?role=patient&page=dashboard",
+                            $patUser['id'],
+                            'patient'
+                        );
 
-                            if (!empty($patUser['email'])) {
-                                $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                                $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
-                                $patientName = $patUser['name'] ?: 'Patient';
-                                $subject = "Update on Your X-ray Request ({$reqNum}) - Citilife System";
-                                $emailBody = renderNotificationEmail(
-                                    $patientName,
-                                    "X-ray Request Rejected",
-                                    "Your X-ray examination request has been reviewed by the clinic staff and was rejected.",
-                                    [
-                                        'Request Number' => htmlspecialchars($reqNum),
-                                        'Examination' => htmlspecialchars($reqData['exam_type'] ?: 'N/A'),
-                                        'Status' => '<span style="color: #cf222e; font-weight: 600;">Rejected</span>',
-                                        'Reason' => htmlspecialchars($reason ?: 'Please contact the clinic for more details or submit a new request.')
-                                    ],
-                                    "Go to Patient Portal",
-                                    $portalUrl,
-                                    "You're receiving this notification regarding your X-ray examination request at Citilife.",
-                                    "#dc2626"
-                                );
-                                sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
-                            }
+                        if (!empty($patUser['email'])) {
+                            $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+                            $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                            $patientName = $patUser['name'] ?: 'Patient';
+                            $subject = "Update on Your X-ray Request ({$reqNum}) - Citilife System";
+                            $emailBody = renderNotificationEmail(
+                                $patientName,
+                                "X-ray Request Rejected",
+                                "Your X-ray examination request has been reviewed by the radiology staff and was rejected.",
+                                [
+                                    'Request Number' => htmlspecialchars($reqNum),
+                                    'Examination' => htmlspecialchars($reqData['exam_type'] ?: 'N/A'),
+                                    'Status' => '<span style="color: #cf222e; font-weight: 600;">Rejected</span>',
+                                    'Reason' => htmlspecialchars($reason)
+                                ],
+                                "Go to Patient Portal",
+                                $portalUrl,
+                                "You're receiving this notification regarding your X-ray examination request at Citilife.",
+                                "#dc2626"
+                            );
+                            sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
                         }
                     }
 
                     $pdo->commit();
-                    $_SESSION['flash_success'] = "Request rejected.";
+                    $_SESSION['flash_success'] = "Request #{$reqNum} has been rejected. The patient has been notified with your reason.";
                 } catch (\Exception $e) {
                     $pdo->rollBack();
                     $_SESSION['flash_error'] = "Rejection failed: " . $e->getMessage();
                 }
                 
-                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
                 header("Location: " . $redirectBase . "/patient-approval");
                 exit;
             }
@@ -315,9 +324,45 @@ class PatientApprovalController
                         }
                     }
 
+                    $philhealthStatus   = trim($_POST['philhealth_status'] ?? ($req['philhealth_status'] ?? 'Without PhilHealth Card'));
+                    $philhealthId       = trim($_POST['philhealth_id'] ?? ($req['philhealth_id'] ?? ''));
+                    $philhealthRelation = trim($_POST['philhealth_relation'] ?? ($req['philhealth_relation'] ?? ''));
+
+                    $hasPhilHealth = ($philhealthStatus === 'With PhilHealth Card');
+                    $philhealthIdToSave = $hasPhilHealth ? $philhealthId : null;
+                    $philhealthRelationToSave = $hasPhilHealth ? $philhealthRelation : null;
+
+                    // Validate PhilHealth uniqueness and identity matching if supplied
+                    if ($hasPhilHealth && $philhealthIdToSave && $philhealthRelationToSave) {
+                        $sqlOwnerReq = "SELECT r.patient_id FROM requests r WHERE r.philhealth_id = :id AND r.philhealth_relation = 'Principal Member' AND r.status != 'Cancelled' AND r.status != 'Rejected' AND r.id != :req_id";
+                        $sqlOwnerCase = "SELECT c.patient_id FROM cases c WHERE c.philhealth_id = :id AND c.philhealth_relation = 'Principal Member' AND c.status != 'Rejected' AND (c.request_id IS NULL OR c.request_id != :req_id)";
+                        $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
+                        $stmtOwner->execute([':id' => $philhealthIdToSave, ':req_id' => $requestId]);
+                        $ownerPatId = $stmtOwner->fetchColumn();
+
+                        if ($philhealthRelationToSave === 'Principal Member' && $ownerPatId) {
+                            throw new \Exception("This PhilHealth ID is already registered to another Principal Member.");
+                        }
+
+                        // Identity Check: A Principal Member CANNOT be a Qualified Dependent of their own card!
+                        $curPatId = (int)($req['patient_id'] ?? 0);
+                        if ($philhealthRelationToSave === 'Qualified Dependent' && $ownerPatId && $curPatId) {
+                            if ((int)$ownerPatId === $curPatId) {
+                                throw new \Exception("The patient is registered as the Principal Member of this PhilHealth ID. The cardholder cannot be their own Qualified Dependent.");
+                            }
+                        }
+
+                        $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected' AND id != :req_id";
+                        $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected' AND (request_id IS NULL OR request_id != :req_id)";
+                        $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
+                        $stmtFamily->execute([':id' => $philhealthIdToSave, ':req_id' => $requestId]);
+                        if ($philhealthRelationToSave === 'Qualified Dependent' && $stmtFamily->fetchColumn()) {
+                            throw new \Exception("This PhilHealth ID is already registered to another Qualified Dependent.");
+                        }
+                    }
+
                     $originalPrice = 0.00;
                     $philhealthDiscount = 0.00;
-                    $hasPhilHealth = ($req['philhealth_status'] === 'With PhilHealth Card');
 
                     if (!empty($examArray)) {
                         $placeholders = implode(',', array_fill(0, count($examArray), '?'));
@@ -339,9 +384,9 @@ class PatientApprovalController
 
                     $amountDue = max(0.00, $originalPrice - $philhealthDiscount);
                     
-                    // Update request with exam type, original price, PhilHealth discount, and amount due, set to Pending Payment
-                    $stmtUpdate = $pdo->prepare("UPDATE requests SET exam_type = ?, original_price = ?, philhealth_discount = ?, amount_due = ?, status = 'Pending Payment' WHERE id = ?");
-                    $stmtUpdate->execute([$examType, $originalPrice, $philhealthDiscount, $amountDue, $requestId]);
+                    // Update request with exam type, PhilHealth details, original price, PhilHealth discount, and amount due, set to Pending Payment
+                    $stmtUpdate = $pdo->prepare("UPDATE requests SET exam_type = ?, philhealth_status = ?, philhealth_id = ?, philhealth_relation = ?, original_price = ?, philhealth_discount = ?, amount_due = ?, is_verified = 1, status = 'Pending Payment' WHERE id = ?");
+                    $stmtUpdate->execute([$examType, $philhealthStatus, $philhealthIdToSave, $philhealthRelationToSave, $originalPrice, $philhealthDiscount, $amountDue, $requestId]);
                     
                     $auditLogModel->addLog($currentUserId, "Assigned Exam", 'Patient Approval', 'Request', $requestId, "Assigned $examType (Original: PHP $originalPrice, PhilHealth Discount: PHP $philhealthDiscount, Due: PHP $amountDue) to request #{$req['request_number']}", $branchId);
                     

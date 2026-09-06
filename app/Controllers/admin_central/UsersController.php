@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'create') {
         $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $password = trim($_POST['password'] ?? '');
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
 
@@ -48,7 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $branchId = null;
         }
 
-        if (empty($email) || empty($password) || empty($inputRole)) {
+        // Automatically generate a secure initial password if not provided by the form
+        if (empty($password)) {
+            $year = date('Y');
+            $password = $year . '_' . random_int(10000, 99999);
+        }
+
+        if (empty($email) || empty($inputRole)) {
             $error = "All fields are required.";
         } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Please include an '@' in the email address. '" . htmlspecialchars($email) . "' is missing an '@'.";
@@ -58,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else if (strlen($password) < $minPassLength) {
                 $error = "Password must be at least $minPassLength characters long.";
             } else if ($userModel->createStaffUser($email, $password, $inputRole, $branchId)) {
-                $success = "User account created successfully! An email with credentials has been sent.";
+                $success = "User account created successfully! An email with credentials has been sent to " . htmlspecialchars($email) . ".";
                 $auditLogModel->addLog($currentAdminId, "Created $inputRole account: $email", 'User Management', 'User', $pdo->lastInsertId(), "Email: $email, Role: $inputRole, Branch: $branchId", $currentBranchId);
                 
                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';

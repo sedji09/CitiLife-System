@@ -4,9 +4,9 @@ require_once __DIR__ . '/../../config/database.php';
 header('Content-Type: application/json');
 
 $philhealth_id = $_GET['philhealth_id'] ?? '';
-// Also optionally accept an exclusion ID (request ID or case ID) to exclude the current record being edited
-$exclude_request_id = $_GET['exclude_request_id'] ?? 0;
-$exclude_case_id = $_GET['exclude_case_id'] ?? 0;
+$exclude_request_id = (int)($_GET['exclude_request_id'] ?? 0);
+$exclude_case_id = (int)($_GET['exclude_case_id'] ?? 0);
+$patient_id = (int)($_GET['patient_id'] ?? 0);
 
 if (empty($philhealth_id)) {
     echo json_encode(['success' => false, 'message' => 'PhilHealth ID is required.']);
@@ -16,56 +16,116 @@ if (empty($philhealth_id)) {
 try {
     global $pdo;
 
-    // Check Owner Usage (ANY record)
-    $sqlOwnerReq = "SELECT created_at FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected'";
-    $sqlOwnerCase = "SELECT created_at FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Principal Member' AND status != 'Rejected'";
-    $stmtOwner = $pdo->prepare("SELECT created_at FROM ($sqlOwnerReq UNION ALL $sqlOwnerCase) AS combined ORDER BY created_at DESC LIMIT 1");
+    // Resolve current patient_id if not provided directly
+    if (!$patient_id && $exclude_request_id) {
+        $stmtFindPat = $pdo->prepare("SELECT patient_id FROM requests WHERE id = ?");
+        $stmtFindPat->execute([$exclude_request_id]);
+        $patient_id = (int)$stmtFindPat->fetchColumn();
+    }
+    if (!$patient_id && $exclude_case_id) {
+        $stmtFindPat = $pdo->prepare("SELECT patient_id FROM cases WHERE id = ?");
+        $stmtFindPat->execute([$exclude_case_id]);
+        $patient_id = (int)$stmtFindPat->fetchColumn();
+    }
+
+    $curPatientName = '';
+    if ($patient_id) {
+        $stmtCur = $pdo->prepare("SELECT CONCAT(first_name, ' ', last_name) FROM patients WHERE id = ?");
+        $stmtCur->execute([$patient_id]);
+        $curPatientName = trim((string)$stmtCur->fetchColumn());
+    }
+
+    // ── Check Principal Member Usage (excluding current editing record) ───────────
+    $sqlOwnerReq = "SELECT r.patient_id, r.created_at, CONCAT(p.first_name, ' ', p.last_name) AS pat_name 
+                    FROM requests r 
+                    JOIN patients p ON r.patient_id = p.id 
+                    WHERE r.philhealth_id = ? AND r.philhealth_relation = 'Principal Member' AND r.status != 'Cancelled' AND r.status != 'Rejected'";
+    if ($exclude_request_id) {
+        $sqlOwnerReq .= " AND r.id != " . (int)$exclude_request_id;
+    }
+
+    $sqlOwnerCase = "SELECT c.patient_id, c.created_at, CONCAT(p.first_name, ' ', p.last_name) AS pat_name 
+                     FROM cases c 
+                     JOIN patients p ON c.patient_id = p.id 
+                     WHERE c.philhealth_id = ? AND c.philhealth_relation = 'Principal Member' AND c.status != 'Rejected'";
+    if ($exclude_request_id) {
+        $sqlOwnerCase .= " AND (c.request_id IS NULL OR c.request_id != " . (int)$exclude_request_id . ")";
+    }
+    if ($exclude_case_id) {
+        $sqlOwnerCase .= " AND c.id != " . (int)$exclude_case_id;
+    }
+
+    $stmtOwner = $pdo->prepare("SELECT patient_id, created_at, pat_name FROM ($sqlOwnerReq UNION ALL $sqlOwnerCase) AS combined ORDER BY created_at DESC LIMIT 1");
     $stmtOwner->execute([$philhealth_id, $philhealth_id]);
-    $ownerUsedDate = $stmtOwner->fetchColumn();
+    $ownerRecord = $stmtOwner->fetch(PDO::FETCH_ASSOC);
 
-    // Check Owner Usage (OTHER records)
-    $sqlOwnerReqOther = $sqlOwnerReq;
-    $sqlOwnerCaseOther = $sqlOwnerCase;
+    $ownerUsed = (bool)$ownerRecord;
+    $ownerUsedDate = $ownerRecord ? date('M d, Y', strtotime($ownerRecord['created_at'])) : null;
+    $ownerPatientId = $ownerRecord ? (int)$ownerRecord['patient_id'] : 0;
+    $ownerPatientName = $ownerRecord ? trim($ownerRecord['pat_name']) : '';
+
+    // ── Check Qualified Dependent Usage (excluding current editing record) ────────
+    $sqlFamilyReq = "SELECT r.patient_id, r.created_at, CONCAT(p.first_name, ' ', p.last_name) AS pat_name 
+                     FROM requests r 
+                     JOIN patients p ON r.patient_id = p.id 
+                     WHERE r.philhealth_id = ? AND r.philhealth_relation = 'Qualified Dependent' AND r.status != 'Cancelled' AND r.status != 'Rejected'";
     if ($exclude_request_id) {
-        $sqlOwnerReqOther .= " AND id != " . (int)$exclude_request_id;
-        $sqlOwnerCaseOther .= " AND (request_id IS NULL OR request_id != " . (int)$exclude_request_id . ")";
+        $sqlFamilyReq .= " AND r.id != " . (int)$exclude_request_id;
+    }
+
+    $sqlFamilyCase = "SELECT c.patient_id, c.created_at, CONCAT(p.first_name, ' ', p.last_name) AS pat_name 
+                      FROM cases c 
+                      JOIN patients p ON c.patient_id = p.id 
+                      WHERE c.philhealth_id = ? AND c.philhealth_relation = 'Qualified Dependent' AND c.status != 'Rejected'";
+    if ($exclude_request_id) {
+        $sqlFamilyCase .= " AND (c.request_id IS NULL OR c.request_id != " . (int)$exclude_request_id . ")";
     }
     if ($exclude_case_id) {
-        $sqlOwnerCaseOther .= " AND id != " . (int)$exclude_case_id;
+        $sqlFamilyCase .= " AND c.id != " . (int)$exclude_case_id;
     }
-    $stmtOwnerOther = $pdo->prepare("SELECT created_at FROM ($sqlOwnerReqOther UNION ALL $sqlOwnerCaseOther) AS combined ORDER BY created_at DESC LIMIT 1");
-    $stmtOwnerOther->execute([$philhealth_id, $philhealth_id]);
-    $ownerUsedByOther = (bool) $stmtOwnerOther->fetchColumn();
-    
-    // Check Family Member Usage (ANY record)
-    $sqlFamilyReq = "SELECT created_at FROM requests WHERE philhealth_id = ? AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected'";
-    $sqlFamilyCase = "SELECT created_at FROM cases WHERE philhealth_id = ? AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected'";
-    $stmtFamily = $pdo->prepare("SELECT created_at FROM ($sqlFamilyReq UNION ALL $sqlFamilyCase) AS combined ORDER BY created_at DESC LIMIT 1");
+
+    $stmtFamily = $pdo->prepare("SELECT patient_id, created_at, pat_name FROM ($sqlFamilyReq UNION ALL $sqlFamilyCase) AS combined ORDER BY created_at DESC LIMIT 1");
     $stmtFamily->execute([$philhealth_id, $philhealth_id]);
-    $familyUsedDate = $stmtFamily->fetchColumn();
+    $familyRecord = $stmtFamily->fetch(PDO::FETCH_ASSOC);
 
-    // Check Family Member Usage (OTHER records)
-    $sqlFamilyReqOther = $sqlFamilyReq;
-    $sqlFamilyCaseOther = $sqlFamilyCase;
-    if ($exclude_request_id) {
-        $sqlFamilyReqOther .= " AND id != " . (int)$exclude_request_id;
-        $sqlFamilyCaseOther .= " AND (request_id IS NULL OR request_id != " . (int)$exclude_request_id . ")";
+    $familyUsed = (bool)$familyRecord;
+    $familyUsedDate = $familyRecord ? date('M d, Y', strtotime($familyRecord['created_at'])) : null;
+    $familyPatientId = $familyRecord ? (int)$familyRecord['patient_id'] : 0;
+    $familyPatientName = $familyRecord ? trim($familyRecord['pat_name']) : '';
+
+    // ── Identity Matching Rule: Cardholder Cannot Be Their Own Dependent ─────────
+    $isCurrentPatientOwner = false;
+    $familyBlockedForOwner = false;
+    $familyBlockReason = '';
+
+    if ($ownerUsed) {
+        if ($patient_id && $ownerPatientId && $patient_id === $ownerPatientId) {
+            $isCurrentPatientOwner = true;
+        } elseif ($curPatientName !== '' && $ownerPatientName !== '' && strcasecmp($curPatientName, $ownerPatientName) === 0) {
+            $isCurrentPatientOwner = true;
+        }
+
+        if ($isCurrentPatientOwner) {
+            $familyBlockedForOwner = true;
+            $familyBlockReason = "The patient (" . ($ownerPatientName ?: 'this patient') . ") is registered as the Principal Member of this PhilHealth ID. The cardholder cannot be their own Qualified Dependent.";
+        }
     }
-    if ($exclude_case_id) {
-        $sqlFamilyCaseOther .= " AND id != " . (int)$exclude_case_id;
-    }
-    $stmtFamilyOther = $pdo->prepare("SELECT created_at FROM ($sqlFamilyReqOther UNION ALL $sqlFamilyCaseOther) AS combined ORDER BY created_at DESC LIMIT 1");
-    $stmtFamilyOther->execute([$philhealth_id, $philhealth_id]);
-    $familyUsedByOther = (bool) $stmtFamilyOther->fetchColumn();
 
     echo json_encode([
-        'success' => true,
-        'owner_used' => (bool)$ownerUsedDate,
-        'owner_used_by_other' => $ownerUsedByOther,
-        'owner_used_date' => $ownerUsedDate ? date('M d, Y', strtotime($ownerUsedDate)) : null,
-        'family_used' => (bool)$familyUsedDate,
-        'family_used_by_other' => $familyUsedByOther,
-        'family_used_date' => $familyUsedDate ? date('M d, Y', strtotime($familyUsedDate)) : null
+        'success'                  => true,
+        'owner_used'               => $ownerUsed,
+        'owner_used_by_other'      => $ownerUsed,
+        'owner_used_date'          => $ownerUsedDate,
+        'owner_patient_name'       => $ownerPatientName,
+        'family_used'              => $familyUsed,
+        'family_used_by_other'     => $familyUsed,
+        'family_used_date'         => $familyUsedDate,
+        'family_patient_name'      => $familyPatientName,
+        'current_patient_id'       => $patient_id,
+        'current_patient_name'     => $curPatientName,
+        'is_same_as_owner'         => $isCurrentPatientOwner,
+        'family_blocked_for_owner' => $familyBlockedForOwner,
+        'family_block_reason'      => $familyBlockReason
     ]);
 
 } catch (Exception $e) {

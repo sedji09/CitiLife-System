@@ -7,10 +7,10 @@
 
 <div class="container mx-auto px-4 py-8 max-w-6xl">
 
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
             <a href="index.php?role=radtech&page=record-request"
-                class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
             </a>
             <div>
@@ -26,6 +26,20 @@
                 </p>
             </div>
         </div>
+
+        <?php if ($request['status'] === 'Denied' && !empty($request['rejection_reason'])): ?>
+            <div class="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 max-w-md shadow-xs">
+                <div class="h-6 w-6 rounded-md bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
+                    <i data-lucide="alert-circle" class="w-4 h-4 stroke-[2.2]"></i>
+                </div>
+                <div class="min-w-0">
+                    <span class="text-[11px] font-bold text-red-900 uppercase tracking-wider block">Reason for Denial:</span>
+                    <p class="text-sm text-red-800 mt-0.5 font-medium italic break-words">
+                        "<?= htmlspecialchars($request['rejection_reason']) ?>"
+                    </p>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -497,13 +511,12 @@
 
     <?php else: ?>
         <div
-            class="p-10 bg-red-50 bg-opacity-30 rounded-xl flex flex-col items-center text-center border-dashed border-2 border-red-100">
-            <div class="p-4 rounded-full bg-red-100/50 mb-4 border border-red-100">
-                <i data-lucide="x-octagon" class="w-10 h-10 text-red-500"></i>
+            class="p-8 sm:p-10 bg-red-50 bg-opacity-40 rounded-2xl flex flex-col items-center text-center border-dashed border-2 border-red-200 shadow-xs">
+            <div class="p-4 rounded-full bg-red-100 mb-4 border border-red-200 text-red-600">
+                <i data-lucide="x-octagon" class="w-10 h-10 text-red-600"></i>
             </div>
-            <h4 class="text-xl font-semibold text-gray-900 leading-tight">Request Denied</h4>
-            <p class="text-sm text-gray-500 mt-2 max-w-sm">This record request was denied by the target branch. You do not
-                have authorization to view the records.</p>
+            <h4 class="text-xl font-bold text-gray-900 leading-tight">Request Denied</h4>
+            <p class="text-sm text-gray-600 mt-2 max-w-md">This record request was denied by the target branch (<?= htmlspecialchars($request['request_branch'] ?? 'Target Branch') ?>). You do not have authorization to view the records.</p>
         </div>
     <?php endif; ?>
 </div>

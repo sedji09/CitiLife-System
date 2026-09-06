@@ -249,9 +249,10 @@ class CaseModel
                                             WHEN ? = 1 THEN 
                                                 CASE WHEN status = 'Completed' THEN 'Completed' ELSE 'Report Ready' END
                                             ELSE 
-                                                CASE WHEN status IN ('Pending', 'Report Ready') THEN 'Under Reading' ELSE status END
+                                                CASE WHEN status IN ('Pending', 'Report Ready', 'For Revision') THEN 'Under Reading' ELSE status END
                                         END,
-                report_status        = CASE WHEN ? = 1 THEN 'Final' ELSE 'Draft' END
+                report_status        = CASE WHEN ? = 1 THEN 'Final' ELSE 'Draft' END,
+                re_edit_reason       = CASE WHEN ? = 1 THEN NULL ELSE re_edit_reason END
             WHERE id = ?
         ");
         return $stmt->execute([
@@ -259,6 +260,7 @@ class CaseModel
             $data['findings'],
             $data['impression'],
             $radiologistId,
+            $finalInt,
             $finalInt,
             $finalInt,
             $finalInt,
@@ -408,7 +410,7 @@ class CaseModel
     /**
      * Unlock a case to be edited.
      */
-    public function revertToDraft($caseId)
+    public function revertToDraft($caseId, $reEditReason = null)
     {
         // Fetch old pdf path to delete
         $stmtCheck = $this->pdo->prepare("SELECT pdf_path FROM cases WHERE id = ?");
@@ -420,11 +422,11 @@ class CaseModel
         }
 
         if ($this->hasColumn('cases', 'released')) {
-            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', report_status = 'Draft', pdf_path = NULL, released = 0 WHERE id = ?");
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'For Revision', report_status = 'Draft', pdf_path = NULL, released = 0, is_amended = 1, re_edit_reason = ? WHERE id = ?");
         } else {
-            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', report_status = 'Draft', pdf_path = NULL WHERE id = ?");
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'For Revision', report_status = 'Draft', pdf_path = NULL, is_amended = 1, re_edit_reason = ? WHERE id = ?");
         }
-        return $stmt->execute([$caseId]);
+        return $stmt->execute([$reEditReason, $caseId]);
     }
 
     /**
@@ -453,7 +455,7 @@ class CaseModel
     public function getCaseById($id)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number,
+            SELECT c.*, p.first_name, p.last_name, p.middle_name, p.birthdate, p.home_address, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number,
                    b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, b.gcash_qr_path,
                    COALESCE(NULLIF(u.full_name_report, ''), NULLIF(u.name, ''), SUBSTRING_INDEX(u.email, '@', 1)) AS radtech_name, u.professional_title AS radtech_title, u.signature AS radtech_signature,
                    COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name, ur.professional_title AS radiologist_title, ur.signature AS radiologist_signature
@@ -529,6 +531,7 @@ class CaseModel
                 r.original_price,
                 r.philhealth_discount,
                 r.amount_due,
+                r.rejection_reason,
                 NULL as radtech_submitted_at
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
@@ -561,6 +564,7 @@ class CaseModel
                 NULL as original_price,
                 0.00 as philhealth_discount,
                 0 as amount_due,
+                NULL as rejection_reason,
                 c.radtech_submitted_at
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
@@ -605,6 +609,7 @@ class CaseModel
                 r.original_price,
                 r.philhealth_discount,
                 r.amount_due,
+                r.rejection_reason,
                 NULL as radtech_submitted_at
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
@@ -637,6 +642,7 @@ class CaseModel
                 req.original_price,
                 COALESCE(req.philhealth_discount, 0.00) as philhealth_discount,
                 COALESCE(req.amount_due, 0) as amount_due,
+                NULL as rejection_reason,
                 c.radtech_submitted_at
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
@@ -1389,6 +1395,9 @@ class CaseModel
             }
             if (!$this->hasColumn('cases', 'amendment_notes')) {
                 $this->safeExec("ALTER TABLE cases ADD COLUMN amendment_notes TEXT DEFAULT NULL");
+            }
+            if (!$this->hasColumn('cases', 're_edit_reason')) {
+                $this->safeExec("ALTER TABLE cases ADD COLUMN re_edit_reason TEXT DEFAULT NULL");
             }
             if (!$this->hasColumn('cases', 'philhealth_relation')) {
                 $this->safeExec("ALTER TABLE cases ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");

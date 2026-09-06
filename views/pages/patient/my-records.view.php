@@ -57,7 +57,7 @@ if ($patientRow && isset($patientRow['patient_number'])) {
         }
     }
 
-    $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, b.name AS branch_name, 
+    $stmtReq = $pdo->prepare("SELECT r.id, r.request_number AS case_number, r.exam_type, r.created_at, r.status, r.rejection_reason, b.name AS branch_name, 
                                      b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
                               FROM requests r 
                               LEFT JOIN branches b ON r.branch_id = b.id 
@@ -395,11 +395,21 @@ $statusBadge = [
                                             <i data-lucide="map-pin" class="w-4 h-4"></i> <?= htmlspecialchars($branchName) ?>
                                         </span>
                                     </div>
+                                    <?php if (!empty($c['rejection_reason'])): ?>
+                                        <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
+                                            <span class="font-bold text-red-900 block mb-0.5">Rejection Reason:</span>
+                                            <span class="italic font-medium">"<?= htmlspecialchars($c['rejection_reason']) ?>"</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
                             <div
                                 class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
+                                <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=registration"
+                                    class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i> <span>Submit New Request</span>
+                                </a>
                                 <button type="button"
                                     onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
                                     class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">

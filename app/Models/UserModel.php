@@ -89,7 +89,7 @@ class UserModel {
         $initials = strtoupper(substr($nameParts[0] ?? 'U', 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
 
         return [
-            'avatar'      => $avatar,
+            'avatar'      => function_exists('getAvatarUrl') ? getAvatarUrl($avatar) : $avatar,
             'displayName' => $displayName,
             'initials'    => $initials
         ];

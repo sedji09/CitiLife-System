@@ -262,6 +262,9 @@ $statusDescriptions = [
 
         $sInfo = $statusColors[$displayStatus] ?? ['bg' => '#F9FAFB', 'border' => '#E5E7EB', 'text' => '#374151', 'label' => $displayStatus];
         $sDesc = $statusDescriptions[$displayStatus] ?? '';
+        if ($displayStatus === 'Rejected' && !empty($caseRow['rejection_reason'])) {
+            $sDesc = 'Your request was rejected: "' . htmlspecialchars($caseRow['rejection_reason']) . '". Please review the details or submit a new request.';
+        }
         $contacts = array_filter([$caseRow['branch_contact'] ?? '', $caseRow['branch_contact_2'] ?? '', $caseRow['branch_contact_3'] ?? '']);
         ?>
 
@@ -336,7 +339,7 @@ $statusDescriptions = [
                 <?php endif; ?>
 
                 <!-- Status Summary Box -->
-                <div class="mt-4 sm:mt-5 rounded-xl p-4 sm:p-5 border status-summary-box"
+                <div class="<?= $isRejected ? 'mt-0' : 'mt-4 sm:mt-5' ?> rounded-xl p-4 sm:p-5 border status-summary-box"
                     style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
                     <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
                         Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
@@ -346,6 +349,25 @@ $statusDescriptions = [
                             style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
                     <?php endif; ?>
                 </div>
+
+                <?php if (($statusVal ?? '') === 'Pending Payment' && !empty($caseRow['rejection_reason'])): ?>
+                    <!-- Payment Issue Notice -->
+                    <div class="mt-4 rounded-2xl bg-red-50/95 border border-red-200 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
+                        <div class="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 stroke-[2.2]"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-bold text-red-900">Payment Submission Returned</h4>
+                            <p class="text-xs sm:text-sm text-red-800 mt-1 leading-relaxed">
+                                <span class="font-semibold">Reason from Clinic:</span>
+                                <span class="italic font-medium">"<?= htmlspecialchars($caseRow['rejection_reason']) ?>"</span>
+                            </p>
+                            <p class="text-xs text-red-700 mt-2">
+                                Please visit your <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=dashboard" class="font-bold underline text-red-800 hover:text-red-900">Dashboard</a> to resubmit the correct Reference Number and a clear screenshot of your payment receipt.
+                            </p>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Case Information Section inside card -->
                 <div class="mt-6 pt-6 border-t border-gray-100">
@@ -468,6 +490,20 @@ $statusDescriptions = [
                             style="background: linear-gradient(135deg, #15803d, #16a34a);">
                             <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 h-4"></i>
                             <span><?= $btnLabel ?></span>
+                        </a>
+                    </div>
+                <?php elseif (($statusVal ?? '') === 'Rejected'): ?>
+                    <div class="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                        <div class="flex items-center min-w-0 text-left py-0.5">
+                            <div class="text-xs sm:text-sm text-red-800 leading-snug">
+                                <span class="font-bold text-red-900">Reason:</span>
+                                <span class="italic font-medium">"<?= htmlspecialchars($caseRow['rejection_reason'] ?: 'Request could not be approved at this time.') ?>"</span>
+                            </div>
+                        </div>
+                        <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=registration"
+                            class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-[11px] sm:text-xs py-2 sm:py-2.5 px-4 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0 bg-red-600 hover:bg-red-700">
+                            <i data-lucide="plus-circle" class="w-3.5 h-3.5 sm:w-4 h-4"></i>
+                            <span>Submit New Request</span>
                         </a>
                     </div>
                 <?php endif; ?>
@@ -721,8 +757,8 @@ $statusDescriptions = [
                         updateStepperDOM(newStatus, isError, data.error_step);
                         updateStatusBox(newStatus);
 
-                        // For non-error workflows or final states that add new UI (report button), reload
-                        if (!isError && ['Released','Completed','Report Ready'].includes(newStatus)) {
+                        // For non-error workflows or final states that add new UI (report button, rejected alert), reload
+                        if (!isError && ['Released','Completed','Report Ready','Rejected'].includes(newStatus)) {
                             window.location.reload();
                         }
                     }

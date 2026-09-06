@@ -230,33 +230,18 @@ foreach ($allServices as $service) {
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <?php if (in_array($patient['status'], ['Rejected', 'Cancelled'])): ?>
-                                        <button
-                                            onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
-                                            class="text-sm font-medium text-gray-600 hover:text-gray-700 transition" title="View">
-                                            <i data-lucide="eye"
-                                                class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
-                                        </button>
-                                    <?php else: ?>
-                                        <button
-                                            onclick="openEditModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
-                                            class="text-sm font-medium text-blue-600 hover:text-blue-700 transition" title="Edit">
-                                            <i data-lucide="edit"
-                                                class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
-                                        </button>
-                                    <?php endif; ?>
+                                    <button
+                                        onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
+                                        class="text-sm font-medium text-gray-600 hover:text-gray-700 transition cursor-pointer" title="View Patient Details">
+                                        <i data-lucide="eye"
+                                            class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
+                                    </button>
                                     
                                     <?php if (in_array($patient['status'], ['Pending Approval', 'Pending Payment'])): ?>
-                                        <?php if (isset($patient['is_verified']) && $patient['is_verified'] == 1): ?>
-                                            <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type']) ?>', '<?= ($patient['status'] === 'Pending Payment') ? htmlspecialchars($patient['exam_type']) : '' ?>')"
-                                                class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition" title="Assign Exam">
-                                                <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
-                                            </button>
-                                        <?php else: ?>
-                                            <button disabled class="text-sm font-medium text-gray-400 cursor-not-allowed" title="Please Edit and verify patient info first">
-                                                <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
-                                            </button>
-                                        <?php endif; ?>
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'], ENT_QUOTES) ?>', '<?= ($patient['status'] === 'Pending Payment') ? htmlspecialchars($patient['exam_type'], ENT_QUOTES) : '' ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>')"
+                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Exam">
+                                            <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
+                                        </button>
                                     <?php endif; ?>
 
                                         <?php if ($patient['status'] === 'Payment Verified'): ?>
@@ -274,12 +259,12 @@ foreach ($allServices as $service) {
                                         <?php endif; ?>
                                         
                                     <?php if (!in_array($patient['status'], ['Rejected', 'Cancelled', 'Payment Verified'])): ?>
-                                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval&action=reject&id=<?= $patient['id'] ?>"
-                                            onclick="confirmAction('Confirm Rejection', 'Would you like to confirm rejecting this patient registration?', this.href, 'Yes, Proceed', false, event)"
-                                            class="text-sm font-medium text-red-600 hover:text-red-700 transition" title="Reject">
+                                        <button type="button"
+                                            onclick="promptRejectRequest(<?= (int)$patient['id'] ?>, '<?= htmlspecialchars($patient['request_number'] ?? ('REQ-' . str_pad($patient['id'], 5, '0', STR_PAD_LEFT)), ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>')"
+                                            class="text-sm font-medium text-red-600 hover:text-red-700 transition cursor-pointer" title="Reject Request">
                                             <i data-lucide="circle-x"
                                                 class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
-                                        </a>
+                                        </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -302,27 +287,28 @@ foreach ($allServices as $service) {
 
 <!-- Assign Exam Modal -->
 <div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-    <div class="w-full max-w-lg p-6 border shadow-2xl rounded-2xl bg-white">
+    <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 border shadow-2xl rounded-2xl bg-white">
         <div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
             <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200">
                 <i data-lucide="clipboard-list" class="w-6 h-6"></i>
             </div>
             <div>
-                <h3 class="text-lg font-bold text-gray-900">Assign Exact Examination</h3>
-                <p class="text-sm text-gray-500 mt-0.5">Select at least one procedure per requested body part</p>
+                <h3 class="text-lg font-bold text-gray-900">Assign Examination</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Select procedure(s) and specify PhilHealth coverage</p>
             </div>
         </div>
         
-        <div class="mb-5 flex flex-col gap-1.5 p-4 bg-red-50 rounded-xl border border-red-100">
+        <div class="mb-4 flex flex-col gap-1 p-3 bg-red-50 rounded-xl border border-red-100">
             <span class="text-xs font-semibold text-red-800 uppercase tracking-wide flex items-center gap-1.5">
                 <i data-lucide="user-check" class="w-4 h-4 text-red-600"></i> Patient requested body part(s):
             </span>
-            <span id="assignBodyPart" class="font-bold text-gray-900 text-base"></span>
+            <span id="assignBodyPart" class="font-bold text-gray-900 text-sm"></span>
         </div>
         
-        <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);">
+        <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);" class="space-y-4">
+            <!-- Exam Selector -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Select Examination Procedure(s)</label>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Select Examination Procedure(s) <span class="text-red-500">*</span></label>
                 <?php 
                 $examInputName = 'exam_type';
                 $placeholderText = 'Select procedure(s)...';
@@ -332,18 +318,56 @@ foreach ($allServices as $service) {
                     <i data-lucide="info" class="w-4 h-4 shrink-0 text-indigo-600"></i>
                     <span id="assignAllowedBadgeText">Choices filtered to requested body part(s)</span>
                 </div>
-                <div id="assignExamWarning" class="hidden mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-sm">
+                <div id="assignExamWarning" class="hidden mt-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shadow-sm">
                     <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
                     <div class="flex-1 leading-relaxed" id="assignExamWarningText"></div>
                 </div>
-                <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
             </div>
+
+            <!-- PhilHealth Coverage Section -->
+            <div class="pt-3 border-t border-gray-100 space-y-2.5">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">PhilHealth Coverage</label>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/60 has-[:checked]:text-blue-900">
+                        <input type="radio" name="philhealth_status" value="Without PhilHealth Card" id="assign_ph_without" onchange="toggleAssignPhilHealth(false)" checked class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-medium">Without PhilHealth</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/60 has-[:checked]:text-blue-900">
+                        <input type="radio" name="philhealth_status" value="With PhilHealth Card" id="assign_ph_with" onchange="toggleAssignPhilHealth(true)" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-medium">With PhilHealth Card</span>
+                    </label>
+                </div>
+
+                <!-- Conditional PhilHealth Details Box -->
+                <div id="assign_philhealth_details" class="hidden p-3.5 bg-blue-50/70 border border-blue-100 rounded-xl space-y-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">PhilHealth ID Number <span class="text-red-500">*</span></label>
+                        <input type="text" name="philhealth_id" id="assign_philhealth_id" inputmode="numeric" maxlength="14"
+                            oninput="formatPhilHealthInput(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
+                            placeholder="XX-XXXXXXXXX-X"
+                            class="w-full text-xs font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-2 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Patient's Relation to ID <span class="text-red-500">*</span></label>
+                        <select name="philhealth_relation" id="assign_philhealth_relation" onchange="checkAssignPhilHealthDup(); recalculateAssignPricing();"
+                            class="w-full text-xs text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-2 outline-none transition">
+                            <option value="">-- Select relation --</option>
+                            <option value="Principal Member" id="assign-opt-owner">Principal Member</option>
+                            <option value="Qualified Dependent" id="assign-opt-family">Qualified Dependent</option>
+                        </select>
+                        <div id="assign-philhealth-msg" class="mt-2 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="exam_price" id="assign_exam_price" value="0">
             
-            <div class="flex justify-end gap-3 mt-6">
+            <div class="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
                 <button type="button" onclick="closeAssignModal()"
-                    class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600">Cancel</button>
+                    class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer">Cancel</button>
                 <button type="submit"
-                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">Assign &amp; Request Payment</button>
+                    class="px-5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 transition shadow-md shadow-indigo-600/20 cursor-pointer">Assign Examination</button>
             </div>
         </form>
     </div>
@@ -575,4 +599,96 @@ foreach ($allServices as $service) {
             }
         }, 150);
     });
+
+    // ── Reject Request with SweetAlert modal ──────────────────────────────────────
+    function escapeHtmlApproval(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    window.promptRejectRequest = function(requestId, reqNumber, patientName) {
+        if (typeof Swal === 'undefined') {
+            if (confirm('Reject request ' + reqNumber + ' for ' + patientName + '?')) {
+                const reason = prompt('Please enter the reason for rejection:');
+                if (reason && reason.trim()) {
+                    submitRejectRequest(requestId, reason.trim());
+                }
+            }
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Reject X-ray Request',
+            html: `
+                <div class="text-left">
+                    <p class="text-sm text-gray-600 mb-3 leading-relaxed">
+                        Are you sure you want to reject request <strong class="text-gray-900 font-mono">${escapeHtmlApproval(reqNumber)}</strong> for <strong class="text-gray-900">${escapeHtmlApproval(patientName)}</strong>? The patient will receive a notification along with your reason.
+                    </p>
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Quick Select Reason:</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRadRejectReason('Incomplete patient information / demographic details provided.')">Incomplete Info</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRadRejectReason('Missing or unclear doctor referral / prescription for X-ray.')">Missing Doctor Referral</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRadRejectReason('Requested X-ray procedure is currently unavailable at this branch.')">Procedure Unavailable</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRadRejectReason('Duplicate examination request submitted.')">Duplicate Request</button>
+                            <button type="button" class="text-xs px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-medium transition cursor-pointer" onclick="window.setRadRejectReason('Clinical indication / symptoms do not correspond to the requested X-ray exam.')">Indication Mismatch</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="swal-rad-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
+                        <textarea id="swal-rad-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-gray-800 transition" placeholder="State why this request is being rejected so the patient understands..."></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Confirm Rejection',
+            cancelButtonText: 'Cancel',
+            focusConfirm: false,
+            customClass: {
+                popup: 'rounded-2xl text-left'
+            },
+            didOpen: () => {
+                window.setRadRejectReason = function(reason) {
+                    const textarea = document.getElementById('swal-rad-rejection-reason');
+                    if (textarea) {
+                        textarea.value = reason;
+                        textarea.focus();
+                    }
+                };
+                const textarea = document.getElementById('swal-rad-rejection-reason');
+                if (textarea) textarea.focus();
+            },
+            preConfirm: () => {
+                const reason = (document.getElementById('swal-rad-rejection-reason')?.value || '').trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Please provide a reason for rejecting this request.');
+                    return false;
+                }
+                return reason;
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                submitRejectRequest(requestId, result.value);
+            }
+        });
+    };
+
+    function submitRejectRequest(requestId, reason) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        const projectBase = '<?= (defined('PROJECT_DIR') && PROJECT_DIR) ? '/' . PROJECT_DIR . '/' : '/' ?>';
+        form.action = projectBase + 'index.php?role=radtech&page=patient-approval&action=reject&id=' + encodeURIComponent(requestId);
+
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'rejection_reason';
+        reasonInput.value = reason;
+        form.appendChild(reasonInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
 </script>

@@ -34,6 +34,12 @@ try {
     $case = $caseModel->getCaseById($caseId);
 
     if (!$case) {
+        $stmtReq = $pdo->prepare("SELECT r.*, r.request_number as case_number FROM requests r WHERE r.id = ?");
+        $stmtReq->execute([$caseId]);
+        $case = $stmtReq->fetch();
+    }
+
+    if (!$case) {
         echo json_encode(['success' => false, 'message' => 'Case not found.']);
         exit;
     }
@@ -128,6 +134,7 @@ try {
             'status'      => $activeDispute['status'],
             'created_at'  => $activeDispute['created_at'],
         ] : null,
+        'rejection_reason'    => $case['rejection_reason'] ?? null,
         'date_completed'      => $case['date_completed'] ?? null,
     ]);
     exit;

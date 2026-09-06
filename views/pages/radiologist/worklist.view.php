@@ -1,58 +1,73 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
 
-
 $branchModel = new \BranchModel($pdo);
 $caseModel = new \CaseModel($pdo);
-
-
 
 // Fetch all branches
 $branchesList = $branchModel->getAllBranches();
 
-// Fetch all pending cases (Standardized via Model)
+// Fetch cases (Standardized via Model)
 $radiologistId = $_SESSION['user_id'] ?? null;
 
 // Support status URL filter for dashboard card deep-links
 $statusParam = $_GET['status'] ?? '';
+$tabParam = $_GET['tab'] ?? '';
+
+// 1. Fetch Pending Worklist cases ('Pending', 'Under Reading', 'For Revision')
 if ($statusParam === 'overdue') {
     // Overdue: pending/under-reading for 3+ hours
-    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
-    $records = array_filter($records, function ($r) {
+    $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+    $pendingRecords = array_filter($pendingRecords, function ($r) {
         return (time() - strtotime($r['created_at'])) >= 3 * 3600;
     });
-    $records = array_values($records);
-} elseif ($statusParam === 'completed_today') {
-    $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
-    $records = array_filter($records, function ($r) {
-        return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');
-    });
-    $records = array_values($records);
+    $pendingRecords = array_values($pendingRecords);
 } elseif ($statusParam === 'Under Reading') {
-    $records = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
-    $records = array_filter($records, function ($r) {
+    $pendingRecords = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
+    $pendingRecords = array_filter($pendingRecords, function ($r) {
         return empty($r['findings']);
     });
-    $records = array_values($records);
+    $pendingRecords = array_values($pendingRecords);
 } elseif ($statusParam === 'For Revision') {
-    $records = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
+    $pendingRecords = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
 } elseif ($statusParam === 'pending') {
-    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
+    $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
 } else {
-    $records = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'Report Ready'], true, $radiologistId);
+    $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'For Revision'], true, $radiologistId);
 }
 
-// Extract unique priorities for filters
-$priorities = array_unique(array_column($records, 'priority'));
+// 2. Fetch Pending Release cases ('Report Ready' awaiting release by RadTech)
+if ($statusParam === 'completed_today') {
+    $releaseRecords = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
+    $releaseRecords = array_filter($releaseRecords, function ($r) {
+        return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');
+    });
+    $releaseRecords = array_values($releaseRecords);
+} else {
+    $releaseRecords = $caseModel->getWorklist(null, null, ['Report Ready'], true, $radiologistId);
+}
+
+// Default records pointer for backward compatibility
+$records = $pendingRecords;
+
+// Extract unique priorities for filters from both lists
+$allCombined = array_merge($pendingRecords, $releaseRecords);
+$priorities = array_unique(array_column($allCombined, 'priority'));
 sort($priorities);
+
+// Determine initial tab
+$initialTab = 'worklist';
+if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam === 'completed_today') {
+    $initialTab = 'release';
+}
 ?>
 
 <!-- Header -->
 <div class="flex items-center justify-between mb-6">
     <div class="ml-5">
         <?php
-        $wlTitle = 'Worklist';
-        $wlSubtitle = 'Manage pending cases across all branches';
+        $wlTitle = ($initialTab === 'release') ? 'Pending Release' : 'Worklist';
+        $wlSubtitle = ($initialTab === 'release') ? 'Cases with completed readings awaiting release' : 'Manage pending cases across all branches';
         if ($statusParam === 'overdue') {
             $wlTitle = 'Overdue Cases';
             $wlSubtitle = 'Cases waiting 3+ hours without a completed reading';
@@ -78,11 +93,12 @@ sort($priorities);
 <!-- Navigation Tabs -->
 <div class="mt-4 px-4 border-b border-gray-200">
     <nav class="flex gap-4">
+        <!-- Tab 1: Pending Worklist -->
         <button type="button" id="tab-rad-worklist-btn" onclick="switchRadTab('worklist')"
                 class="pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2">
             Pending Worklist
             <?php
-            $wlCount = count($records);
+            $wlCount = count($pendingRecords);
             $wlDisplay = $wlCount > 99 ? '99+' : $wlCount;
             ?>
             <span id="worklist-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $wlCount ?>">
@@ -90,10 +106,22 @@ sort($priorities);
             </span>
         </button>
 
+        <!-- Tab 2: Pending Release -->
+        <button type="button" id="tab-rad-release-btn" onclick="switchRadTab('release')"
+                class="pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2">
+            Pending Release
+            <?php
+            $relCount = count($releaseRecords);
+            $relDisplay = $relCount > 99 ? '99+' : $relCount;
+            ?>
+            <span id="release-tab-badge" class="tab-circle-badge bg-gray-100 text-gray-700 border border-gray-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $relCount ?>">
+                <?= $relDisplay ?>
+            </span>
+        </button>
     </nav>
 </div>
 
-<!-- Controls for Pending Worklist -->
+<!-- Controls for Worklist & Pending Release -->
 <div id="worklist-controls" class="mt-6 flex flex-col gap-4 px-4">
     <div class="flex flex-wrap gap-4 items-center">
         <!-- Search -->
@@ -146,10 +174,8 @@ sort($priorities);
     </div>
 </div>
 
-<!-- Controls for Escalated Error Reports / Disputes Tab -->
-
-
 <div class="px-4">
+    <!-- TABLE CARD 1: Pending Worklist -->
     <div id="worklist-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
         <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
             <table class="w-full text-sm">
@@ -166,15 +192,14 @@ sort($priorities);
                     </tr>
                 </thead>
                 <tbody id="worklist-tbody" class="text-gray-800 bg-white divide-y divide-gray-100">
-                    <?php if (count($records) === 0): ?>
+                    <?php if (count($pendingRecords) === 0): ?>
                         <tr class="empty-state-row">
                             <td colspan="8" class="text-center py-8 text-gray-500">
                                 No pending cases.
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($records as $row):
-                            // Map Priority Weight for sorting: STAT > Urgent > Priority > Normal > Routine
+                        <?php foreach ($pendingRecords as $row):
                             $pWeight = 1;
                             $pUpper = strtoupper(trim($row['priority'] ?? ''));
                             if ($pUpper === 'STAT')
@@ -199,7 +224,7 @@ sort($priorities);
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>"
                                 data-is-today="<?= $isToday ? 'true' : 'false' ?>"
-                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'])) ?>"
+                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="font-medium"><?= htmlspecialchars($row['case_number']) ?></div>
@@ -277,30 +302,194 @@ sort($priorities);
                                             $sColor = '#a16207';
                                         }
                                     } elseif ($rawStatus === 'Under Reading') {
-                                        $displayStatus = 'In Progress';
-                                        $sBorder = '1.5px solid #60a5fa';
-                                        $sBg = '#eff6ff';
-                                        $sColor = '#1d4ed8';
-                                    } elseif ($rawStatus === 'Report Ready') {
-                                        $displayStatus = 'Report Ready';
-                                        $sBorder = '1.5px solid #818cf8';
-                                        $sBg = '#eef2ff';
-                                        $sColor = '#4338ca';
+                                        if (!empty($row['re_edit_reason'])) {
+                                            $displayStatus = 'For Revision';
+                                            $sBorder = '1.5px solid #f87171';
+                                            $sBg = '#fef2f2';
+                                            $sColor = '#b91c1c';
+                                        } else {
+                                            $displayStatus = 'In Progress';
+                                            $sBorder = '1.5px solid #60a5fa';
+                                            $sBg = '#eff6ff';
+                                            $sColor = '#1d4ed8';
+                                        }
                                     } elseif ($rawStatus === 'For Revision') {
                                         $displayStatus = 'For Revision';
                                         $sBorder = '1.5px solid #f87171';
                                         $sBg = '#fef2f2';
                                         $sColor = '#b91c1c';
-                                    } elseif ($rawStatus === 'Completed') {
-                                        $displayStatus = 'Completed';
+                                    }
+                                    ?>
+                                    <div class="flex flex-col items-start gap-1">
+                                        <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold"
+                                            style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                                            <?= htmlspecialchars($displayStatus) ?>
+                                        </span>
+                                        <?php if (!empty($row['re_edit_reason'])): ?>
+                                            <?php 
+                                            $ptNo = !empty($row['patient_number']) ? ' (' . $row['patient_number'] . ')' : '';
+                                            $fullPatientInfo = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) . $ptNo;
+                                            $dateSubmitted = !empty($row['status_timestamp']) ? $row['status_timestamp'] : (!empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']);
+                                            $dateFormatted = date('M d, Y h:i A', strtotime($dateSubmitted));
+                                            ?>
+                                            <button type="button" 
+                                                onclick="window.showReEditModal(this, event)"
+                                                data-case="<?= htmlspecialchars($row['case_number'] ?? '') ?>"
+                                                data-patient="<?= htmlspecialchars($fullPatientInfo) ?>"
+                                                data-date="<?= htmlspecialchars($dateFormatted) ?>"
+                                                data-reason="<?= htmlspecialchars($row['re_edit_reason']) ?>"
+                                                class="text-[11px] font-semibold text-amber-700 hover:text-amber-900 transition underline underline-offset-2 flex items-center gap-1 cursor-pointer">
+                                                See error
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3 whitespace-nowrap">
+                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
+                                        class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
+                                        <i data-lucide="microscope" class="w-4 h-4 mr-1"></i> Review Case
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination footer for Pending Worklist -->
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+            <!-- Record count -->
+            <span id="worklist-record-count" class="text-xs text-gray-500 font-medium"></span>
+
+            <!-- Pagination Controls -->
+            <div class="flex items-center flex-wrap gap-1.5" id="worklist-pagination-controls">
+                <!-- Dynamic page buttons will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE CARD 2: Pending Release -->
+    <div id="release-table-card" class="hidden rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
+        <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
+            <table class="w-full text-sm">
+                <thead class="sticky top-0 z-10">
+                    <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Case No.</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Branch</th>
+                        <th class="text-left font-semibold px-3 py-3 truncate max-w-[200px]">Patient Name</th>
+                        <th class="text-left font-semibold px-3 py-3 truncate max-w-[150px]">Exam Type</th>
+                        <th class="text-left font-semibold px-3 py-3">Priority</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Date Submitted</th>
+                        <th class="text-left font-semibold px-3 py-3">Status</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="release-tbody" class="text-gray-800 bg-white divide-y divide-gray-100">
+                    <?php if (count($releaseRecords) === 0): ?>
+                        <tr class="empty-release-row">
+                            <td colspan="8" class="text-center py-8 text-gray-500">
+                                No cases pending release.
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($releaseRecords as $row):
+                            $pWeight = 1;
+                            $pUpper = strtoupper(trim($row['priority'] ?? ''));
+                            if ($pUpper === 'STAT')
+                                $pWeight = 5;
+                            elseif ($pUpper === 'URGENT')
+                                $pWeight = 4;
+                            elseif ($pUpper === 'PRIORITY')
+                                $pWeight = 3;
+                            elseif ($pUpper === 'NORMAL')
+                                $pWeight = 2;
+                            else
+                                $pWeight = 1;
+
+                            $isEmergency = ($pUpper === 'STAT') ? 1 : 0;
+                            $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
+                            $isToday = (date('Y-m-d', strtotime($rowDate)) === date('Y-m-d'));
+                            ?>
+                            <tr class="hover:bg-white/10 transition-colors release-record-row cursor-pointer"
+                                data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                                data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
+                                data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
+                                data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
+                                data-pweight="<?= $pWeight ?>"
+                                data-is-today="<?= $isToday ? 'true' : 'false' ?>"
+                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
+                                data-date="<?= strtotime($rowDate) ?>">
+                                <td class="py-3 px-3 whitespace-nowrap">
+                                    <div class="font-medium"><?= htmlspecialchars($row['case_number']) ?></div>
+                                </td>
+                                <td class="py-3 px-3 whitespace-nowrap">
+                                    <div class="font-medium text-gray-600"><?= htmlspecialchars($row['branch_name']) ?></div>
+                                </td>
+                                <td class="py-3 px-3 truncate max-w-[200px]"
+                                    title="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>">
+                                    <div class="font-medium truncate">
+                                        <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3 whitespace-nowrap text-xs text-gray-800 font-medium">
+                                    <?php
+                                    $pExams = array_filter(array_map('trim', explode(',', $row['exam_type'] ?? '')));
+                                    $pFirstExam = reset($pExams) ?: 'General Exam';
+                                    $pCount = count($pExams);
+                                    ?>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="truncate max-w-[130px]" title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
+                                            <?= htmlspecialchars($pFirstExam) ?>
+                                        </span>
+                                        <?php if ($pCount > 1): ?>
+                                            <span class="inline-flex items-center justify-center rounded-full bg-gray-100 border border-gray-300 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 cursor-default flex-shrink-0"
+                                                title="<?= htmlspecialchars($row['exam_type'] ?? '') ?>">
+                                                <?= $pCount ?>+
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <?php
+                                    $pColor = 'blue';
+                                    if ($row['priority'] === 'STAT')
+                                        $pColor = 'red';
+                                    if ($row['priority'] === 'Urgent')
+                                        $pColor = 'yellow';
+                                    if ($row['priority'] === 'Priority')
+                                        $pColor = 'orange';
+                                    ?>
+                                    <span
+                                        class="inline-flex items-center rounded-full border border-<?= $pColor ?>-400 bg-<?= $pColor ?>-50 px-2 py-1 text-xs font-semibold text-<?= $pColor ?>-700">
+                                        <?= htmlspecialchars($row['priority']) ?>
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 whitespace-nowrap">
+                                    <div class="flex flex-col gap-1 items-start">
+                                        <?php $submitDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at']; ?>
+                                        <span class="text-sm text-gray-600"><?= date('M d, Y', strtotime($submitDate)) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($submitDate)) ?></span></span>
+                                        <?php if (!$isToday): ?>
+                                            <span class="inline-block rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700 border border-red-200" title="This case was carried over from a previous day">BACKLOG</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <?php
+                                    $rawRelStatus = $row['status'] ?? 'Report Ready';
+                                    if ($rawRelStatus === 'Completed') {
                                         $sBorder = '1.5px solid #4ade80';
                                         $sBg = '#f0fdf4';
                                         $sColor = '#15803d';
+                                    } else {
+                                        $sBorder = '1.5px solid #818cf8';
+                                        $sBg = '#eef2ff';
+                                        $sColor = '#4338ca';
                                     }
                                     ?>
                                     <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold"
                                         style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
-                                        <?= htmlspecialchars($displayStatus) ?>
+                                        <?= htmlspecialchars($rawRelStatus) ?>
                                     </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
@@ -316,54 +505,180 @@ sort($priorities);
             </table>
         </div>
 
-        <!-- Pagination footer -->
-        <div
-            class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+        <!-- Pagination footer for Pending Release -->
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
             <!-- Record count -->
-            <span id="worklist-record-count" class="text-xs text-gray-500 font-medium"></span>
+            <span id="release-record-count" class="text-xs text-gray-500 font-medium"></span>
 
             <!-- Pagination Controls -->
-            <div class="flex items-center flex-wrap gap-1.5" id="worklist-pagination-controls">
+            <div class="flex items-center flex-wrap gap-1.5" id="release-pagination-controls">
                 <!-- Dynamic page buttons will be inserted here -->
             </div>
         </div>
     </div>
 </div>
 
+<!-- RE-EDIT DETAILS MODAL (Matching Correction Request Details design) -->
+<div id="reedit-details-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" onclick="if(event.target === this) window.closeReEditDetailsModal()">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
+        <!-- Header -->
+        <div class="flex items-start justify-between border-b border-gray-100 pb-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
+                    <i data-lucide="file-warning" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-base">Re-Edit Request Details</h3>
+                    <p id="redm-subtitle" class="text-xs text-gray-500 mt-0.5 font-medium"></p>
+                </div>
+            </div>
+            <button type="button" onclick="window.closeReEditDetailsModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
 
+        <!-- Meta Summary Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
+            <div class="flex items-center gap-1.5">
+                <span class="text-gray-500 font-medium">Status:</span>
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                    For Revision
+                </span>
+            </div>
+            <div class="text-gray-500 flex items-center gap-1.5 font-medium">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
+                <span id="redm-date-text"></span>
+            </div>
+        </div>
+
+        <!-- Content Card -->
+        <div class="p-4 rounded-xl bg-white border border-gray-200/90 shadow-2xs space-y-2">
+            <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="message-square" class="w-4 h-4 text-amber-600"></i>
+                RadTech Note / Re-Edit Reason:
+            </div>
+            <div class="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/80 text-xs text-amber-950 font-medium leading-relaxed italic break-words">
+                <span id="redm-reason-text"></span>
+            </div>
+            <p class="text-[11px] text-gray-500 pt-1">
+                The RadTech indicated that revisions are required for this case. You can update the findings and resubmit the report.
+            </p>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pt-3 border-t border-gray-100 flex items-center justify-end">
+            <button type="button" onclick="window.closeReEditDetailsModal()" 
+                    class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer shadow-2xs">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
+    // Modal handler for Re-Edit Reason (Matching Correction Request Details)
+    window.showReEditModal = function(btn, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const caseNo = (btn && btn.getAttribute('data-case')) || '';
+        const patientInfo = (btn && btn.getAttribute('data-patient')) || '';
+        const dateStr = (btn && btn.getAttribute('data-date')) || '';
+        const reason = (btn && btn.getAttribute('data-reason')) || 'No reason provided.';
 
-    // Tab Switching for Radiologist (Worklist vs Escalated Disputes)
+        const modal = document.getElementById('reedit-details-modal');
+        const subtitle = document.getElementById('redm-subtitle');
+        const reasonText = document.getElementById('redm-reason-text');
+        const dateText = document.getElementById('redm-date-text');
+
+        if (subtitle) {
+            subtitle.textContent = 'Case #' + caseNo + (patientInfo ? ' • ' + patientInfo : '');
+        }
+        if (reasonText) {
+            reasonText.textContent = '"' + reason + '"';
+        }
+        if (dateText) {
+            dateText.textContent = dateStr;
+        }
+
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    };
+
+    window.closeReEditDetailsModal = function() {
+        const modal = document.getElementById('reedit-details-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.closeReEditDetailsModal();
+        }
+    });
+
+    // Tab Switching for Radiologist: Pending Worklist vs Pending Release
     window.switchRadTab = function(tab) {
         sessionStorage.setItem('Citilife_radWorklist_tab', tab);
         const workCard = document.getElementById('worklist-table-card');
-        const dispCard = document.getElementById('rad-disputes-table-card');
-        const workCtrls = document.getElementById('worklist-controls');
-        const dispCtrls = document.getElementById('disputes-controls');
+        const relCard = document.getElementById('release-table-card');
         const workBtn = document.getElementById('tab-rad-worklist-btn');
-        const dispBtn = document.getElementById('tab-rad-disputes-btn');
+        const relBtn = document.getElementById('tab-rad-release-btn');
+        const worklistTitle = document.getElementById('worklist-title');
+        const worklistSubtitle = document.getElementById('worklist-subtitle');
+        const branchValue = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : '';
 
-        if (tab === 'worklist') {
+        if (tab === 'release') {
+            if (workCard) workCard.classList.add('hidden');
+            if (relCard) relCard.classList.remove('hidden');
+
+            if (relBtn) relBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
+            if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+
+            if (worklistTitle && worklistSubtitle) {
+                if (branchValue) {
+                    worklistTitle.innerText = "Pending Release - " + branchValue;
+                    worklistSubtitle.innerText = "Cases with completed readings awaiting release for " + branchValue + " branch";
+                } else {
+                    worklistTitle.innerText = "Pending Release";
+                    worklistSubtitle.innerText = "Cases with completed readings awaiting release across all branches";
+                }
+            }
+
+            if (typeof updateReleaseTable === 'function') {
+                updateReleaseTable();
+            }
+        } else {
+            // tab === 'worklist'
             if (workCard) workCard.classList.remove('hidden');
-            if (dispCard) dispCard.classList.add('hidden');
-            if (workCtrls) workCtrls.classList.remove('hidden');
-            if (dispCtrls) dispCtrls.classList.add('hidden');
+            if (relCard) relCard.classList.add('hidden');
 
             if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
-            if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2 relative";
-        } else {
-            if (workCard) workCard.classList.add('hidden');
-            if (dispCard) dispCard.classList.remove('hidden');
-            if (workCtrls) workCtrls.classList.add('hidden');
-            if (dispCtrls) dispCtrls.classList.remove('hidden');
+            if (relBtn) relBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
 
-            if (dispBtn) dispBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2 relative";
-            if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
-            
-            if (typeof updateDisputesTable === 'function') {
-                updateDisputesTable();
+            if (worklistTitle && worklistSubtitle) {
+                if (branchValue) {
+                    worklistTitle.innerText = "Worklist - " + branchValue;
+                    worklistSubtitle.innerText = "Manage pending cases for " + branchValue + " branch";
+                } else {
+                    worklistTitle.innerText = "Worklist";
+                    worklistSubtitle.innerText = "Manage pending cases across all branches";
+                }
             }
+
+            if (typeof updateTable === 'function') {
+                updateTable();
+            }
+        }
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
     };
 
@@ -374,20 +689,16 @@ sort($priorities);
         const filterPriority = document.getElementById('filterPriority');
         const filterDate = document.getElementById('filterDate');
         const sortOption = document.getElementById('sortOption');
-        const worklistTbody = document.getElementById('worklist-tbody') || document.querySelector('tbody');
-        let allRows = Array.from(document.querySelectorAll('tr.record-row'));
 
+        const worklistTbody = document.getElementById('worklist-tbody');
+        let allRows = Array.from(document.querySelectorAll('tr.record-row'));
         const ROWS_PER_PAGE = 8;
         let currentPage = 1;
-        
-        const disputeSearchInput = document.getElementById('disputeSearchInput');
-        const disputeFilterType = document.getElementById('disputeFilterType');
-        const disputeFilterBranch = document.getElementById('disputeFilterBranch');
-        const disputeSortOption = document.getElementById('disputeSortOption');
-        const disputesTbody = document.getElementById('disputes-tbody');
-        let allDisputeRows = Array.from(document.querySelectorAll('tr.dispute-row'));
-        const DISPUTES_PER_PAGE = 8;
-        let currentDisputesPage = 1;
+
+        const releaseTbody = document.getElementById('release-tbody');
+        let allReleaseRows = Array.from(document.querySelectorAll('tr.release-record-row'));
+        const RELEASE_ROWS_PER_PAGE = 8;
+        let currentReleasePage = 1;
 
         function saveWorklistState() {
             if (searchInput) sessionStorage.setItem('Citilife_radWorklist_search', searchInput.value);
@@ -396,12 +707,12 @@ sort($priorities);
             if (filterDate) sessionStorage.setItem('Citilife_radWorklist_date', filterDate.value);
             if (sortOption) sessionStorage.setItem('Citilife_radWorklist_sort', sortOption.value);
             sessionStorage.setItem('Citilife_radWorklist_page', currentPage);
-            sessionStorage.setItem('Citilife_radWorklist_disputesPage', currentDisputesPage);
+            sessionStorage.setItem('Citilife_radWorklist_releasePage', currentReleasePage);
         }
 
         function restoreWorklistState() {
             const params = new URLSearchParams(window.location.search);
-            const hasHighlight = params.has('highlight_case') || params.has('highlight') || params.has('case_id') || params.has('highlight_dispute_case');
+            const hasHighlight = params.has('highlight_case') || params.has('highlight') || params.has('case_id');
 
             if (params.has('branch')) {
                 if (filterBranch) filterBranch.value = params.get('branch');
@@ -444,10 +755,11 @@ sort($priorities);
                 if (savedPage && savedPage > 0) {
                     currentPage = savedPage;
                 }
-                const savedDisputesPage = parseInt(sessionStorage.getItem('Citilife_radWorklist_disputesPage'));
-                if (savedDisputesPage && savedDisputesPage > 0) {
-                    currentDisputesPage = savedDisputesPage;
+                const savedReleasePage = parseInt(sessionStorage.getItem('Citilife_radWorklist_releasePage'));
+                if (savedReleasePage && savedReleasePage > 0) {
+                    currentReleasePage = savedReleasePage;
                 }
+
                 const savedTab = sessionStorage.getItem('Citilife_radWorklist_tab');
                 if (savedTab && !params.has('tab') && !params.has('status')) {
                     window.switchRadTab(savedTab);
@@ -455,25 +767,29 @@ sort($priorities);
             }
         }
 
+        // --- Pending Worklist Table Logic ---
         function updateTable() {
-            if (!searchInput || !filterBranch || !filterPriority || !sortOption || !worklistTbody) return;
+            if (!worklistTbody) return;
 
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const branchValue = filterBranch.value;
-            const priorityValue = filterPriority.value;
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const branchValue = filterBranch ? filterBranch.value : '';
+            const priorityValue = filterPriority ? filterPriority.value : '';
             const dateValue = filterDate ? filterDate.value : 'All';
-            const sortValue = sortOption.value;
+            const sortValue = sortOption ? sortOption.value : 'date_desc';
 
-            // Update Title dynamically based on selected branch
-            const worklistTitle = document.getElementById('worklist-title');
-            const worklistSubtitle = document.getElementById('worklist-subtitle');
-            if (worklistTitle && worklistSubtitle) {
-                if (branchValue) {
-                    worklistTitle.innerText = "Worklist - " + branchValue;
-                    worklistSubtitle.innerText = "Manage pending cases for " + branchValue + " branch";
-                } else {
-                    worklistTitle.innerText = "Worklist";
-                    worklistSubtitle.innerText = "Manage pending cases across all branches";
+            // Update Title dynamically if currently on worklist tab
+            const activeTab = sessionStorage.getItem('Citilife_radWorklist_tab') || 'worklist';
+            if (activeTab === 'worklist') {
+                const worklistTitle = document.getElementById('worklist-title');
+                const worklistSubtitle = document.getElementById('worklist-subtitle');
+                if (worklistTitle && worklistSubtitle) {
+                    if (branchValue) {
+                        worklistTitle.innerText = "Worklist - " + branchValue;
+                        worklistSubtitle.innerText = "Manage pending cases for " + branchValue + " branch";
+                    } else {
+                        worklistTitle.innerText = "Worklist";
+                        worklistSubtitle.innerText = "Manage pending cases across all branches";
+                    }
                 }
             }
 
@@ -504,7 +820,7 @@ sort($priorities);
             // Apply filtering
             let filteredRows = [];
             allRows.forEach(row => {
-                const matchesSearch = row.dataset.search.includes(searchTerm);
+                const matchesSearch = !searchTerm || row.dataset.search.includes(searchTerm);
                 const matchesBranch = branchValue === '' || row.dataset.branch === branchValue;
                 let rowPriority = row.dataset.priority;
                 let mappedPriority = rowPriority;
@@ -547,14 +863,12 @@ sort($priorities);
             let emptyStateRow = worklistTbody.querySelector('.empty-state-row');
 
             if (emptyStateRow && emptyStateRow.style.display !== 'none' && allRows.length === 0) {
-                return;
-            }
-
-            if (filteredRows.length === 0 && allRows.length > 0) {
+                // Keep empty state
+            } else if (filteredRows.length === 0 && allRows.length > 0) {
                 if (!noRecordsRow) {
                     noRecordsRow = document.createElement('tr');
                     noRecordsRow.className = 'no-records';
-                    noRecordsRow.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No matching records found.</td>`;
+                    noRecordsRow.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No matching pending cases found.</td>`;
                     worklistTbody.appendChild(noRecordsRow);
                 } else {
                     noRecordsRow.style.display = '';
@@ -584,7 +898,6 @@ sort($priorities);
             if (!container) return;
             container.innerHTML = '';
 
-            // Helper to create a button
             function createButton(label, page, disabled, isActive = false) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
@@ -612,7 +925,6 @@ sort($priorities);
                 return btn;
             }
 
-            // Helper to create ellipsis
             function createEllipsis() {
                 const span = document.createElement('span');
                 span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
@@ -620,13 +932,9 @@ sort($priorities);
                 return span;
             }
 
-            // First Button
             container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
-
-            // Back Button
             container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
 
-            // Page numbers
             if (totalPages <= 7) {
                 for (let i = 1; i <= totalPages; i++) {
                     container.appendChild(createButton(i, i, false, i == currentPage));
@@ -657,92 +965,131 @@ sort($priorities);
                 }
             }
 
-            // Next Button
             container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
-
-            // Last Button
             container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
         }
 
-        window.updateDisputesTable = function() {
-            if (!disputesTbody) return;
+        // --- Pending Release Table Logic ---
+        window.updateReleaseTable = function() {
+            if (!releaseTbody) return;
 
-            const searchTerm = disputeSearchInput ? disputeSearchInput.value.toLowerCase().trim() : '';
-            const typeValue = disputeFilterType ? disputeFilterType.value : '';
-            const branchValue = disputeFilterBranch ? disputeFilterBranch.value : '';
-            const sortValue = disputeSortOption ? disputeSortOption.value : 'date_desc';
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const branchValue = filterBranch ? filterBranch.value : '';
+            const priorityValue = filterPriority ? filterPriority.value : '';
+            const dateValue = filterDate ? filterDate.value : 'All';
+            const sortValue = sortOption ? sortOption.value : 'date_desc';
 
-            // Sorting
-            allDisputeRows.sort((a, b) => {
+            // Update Title dynamically if currently on release tab
+            const activeTab = sessionStorage.getItem('Citilife_radWorklist_tab') || 'worklist';
+            if (activeTab === 'release') {
+                const worklistTitle = document.getElementById('worklist-title');
+                const worklistSubtitle = document.getElementById('worklist-subtitle');
+                if (worklistTitle && worklistSubtitle) {
+                    if (branchValue) {
+                        worklistTitle.innerText = "Pending Release - " + branchValue;
+                        worklistSubtitle.innerText = "Cases with completed readings awaiting release for " + branchValue + " branch";
+                    } else {
+                        worklistTitle.innerText = "Pending Release";
+                        worklistSubtitle.innerText = "Cases with completed readings awaiting release across all branches";
+                    }
+                }
+            }
+
+            // Accurate sorting
+            allReleaseRows.sort((a, b) => {
                 const dateA = parseInt(a.dataset.date) || 0;
                 const dateB = parseInt(b.dataset.date) || 0;
-                const typeA = (a.dataset.typelabel || '').toLowerCase();
-                const typeB = (b.dataset.typelabel || '').toLowerCase();
-                const caseA = (a.dataset.case || '').toLowerCase();
-                const caseB = (b.dataset.case || '').toLowerCase();
-                const nameA = (a.dataset.name || '').toLowerCase();
-                const nameB = (b.dataset.name || '').toLowerCase();
+                const weightA = parseInt(a.dataset.pweight) || 0;
+                const weightB = parseInt(b.dataset.pweight) || 0;
 
-                if (sortValue === 'date_desc') return dateB - dateA;
-                if (sortValue === 'date_asc') return dateA - dateB;
-                if (sortValue === 'type_asc') return typeA.localeCompare(typeB);
-                if (sortValue === 'case_asc') return caseA.localeCompare(caseB);
-                if (sortValue === 'name_asc') return nameA.localeCompare(nameB);
+                if (sortValue === 'date_desc') {
+                    return dateB - dateA;
+                } else if (sortValue === 'date_asc') {
+                    return dateA - dateB;
+                } else if (sortValue === 'priority_desc') {
+                    if (weightB !== weightA) return weightB - weightA;
+                    return dateB - dateA;
+                } else if (sortValue === 'priority_asc') {
+                    if (weightA !== weightB) return weightA - weightB;
+                    return dateB - dateA;
+                }
                 return dateB - dateA;
             });
 
             // Reorder in DOM
-            allDisputeRows.forEach(row => disputesTbody.appendChild(row));
+            allReleaseRows.forEach(row => releaseTbody.appendChild(row));
 
-            let filteredRows = [];
-            allDisputeRows.forEach(row => {
+            // Apply filtering
+            let filteredReleaseRows = [];
+            allReleaseRows.forEach(row => {
                 const matchesSearch = !searchTerm || row.dataset.search.includes(searchTerm);
-                const matchesType = !typeValue || row.dataset.type === typeValue;
-                const matchesBranch = !branchValue || row.dataset.branch === branchValue;
+                const matchesBranch = branchValue === '' || row.dataset.branch === branchValue;
+                let rowPriority = row.dataset.priority;
+                let mappedPriority = rowPriority;
+                if (rowPriority === 'Normal' || rowPriority === 'Priority') {
+                    mappedPriority = 'Routine';
+                }
+                const matchesPriority = priorityValue === '' || rowPriority === priorityValue || mappedPriority === priorityValue;
 
-                if (matchesSearch && matchesType && matchesBranch) {
-                    filteredRows.push(row);
+                const isToday = row.dataset.isToday === 'true';
+                let matchesDate = true;
+                if (dateValue === 'Today') {
+                    matchesDate = isToday;
+                } else if (dateValue === 'Backlog') {
+                    matchesDate = !isToday;
+                }
+
+                if (matchesSearch && matchesBranch && matchesPriority && matchesDate) {
+                    filteredReleaseRows.push(row);
                 } else {
                     row.style.display = 'none';
                 }
             });
 
-            let emptyRow = disputesTbody.querySelector('.empty-disputes-row');
-            if (filteredRows.length === 0 && allDisputeRows.length > 0) {
-                if (!emptyRow) {
-                    emptyRow = document.createElement('tr');
-                    emptyRow.className = 'empty-disputes-row';
-                    emptyRow.innerHTML = '<td colspan="7" class="text-center py-8 text-gray-500">No matching escalated error reports found.</td>';
-                    disputesTbody.appendChild(emptyRow);
-                } else {
-                    emptyRow.style.display = '';
-                    disputesTbody.appendChild(emptyRow);
-                }
-            } else if (emptyRow) {
-                emptyRow.style.display = 'none';
-            }
+            // Pagination calculation
+            const totalPages = Math.max(1, Math.ceil(filteredReleaseRows.length / RELEASE_ROWS_PER_PAGE));
+            if (currentReleasePage > totalPages) currentReleasePage = totalPages;
+            if (currentReleasePage < 1) currentReleasePage = 1;
 
-            const totalPages = Math.max(1, Math.ceil(filteredRows.length / DISPUTES_PER_PAGE));
-            if (currentDisputesPage > totalPages) currentDisputesPage = totalPages;
-            if (currentDisputesPage < 1) currentDisputesPage = 1;
+            const startIdx = (currentReleasePage - 1) * RELEASE_ROWS_PER_PAGE;
+            const endIdx = startIdx + RELEASE_ROWS_PER_PAGE;
 
-            const startIdx = (currentDisputesPage - 1) * DISPUTES_PER_PAGE;
-            const endIdx = startIdx + DISPUTES_PER_PAGE;
+            const visibleSet = new Set(filteredReleaseRows.slice(startIdx, endIdx));
 
-            filteredRows.forEach((row, idx) => {
-                row.style.display = (idx >= startIdx && idx < endIdx) ? '' : 'none';
+            filteredReleaseRows.forEach(row => {
+                row.style.display = visibleSet.has(row) ? '' : 'none';
             });
 
-            updateDisputesPaginationUI(filteredRows.length, totalPages);
-            if (window.lucide) lucide.createIcons();
+            // Handle "No records found" state
+            let noRelRecordsRow = releaseTbody.querySelector('.no-rel-records');
+            let emptyRelStateRow = releaseTbody.querySelector('.empty-release-row');
+
+            if (emptyRelStateRow && emptyRelStateRow.style.display !== 'none' && allReleaseRows.length === 0) {
+                // Keep empty state
+            } else if (filteredReleaseRows.length === 0 && allReleaseRows.length > 0) {
+                if (!noRelRecordsRow) {
+                    noRelRecordsRow = document.createElement('tr');
+                    noRelRecordsRow.className = 'no-rel-records';
+                    noRelRecordsRow.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No matching cases pending release found.</td>`;
+                    releaseTbody.appendChild(noRelRecordsRow);
+                } else {
+                    noRelRecordsRow.style.display = '';
+                    releaseTbody.appendChild(noRelRecordsRow);
+                }
+            } else if (noRelRecordsRow) {
+                noRelRecordsRow.style.display = 'none';
+            }
+
+            // Update Pagination UI
+            updateReleasePaginationUI(filteredReleaseRows.length, totalPages);
         };
 
-        function updateDisputesPaginationUI(totalFiltered, totalPages) {
-            const recordCountInfo = document.getElementById('disputes-record-count');
-            const container = document.getElementById('disputes-pagination-controls');
+        function updateReleasePaginationUI(totalFiltered, totalPages) {
+            const recordCountInfo = document.getElementById('release-record-count');
+            const container = document.getElementById('release-pagination-controls');
 
-            const startIdx = totalFiltered === 0 ? 0 : (currentDisputesPage - 1) * DISPUTES_PER_PAGE + 1;
-            const endIdx = Math.min(currentDisputesPage * DISPUTES_PER_PAGE, totalFiltered);
+            const startIdx = totalFiltered === 0 ? 0 : (currentReleasePage - 1) * RELEASE_ROWS_PER_PAGE + 1;
+            const endIdx = Math.min(currentReleasePage * RELEASE_ROWS_PER_PAGE, totalFiltered);
 
             if (recordCountInfo) {
                 recordCountInfo.innerHTML = totalFiltered === 0
@@ -768,10 +1115,10 @@ sort($priorities);
                     btn.disabled = true;
                 } else {
                     btn.onclick = () => {
-                        currentDisputesPage = page;
+                        currentReleasePage = page;
                         saveWorklistState();
-                        updateDisputesTable();
-                        const card = document.getElementById('rad-disputes-table-card');
+                        updateReleaseTable();
+                        const card = document.getElementById('release-table-card');
                         if (card) {
                             card.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
@@ -787,74 +1134,50 @@ sort($priorities);
                 return span;
             }
 
-            container.appendChild(createButton('&laquo; First', 1, currentDisputesPage <= 1));
-            container.appendChild(createButton('&lsaquo; Back', currentDisputesPage - 1, currentDisputesPage <= 1));
+            container.appendChild(createButton('&laquo; First', 1, currentReleasePage <= 1));
+            container.appendChild(createButton('&lsaquo; Back', currentReleasePage - 1, currentReleasePage <= 1));
 
             if (totalPages <= 7) {
                 for (let i = 1; i <= totalPages; i++) {
-                    container.appendChild(createButton(i, i, false, i == currentDisputesPage));
+                    container.appendChild(createButton(i, i, false, i == currentReleasePage));
                 }
             } else {
-                if (currentDisputesPage <= 4) {
+                if (currentReleasePage <= 4) {
                     for (let i = 1; i <= 5; i++) {
-                        container.appendChild(createButton(i, i, false, i == currentDisputesPage));
+                        container.appendChild(createButton(i, i, false, i == currentReleasePage));
                     }
                     container.appendChild(createEllipsis());
-                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentDisputesPage));
-                } else if (currentDisputesPage >= totalPages - 3) {
-                    container.appendChild(createButton(1, 1, false, 1 == currentDisputesPage));
+                    container.appendChild(createButton(totalPages, totalPages, false, totalPages == currentReleasePage));
+                } else if (currentReleasePage >= totalPages - 3) {
+                    container.appendChild(createButton(1, 1, false, 1 == currentReleasePage));
                     container.appendChild(createEllipsis());
                     for (let i = totalPages - 4; i <= totalPages; i++) {
-                        container.appendChild(createButton(i, i, false, i == currentDisputesPage));
+                        container.appendChild(createButton(i, i, false, i == currentReleasePage));
                     }
                 } else {
-                    container.appendChild(createButton(1, 1, false, 1 == currentDisputesPage));
+                    container.appendChild(createButton(1, 1, false, 1 == currentReleasePage));
                     container.appendChild(createEllipsis());
-                    container.appendChild(createButton(currentDisputesPage - 1, currentDisputesPage - 1, false, false));
-                    container.appendChild(createButton(currentDisputesPage, currentDisputesPage, false, true));
-                    container.appendChild(createButton(currentDisputesPage + 1, currentDisputesPage + 1, false, false));
+
+                    container.appendChild(createButton(currentReleasePage - 1, currentReleasePage - 1, false, false));
+                    container.appendChild(createButton(currentReleasePage, currentReleasePage, false, true));
+                    container.appendChild(createButton(currentReleasePage + 1, currentReleasePage + 1, false, false));
+
                     container.appendChild(createEllipsis());
                     container.appendChild(createButton(totalPages, totalPages, false, false));
                 }
             }
 
-            container.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
-            container.appendChild(createButton('Last &raquo;', totalPages, currentDisputesPage >= totalPages));
+            container.appendChild(createButton('Next &rsaquo;', currentReleasePage + 1, currentReleasePage >= totalPages));
+            container.appendChild(createButton('Last &raquo;', totalPages, currentReleasePage >= totalPages));
         }
 
-        // Event listeners for Disputes tab
-        if (disputeSearchInput) {
-            disputeSearchInput.addEventListener('input', () => {
-                currentDisputesPage = 1;
-                updateDisputesTable();
-            });
-        }
-        if (disputeFilterType) {
-            disputeFilterType.addEventListener('change', () => {
-                currentDisputesPage = 1;
-                updateDisputesTable();
-            });
-        }
-        if (disputeFilterBranch) {
-            disputeFilterBranch.addEventListener('change', () => {
-                currentDisputesPage = 1;
-                updateDisputesTable();
-            });
-        }
-        if (disputeSortOption) {
-            disputeSortOption.addEventListener('change', () => {
-                currentDisputesPage = 1;
-                updateDisputesTable();
-            });
-        }
-
-        // Reset to page 1 on filter/sort change
+        // Reset to page 1 on filter/sort change and update both tables
         function onFilterSortChange() {
             currentPage = 1;
-            currentDisputesPage = 1;
+            currentReleasePage = 1;
             saveWorklistState();
             updateTable();
-            updateDisputesTable();
+            updateReleaseTable();
         }
 
         if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
@@ -865,146 +1188,94 @@ sort($priorities);
 
         function handleHighlight() {
             const urlParams = new URLSearchParams(window.location.search);
-            const currentTabParam = urlParams.get('tab') || urlParams.get('status');
-            
-            // Handle Disputes Tab
-            const disputeCase = urlParams.get('highlight_dispute_case') || (currentTabParam === 'disputes' ? (urlParams.get('highlight_case') || urlParams.get('highlight') || urlParams.get('case_id')) : null);
-            if (disputeCase) {
-                if (typeof switchRadTab === 'function') switchRadTab('disputes');
-                const dispRows = document.querySelectorAll('.dispute-row');
-                const row = Array.from(dispRows).find(r => 
-                    (r.dataset.id || '').toLowerCase() === disputeCase.toLowerCase() ||
-                    (r.dataset.case || '').toLowerCase() === disputeCase.toLowerCase() ||
-                    (r.dataset.caseId || '').toLowerCase() === disputeCase.toLowerCase() ||
-                    r.innerText.toLowerCase().includes(disputeCase.toLowerCase())
-                );
-                if (row) {
-                    const dispIndex = Array.from(dispRows).indexOf(row);
-                    currentDisputesPage = Math.floor(dispIndex / DISPUTES_PER_PAGE) + 1;
-                    updateDisputesTable();
-
-                    setTimeout(() => {
-                        row.style.display = '';
-                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        
-                        // Insert notification highlight banner at the top header (like other modules)
-                        const existingBanner = document.getElementById('highlight-banner');
-                        if (existingBanner) existingBanner.remove();
-
-                        const banner = document.createElement('div');
-                        banner.id = 'highlight-banner';
-                        banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Error report for Case <strong>${disputeCase}</strong> is highlighted below.</span></div>`;
-                        banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
-                        
-                        const header = document.querySelector('h2');
-                        if (header && header.parentElement) {
-                            header.parentElement.insertAdjacentElement('afterend', banner);
-                        } else {
-                            const topHeader = document.querySelector('h1') || document.querySelector('.flex.justify-between.items-center');
-                            if (topHeader && topHeader.parentElement) {
-                                topHeader.parentElement.insertAdjacentElement('afterend', banner);
-                            }
-                        }
-
-                        setTimeout(() => {
-                            banner.style.transition = 'opacity 0.5s';
-                            banner.style.opacity = '0';
-                            setTimeout(() => banner.remove(), 500);
-                        }, 6000);
-
-                        // Flash highlight ring and background animation
-                        row.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400');
-                        row.style.backgroundColor = '#fef08a';
-                        
-                        let flashCount = 0;
-                        const flashInterval = setInterval(() => {
-                            flashCount++;
-                            row.style.backgroundColor = (flashCount % 2 === 1) ? '#fde047' : '#fef08a';
-                            if (flashCount >= 6) {
-                                clearInterval(flashInterval);
-                                setTimeout(() => {
-                                    row.style.transition = 'background-color 2s ease, box-shadow 2s ease';
-                                    row.style.backgroundColor = '';
-                                    row.classList.remove('ring-2', 'ring-amber-400');
-                                }, 1200);
-                            }
-                        }, 250);
-
-                        const newUrl = new URL(window.location);
-                        newUrl.searchParams.delete('highlight_dispute_case');
-                        newUrl.searchParams.delete('highlight_case');
-                        newUrl.searchParams.delete('highlight');
-                        newUrl.searchParams.delete('is_new');
-                        window.history.replaceState({}, document.title, newUrl.toString());
-                    }, 200);
-                }
-            }
-
-            // Handle Main Worklist
             const highlightCase = urlParams.get('highlight_case') || urlParams.get('highlight') || urlParams.get('case_id');
-            if (highlightCase) {
-                if (typeof switchRadTab === 'function') switchRadTab('worklist');
-                const mainRows = document.querySelectorAll('.record-row');
-                const row = Array.from(mainRows).find(r => 
+            if (!highlightCase) return;
+
+            // Search in Pending Worklist
+            const mainRows = document.querySelectorAll('.record-row');
+            let targetRow = Array.from(mainRows).find(r => 
+                (r.dataset.id || '').toLowerCase() === highlightCase.toLowerCase() ||
+                (r.dataset.caseId || '').toLowerCase() === highlightCase.toLowerCase()
+            );
+
+            let isReleaseTab = false;
+            if (!targetRow) {
+                // Search in Pending Release
+                const relRows = document.querySelectorAll('.release-record-row');
+                targetRow = Array.from(relRows).find(r => 
                     (r.dataset.id || '').toLowerCase() === highlightCase.toLowerCase() ||
                     (r.dataset.caseId || '').toLowerCase() === highlightCase.toLowerCase()
                 );
-                if (row) {
-                    const index = Array.from(mainRows).indexOf(row);
+                if (targetRow) {
+                    isReleaseTab = true;
+                }
+            }
+
+            if (targetRow) {
+                if (isReleaseTab) {
+                    if (typeof switchRadTab === 'function') switchRadTab('release');
+                    const relRows = document.querySelectorAll('.release-record-row');
+                    const index = Array.from(relRows).indexOf(targetRow);
+                    currentReleasePage = Math.floor(index / RELEASE_ROWS_PER_PAGE) + 1;
+                    updateReleaseTable();
+                } else {
+                    if (typeof switchRadTab === 'function') switchRadTab('worklist');
+                    const mainRows = document.querySelectorAll('.record-row');
+                    const index = Array.from(mainRows).indexOf(targetRow);
                     currentPage = Math.floor(index / ROWS_PER_PAGE) + 1;
                     updateTable();
+                }
 
+                setTimeout(() => {
+                    targetRow.style.display = '';
+                    const tableWrapper = targetRow.closest('.overflow-y-auto');
+                    if (tableWrapper) {
+                        tableWrapper.scrollTo({ top: targetRow.offsetTop - tableWrapper.offsetTop - 40, behavior: 'smooth' });
+                    } else {
+                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+
+                    targetRow.style.transition = 'background-color 0.3s ease';
+                    targetRow.style.backgroundColor = '#fef08a';
                     setTimeout(() => {
-                        row.style.display = '';
-                        const tableWrapper = row.closest('.overflow-y-auto');
-                        if (tableWrapper) {
-                            tableWrapper.scrollTo({ top: row.offsetTop - tableWrapper.offsetTop - 40, behavior: 'smooth' });
-                        } else {
-                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-
-                        row.style.transition = 'background-color 0.3s ease';
-                        row.style.backgroundColor = '#fef08a';
+                        targetRow.style.backgroundColor = '#fde047';
                         setTimeout(() => {
-                            row.style.backgroundColor = '#fde047';
+                            targetRow.style.backgroundColor = '#fef08a';
                             setTimeout(() => {
-                                row.style.backgroundColor = '#fef08a';
+                                targetRow.style.backgroundColor = '#fde047';
                                 setTimeout(() => {
-                                    row.style.backgroundColor = '#fde047';
-                                    setTimeout(() => {
-                                        row.style.transition = 'background-color 1.5s ease';
-                                        row.style.backgroundColor = '';
-                                    }, 400);
+                                    targetRow.style.transition = 'background-color 1.5s ease';
+                                    targetRow.style.backgroundColor = '';
                                 }, 400);
                             }, 400);
-                        }, 200);
-
-                        // Banner feedback
-                        const existingBanner = document.getElementById('highlight-banner');
-                        if (existingBanner) existingBanner.remove();
-
-                        const banner = document.createElement('div');
-                        banner.id = 'highlight-banner';
-                        banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightCase}</strong> is highlighted below.</span></div>`;
-                        banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
-                        const header = document.querySelector('h2');
-                        if (header && header.parentElement) {
-                            header.parentElement.insertAdjacentElement('afterend', banner);
-                        }
-                        setTimeout(() => {
-                            banner.style.transition = 'opacity 0.5s';
-                            banner.style.opacity = '0';
-                            setTimeout(() => banner.remove(), 500);
-                        }, 6000);
-
-                        const newUrl = new URL(window.location);
-                        newUrl.searchParams.delete('highlight_case');
-                        newUrl.searchParams.delete('highlight');
-                        newUrl.searchParams.delete('case_id');
-                        newUrl.searchParams.delete('is_new');
-                        window.history.replaceState({}, document.title, newUrl.toString());
+                        }, 400);
                     }, 200);
-                }
+
+                    // Banner feedback
+                    const existingBanner = document.getElementById('highlight-banner');
+                    if (existingBanner) existingBanner.remove();
+
+                    const banner = document.createElement('div');
+                    banner.id = 'highlight-banner';
+                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightCase}</strong> is highlighted below.</span></div>`;
+                    banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                    const header = document.querySelector('h2');
+                    if (header && header.parentElement) {
+                        header.parentElement.insertAdjacentElement('afterend', banner);
+                    }
+                    setTimeout(() => {
+                        banner.style.transition = 'opacity 0.5s';
+                        banner.style.opacity = '0';
+                        setTimeout(() => banner.remove(), 500);
+                    }, 6000);
+
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.delete('highlight_case');
+                    newUrl.searchParams.delete('highlight');
+                    newUrl.searchParams.delete('case_id');
+                    newUrl.searchParams.delete('is_new');
+                    window.history.replaceState({}, document.title, newUrl.toString());
+                }, 200);
             }
         }
 
@@ -1012,29 +1283,30 @@ sort($priorities);
         restoreWorklistState();
 
         const paramsList = new window.URLSearchParams(window.location.search);
-        if (paramsList.get('status') === 'disputes' || paramsList.get('tab') === 'disputes') {
-            window.switchRadTab('disputes');
+        if (paramsList.get('tab') === 'release' || paramsList.get('status') === 'Report Ready' || paramsList.get('status') === 'completed_today') {
+            window.switchRadTab('release');
+        } else if (paramsList.get('tab') === 'worklist' || paramsList.get('status') === 'pending') {
+            window.switchRadTab('worklist');
         }
 
-        // Render tables
+        // Render both tables
         updateTable();
-        updateDisputesTable();
+        updateReleaseTable();
 
         handleHighlight();
 
-        // ensure lucide icons are created if not already
+        // Ensure lucide icons are rendered
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
 
-        // Real-time polling for Radiologist Worklist & Escalated Error Reports (every 3 seconds)
+        // Real-time polling for Radiologist Worklist & Pending Release (every 3 seconds)
         let isSyncingWorklist = false;
         setInterval(() => {
             if (isSyncingWorklist) return;
 
-            // Don't sync if user is actively searching or typing in search inputs
+            // Don't sync if user is actively searching or typing
             const isTyping = document.activeElement && (
-                document.activeElement === document.getElementById('disputeSearchInput') || 
                 document.activeElement === document.getElementById('searchInput')
             );
             if (isTyping) return;
@@ -1046,9 +1318,7 @@ sort($priorities);
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
 
-
-
-                    // 3. Sync Pending Worklist Table
+                    // 1. Sync Pending Worklist Table
                     const newWorklistTbody = doc.getElementById('worklist-tbody');
                     const curWorklistTbody = document.getElementById('worklist-tbody');
                     if (newWorklistTbody && curWorklistTbody) {
@@ -1062,13 +1332,36 @@ sort($priorities);
                         }
                     }
 
-                    // 4. Sync Worklist Tab Badge
+                    // 2. Sync Pending Release Table
+                    const newReleaseTbody = doc.getElementById('release-tbody');
+                    const curReleaseTbody = document.getElementById('release-tbody');
+                    if (newReleaseTbody && curReleaseTbody) {
+                        const newRelContent = newReleaseTbody.innerHTML.trim();
+                        const newRelCount = newReleaseTbody.querySelectorAll('tr.release-record-row').length;
+                        const curRelCount = curReleaseTbody.querySelectorAll('tr.release-record-row').length;
+                        if (newRelContent !== curReleaseTbody.innerHTML.trim() || newRelCount !== curRelCount) {
+                            curReleaseTbody.innerHTML = newRelContent;
+                            allReleaseRows = Array.from(curReleaseTbody.querySelectorAll('tr.release-record-row'));
+                            updateReleaseTable();
+                        }
+                    }
+
+                    // 3. Sync Worklist Tab Badge
                     const newWlBadge = doc.getElementById('worklist-tab-badge');
                     const curWlBadge = document.getElementById('worklist-tab-badge');
                     if (newWlBadge && curWlBadge) {
                         curWlBadge.innerHTML = newWlBadge.innerHTML;
                         curWlBadge.className = newWlBadge.className;
                         if (newWlBadge.title) curWlBadge.title = newWlBadge.title;
+                    }
+
+                    // 4. Sync Release Tab Badge
+                    const newRelBadge = doc.getElementById('release-tab-badge');
+                    const curRelBadge = document.getElementById('release-tab-badge');
+                    if (newRelBadge && curRelBadge) {
+                        curRelBadge.innerHTML = newRelBadge.innerHTML;
+                        curRelBadge.className = newRelBadge.className;
+                        if (newRelBadge.title) curRelBadge.title = newRelBadge.title;
                     }
 
                     if (typeof lucide !== 'undefined') {

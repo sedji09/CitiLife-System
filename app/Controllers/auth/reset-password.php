@@ -17,7 +17,7 @@ if (empty($token)) {
 
 // Verify token
 $stmt = $pdo->prepare("
-    SELECT u.id, u.name, u.role, u.branch_id, p.first_name 
+    SELECT u.id, u.email, u.name, u.role, u.branch_id, u.patient_id, p.first_name, p.last_name 
     FROM users u 
     LEFT JOIN patients p ON u.patient_id = p.id 
     WHERE u.reset_password_token = ? AND u.reset_password_expires_at > NOW() 
@@ -63,6 +63,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
             "User successfully reset their password",
             $user['branch_id']
         );
+
+        // Auto-login for patient: immediately establish session and redirect to dashboard
+        if ($user['role'] === 'patient') {
+            session_regenerate_id(true);
+
+            $patientDisplayName = !empty($user['name'])
+                ? $user['name']
+                : (!empty($user['first_name']) ? trim($user['first_name'] . ' ' . ($user['last_name'] ?? '')) : 'Patient');
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = 'patient';
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['branch_id'] = $user['branch_id'];
+            $_SESSION['patient_id'] = $user['patient_id'];
+            $_SESSION['name'] = $patientDisplayName;
+
+            // Remember device to prevent immediate OTP challenge
+            $deviceToken = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
+            $stmtStore = $pdo->prepare("INSERT INTO user_devices (user_id, device_token, expires_at) VALUES (?, ?, ?)");
+            $stmtStore->execute([$user['id'], $deviceToken, $expires]);
+            setcookie('remember_device', $deviceToken, time() + (86400 * 30), "/");
+
+            // Update last activity and clear temporary state
+            $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$user['id']]);
+            unset($_SESSION['login_attempts'], $_SESSION['temp_user_id'], $_SESSION['temp_role'], $_SESSION['temp_email'], $_SESSION['temp_branch_id'], $_SESSION['temp_patient_id'], $_SESSION['temp_name'], $_SESSION['temp_portal'], $_SESSION['temp_redirect_url']);
+
+            header("Location: /" . PROJECT_DIR . "/dashboard?password_reset=1");
+            exit;
+        }
 
         $success = "Your password has been reset successfully. You can now log in.";
         $validToken = false; // Hide form after success

@@ -169,7 +169,7 @@
                                 </span>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
-                                <div class="flex items-center gap-1.5">
+                                <div class="flex flex-col items-start gap-1">
                                     <span
                                         class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
                                         style="border:1.5px solid #818cf8;background-color:#eef2ff;color:#4338ca">
@@ -194,6 +194,23 @@
                                         <i data-lucide="eye"
                                             class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
                                     </a>
+
+                                    <!-- Re-edit button -->
+                                    <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
+                                        class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition"
+                                        title="Allow Radiologist to Re-edit (Revert to Draft)">
+                                        <span class="w-6 h-6 mr-1 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 px-1 py-1 rounded-md border border-yellow-400 inline-flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
+                                                <polyline points="14 2 14 8 20 8"/>
+                                                <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
+                                                <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
+                                                <polyline points="7.5 9.5 11 12 7.5 14.5"/>
+                                                <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
+                                                <polyline points="6.5 22.5 3 20 6.5 17.5"/>
+                                            </svg>
+                                        </span>
+                                    </button>
 
                                     <!-- Print Result -->
                                     <a href="javascript:void(0)"
@@ -317,6 +334,133 @@
 </div>
 
 <script>
+    async function triggerReEdit(caseId, btn, event = null) {
+        if (event) event.preventDefault();
+
+        let reason = '';
+        if (typeof Swal !== 'undefined') {
+            const { value: formValues, isConfirmed } = await Swal.fire({
+                title: 'Allow Radiologist to Re-edit?',
+                html: `
+                    <div class="text-left text-sm text-gray-600 mb-3">
+                        This will revert the report to draft status (Under Reading) so the radiologist can update findings and impressions.
+                    </div>
+                    <div class="text-left mb-2">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                            Quick Reason Presets:
+                        </label>
+                        <div class="flex flex-wrap gap-1.5 mb-3">
+                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Clarification needed on findings/impression.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Findings Clarification</button>
+                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Patient clinical history/demographics need update.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Patient Info/History</button>
+                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Additional X-ray view/projection uploaded.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Additional View</button>
+                            <button type="button" onclick="document.getElementById('swal-reedit-reason').value = 'Typographical error in report findings.'; document.getElementById('swal-reedit-reason').focus();" class="text-xs px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg border border-amber-200 transition font-medium">Typo in Report</button>
+                        </div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                            Reason for Re-Edit <span class="text-red-500">*</span>:
+                        </label>
+                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition outline-none resize-none" placeholder="Explain specifically what needs to be changed or reviewed..."></textarea>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Allow Re-edit',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#d97706',
+                cancelButtonColor: '#6b7280',
+                customClass: {
+                    popup: 'rounded-2xl p-5 max-w-lg',
+                    confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                    cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
+                },
+                preConfirm: () => {
+                    const text = document.getElementById('swal-reedit-reason').value.trim();
+                    if (!text) {
+                        Swal.showValidationMessage('Please enter a reason so the radiologist knows what to review.');
+                        return false;
+                    }
+                    return text;
+                }
+            });
+
+            if (!isConfirmed || !formValues) return;
+            reason = formValues;
+        } else {
+            reason = prompt('Allow Radiologist to Re-edit? Please enter the reason:');
+            if (reason === null) return;
+            reason = reason.trim();
+            if (!reason) {
+                alert('A reason is required to allow re-edit.');
+                return;
+            }
+        }
+
+        const originalHTML = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        try {
+            const baseDir = '<?= defined("PROJECT_DIR") && PROJECT_DIR ? "/" . PROJECT_DIR : "" ?>';
+            const res = await fetch(`${baseDir}/radtech/re-edit-case`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `case_id=${encodeURIComponent(caseId)}&reason=${encodeURIComponent(reason)}`
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Reverted to Draft',
+                        text: data.message || 'Report reverted to draft successfully.',
+                        timer: 1800,
+                        showConfirmButton: false,
+                        customClass: { popup: 'rounded-2xl' }
+                    });
+                } else {
+                    alert(data.message || 'Report reverted to draft successfully.');
+                }
+                window.location.reload();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Action Failed',
+                        text: data.message || 'Could not revert report.',
+                        customClass: { popup: 'rounded-2xl' }
+                    });
+                } else {
+                    alert(data.message || 'Could not revert report.');
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.innerHTML = originalHTML;
+                }
+            }
+        } catch (err) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Network Error',
+                    text: 'A network error occurred. Please try again.',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+            } else {
+                alert('A network error occurred. Please try again.');
+            }
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerHTML = originalHTML;
+            }
+        }
+    }
+
     async function releaseToPhoto(caseId, btn, event = null) {
         if (event) event.preventDefault();
         const confirmed = await confirmAlert('Confirm Release', 'Would you like to confirm releasing this result and moving it to X-ray Patient Records?');

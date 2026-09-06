@@ -85,6 +85,23 @@ if ($activeDispute && $backPage === 'worklist') {
 </div>
 <?php endif; ?>
 
+<?php if (!empty($caseDetails['re_edit_reason'])): ?>
+<div class="mb-5 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3 shadow-xs">
+    <div class="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 text-amber-700 mt-0.5">
+        <i data-lucide="alert-triangle" class="w-4 h-4 stroke-[2.2]"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-amber-900 uppercase tracking-wider">Re-Edit Requested by RadTech</span>
+            <span class="text-[10px] font-semibold bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full">Attention Required</span>
+        </div>
+        <p class="text-sm text-amber-800 mt-1 font-medium italic">
+            "<?= htmlspecialchars($caseDetails['re_edit_reason']) ?>"
+        </p>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- ══ Row 1: Info Cards (Patient + RadTech) ══ -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
 
@@ -372,28 +389,28 @@ if ($activeDispute && $backPage === 'worklist') {
                     <div class="flex flex-col" style="flex: 1.5;">
                         <div class="flex items-center justify-between mb-1.5 ml-1">
                             <label class="block text-[10px] font-bold text-red-500 uppercase tracking-wider ml-1">Radiographic Findings</label>
-                            <span class="text-[10px] text-gray-400" id="findings-count-<?= $idx ?>">0 words</span>
+                            <span id="findings-count-<?= $idx ?>" class="text-[10px] text-gray-400">0 words</span>
                         </div>
                         <textarea
-                            class="exam-findings flex-1 w-full rounded-xl border border-gray-200 <?= ($isCompleted || $isDraftLocked) ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
+                            class="exam-findings flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
+                            placeholder="Enter detailed radiographic findings..."
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
-                            placeholder="Describe radiographic findings for <?= htmlspecialchars($exam) ?>..."
-                            <?= ($isCompleted || $isDraftLocked) ? 'readonly' : '' ?>><?= htmlspecialchars($savedF) ?></textarea>
+                            <?= $isCompleted ? 'readonly' : '' ?>><?= htmlspecialchars($savedF) ?></textarea>
                     </div>
 
                     <!-- Impression -->
-                    <div class="flex flex-col" style="flex: 1;">
-                        <div class="flex items-center justify-between mb-1.5 ml-1">
-                            <label class="block text-[10px] font-bold text-red-500 uppercase tracking-wider ml-1">Impression</label>
-                            <span class="text-[10px] text-gray-400" id="impression-count-<?= $idx ?>">0 words</span>
+                    <div class="flex flex-col flex-1 min-h-0">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-bold uppercase tracking-wider text-gray-400">Impression</label>
+                            <span id="impression-count-<?= $idx ?>" class="text-[11px] text-gray-400">0 words</span>
                         </div>
                         <textarea
-                            class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= ($isCompleted || $isDraftLocked) ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
+                            class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
+                            placeholder="Enter definitive diagnostic impression..."
                             data-exam-idx="<?= $idx ?>"
                             data-exam-key="<?= htmlspecialchars($exam) ?>"
-                            placeholder="Impression for <?= htmlspecialchars($exam) ?>..."
-                            <?= ($isCompleted || $isDraftLocked) ? 'readonly' : '' ?>><?= htmlspecialchars($savedI) ?></textarea>
+                            <?= $isCompleted ? 'readonly' : '' ?>><?= htmlspecialchars($savedI) ?></textarea>
                     </div>
                 </div>
 
@@ -401,28 +418,16 @@ if ($activeDispute && $backPage === 'worklist') {
             <?php endforeach; ?>
         </div>
 
-        <!-- Submit footer -->
+        <!-- Footer Actions -->
         <div class="border-t border-gray-100 px-5 py-4 rounded-b-xl">
             <div id="completed-footer-actions" class="<?= $isCompleted ? '' : 'hidden' ?> w-full flex flex-col gap-2">
                 <div class="w-full rounded-xl bg-red-50 border border-red-200 py-3 px-5 flex items-center justify-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
                     <span class="text-sm font-bold text-red-600">Report Submitted &mdash; Ready for Release</span>
                 </div>
-                <button type="button" id="btn-edit-report"
-                        class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all">
-                    <i data-lucide="edit-3" class="w-4 h-4"></i> Revert to Draft
-                </button>
             </div>
             
             <div id="editable-footer-actions" class="<?= $isCompleted ? 'hidden' : '' ?> w-full flex flex-col gap-2">
-                <button type="button" id="btn-edit-draft"
-                        class="<?= $isDraftLocked ? '' : 'hidden' ?> w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm focus:ring-4 focus:ring-blue-200 focus:outline-none transition-all">
-                    <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Draft
-                </button>
-                <button type="button" id="btn-save-draft"
-                        class="<?= $isDraftLocked ? 'hidden' : '' ?> w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl shadow-sm focus:ring-4 focus:ring-gray-100 focus:outline-none transition-all">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
-                </button>
                 <button type="button" id="btn-submit-final"
                         class="w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm focus:ring-4 focus:ring-red-200 focus:outline-none transition-all">
                     <i data-lucide="send" class="w-4 h-4"></i> Submit as Final
@@ -438,7 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const examKeys  = <?= json_encode($examTypes) ?>;
     const savedData = <?= json_encode($savedReports) ?>;
     let isCompleted = <?= $isCompleted ? 'true' : 'false' ?>;
-    let isDraftLocked = <?= $isDraftLocked ? 'true' : 'false' ?>;
     const STORAGE_KEY = `rad_case_draft_<?= $caseId ?>`;
 
     const store = {}; // { examKey: { findings, impression } }
@@ -593,21 +597,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const clinicalPanel = null; // removed
     document.getElementById('btn-clinical')?.addEventListener('click', () => {});
 
-    // ── Edit Draft Unlock ─────────────────────────────────────────────────────
-    const btnEditDraft = document.getElementById('btn-edit-draft');
-    if (btnEditDraft) {
-        btnEditDraft.addEventListener('click', () => {
-            isDraftLocked = false;
-            document.querySelectorAll('.exam-findings, .exam-impression').forEach(ta => {
-                ta.removeAttribute('readonly');
-                ta.classList.remove('bg-gray-50', 'cursor-not-allowed', 'text-gray-600');
-                ta.classList.add('bg-white', 'focus:ring-2', 'focus:ring-red-100', 'focus:border-red-300');
-            });
-            btnEditDraft.classList.add('hidden');
-            document.getElementById('btn-save-draft').classList.remove('hidden');
-        });
-    }
-
     // ── Submit Logic ──────────────────────────────────────────────────────────
 
     function validateReport() {
@@ -645,14 +634,324 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    document.getElementById('btn-save-draft')?.addEventListener('click', (e) => {
-        if (isCompleted) return;
-        syncHiddenInput();
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
 
-        document.getElementById('save_draft_input').disabled = false;
-        document.getElementById('submit_final_input').disabled = true;
-        document.getElementById('report-form').submit();
-    });
+    function showReviewModal(startSlide = 0) {
+        // Build rich confirmation modal content
+        const pName = <?= json_encode($fullName) ?>;
+        const cNum = <?= json_encode($caseDetails['case_number']) ?>;
+
+        const dicomImgs = document.querySelectorAll('.dicom-img');
+        const imgList = [];
+        dicomImgs.forEach(img => {
+            if (img.src) imgList.push(img.src);
+        });
+
+        let slidesHtml = '';
+        let dotsHtml = '';
+        const totalExams = examPanels.length;
+
+        examPanels.forEach((panel, i) => {
+            const examKey = panel.dataset.examKey || ('Exam ' + (i + 1));
+            const findings = panel.querySelector('.exam-findings')?.value.trim() || '—';
+            const impression = panel.querySelector('.exam-impression')?.value.trim() || '—';
+
+            // Match image to exam by index or fallback
+            const currentImg = imgList[i] || imgList[0] || '';
+
+            slidesHtml += `
+                <div class="preview-carousel-slide" data-slide-idx="${i}" data-exam-name="${escapeHtml(examKey)}" style="${i === startSlide ? 'display: flex;' : 'display: none;'} flex-direction: row; gap: 16px; align-items: stretch; width: 100%; box-sizing: border-box;">
+                    <!-- Left: Image Preview Box -->
+                    <div style="flex: 0 0 46%; width: 46%; max-width: 46%; min-width: 46%; height: 350px; background: #0a0a0a; border: 1px solid #374151; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-sizing: border-box; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+                        ${currentImg ? `
+                            <img id="preview-main-img-${i}" src="${escapeHtml(currentImg)}" alt="X-ray" style="width: 100%; height: 100%; object-fit: contain; padding: 6px; user-select: none;">
+                        ` : `
+                            <div style="text-align: center; padding: 16px; color: #9ca3af;">
+                                <svg style="width: 40px; height: 40px; margin: 0 auto 8px auto; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <p style="font-size: 12px; margin: 0;">No X-ray image available</p>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Right: Findings & Impression Column -->
+                    <div style="flex: 0 0 54%; width: 54%; max-width: 54%; min-width: 54%; height: 350px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; text-align: left; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <!-- Exam Header -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; margin-bottom: 6px; border-bottom: 1px solid #f3f4f6;">
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                <span style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626; flex-shrink: 0;"></span>
+                                <h4 style="font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #dc2626; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(examKey)}">${escapeHtml(examKey)}</h4>
+                            </div>
+                            <span style="background: #f3f4f6; color: #4b5563; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0;">Exam ${i + 1} of ${totalExams}</span>
+                        </div>
+
+                        <!-- Findings -->
+                        <div style="flex: 1; display: flex; flex-direction: column; min-height: 0; margin-bottom: 8px;">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 4px;">Radiographic Findings</span>
+                            <div style="flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #1f2937; line-height: 1.55; overflow-y: auto; white-space: pre-wrap; word-break: break-word;">${escapeHtml(findings)}</div>
+                        </div>
+
+                        <!-- Impression -->
+                        <div style="display: flex; flex-direction: column; min-height: 0;">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 4px;">Impression</span>
+                            <div style="max-height: 90px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #111827; line-height: 1.5; overflow-y: auto; white-space: pre-wrap; word-break: break-word;">${escapeHtml(impression)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            dotsHtml += `
+                <button type="button" class="preview-carousel-dot" data-slide-idx="${i}" title="${escapeHtml(examKey)}" style="width: ${i === startSlide ? '24px' : '8px'}; height: 8px; border-radius: 9999px; background: ${i === startSlide ? '#dc2626' : '#d1d5db'}; border: none; padding: 0; cursor: pointer; transition: all 0.2s;"></button>
+            `;
+        });
+
+        const modalHtml = `
+            <div style="width: 100%; box-sizing: border-box; text-align: left; user-select: none;">
+                <!-- Header: Patient summary -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb;">
+                    <div>
+                        <span style="font-size: 10px; text-transform: uppercase; font-weight: 800; color: #9ca3af; letter-spacing: 0.05em;">Patient Name</span>
+                        <h3 style="font-size: 17px; font-weight: 900; color: #111827; margin: 2px 0 0 0; line-height: 1.2;">${escapeHtml(pName)}</h3>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 800; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;">${escapeHtml(cNum)}</span>
+                    </div>
+                </div>
+
+                <!-- Carousel Body with Nav Arrows -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin: 6px 0; box-sizing: border-box;">
+                    <!-- Left Arrow Button -->
+                    <button type="button" id="preview-carousel-prev"
+                        style="width: 44px; height: 44px; min-width: 44px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; color: #374151; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;"
+                        title="Previous Exam">
+                        <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+
+                    <!-- Slides Wrapper -->
+                    <div style="flex: 1; min-width: 0; overflow: hidden;" id="preview-carousel-slides">
+                        ${slidesHtml}
+                    </div>
+
+                    <!-- Right Arrow Button -->
+                    <button type="button" id="preview-carousel-next"
+                        style="width: 44px; height: 44px; min-width: 44px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; color: #374151; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;"
+                        title="Next Exam">
+                        <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+
+                <!-- Bottom Indicator Dots & Counter -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; margin-top: 8px; border-top: 1px solid #f3f4f6;">
+                    <div style="display: flex; align-items: center; gap: 6px;" id="preview-dots-container">
+                        ${dotsHtml}
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700; color: #6b7280;" id="preview-exam-indicator">
+                        Exam ${startSlide + 1} of ${totalExams}
+                    </div>
+                </div>
+
+                <!-- Notice -->
+                <div style="margin-top: 8px; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; padding: 6px 12px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #92400e;">
+                    <span style="font-weight: 700; color: #b45309;">Notice:</span> Once submitted as final, report editing requires RadTech authorization to revert to draft.
+                </div>
+            </div>
+        `;
+
+        let activeSlide = startSlide;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '<div style="font-size: 17px; font-weight: 900; color: #111827; text-align: left; display: flex; align-items: center; gap: 8px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #dc2626; display: inline-block;"></span>Review Final Report</div>',
+                html: modalHtml,
+                width: '920px',
+                showCancelButton: true,
+                confirmButtonText: 'Submit as final',
+                cancelButtonText: 'Review & Edit',
+                reverseButtons: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                buttonsStyling: true,
+                customClass: {
+                    popup: 'rounded-3xl p-6',
+                    htmlContainer: 'm-0 p-0 text-left overflow-visible',
+                    actions: 'w-full !flex !justify-end !gap-3',
+                    confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                    cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
+                },
+                didOpen: () => {
+                    const actions = Swal.getActions ? Swal.getActions() : document.querySelector('.swal2-actions');
+                    if (actions) {
+                        actions.style.justifyContent = 'flex-end';
+                        actions.style.width = '100%';
+                        actions.style.margin = '16px 0 0 0';
+                        actions.style.padding = '0';
+                        actions.style.gap = '10px';
+                    }
+
+                    const slides = document.querySelectorAll('.preview-carousel-slide');
+                    const dots = document.querySelectorAll('.preview-carousel-dot');
+                    const prevBtn = document.getElementById('preview-carousel-prev');
+                    const nextBtn = document.getElementById('preview-carousel-next');
+                    const indicator = document.getElementById('preview-exam-indicator');
+                    let currentIdx = startSlide;
+                    const total = slides.length;
+
+                    function updateCarousel(idx) {
+                        currentIdx = idx;
+                        activeSlide = idx;
+                        slides.forEach((s, i) => {
+                            s.style.display = (i === currentIdx ? 'flex' : 'none');
+                        });
+                        dots.forEach((d, i) => {
+                            if (i === currentIdx) {
+                                d.style.width = '24px';
+                                d.style.background = '#dc2626';
+                            } else {
+                                d.style.width = '8px';
+                                d.style.background = '#d1d5db';
+                            }
+                        });
+
+                        if (indicator) {
+                            const currentExamName = slides[currentIdx]?.dataset.examName || '';
+                            indicator.textContent = `Exam ${currentIdx + 1} of ${total}${currentExamName ? ': ' + currentExamName : ''}`;
+                        }
+
+                        if (prevBtn) {
+                            prevBtn.disabled = (currentIdx === 0);
+                            prevBtn.style.opacity = (currentIdx === 0 ? '0.3' : '1');
+                            prevBtn.style.pointerEvents = (currentIdx === 0 ? 'none' : 'auto');
+                        }
+                        if (nextBtn) {
+                            nextBtn.disabled = (currentIdx === total - 1);
+                            nextBtn.style.opacity = (currentIdx === total - 1 ? '0.3' : '1');
+                            nextBtn.style.pointerEvents = (currentIdx === total - 1 ? 'none' : 'auto');
+                        }
+                    }
+
+                    if (total <= 1) {
+                        if (prevBtn) prevBtn.style.display = 'none';
+                        if (nextBtn) nextBtn.style.display = 'none';
+                        const dotsContainer = document.getElementById('preview-dots-container');
+                        if (dotsContainer) dotsContainer.style.display = 'none';
+                    } else {
+                        prevBtn?.addEventListener('click', () => {
+                            if (currentIdx > 0) updateCarousel(currentIdx - 1);
+                        });
+                        nextBtn?.addEventListener('click', () => {
+                            if (currentIdx < total - 1) updateCarousel(currentIdx + 1);
+                        });
+                        dots.forEach((dot, i) => {
+                            dot.addEventListener('click', () => updateCarousel(i));
+                        });
+                    }
+
+                    updateCarousel(startSlide);
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const returnSlide = activeSlide;
+                    Swal.fire({
+                        title: 'Are you sure this is the final version of the report?',
+                        text: 'Once you submit this, it can no longer be edited and will be submitted to the RadTech.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Confirm',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#6b7280',
+                        customClass: {
+                            popup: 'rounded-2xl p-6',
+                            title: 'text-lg font-bold text-gray-900',
+                            confirmButton: 'rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm',
+                            cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
+                        }
+                    }).then(async (finalResult) => {
+                        if (finalResult.isConfirmed) {
+                            try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                            const formEl = document.getElementById('report-form');
+                            document.getElementById('save_draft_input').disabled = true;
+                            document.getElementById('submit_final_input').disabled = false;
+
+                            // 1. Show processing loader
+                            Swal.fire({
+                                title: 'Submitting Report...',
+                                text: 'Please wait while the final report is being processed.',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                showConfirmButton: false,
+                                customClass: {
+                                    popup: 'rounded-2xl p-6',
+                                    title: 'text-lg font-bold text-gray-900'
+                                },
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            try {
+                                const formData = new FormData(formEl);
+                                formData.set('submit_final', '1');
+                                formData.set('ajax', '1');
+
+                                const response = await fetch(window.location.href, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: formData
+                                });
+
+                                const data = await response.json();
+
+                                if (data.success) {
+                                    // 2. Success transition popup
+                                    await Swal.fire({
+                                        icon: 'success',
+                                        title: 'Report Submitted!',
+                                        text: data.message || 'The report has been finalized and submitted to the RadTech.',
+                                        timer: 1800,
+                                        showConfirmButton: false,
+                                        customClass: {
+                                            popup: 'rounded-2xl p-6',
+                                            title: 'text-xl font-bold text-gray-900'
+                                        }
+                                    });
+
+                                    // 3. Redirect to worklist
+                                    const baseDir = '<?= defined("PROJECT_DIR") && PROJECT_DIR ? "/" . PROJECT_DIR : "" ?>';
+                                    window.location.href = data.redirect || `${baseDir}/index.php?role=radiologist&page=worklist`;
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Submission Failed',
+                                        text: data.message || 'An error occurred while submitting the report.',
+                                        customClass: { popup: 'rounded-2xl p-6' }
+                                    });
+                                }
+                            } catch (err) {
+                                console.error('Fetch submission error:', err);
+                                formEl.submit();
+                            }
+                        } else {
+                            // User clicked Cancel or closed the confirmation: return back to preview modal
+                            showReviewModal(returnSlide);
+                        }
+                    });
+                }
+            });
+        } else {
+            if (confirm('Are you sure this is the final version of the report? Once submitted, it can no longer be edited and will be submitted to the RadTech.')) {
+                try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                document.getElementById('save_draft_input').disabled = true;
+                document.getElementById('submit_final_input').disabled = false;
+                document.getElementById('report-form').submit();
+            }
+        }
+    }
 
     document.getElementById('btn-submit-final')?.addEventListener('click', (e) => {
         if (isCompleted) return;
@@ -660,57 +959,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!validateReport()) return;
 
-        confirmAction('Submit Final Report', 'Are you sure this report is final? You will not be able to edit it once submitted.', () => {
-            document.getElementById('save_draft_input').disabled = true;
-            document.getElementById('submit_final_input').disabled = false;
-            document.getElementById('report-form').submit();
-        }, 'Yes, Submit Final', false, e);
+        showReviewModal(0);
     });
-
-    // ── Unlock Report Findings for Editing ────────────────────────────────────
-    const btnEditReport = document.getElementById('btn-edit-report');
-    if (btnEditReport) {
-        btnEditReport.addEventListener('click', () => {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Edit Report Findings?',
-                    text: 'Are you sure you want to unlock and edit the findings of this report? This will allow you to modify and resubmit the report.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, edit findings',
-                    cancelButtonText: 'Cancel',
-                    confirmButtonColor: '#2563eb', // Blue
-                    cancelButtonColor: '#4b5563',
-                    customClass: {
-                        popup: 'rounded-3xl',
-                        confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-sm',
-                        cancelButton: 'rounded-xl px-5 py-2.5 font-semibold text-sm'
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        unlockFormForEditing();
-                    }
-                });
-            } else {
-                if (confirm('Are you sure you want to unlock and edit the findings of this report?')) {
-                    unlockFormForEditing();
-                }
-            }
-        });
-    }
-
-    function unlockFormForEditing() {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '';
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'revert_to_draft';
-        input.value = '1';
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
-    }
 
     // ── Image Viewer ──────────────────────────────────────────────────────────
     const images   = document.querySelectorAll('.dicom-img');

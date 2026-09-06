@@ -57,9 +57,9 @@ class RecordRequestModel {
     /**
      * Update request status.
      */
-    public function updateRequestStatus($requestId, $status, $branchName = null) {
-        $sql = "UPDATE record_requests SET status = ? WHERE id = ?";
-        $params = [$status, $requestId];
+    public function updateRequestStatus($requestId, $status, $branchName = null, $rejectionReason = null) {
+        $sql = "UPDATE record_requests SET status = ?, rejection_reason = ? WHERE id = ?";
+        $params = [$status, $rejectionReason, $requestId];
         
         if ($branchName) {
             $sql .= " AND request_branch = ?";
@@ -105,20 +105,38 @@ class RecordRequestModel {
      * Centralized logic for approving or denying a record request.
      * Handles DB update and notification dispatch.
      */
-    public function processRequestAction($requestId, $action, $myBranchName, $notificationModel) {
+    public function processRequestAction($requestId, $action, $myBranchName, $notificationModel, $rejectionReason = null) {
         if (!$requestId || !in_array($action, ['Approve', 'Deny'])) {
             throw new Exception("Invalid action or request ID.");
+        }
+
+        if ($action === 'Deny' && empty(trim($rejectionReason ?? ''))) {
+            throw new Exception("Please provide a reason for denying this record request.");
         }
 
         $newStatus = ($action === 'Approve') ? 'Approved' : 'Denied';
         $requestData = $this->getRequestById($requestId);
 
-        if ($requestData && $this->updateRequestStatus($requestId, $newStatus, $myBranchName)) {
+        if ($requestData && $this->updateRequestStatus($requestId, $newStatus, $myBranchName, ($action === 'Deny' ? trim($rejectionReason) : null))) {
             // Notifications Logic
             if (!empty($requestData['branch_id'])) {
                 $notifTitle = "Record Request " . $newStatus;
-                $notifMsg   = "Your request for patient " . ($requestData['patient_name'] ?? 'N/A') . " has been " . strtolower($newStatus) . " by " . $myBranchName . ".";
-                $notificationModel->add($notifTitle, $notifMsg, "/" . PROJECT_DIR . "/index.php?role=radtech&page=record-request", null, 'radtech', $requestData['branch_id']);
+                $patientName = $requestData['patient_name'] ?? 'N/A';
+                if ($action === 'Deny') {
+                    $cleanReason = trim($rejectionReason);
+                    $notifMsg   = "Your record request for patient {$patientName} was denied by {$myBranchName}. Reason: \"{$cleanReason}\".";
+                } else {
+                    $notifMsg   = "Your request for patient {$patientName} has been approved by {$myBranchName}.";
+                }
+                $projectBase = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
+                $notificationModel->add(
+                    $notifTitle, 
+                    $notifMsg, 
+                    $projectBase . "/index.php?role=radtech&page=view-record-request&id=" . urlencode($requestId), 
+                    null, 
+                    'radtech', 
+                    $requestData['branch_id']
+                );
             }
 
             return [
