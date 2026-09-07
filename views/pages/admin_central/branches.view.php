@@ -168,8 +168,8 @@
                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Inactive">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-200 hover:bg-orange-50 transition shadow-sm"
-                                                        title="Deactivate">
+                                                        class="p-1.5 rounded-md border border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 transition shadow-sm"
+                                                        title="Deactivate (Set Inactive)">
                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
                                                     </button>
                                                 </form>
@@ -179,8 +179,8 @@
                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Active">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
-                                                        title="Activate">
+                                                        class="p-1.5 rounded-md border border-green-100 bg-green-50 text-green-600 hover:bg-green-100 transition shadow-sm"
+                                                        title="Activate (Set Active)">
                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                                                     </button>
                                                 </form>
@@ -202,7 +202,7 @@
 
                                             <button type="button"
                                                 onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition shadow-sm"
                                                 title="Delete Branch">
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>

@@ -668,7 +668,7 @@ $catBadgeLabel = match ($dCategory) {
                 btn,
                 'save_and_release',
                 'Confirm Save & Resolve',
-                'Would you like to save these amendments and resolve this error report? The updated record will be marked as Resolved and released.',
+                'Would you like to save these amendments and resolve this correction request? The updated record will be marked as Resolved and released.',
                 'amendment_action',
                 e
             );

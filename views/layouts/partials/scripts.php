@@ -1344,13 +1344,14 @@
         if (
           combined.includes('overdue') ||
           combined.includes('error report') ||
+          combined.includes('correction request') ||
+          combined.includes('correction requested') ||
           combined.includes('dispute') ||
           combined.includes('escalat') ||
           combined.includes('feedback') ||
           combined.includes('alert') ||
           combined.includes('warning') ||
           combined.includes('payment') ||
-          combined.includes('bayad') ||
           combined.includes('amount due')
         ) {
           return 'warning';
@@ -1367,8 +1368,7 @@
           combined.includes('request') ||
           combined.includes('registration') ||
           combined.includes('account') ||
-          combined.includes('case') ||
-          combined.includes('kaso')
+          combined.includes('case')
         ) {
           return 'info';
         }
@@ -1614,7 +1614,7 @@
             }
           }
 
-          // Navigate immediately to avoid perceived delay ("hindi agad napupunta")
+          // Navigate immediately to avoid perceived delay
           fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },

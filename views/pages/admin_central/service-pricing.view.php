@@ -194,7 +194,7 @@
                                         <?php
                                         $badgeClass = $s['status'] === 'active'
                                             ? 'bg-green-50 text-green-600 ring-green-100'
-                                            : 'bg-gray-100 text-gray-500 ring-gray-200';
+                                            : 'bg-red-50 text-red-600 ring-red-100';
                                         ?>
                                         <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold ring-1 ring-inset <?= $badgeClass ?>">
                                             <?= ucfirst(htmlspecialchars($s['status'])) ?>
@@ -208,8 +208,8 @@
                                                     <input type="hidden" name="service_id" value="<?= $s['id'] ?>">
                                                     <input type="hidden" name="new_status" value="inactive">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 transition shadow-sm"
-                                                        title="Deactivate (Hide from landing page)">
+                                                        class="p-1.5 rounded-md border border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 transition shadow-sm"
+                                                        title="Hide">
                                                         <i data-lucide="eye-off" class="w-4 h-4"></i>
                                                     </button>
                                                 </form>
@@ -219,8 +219,8 @@
                                                     <input type="hidden" name="service_id" value="<?= $s['id'] ?>">
                                                     <input type="hidden" name="new_status" value="active">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
-                                                        title="Activate (Show on landing page)">
+                                                        class="p-1.5 rounded-md border border-green-100 bg-green-50 text-green-600 hover:bg-green-100 transition shadow-sm"
+                                                        title="Unhide">
                                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                                     </button>
                                                 </form>
@@ -235,7 +235,7 @@
 
                                             <button type="button"
                                                 onclick="confirmDeleteService(<?= $s['id'] ?>, '<?= htmlspecialchars($s['exam_type'], ENT_QUOTES) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition shadow-sm"
                                                 title="Delete Procedure">
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>

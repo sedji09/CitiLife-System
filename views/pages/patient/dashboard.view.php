@@ -234,7 +234,7 @@ $statusDescriptions = [
         : 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
     'Cancelled' => 'You have cancelled this request.',
     // Error Correction Descriptions
-    'Issue Reported' => 'Your error report has been received and queued for review by the RadTech team.',
+    'Issue Reported' => 'Your correction request has been received and queued for review by the RadTech team.',
     'For RadTech Review' => 'Our Radiologic Technologist is actively evaluating your reported issue.',
     'Pending RadTech Review' => 'Our Radiologic Technologist is actively evaluating your reported issue.',
     'Correction in Progress' => 'The RadTech is actively amending your report findings and patient details.',
@@ -1479,7 +1479,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </button>
                 <button type="submit" id="dispute-submit-btn"
                     class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5">
-                    <i data-lucide="send" class="w-4 h-4"></i> Submit Error Report
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request
                 </button>
             </div>
         </form>
@@ -1790,7 +1790,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             'Report Ready': 'Your X-ray report is ready. Please visit the branch to collect your results.',
             'Released': 'Your X-ray report has been released. You can now view your report result below.',
             'Completed': 'Your X-ray examination has been completed. You can view your report result below.',
-            'Issue Reported': 'Your error report has been received and queued for review by the RadTech team.',
+            'Issue Reported': 'Your correction request has been received and queued for review by the RadTech team.',
             'For RadTech Review': 'Our Radiologic Technologist is actively evaluating your reported issue.',
             'Pending RadTech Review': 'Our Radiologic Technologist is actively evaluating your reported issue.',
             'Correction in Progress': 'The RadTech is actively amending your report findings and patient details.',

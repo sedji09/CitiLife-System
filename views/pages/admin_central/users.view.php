@@ -138,7 +138,7 @@
                                 <tr class="hover:bg-gray-50/30 transition-colors group user-row"
                                     data-email="<?= htmlspecialchars(strtolower($u['email'])) ?>"
                                     data-role="<?= htmlspecialchars(strtolower($u['role'])) ?>"
-                                    data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'universal')) ?>"
+                                    data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'all branches')) ?>"
                                     data-status="<?= htmlspecialchars($u['status']) ?>">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
@@ -167,7 +167,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-2 text-sm text-gray-500 tracking-tight">
-                                            <?= htmlspecialchars($u['branch_name'] ?? 'Universal') ?>
+                                            <?= htmlspecialchars($u['branch_name'] ?? 'All Branches') ?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
@@ -187,30 +187,38 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-left">
-                                        <div class="flex items-center justify-start gap-1.5">
-                                            <?php if ($u['status'] === 'Active'): ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Inactive">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-200 hover:bg-orange-50 transition shadow-sm"
-                                                        title="Deactivate">
-                                                        <i data-lucide="user-minus" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php else: ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Active">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
-                                                        title="Activate">
-                                                        <i data-lucide="user-check" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
+                                         <div class="flex items-center justify-start gap-1.5">
+                                             <?php if ($u['status'] === 'Active'): ?>
+                                                 <?php if ($u['role'] === 'admin_central'): ?>
+                                                     <button type="button" disabled
+                                                         class="p-1.5 rounded-md border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 shadow-sm"
+                                                         title="Cannot deactivate Central Admin">
+                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 <?php else: ?>
+                                                     <form action="" method="POST" class="inline">
+                                                         <input type="hidden" name="action" value="toggle-status">
+                                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                         <input type="hidden" name="new_status" value="Inactive">
+                                                         <button type="submit"
+                                                             class="p-1.5 rounded-md border border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 transition shadow-sm"
+                                                             title="Deactivate (Set Inactive)">
+                                                             <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                         </button>
+                                                     </form>
+                                                 <?php endif; ?>
+                                             <?php else: ?>
+                                                 <form action="" method="POST" class="inline">
+                                                     <input type="hidden" name="action" value="toggle-status">
+                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                     <input type="hidden" name="new_status" value="Active">
+                                                     <button type="submit"
+                                                         class="p-1.5 rounded-md border border-green-100 bg-green-50 text-green-600 hover:bg-green-100 transition shadow-sm"
+                                                         title="Activate (Set Active)">
+                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 </form>
+                                             <?php endif; ?>
 
                                             <button type="button"
                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($u)) ?>)"
@@ -219,12 +227,20 @@
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
 
-                                            <button type="button"
-                                                onclick="confirmDelete(<?= $u['id'] ?>, '<?= htmlspecialchars($u['email']) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
-                                                title="Delete Account">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
+                                            <?php if ($u['role'] === 'admin_central'): ?>
+                                                <button type="button" disabled
+                                                    class="p-1.5 rounded-md border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 shadow-sm"
+                                                    title="Cannot delete Central Admin">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button"
+                                                    onclick="confirmDelete(<?= $u['id'] ?>, '<?= htmlspecialchars($u['email']) ?>')"
+                                                    class="p-1.5 rounded-md border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition shadow-sm"
+                                                    title="Delete Account">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -345,16 +361,6 @@
                 </div>
             </div>
 
-            <div>
-                <label for="edit_password" class="block text-sm font-semibold text-gray-700 mb-1.5">New Password (Leave
-                    blank to keep current)</label>
-                <div class="relative">
-                    <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="password" id="edit_password" name="password" placeholder="••••••••"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                </div>
-            </div>
-
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="edit_role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
@@ -464,7 +470,6 @@
         document.getElementById('edit_email').value = user.email;
         document.getElementById('edit_role').value = user.role;
         document.getElementById('edit_branch_id').value = user.branch_id || '';
-        document.getElementById('edit_password').value = ''; // Always clear for security
 
         toggleEditBranchSelect();
         document.getElementById('editUserModal').classList.remove('hidden');

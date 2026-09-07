@@ -97,8 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $userId = $_POST['user_id'] ?? null;
         $currentAdminId = $_SESSION['user_id'] ?? 0;
+        $targetUser = $userId ? $userModel->getUserById($userId) : null;
 
-        if ($userId == $currentAdminId) {
+        if ($targetUser && $targetUser['role'] === 'admin_central') {
+            $error = "Central Admin accounts cannot be deleted.";
+        } else if ($userId == $currentAdminId) {
             $error = "You cannot delete your own account.";
         } else if ($userId && $userModel->deleteStaffUser($userId)) {
             $success = "User account deleted successfully.";
@@ -113,7 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
-        $password = $_POST['password'] ?? null;
 
         if (in_array($inputRole, ['it_admin', 'admin_central', 'radiologist'])) {
             $branchId = null;
@@ -126,12 +128,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $existing = $userModel->getUserByEmail($email);
                 if ($existing && $existing['id'] != $userId) {
                     $error = "The email '" . htmlspecialchars($email) . "' is already taken by another account.";
-                } else if ($password && strlen($password) < $minPassLength) {
-                    $error = "The new password must be at least $minPassLength characters long.";
-                } else if ($userModel->updateStaffUser($userId, $email, $inputRole, $branchId, $password)) {
+                } else if ($userModel->updateStaffUser($userId, $email, $inputRole, $branchId)) {
                     $success = "User account updated successfully!";
                     $details = "Updated user $email (Role: $inputRole)";
-                    if ($password) $details .= " - Password reset performed.";
                     $auditLogModel->addLog($currentAdminId, "Updated staff account details", 'User Management', 'User', $userId, $details, $currentBranchId);
                 } else {
                     $error = "Failed to update user account.";
@@ -145,7 +144,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newStatus = $_POST['new_status'] ?? 'Active';
         $currentAdminId = $_SESSION['user_id'] ?? 0;
 
-        if ($userId == $currentAdminId && $newStatus === 'Inactive') {
+        $targetUser = $userId ? $userModel->getUserById($userId) : null;
+
+        if ($targetUser && $targetUser['role'] === 'admin_central' && $newStatus === 'Inactive') {
+            $error = "Central Admin accounts cannot be deactivated.";
+        } else if ($userId == $currentAdminId && $newStatus === 'Inactive') {
             $error = "You cannot deactivate your own account.";
         } else if ($userId && $userModel->updateUserStatus($userId, $newStatus)) {
             $success = "User status updated to " . htmlspecialchars($newStatus) . "!";

@@ -45,7 +45,7 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
 </div>
 
 <style>
-    /* Medyo dark na grey hover for Laptop/Desktop */
+    /* Subtle dark grey hover for Laptop/Desktop */
     .record-row {
         transition: all 0.2s ease !important;
     }
