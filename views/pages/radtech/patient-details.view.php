@@ -12,6 +12,7 @@ if (isset($caseNotFound) && $caseNotFound) {
 <!-- Vanilla JS Datepicker -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
 <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
 
 <!-- html2canvas for Report Release snapshot -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1153,12 +1154,7 @@ $catBadgeLabel = match ($dCategory) {
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Birthdate <span class="text-red-500">*</span></label>
                         <span id="modal_pat_calc_age" class="text-xs text-blue-600 font-semibold"><?= !empty($caseDetails['age']) ? $caseDetails['age'] . ' yrs old' : '' ?></span>
                     </div>
-                    <div class="relative">
-                        <input type="text" name="birthdate" id="modal_pat_birthdate" readonly placeholder="Select birthdate" required
-                            value="<?= htmlspecialchars($caseDetails['birthdate'] ?? '') ?>"
-                            class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 pr-9 outline-none transition cursor-pointer">
-                        <i data-lucide="calendar" class="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
-                    </div>
+                    <div id="modal_pat_birthdate_container" data-birthdate-picker data-id="modal_pat_birthdate" data-name="birthdate" data-value="<?= htmlspecialchars($caseDetails['birthdate'] ?? '') ?>" data-required></div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Sex <span class="text-red-500">*</span></label>
@@ -1238,22 +1234,12 @@ $catBadgeLabel = match ($dCategory) {
 </div>
 
 <script>
-    let modalPatientDatePicker = null;
-
     function initModalPatientDatePicker() {
         const bdayInput = document.getElementById('modal_pat_birthdate');
-        if (bdayInput && typeof Datepicker !== 'undefined') {
-            if (!modalPatientDatePicker) {
-                modalPatientDatePicker = new Datepicker(bdayInput, {
-                    autohide: true,
-                    format: 'yyyy-mm-dd',
-                    todayHighlight: true,
-                    maxDate: new Date()
-                });
-                bdayInput.addEventListener('changeDate', function () {
-                    updateModalPatientAge();
-                });
-            }
+        if (bdayInput && !bdayInput._hasAgeListener) {
+            bdayInput.addEventListener('input', updateModalPatientAge);
+            bdayInput.addEventListener('change', updateModalPatientAge);
+            bdayInput._hasAgeListener = true;
         }
     }
 

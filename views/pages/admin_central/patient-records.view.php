@@ -8,6 +8,7 @@
 <!-- Vanilla JS Datepicker styles/scripts -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
 <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
 
 <style>
     /* Global override for Vanilla JS Datepicker to make selected date RED */
@@ -238,11 +239,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="birthdate" class="block text-sm font-semibold text-gray-700 mb-1.5">Birthdate</label>
-                    <div class="relative">
-                        <input type="text" id="birthdate" name="birthdate" required readonly placeholder="yyyy-mm-dd"
-                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                        <i data-lucide="calendar" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    </div>
+                    <div id="birthdate_container" data-birthdate-picker data-id="birthdate" data-name="birthdate" data-required></div>
                 </div>
                 <div>
                     <label for="sex" class="block text-sm font-semibold text-gray-700 mb-1.5">Sex</label>
@@ -298,10 +295,12 @@
         document.getElementById('first_name').value = patient.first_name;
         document.getElementById('last_name').value = patient.last_name;
         
-        const birthdateInput = document.getElementById('birthdate');
-        birthdateInput.value = patient.birthdate;
-        if(editDatePicker) {
-            editDatePicker.setDate(patient.birthdate);
+        const bdPicker = document.getElementById('birthdate_container')?._bdPicker;
+        if (bdPicker) {
+            bdPicker.setValue(patient.birthdate);
+        } else {
+            const birthdateInput = document.getElementById('birthdate');
+            if (birthdateInput) birthdateInput.value = patient.birthdate;
         }
 
         document.getElementById('sex').value = patient.sex;
@@ -489,15 +488,6 @@
         if (window.lucide) window.lucide.createIcons();
         filterAndSortPatients(false);
         
-        const bDateInput = document.getElementById('birthdate');
-        if (bDateInput) {
-            editDatePicker = new Datepicker(bDateInput, {
-                autohide: true,
-                format: 'yyyy-mm-dd',
-                todayHighlight: true
-            });
-        }
-
         // Alert auto-dismiss
         const alert = document.getElementById('statusAlert');
         if (alert) {

@@ -265,6 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
     <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+    <script src="/<?= PROJECT_DIR ?>/public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/alerts.js?v=<?= time() ?>"></script>
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/security.js?v=<?= time() ?>"></script>
@@ -508,13 +509,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate
                                 <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <input id="d_birthdate" name="birthdate" type="text" required readonly
-                                    placeholder="Select birthdate"
-                                    class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all cursor-pointer"
-                                    value="<?= htmlspecialchars($birthdate ?? '') ?>">
-                                <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                            </div>
+                            <div id="d_birthdate_container" data-birthdate-picker data-id="d_birthdate" data-name="birthdate" data-value="<?= htmlspecialchars($birthdate ?? '') ?>" data-feedback-id="d_birthdate_feedback" data-required></div>
                             <p id="d_birthdate_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
@@ -706,14 +701,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">When is your birthday?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
-                            <div class="relative mb-6 overflow-visible" id="m_birthdate_container" style="min-height: 330px;">
-                                <input type="text" id="m_birthdate" name="birthdate" required readonly
-                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all cursor-pointer"
-                                    placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
-                                <i data-lucide="calendar"
-                                    class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
-                                <label for="m_birthdate"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all cursor-pointer">Birthdate <span class="text-red-500">*</span></label>
+                            <div class="mb-6">
+                                <div id="m_birthdate_container" data-birthdate-picker data-id="m_birthdate" data-name="birthdate" data-value="<?= htmlspecialchars($birthdate ?? '') ?>" data-feedback-id="m_birthdate_feedback" data-required></div>
                                 <p id="m_birthdate_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             </div>
                             <button type="button" onclick="nextStep(2)"
@@ -971,6 +960,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function validateBirthdateField(inputEl, feedbackEl) {
             if (!inputEl) return true;
+            const container = inputEl.closest('.birthdate-picker-root') || inputEl.parentElement?.closest('.birthdate-picker-root') || document.getElementById(inputEl.id + '_container');
+            if (container && container._bdPicker) {
+                const res = container._bdPicker.validate(true);
+                return res.isValid;
+            }
             const val = inputEl.value.trim();
             if (!val) {
                 setFieldStatus(inputEl, feedbackEl, 'error', 'Birthdate is required.');
@@ -1128,25 +1122,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             initRealtimeValidation();
 
-            const datepickerOptions = {
-                autohide: true,
-                format: 'yyyy-mm-dd',
-                todayHighlight: true,
-                orientation: 'bottom left'
-            };
-
             const dBirthInput = document.getElementById('d_birthdate');
             if (dBirthInput) {
-                new Datepicker(dBirthInput, datepickerOptions);
-                dBirthInput.addEventListener('changeDate', () => {
+                dBirthInput.addEventListener('change', () => {
                     validateBirthdateField(dBirthInput, document.getElementById('d_birthdate_feedback'));
                     setTimeout(sendHeight, 60);
                 });
             }
             const mBirthInput = document.getElementById('m_birthdate');
             if (mBirthInput) {
-                new Datepicker(mBirthInput, datepickerOptions);
-                mBirthInput.addEventListener('changeDate', () => {
+                mBirthInput.addEventListener('change', () => {
                     validateBirthdateField(mBirthInput, document.getElementById('m_birthdate_feedback'));
                     setTimeout(sendHeight, 60);
                 });
@@ -1163,9 +1148,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (stepEl) stepEl.classList.add('active');
 
             if (step === 2) {
-                const mInput = document.getElementById('m_birthdate');
-                if (mInput && mInput.datepicker) {
-                    mInput.datepicker.show();
+                const mm = document.getElementById('m_birthdate_mm');
+                if (mm) {
+                    setTimeout(() => mm.focus(), 150);
                 }
             }
 

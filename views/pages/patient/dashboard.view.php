@@ -1405,11 +1405,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             <label class="block text-[11px] font-bold text-gray-700 mb-1">
                                 Correct Age <span class="text-red-500">*</span>
                             </label>
-                            <div class="relative">
-                                <input type="text" id="input-correct-birthdate" readonly placeholder="Select birthdate"
-                                    class="w-full rounded-xl border border-gray-300 pl-9 pr-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer transition">
-                                <i data-lucide="calendar" class="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none"></i>
-                            </div>
+                            <div id="input-correct-birthdate_container" data-birthdate-picker data-id="input-correct-birthdate" data-name="correct_birthdate"></div>
                             <input type="hidden" id="input-correct-age">
                             <div id="preview-calculated-age" class="hidden mt-1.5 text-[11px] text-gray-600 flex items-center gap-1.5 font-medium bg-gray-100/90 px-2.5 py-1 rounded-lg border border-gray-200">
                                 <span class="text-gray-500">Age:</span>

@@ -4,6 +4,9 @@
 <!-- âœ… Lucide production local asset -->
 <script type="text/javascript" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/lucide.min.js"></script>
 
+<!-- âœ… Birthdate Picker production local asset -->
+<script type="text/javascript" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
+
 <!-- âœ… Inject PHP data -->
 <script>
   window.__APP__ = {
@@ -870,22 +873,19 @@
         nextTick(() => {
           this.renderIcons();
           if (this.role === 'patient') {
-            const birthdateInput = document.getElementById('settingsBirthdate');
-            if (birthdateInput && typeof Datepicker !== 'undefined') {
-              if (birthdateInput.datepicker) {
-                birthdateInput.datepicker.destroy();
-              }
-              const picker = new Datepicker(birthdateInput, {
-                autohide: true,
-                format: 'yyyy-mm-dd',
-                todayHighlight: true
-              });
-
-              if (!birthdateInput._hasDatepickerListener) {
-                birthdateInput.addEventListener('changeDate', (e) => {
-                  this.editBirthdate = birthdateInput.value;
+            const container = document.getElementById('settingsBirthdate_container');
+            if (container && typeof BirthdatePicker !== 'undefined') {
+              if (!container._bdPicker) {
+                container._bdPicker = new BirthdatePicker(container, {
+                  id: 'settingsBirthdate',
+                  name: 'settingsBirthdate',
+                  value: this.editBirthdate || '',
+                  onChange: (iso) => {
+                    this.editBirthdate = iso;
+                  }
                 });
-                birthdateInput._hasDatepickerListener = true;
+              } else {
+                container._bdPicker.setValue(this.editBirthdate || '', false);
               }
             }
           }
