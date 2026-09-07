@@ -254,7 +254,7 @@ $catBadgeLabel = match ($dCategory) {
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Full Name</span>
                         <span
-                            class="font-bold text-gray-900"><?= htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']) ?></span>
+                            class="font-bold text-gray-900"><?= htmlspecialchars(formatFullName($caseDetails)) ?></span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Age/Sex</span>
@@ -806,7 +806,7 @@ $catBadgeLabel = match ($dCategory) {
                                             <i data-lucide="upload-cloud" class="w-6 h-6"></i>
                                         </div>
                                         <p class="text-sm font-semibold text-red-600 mb-1">Click or drag X-ray files here</p>
-                                        <p class="text-xs text-gray-400">Patient: <?= htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']) ?></p>
+                                        <p class="text-xs text-gray-400">Patient: <?= htmlspecialchars(formatFullName($caseDetails)) ?></p>
                                         <p class="text-xs text-gray-400 mt-1">Max <strong class="text-gray-500">15 MB</strong> per file</p>
                                     </div>
                                     <input type="file" id="xray_file_input" name="xray_image[]" accept=".jpg,.jpeg,.png,.dcm,.dicom"

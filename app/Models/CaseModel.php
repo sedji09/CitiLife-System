@@ -457,7 +457,7 @@ class CaseModel
         // We need to adjust 'created_at' in the condition if we're using joins with aliases
         $recentDateCondition = str_replace('created_at', 'c.created_at', $dateCondition);
 
-        $sql = "SELECT c.*, p.first_name, p.last_name, p.patient_number 
+        $sql = "SELECT c.*, p.first_name, p.middle_name, p.last_name, p.patient_number 
                 FROM cases c 
                 JOIN patients p ON c.patient_id = p.id 
                 WHERE c.branch_id = ? AND $recentDateCondition 
@@ -736,7 +736,7 @@ class CaseModel
      */
     public function getWorklist($branchId = null, $priority = null, $status = null, $imageUploadedOnly = false, $radiologistId = null)
     {
-        $sql = "SELECT c.*, p.first_name, p.last_name, p.patient_number, b.name as branch_name 
+        $sql = "SELECT c.*, p.first_name, p.middle_name, p.last_name, p.patient_number, b.name as branch_name 
                 FROM cases c 
                 JOIN patients p ON c.patient_id = p.id 
                 JOIN branches b ON c.branch_id = b.id 
@@ -940,13 +940,13 @@ class CaseModel
         $hasReleased = $this->hasColumn('cases', 'released');
 
         if ($hasReleased) {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.patient_number 
+            $sql = "SELECT c.*, p.first_name, p.middle_name, p.last_name, p.patient_number 
                     FROM cases c 
                     JOIN patients p ON c.patient_id = p.id 
                     WHERE c.released = 1 AND c.branch_id = ?
                     ORDER BY c.created_at DESC";
         } else {
-            $sql = "SELECT c.*, p.first_name, p.last_name, p.patient_number 
+            $sql = "SELECT c.*, p.first_name, p.middle_name, p.last_name, p.patient_number 
                     FROM cases c 
                     JOIN patients p ON c.patient_id = p.id 
                     WHERE c.status = 'Completed' AND c.branch_id = ?
@@ -964,7 +964,7 @@ class CaseModel
     public function getCaseByNumber($caseNumber)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number as p_num, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
+            SELECT c.*, p.first_name, p.middle_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number as p_num, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
             FROM cases c
             JOIN patients p ON c.patient_id = p.id
             JOIN branches b ON c.branch_id = b.id
@@ -991,7 +991,7 @@ class CaseModel
     {
         // Search by case number first
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, p.patient_number 
+            SELECT c.*, p.first_name, p.middle_name, p.last_name, p.patient_number 
             FROM cases c 
             JOIN patients p ON c.patient_id = p.id 
             WHERE c.branch_id = ? AND c.case_number = ?
@@ -1004,16 +1004,16 @@ class CaseModel
         if (empty($cases) && !empty($patientName)) {
             $likeName = '%' . $patientName . '%';
             $stmt2 = $this->pdo->prepare("
-                SELECT c.*, p.first_name, p.last_name, p.patient_number 
+                SELECT c.*, p.first_name, p.middle_name, p.last_name, p.patient_number 
                 FROM cases c 
                 JOIN patients p ON c.patient_id = p.id 
                 WHERE c.branch_id = ? 
-                  AND CONCAT(p.first_name, ' ', p.last_name) LIKE ?
+                  AND (CONCAT_WS(' ', p.first_name, p.middle_name, p.last_name) LIKE ? OR CONCAT(p.first_name, ' ', p.last_name) LIKE ?)
                   AND c.exam_type LIKE ?
                 ORDER BY c.created_at DESC
                 LIMIT 5
             ");
-            $stmt2->execute([$branchId, $likeName, '%' . $examType . '%']);
+            $stmt2->execute([$branchId, $likeName, $likeName, '%' . $examType . '%']);
             $cases = $stmt2->fetchAll();
         }
 
@@ -1045,7 +1045,7 @@ class CaseModel
      */
     public function getPendingCases($branchId)
     {
-        $sql = "SELECT r.*, r.id as request_id, p.first_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
+        $sql = "SELECT r.*, r.id as request_id, p.first_name, p.middle_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                 FROM requests r 
                 JOIN patients p ON r.patient_id = p.id 
                 WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified') AND r.branch_id = ?

@@ -133,7 +133,7 @@ if (!$caseDetails) {
         $caseDetails['status'] = 'Under Reading';
     }
 
-    $fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
+    $fullName = htmlspecialchars(formatFullName($caseDetails));
     $isCompleted = (($caseDetails['report_status'] ?? '') === 'Final' || in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']));
     $isDraftLocked = false;
 

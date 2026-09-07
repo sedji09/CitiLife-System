@@ -45,6 +45,98 @@ try {
     // Ignore error
 }
 
+// Handle real-time AJAX validations
+if (isset($_REQUEST['ajax_action'])) {
+    header('Content-Type: application/json');
+    $action = $_REQUEST['ajax_action'];
+
+    if ($action === 'check_patient_id') {
+        $pNum = trim($_REQUEST['patient_number'] ?? '');
+        if (empty($pNum)) {
+            echo json_encode(['status' => 'empty']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("SELECT id, first_name, last_name, birthdate FROM patients WHERE LOWER(patient_number) = LOWER(?) LIMIT 1");
+        $stmt->execute([$pNum]);
+        $pat = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pat) {
+            echo json_encode([
+                'status' => 'not_found',
+                'message' => 'No patient record found with this Patient ID. Please check your clinic receipt.'
+            ]);
+            exit;
+        }
+
+        // Check if user account is already linked
+        $stmtUser = $pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
+        $stmtUser->execute([$pat['id']]);
+        if ($stmtUser->fetch()) {
+            echo json_encode([
+                'status' => 'already_registered',
+                'message' => 'This Patient ID already has an active account. Please log in.'
+            ]);
+            exit;
+        }
+
+        echo json_encode([
+            'status' => 'available',
+            'message' => 'Patient record found in clinic records.'
+        ]);
+        exit;
+    }
+
+    if ($action === 'verify_record') {
+        $pNum = trim($_REQUEST['patient_number'] ?? '');
+        $fName = trim($_REQUEST['first_name'] ?? '');
+        $lName = trim($_REQUEST['last_name'] ?? '');
+        $bDate = trim($_REQUEST['birthdate'] ?? '');
+
+        if (empty($pNum) || empty($fName) || empty($lName) || empty($bDate)) {
+            echo json_encode(['status' => 'incomplete']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT id FROM patients 
+            WHERE LOWER(patient_number) = LOWER(?) 
+              AND LOWER(TRIM(first_name)) = LOWER(TRIM(?))
+              AND LOWER(TRIM(last_name)) = LOWER(TRIM(?))
+              AND birthdate = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$pNum, $fName, $lName, $bDate]);
+        $pat = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pat) {
+            echo json_encode([
+                'status' => 'mismatch',
+                'message' => 'Name or birthdate does not match the clinic record for this Patient ID.'
+            ]);
+            exit;
+        }
+
+        $stmtUser = $pdo->prepare("SELECT id FROM users WHERE patient_id = ? LIMIT 1");
+        $stmtUser->execute([$pat['id']]);
+        if ($stmtUser->fetch()) {
+            echo json_encode([
+                'status' => 'already_registered',
+                'message' => 'This patient record is already linked to an active account. Please log in.'
+            ]);
+            exit;
+        }
+
+        echo json_encode([
+            'status' => 'match',
+            'message' => 'Clinic record verified successfully!'
+        ]);
+        exit;
+    }
+
+    echo json_encode(['status' => 'invalid_action']);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $patientNumber = trim($_POST['patient_number'] ?? '');
@@ -294,6 +386,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 0 !important;
             max-width: 100% !important;
         }
+        /* Real-time Field Validation States */
+        .field-error {
+            border-color: #f87171 !important;
+            background-color: #fef2f2 !important;
+        }
+        .field-error:focus {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+        }
+        .field-success {
+            border-color: #86efac !important;
+        }
+        .field-success:focus {
+            border-color: #22c55e !important;
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+        }
+        .field-warning {
+            border-color: #fcd34d !important;
+            background-color: #fffbeb !important;
+        }
+        .field-warning:focus {
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
+        }
         <?php endif; ?>
     </style>
 </head>
@@ -362,8 +478,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_patient_number" class="block text-sm font-semibold text-gray-700 mb-1">Patient ID
                                 <span class="text-red-500">*</span></label>
                             <input id="d_patient_number" name="patient_number" type="text" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 placeholder="e.g. PAT-GAP-2026-001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
+                            <p id="d_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             <p class="text-xs text-gray-500 mt-1">Found on your clinic receipt or given by staff.</p>
                         </div>
 
@@ -372,8 +489,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_first_name" class="block text-sm font-semibold text-gray-700 mb-1">First Name
                                 <span class="text-red-500">*</span></label>
                             <input id="d_first_name" name="first_name" type="text" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 value="<?= htmlspecialchars($firstName ?? '') ?>">
+                            <p id="d_first_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
                         <!-- Last Name -->
@@ -381,8 +499,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_last_name" class="block text-sm font-semibold text-gray-700 mb-1">Last Name
                                 <span class="text-red-500">*</span></label>
                             <input id="d_last_name" name="last_name" type="text" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 value="<?= htmlspecialchars($lastName ?? '') ?>">
+                            <p id="d_last_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
                         <!-- Birthdate -->
@@ -392,19 +511,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="relative">
                                 <input id="d_birthdate" name="birthdate" type="text" required readonly
                                     placeholder="Select birthdate"
-                                    class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    class="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all cursor-pointer"
                                     value="<?= htmlspecialchars($birthdate ?? '') ?>">
                                 <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
                             </div>
+                            <p id="d_birthdate_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
                         <!-- Sex -->
                         <div>
                             <label for="d_sex" class="block text-sm font-semibold text-gray-700 mb-1">Sex <span
-                                    class="text-red-500">*</span></label>
+                                     class="text-red-500">*</span></label>
                             <div class="relative">
                                 <select id="d_sex" name="sex" required
-                                    class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
+                                    class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white transition-all">
                                     <option value="Male" <?= (($sex ?? '') === 'Male') ? 'selected' : '' ?>>Male</option>
                                     <option value="Female" <?= (($sex ?? '') === 'Female') ? 'selected' : '' ?>>Female</option>
                                 </select>
@@ -418,6 +538,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </svg>
                                 </div>
                             </div>
+                            <p id="d_sex_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
                         <!-- Home Address -->
@@ -425,7 +546,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_home_address" class="block text-sm font-semibold text-gray-700 mb-1">Home
                                 Address <span class="text-xs text-gray-400 font-normal">(Optional)</span></label>
                             <input id="d_home_address" name="home_address" type="text"
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 placeholder="123 Main St, Brgy, City" value="<?= htmlspecialchars($homeAddress ?? '') ?>">
                         </div>
 
@@ -434,11 +555,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_contact_number" class="block text-sm font-semibold text-gray-700 mb-1">Contact
                                 Number <span class="text-red-500">*</span></label>
                             <input id="d_contact_number" name="contact_number" type="text" required
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 placeholder="Ex: 09123456789" value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                pattern="09[0-9]{9}" maxlength="11" minlength="11"
-                                title="Contact number must be 11 digits and start with 09"
+                                maxlength="11"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <p id="d_contact_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
                         <!-- Branch -->
@@ -447,7 +568,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Validating Branch <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <select id="d_branch_id" name="branch_id" required
-                                    class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
+                                    class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white transition-all">
                                     <option value="" disabled <?= empty($branchId) ? 'selected' : '' ?> hidden>Select Branch
                                     </option>
                                     <?php foreach ($branches as $branch): ?>
@@ -464,6 +585,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </svg>
                                 </div>
                             </div>
+                            <p id="d_branch_id_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                     </div>
 
@@ -475,8 +597,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address
                                 <span class="text-red-500">*</span></label>
                             <input id="d_email" name="email" type="email" required autocomplete="username"
-                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 placeholder="you@example.com" value="<?= htmlspecialchars($email ?? '') ?>">
+                            <p id="d_email_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
                     </div>
@@ -551,6 +674,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="m_patient_number"
                                     class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Patient
                                     ID (e.g. PAT-GAP-2026-001) <span class="text-red-500">*</span></label>
+                                <p id="m_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             </div>
 
                             <div class="grid grid-cols-2 gap-3 mb-6">
@@ -561,6 +685,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="m_first_name"
                                         class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">First
                                         name <span class="text-red-500">*</span></label>
+                                    <p id="m_first_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                                 </div>
                                 <div class="relative">
                                     <input type="text" id="m_last_name" name="last_name" required
@@ -569,6 +694,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="m_last_name"
                                         class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Last
                                         name <span class="text-red-500">*</span></label>
+                                    <p id="m_last_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                                 </div>
                             </div>
                             <button type="button" onclick="nextStep(1)"
@@ -588,6 +714,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all cursor-pointer">Birthdate <span class="text-red-500">*</span></label>
+                                <p id="m_birthdate_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             </div>
                             <button type="button" onclick="nextStep(2)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -643,12 +770,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" id="m_contact_number" name="contact_number" required
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
                                     placeholder=" " value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                    pattern="09[0-9]{9}" maxlength="11" minlength="11"
-                                    title="Contact number must be 11 digits and start with 09"
+                                    maxlength="11"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                                 <label for="m_contact_number"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Mobile
                                     number <span class="text-red-500">*</span></label>
+                                <p id="m_contact_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             </div>
                             <button type="button" onclick="nextStep(5)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -706,6 +833,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <?php endforeach; ?>
                                     </ul>
                                 </div>
+                                <p id="m_branch_id_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             </div>
                             <button type="button" onclick="nextStep(6)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -724,6 +852,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="m_email"
                                         class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Email
                                         Address <span class="text-red-500">*</span></label>
+                                    <p id="m_email_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                                 </div>
 
                                 <button type="submit"
@@ -750,10 +879,254 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // ── Real-time Inline Validation System ─────────────────────────────────
+        function setFieldStatus(inputEl, feedbackEl, state, message) {
+            if (!inputEl) return;
+            inputEl.classList.remove('field-error', 'field-warning', 'field-success');
+
+            if (feedbackEl) {
+                feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200';
+                if (state === 'error') {
+                    inputEl.classList.add('field-error');
+                    feedbackEl.className = 'text-xs mt-1.5 font-medium text-red-600 flex items-center gap-1';
+                    feedbackEl.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"></circle><line x1="12" y1="8" x2="12" y2="12" stroke-width="2"></line><line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2"></line></svg> <span>${message}</span>`;
+                    feedbackEl.classList.remove('hidden');
+                } else if (state === 'warning') {
+                    inputEl.classList.add('field-warning');
+                    feedbackEl.className = 'text-xs mt-1.5 font-medium text-amber-600 flex items-center gap-1';
+                    feedbackEl.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"></circle><line x1="12" y1="8" x2="12" y2="12" stroke-width="2"></line><line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2"></line></svg> <span>${message}</span>`;
+                    feedbackEl.classList.remove('hidden');
+                } else if (state === 'success') {
+                    inputEl.classList.add('field-success');
+                    if (message) {
+                        feedbackEl.className = 'text-xs mt-1.5 font-medium text-emerald-600 flex items-center gap-1';
+                        feedbackEl.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polyline points="20 6 9 17 4 12" stroke-width="2"></polyline></svg> <span>${message}</span>`;
+                        feedbackEl.classList.remove('hidden');
+                    } else {
+                        feedbackEl.classList.add('hidden');
+                        feedbackEl.textContent = '';
+                    }
+                } else {
+                    feedbackEl.classList.add('hidden');
+                    feedbackEl.textContent = '';
+                }
+            }
+
+            if (typeof sendHeight === 'function') {
+                sendHeight();
+            }
+        }
+
+        const nameRegex = /^[a-zA-Z\s\-']+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        function validateNameField(inputEl, feedbackEl, fieldLabel) {
+            if (!inputEl) return true;
+            const val = inputEl.value.trim();
+            if (!val) {
+                setFieldStatus(inputEl, feedbackEl, 'error', `${fieldLabel} is required.`);
+                return false;
+            }
+            if (!nameRegex.test(val)) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Letters, spaces, and hyphens only.');
+                return false;
+            }
+            setFieldStatus(inputEl, feedbackEl, 'success', '');
+            return true;
+        }
+
+        function validateContactField(inputEl, feedbackEl) {
+            if (!inputEl) return true;
+            const val = inputEl.value.trim();
+            if (!val) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Contact number is required.');
+                return false;
+            }
+            if (!val.startsWith('09')) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Must start with 09 (e.g. 09123456789).');
+                return false;
+            }
+            if (val.length !== 11) {
+                setFieldStatus(inputEl, feedbackEl, 'error', `Must be 11 digits (currently ${val.length} digits).`);
+                return false;
+            }
+            setFieldStatus(inputEl, feedbackEl, 'success', '');
+            return true;
+        }
+
+        function validateEmailField(inputEl, feedbackEl) {
+            if (!inputEl) return true;
+            const val = inputEl.value.trim();
+            if (!val) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Email address is required.');
+                return false;
+            }
+            if (!emailRegex.test(val)) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Please enter a valid email address (e.g. name@example.com).');
+                return false;
+            }
+            setFieldStatus(inputEl, feedbackEl, 'success', '');
+            return true;
+        }
+
+        function validateBirthdateField(inputEl, feedbackEl) {
+            if (!inputEl) return true;
+            const val = inputEl.value.trim();
+            if (!val) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Birthdate is required.');
+                return false;
+            }
+            const chosen = new Date(val);
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            if (chosen > today) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Birthdate cannot be in the future.');
+                return false;
+            }
+            setFieldStatus(inputEl, feedbackEl, 'success', '');
+            return true;
+        }
+
+        function validateBranchField(inputEl, feedbackEl) {
+            if (!inputEl) return true;
+            const val = inputEl.value.trim();
+            if (!val) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Please select a preferred branch.');
+                return false;
+            }
+            setFieldStatus(inputEl, feedbackEl, 'success', '');
+            return true;
+        }
+
+        let patientIdDebounceTimer = null;
+        function validatePatientIdField(inputEl, feedbackEl) {
+            if (!inputEl) return true;
+            const val = inputEl.value.trim();
+            if (!val) {
+                setFieldStatus(inputEl, feedbackEl, 'error', 'Patient ID is required.');
+                return false;
+            }
+
+            clearTimeout(patientIdDebounceTimer);
+            patientIdDebounceTimer = setTimeout(() => {
+                fetch(`patient-signup?ajax_action=check_patient_id&patient_number=${encodeURIComponent(val)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'not_found') {
+                            setFieldStatus(inputEl, feedbackEl, 'error', data.message || 'Patient ID not found in clinic records.');
+                        } else if (data.status === 'already_registered') {
+                            setFieldStatus(inputEl, feedbackEl, 'warning', data.message || 'This Patient ID already has an active account.');
+                        } else if (data.status === 'available') {
+                            setFieldStatus(inputEl, feedbackEl, 'success', data.message || 'Patient record found in clinic records.');
+                        }
+                    })
+                    .catch(() => {});
+            }, 400);
+
+            return true;
+        }
+
+        function initRealtimeValidation() {
+            // Desktop bindings
+            const dPatient = document.getElementById('d_patient_number');
+            const dPatientFb = document.getElementById('d_patient_number_feedback');
+            if (dPatient) {
+                dPatient.addEventListener('input', () => validatePatientIdField(dPatient, dPatientFb));
+                dPatient.addEventListener('blur', () => validatePatientIdField(dPatient, dPatientFb));
+            }
+
+            const dFirst = document.getElementById('d_first_name');
+            const dFirstFb = document.getElementById('d_first_name_feedback');
+            if (dFirst) {
+                dFirst.addEventListener('input', () => validateNameField(dFirst, dFirstFb, 'First name'));
+                dFirst.addEventListener('blur', () => validateNameField(dFirst, dFirstFb, 'First name'));
+            }
+
+            const dLast = document.getElementById('d_last_name');
+            const dLastFb = document.getElementById('d_last_name_feedback');
+            if (dLast) {
+                dLast.addEventListener('input', () => validateNameField(dLast, dLastFb, 'Last name'));
+                dLast.addEventListener('blur', () => validateNameField(dLast, dLastFb, 'Last name'));
+            }
+
+            const dBirth = document.getElementById('d_birthdate');
+            const dBirthFb = document.getElementById('d_birthdate_feedback');
+            if (dBirth) {
+                dBirth.addEventListener('change', () => validateBirthdateField(dBirth, dBirthFb));
+                dBirth.addEventListener('blur', () => validateBirthdateField(dBirth, dBirthFb));
+            }
+
+            const dContact = document.getElementById('d_contact_number');
+            const dContactFb = document.getElementById('d_contact_number_feedback');
+            if (dContact) {
+                dContact.addEventListener('input', () => validateContactField(dContact, dContactFb));
+                dContact.addEventListener('blur', () => validateContactField(dContact, dContactFb));
+            }
+
+            const dBranch = document.getElementById('d_branch_id');
+            const dBranchFb = document.getElementById('d_branch_id_feedback');
+            if (dBranch) {
+                dBranch.addEventListener('change', () => validateBranchField(dBranch, dBranchFb));
+                dBranch.addEventListener('blur', () => validateBranchField(dBranch, dBranchFb));
+            }
+
+            const dEmail = document.getElementById('d_email');
+            const dEmailFb = document.getElementById('d_email_feedback');
+            if (dEmail) {
+                dEmail.addEventListener('input', () => validateEmailField(dEmail, dEmailFb));
+                dEmail.addEventListener('blur', () => validateEmailField(dEmail, dEmailFb));
+            }
+
+            // Mobile bindings
+            const mPatient = document.getElementById('m_patient_number');
+            const mPatientFb = document.getElementById('m_patient_number_feedback');
+            if (mPatient) {
+                mPatient.addEventListener('input', () => validatePatientIdField(mPatient, mPatientFb));
+                mPatient.addEventListener('blur', () => validatePatientIdField(mPatient, mPatientFb));
+            }
+
+            const mFirst = document.getElementById('m_first_name');
+            const mFirstFb = document.getElementById('m_first_name_feedback');
+            if (mFirst) {
+                mFirst.addEventListener('input', () => validateNameField(mFirst, mFirstFb, 'First name'));
+                mFirst.addEventListener('blur', () => validateNameField(mFirst, mFirstFb, 'First name'));
+            }
+
+            const mLast = document.getElementById('m_last_name');
+            const mLastFb = document.getElementById('m_last_name_feedback');
+            if (mLast) {
+                mLast.addEventListener('input', () => validateNameField(mLast, mLastFb, 'Last name'));
+                mLast.addEventListener('blur', () => validateNameField(mLast, mLastFb, 'Last name'));
+            }
+
+            const mBirth = document.getElementById('m_birthdate');
+            const mBirthFb = document.getElementById('m_birthdate_feedback');
+            if (mBirth) {
+                mBirth.addEventListener('change', () => validateBirthdateField(mBirth, mBirthFb));
+                mBirth.addEventListener('blur', () => validateBirthdateField(mBirth, mBirthFb));
+            }
+
+            const mContact = document.getElementById('m_contact_number');
+            const mContactFb = document.getElementById('m_contact_number_feedback');
+            if (mContact) {
+                mContact.addEventListener('input', () => validateContactField(mContact, mContactFb));
+                mContact.addEventListener('blur', () => validateContactField(mContact, mContactFb));
+            }
+
+            const mEmail = document.getElementById('m_email');
+            const mEmailFb = document.getElementById('m_email_feedback');
+            if (mEmail) {
+                mEmail.addEventListener('input', () => validateEmailField(mEmail, mEmailFb));
+                mEmail.addEventListener('blur', () => validateEmailField(mEmail, mEmailFb));
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) {
                 window.lucide.createIcons();
             }
+
+            initRealtimeValidation();
 
             const datepickerOptions = {
                 autohide: true,
@@ -762,13 +1135,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 orientation: 'bottom left'
             };
 
-            if (document.getElementById('d_birthdate')) {
-                new Datepicker(document.getElementById('d_birthdate'), datepickerOptions);
+            const dBirthInput = document.getElementById('d_birthdate');
+            if (dBirthInput) {
+                new Datepicker(dBirthInput, datepickerOptions);
+                dBirthInput.addEventListener('changeDate', () => {
+                    validateBirthdateField(dBirthInput, document.getElementById('d_birthdate_feedback'));
+                    setTimeout(sendHeight, 60);
+                });
             }
             const mBirthInput = document.getElementById('m_birthdate');
             if (mBirthInput) {
                 new Datepicker(mBirthInput, datepickerOptions);
                 mBirthInput.addEventListener('changeDate', () => {
+                    validateBirthdateField(mBirthInput, document.getElementById('m_birthdate_feedback'));
                     setTimeout(sendHeight, 60);
                 });
             }
@@ -818,15 +1197,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const stepEl = document.getElementById('step' + step);
             if (!stepEl) return true;
 
-            const inputs = stepEl.querySelectorAll('input:required, select:required');
             let isValid = true;
 
-            inputs.forEach(input => {
-                if (!input.checkValidity()) {
-                    input.reportValidity();
+            if (step === 1) {
+                const pIdOk = validatePatientIdField(document.getElementById('m_patient_number'), document.getElementById('m_patient_number_feedback'));
+                const fnOk = validateNameField(document.getElementById('m_first_name'), document.getElementById('m_first_name_feedback'), 'First name');
+                const lnOk = validateNameField(document.getElementById('m_last_name'), document.getElementById('m_last_name_feedback'), 'Last name');
+                if (!pIdOk || !fnOk || !lnOk) {
                     isValid = false;
                 }
-            });
+            }
+
+            if (step === 2) {
+                if (!validateBirthdateField(document.getElementById('m_birthdate'), document.getElementById('m_birthdate_feedback'))) {
+                    isValid = false;
+                }
+            }
 
             if (step === 3) {
                 const sexSelected = stepEl.querySelector('input[name="sex"]:checked');
@@ -835,16 +1221,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            if (step === 6) {
-                const branchHidden = document.getElementById('m_branch_id');
-                if (branchHidden && !branchHidden.value) {
-                    toast("Please select your preferred clinic.", "error");
+            if (step === 5) {
+                if (!validateContactField(document.getElementById('m_contact_number'), document.getElementById('m_contact_number_feedback'))) {
                     isValid = false;
                 }
             }
 
+            if (step === 6) {
+                const branchHidden = document.getElementById('m_branch_id');
+                const branchFeedback = document.getElementById('m_branch_id_feedback');
+                if (!branchHidden || !branchHidden.value) {
+                    setFieldStatus(document.getElementById('m_branch_display'), branchFeedback, 'error', 'Please select your preferred clinic.');
+                    isValid = false;
+                } else {
+                    setFieldStatus(document.getElementById('m_branch_display'), branchFeedback, 'success', '');
+                }
+            }
+
             if (step === 7) {
-                // Email is validated natively by checkValidity() loop above
+                if (!validateEmailField(document.getElementById('m_email'), document.getElementById('m_email_feedback'))) {
+                    isValid = false;
+                }
+            }
+
+            const errorInStep = stepEl.querySelector('.field-error');
+            if (errorInStep) {
+                isValid = false;
+                errorInStep.focus();
             }
 
             return isValid;
@@ -854,6 +1257,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const mobileForm = document.getElementById('signupFormMobile');
         if (mobileForm) {
             mobileForm.addEventListener('submit', function (e) {
+                if (!validateStep(7)) {
+                    e.preventDefault();
+                    return;
+                }
                 const btn = this.querySelector('button[type="submit"]');
                 if (btn) {
                     btn.disabled = true;
@@ -879,6 +1286,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const desktopForm = document.getElementById('signupFormDesktop');
         if (desktopForm) {
             desktopForm.addEventListener('submit', function (e) {
+                const v1 = validatePatientIdField(document.getElementById('d_patient_number'), document.getElementById('d_patient_number_feedback'));
+                const v2 = validateNameField(document.getElementById('d_first_name'), document.getElementById('d_first_name_feedback'), 'First name');
+                const v3 = validateNameField(document.getElementById('d_last_name'), document.getElementById('d_last_name_feedback'), 'Last name');
+                const v4 = validateBirthdateField(document.getElementById('d_birthdate'), document.getElementById('d_birthdate_feedback'));
+                const v5 = validateContactField(document.getElementById('d_contact_number'), document.getElementById('d_contact_number_feedback'));
+                const v6 = validateBranchField(document.getElementById('d_branch_id'), document.getElementById('d_branch_id_feedback'));
+                const v7 = validateEmailField(document.getElementById('d_email'), document.getElementById('d_email_feedback'));
+
+                const hasError = document.querySelector('#desktopFormContainer .field-error');
+                if (hasError || !v1 || !v2 || !v3 || !v4 || !v5 || !v6 || !v7) {
+                    e.preventDefault();
+                    if (hasError) hasError.focus();
+                    return;
+                }
+
                 const btn = this.querySelector('button[type="submit"]');
                 if (btn) {
                     btn.disabled = true;

@@ -34,7 +34,7 @@ if (!$caseDetails || !$isInBranch || !$isReleased) {
     return;
 }
 
-$fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
+$fullName = htmlspecialchars(formatFullName($caseDetails));
 $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card') ? 'With PhilHealth ID' : 'Without PhilHealth ID';
 
 $userRole = $_SESSION['role'] ?? 'radtech';

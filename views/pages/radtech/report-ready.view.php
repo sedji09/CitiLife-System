@@ -108,11 +108,13 @@
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($patients as $row): ?>
+                    <?php foreach ($patients as $row): 
+                        $patFullName = formatFullName($row);
+                    ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
                             data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
-                            data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>">
@@ -123,8 +125,8 @@
                                 <?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?>
                             </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
-                                title="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>">
-                                <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                title="<?= htmlspecialchars($patFullName) ?>">
+                                <?= htmlspecialchars($patFullName) ?>
                             </td>
                             <td class="py-3 px-3 max-w-[180px]">
                                 <?php

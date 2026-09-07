@@ -101,9 +101,12 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($data as $row): ?>
-                        <?php $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d')); ?>
+                        <?php 
+                        $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d')); 
+                        $patFullName = formatFullName($row);
+                        ?>
                         <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
-                            data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-case="<?= htmlspecialchars($row['case_number']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority'] ?? '') ?>"
@@ -115,7 +118,7 @@
                             <td class="py-3 px-4 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
                             <td class="py-3 px-4">
                                 <span
-                                    class="font-medium text-gray-800"><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?></span>
+                                    class="font-medium text-gray-800"><?= htmlspecialchars($patFullName) ?></span>
                             </td>
                             <td class="py-3 px-4">
                                 <?php

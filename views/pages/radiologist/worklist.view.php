@@ -271,6 +271,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 $sColor = '#b91c1c';
                             }
                             ?>
+                            <?php $pFullName = formatFullName($row); ?>
                             <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
                                 data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
@@ -278,7 +279,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-status="<?= htmlspecialchars($displayStatus) ?>"
                                 data-pweight="<?= $pWeight ?>" data-is-today="<?= $isToday ? 'true' : 'false' ?>"
-                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
+                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $pFullName . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="font-medium"><?= htmlspecialchars($row['case_number']) ?></div>
@@ -287,9 +288,9 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                     <div class="font-medium text-gray-600"><?= htmlspecialchars($row['branch_name']) ?></div>
                                 </td>
                                 <td class="py-3 px-3 truncate max-w-[200px]"
-                                    title="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>">
+                                    title="<?= htmlspecialchars($pFullName) ?>">
                                     <div class="font-medium truncate">
-                                        <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                        <?= htmlspecialchars($pFullName) ?>
                                     </div>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap text-xs text-gray-800 font-medium">
@@ -414,13 +415,14 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                             $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
                             $isToday = (date('Y-m-d', strtotime($rowDate)) === date('Y-m-d'));
                             ?>
+                            <?php $pFullName = formatFullName($row); ?>
                             <tr class="hover:bg-white/10 transition-colors release-record-row cursor-pointer"
                                 data-id="<?= htmlspecialchars($row['case_number']) ?>"
                                 data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>" data-is-today="<?= $isToday ? 'true' : 'false' ?>"
-                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $row['first_name'] . ' ' . $row['last_name'] . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
+                                data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $pFullName . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
                                     <div class="font-medium"><?= htmlspecialchars($row['case_number']) ?></div>
@@ -429,9 +431,9 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                     <div class="font-medium text-gray-600"><?= htmlspecialchars($row['branch_name']) ?></div>
                                 </td>
                                 <td class="py-3 px-3 truncate max-w-[200px]"
-                                    title="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>">
+                                    title="<?= htmlspecialchars($pFullName) ?>">
                                     <div class="font-medium truncate">
-                                        <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                        <?= htmlspecialchars($pFullName) ?>
                                     </div>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap text-xs text-gray-800 font-medium">

@@ -8,6 +8,32 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
 <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
 
+<style>
+@keyframes inputShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+.animate-shake {
+    animation: inputShake 0.35s ease-in-out;
+}
+.field-error {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+    box-shadow: 0 0 0 1px #ef4444 !important;
+}
+.field-warning {
+    border-color: #f59e0b !important;
+    background-color: #fffbeb !important;
+    box-shadow: 0 0 0 1px #f59e0b !important;
+}
+.field-success {
+    border-color: #10b981 !important;
+    background-color: #f0fdf4 !important;
+    box-shadow: 0 0 0 1px #10b981 !important;
+}
+</style>
+
 <main class="flex-1 overflow-y-auto p-4 lg:p-6">
     <div class="mx-auto max-w-3xl space-y-6">
         <div>
@@ -42,38 +68,73 @@
             </nav>
         </div>
 
-        <form method="POST" action="" class="space-y-6 rounded-xl border border-gray-300 shadow-sm bg-white p-6 mt-4">
+        <form method="POST" action="" novalidate class="space-y-6 rounded-xl border border-gray-300 shadow-sm bg-white px-6 py-5 mt-4">
 
             <!-- Hidden field for existing patient selected -->
-            <input type="hidden" name="form-mode" id="form-mode"
-                value="<?= htmlspecialchars($_POST['form-mode'] ?? 'new-patient') ?>">
-            <input type="hidden" name="existing-patient-id" id="existing-patient-id"
-                value="<?= htmlspecialchars($_POST['existing-patient-id'] ?? '') ?>">
+            <div class="hidden" hidden>
+                <input type="hidden" name="form-mode" id="form-mode"
+                    value="<?= htmlspecialchars($_POST['form-mode'] ?? 'new-patient') ?>">
+                <input type="hidden" name="existing-patient-id" id="existing-patient-id"
+                    value="<?= htmlspecialchars($_POST['existing-patient-id'] ?? '') ?>">
+            </div>
 
-            <div id="new-patient-section">
+            <div id="new-patient-section" class="!mt-0">
                 <fieldset class="space-y-4">
-                    <legend class="text-lg font-medium text-gray-900 mb-2">Patient Information</legend>
+                    <legend class="text-lg font-semibold text-gray-900 mb-2">Patient Information</legend>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div>
                             <label for="first-name" class="block text-sm font-medium text-gray-700 mb-2">First Name
                                 <span class="text-red-500">*</span></label>
                             <input type="text" id="first-name" name="first-name"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
+                                value="<?= htmlspecialchars($_POST['first-name'] ?? '') ?>"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new transition-all">
+                            <p id="first-name-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                         <div>
-                            <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle
-                                Name</label>
+                            <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Middle Name 
+                                <span id="middle-name-req" class="text-red-500 font-bold hidden">*</span>
+                                <span id="middle-name-opt" class="text-xs text-gray-400 font-normal ml-1">(Optional)</span>
+                            </label>
                             <input type="text" id="middle-name" name="middle-name"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                                value="<?= htmlspecialchars($_POST['middle-name'] ?? '') ?>"
+                                placeholder="Enter middle name or initial"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                            <p id="middle-name-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                         <div>
                             <label for="last-name" class="block text-sm font-medium text-gray-700 mb-2">Last Name <span
                                     class="text-red-500">*</span></label>
                             <input type="text" id="last-name" name="last-name"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
+                                value="<?= htmlspecialchars($_POST['last-name'] ?? '') ?>"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new transition-all">
+                            <p id="last-name-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+
+                    <!-- Namesake / Duplicate Name Warning Banner -->
+                    <div id="namesake-warning" class="hidden rounded-xl border border-amber-300 bg-amber-50/70 p-4 shadow-2xs transition-all duration-300">
+                        <div class="flex items-start gap-3.5">
+                            <div class="p-2 rounded-lg bg-amber-500 text-white shrink-0 mt-0.5 shadow-2xs">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-gray-900">
+                                    Existing Patient Record Found
+                                </h4>
+                                <p class="mt-1 text-xs text-gray-600 leading-relaxed">
+                                    A matching record was found. Verify the details below. If this is the same patient, select <strong>"Use This Profile"</strong>. If this is a new patient, enter their middle name above.
+                                </p>
+
+                                <!-- Existing Matching Patient Cards -->
+                                <div id="namesake-list" class="mt-3 space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-2">Birthdate <span
                                     class="text-red-500">*</span></label>
@@ -82,9 +143,10 @@
                                 <input type="text" id="birthdate" name="birthdate" required
                                     placeholder="Select birthdate" readonly
                                     value="<?= htmlspecialchars($birthdateValue) ?>"
-                                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new transition-all">
                                 <i data-lucide="calendar" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
                             </div>
+                            <p id="birthdate-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                         <div>
                             <label for="sex" class="block text-sm font-medium text-gray-700 mb-2">Sex <span
@@ -100,15 +162,17 @@
                         <div>
                             <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number
                                 <span class="text-red-500">*</span></label>
-                            <input type="tel" id="contact" name="contact" pattern="[0-9]{11}" maxlength="11"
-                                minlength="11" title="Please enter exactly 11 digits" placeholder="e.g. 09123456789"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
+                            <input type="tel" id="contact" name="contact" maxlength="11"
+                                placeholder="09123456789"
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new transition-all">
+                            <p id="contact-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email
                                 Address <span class="text-xs text-gray-400 font-normal">(Optional)</span></label>
                             <input type="email" id="email" name="email" placeholder="patient@example.com"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 transition-all">
+                            <p id="email-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                         <div class="sm:col-span-2">
                             <label for="home_address" class="block text-sm font-medium text-gray-700 mb-2">Home
@@ -121,9 +185,9 @@
                 </fieldset>
             </div>
 
-            <div id="existing-patient-section" class="hidden">
+            <div id="existing-patient-section" class="hidden !mt-0">
                 <fieldset class="space-y-4">
-                    <legend class="text-lg font-medium text-gray-900 mb-2">Search Existing Patient</legend>
+                    <legend class="text-lg font-semibold text-gray-900 mb-2">Search Existing Patient</legend>
                     <div class="relative">
                         <input type="text" id="search-patient" placeholder="Search by name or ID... (Type and wait)"
                             onkeydown="return event.key != 'Enter';"
@@ -366,6 +430,9 @@
             document.getElementById('existing-patient-id').value = '';
             document.getElementById('btn-submit').innerText = "Register Patient";
             reqFields.forEach(f => f.setAttribute('required', 'required'));
+            if (typeof checkNamesake === 'function') {
+                checkNamesake();
+            }
         } else {
             formMode.value = 'existing-patient';
             newSec.classList.add('hidden');
@@ -378,35 +445,387 @@
 
             document.getElementById('btn-submit').innerText = "Create Case";
             reqFields.forEach(f => f.removeAttribute('required'));
+
+            const wBox = document.getElementById('namesake-warning');
+            if (wBox) wBox.classList.add('hidden');
+            const mnFeedback = document.getElementById('middle-name-feedback');
+            if (mnFeedback) mnFeedback.classList.add('hidden');
+        }
+    }
+
+    // ── Inline Validation Helper ─────────────────────────────────────────────
+    function setFieldStatus(inputEl, feedbackEl, state, message) {
+        if (!inputEl) return;
+        inputEl.classList.remove('field-error', 'field-warning', 'field-success', 'border-red-400', 'border-gray-300');
+
+        if (feedbackEl) {
+            feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200';
+            if (message) {
+                feedbackEl.innerHTML = message;
+                feedbackEl.classList.remove('hidden');
+            } else {
+                feedbackEl.innerHTML = '';
+                feedbackEl.classList.add('hidden');
+            }
         }
 
-        if (isChanging) {
-            clearExaminationDetails();
+        if (state === 'error') {
+            inputEl.classList.add('field-error');
+            if (feedbackEl) feedbackEl.classList.add('text-red-600', 'font-medium');
+        } else if (state === 'warning') {
+            inputEl.classList.add('field-warning');
+            if (feedbackEl) feedbackEl.classList.add('text-amber-700', 'font-medium');
+        } else if (state === 'success') {
+            inputEl.classList.add('field-success');
+            if (feedbackEl) feedbackEl.classList.add('text-emerald-600', 'font-medium');
+        } else {
+            inputEl.classList.add('border-gray-300');
         }
+    }
+
+    // ── Field Validations ───────────────────────────────────────────────────
+    function validateFirstName(isSubmitted = false) {
+        const input = document.getElementById('first-name');
+        const feedback = document.getElementById('first-name-feedback');
+        if (!input) return true;
+
+        const val = input.value.trim();
+        if (!val) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'First name is required.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'normal', '');
+            return false;
+        }
+
+        if (!/^[a-zA-ZÀ-ÿ\s.\-ñÑ]+$/.test(val)) {
+            setFieldStatus(input, feedback, 'error', 'Letters, spaces, and hyphens only.');
+            return false;
+        }
+
+        if (val.length < 2) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Must be at least 2 characters.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'warning', 'Minimum 2 characters.');
+            return false;
+        }
+
+        setFieldStatus(input, feedback, 'success', '');
+        return true;
+    }
+
+    function validateLastName(isSubmitted = false) {
+        const input = document.getElementById('last-name');
+        const feedback = document.getElementById('last-name-feedback');
+        if (!input) return true;
+
+        const val = input.value.trim();
+        if (!val) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Last name is required.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'normal', '');
+            return false;
+        }
+
+        if (!/^[a-zA-ZÀ-ÿ\s.\-ñÑ]+$/.test(val)) {
+            setFieldStatus(input, feedback, 'error', 'Letters, spaces, and hyphens only.');
+            return false;
+        }
+
+        if (val.length < 2) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Must be at least 2 characters.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'warning', 'Minimum 2 characters.');
+            return false;
+        }
+
+        setFieldStatus(input, feedback, 'success', '');
+        return true;
+    }
+
+    function validateMiddleName(isSubmitted = false) {
+        const input = document.getElementById('middle-name');
+        const feedback = document.getElementById('middle-name-feedback');
+        const reqAsterisk = document.getElementById('middle-name-req');
+        const optBadge = document.getElementById('middle-name-opt');
+        if (!input) return true;
+
+        const val = input.value.trim();
+
+        if (window.__hasNamesake) {
+            if (reqAsterisk) reqAsterisk.classList.remove('hidden');
+            if (optBadge) optBadge.classList.add('hidden');
+
+            if (!val) {
+                setFieldStatus(input, feedback, 'error', 'Middle name is required because a matching patient record exists.');
+                return false;
+            }
+
+            if (!/^[a-zA-ZÀ-ÿ\s.\-ñÑ]+$/.test(val)) {
+                setFieldStatus(input, feedback, 'error', 'Letters, spaces, and hyphens only.');
+                return false;
+            }
+
+            // Check if user entered the exact same middle name as any namesake match
+            const exactMatch = (window.__namesakeMatches || []).some(m => {
+                const mMid = (m.middle_name || '').trim().toLowerCase();
+                return mMid && mMid === val.toLowerCase();
+            });
+
+            if (exactMatch) {
+                setFieldStatus(input, feedback, 'warning', '⚠ An existing record has this exact middle name. Verify patient profile above.');
+                return true;
+            }
+
+            setFieldStatus(input, feedback, 'success', '✓ Middle name differentiates patient from existing records.');
+            return true;
+        } else {
+            if (reqAsterisk) reqAsterisk.classList.add('hidden');
+            if (optBadge) optBadge.classList.remove('hidden');
+
+            if (!val) {
+                setFieldStatus(input, feedback, 'normal', '');
+                return true;
+            }
+
+            if (!/^[a-zA-ZÀ-ÿ\s.\-ñÑ]+$/.test(val)) {
+                setFieldStatus(input, feedback, 'error', 'Letters, spaces, and hyphens only.');
+                return false;
+            }
+
+            setFieldStatus(input, feedback, 'success', '');
+            return true;
+        }
+    }
+
+    function validateBirthdate(isSubmitted = false) {
+        const input = document.getElementById('birthdate');
+        const feedback = document.getElementById('birthdate-feedback');
+        if (!input) return true;
+
+        const val = input.value.trim();
+        if (!val) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Birthdate is required.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'normal', '');
+            return false;
+        }
+
+        const bdate = new Date(val);
+        const today = new Date();
+        bdate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        if (isNaN(bdate.getTime())) {
+            setFieldStatus(input, feedback, 'error', 'Please enter a valid birthdate.');
+            return false;
+        }
+
+        if (bdate > today) {
+            setFieldStatus(input, feedback, 'error', 'Birthdate cannot be in the future.');
+            return false;
+        }
+
+        let age = today.getFullYear() - bdate.getFullYear();
+        const mDiff = today.getMonth() - bdate.getMonth();
+        if (mDiff < 0 || (mDiff === 0 && today.getDate() < bdate.getDate())) {
+            age--;
+        }
+        if (age < 0) age = 0;
+
+        setFieldStatus(input, feedback, 'success', `✓ Age: ${age} year${age === 1 ? '' : 's'} old`);
+        return true;
+    }
+
+    function validateContact(isSubmitted = false) {
+        const input = document.getElementById('contact');
+        const feedback = document.getElementById('contact-feedback');
+        if (!input) return true;
+
+        // Auto-sanitize digits live
+        input.value = input.value.replace(/\D/g, '').slice(0, 11);
+        const val = input.value;
+
+        if (!val) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Contact number is required.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'normal', '');
+            return false;
+        }
+
+        if (val.length >= 2 && !val.startsWith('09')) {
+            setFieldStatus(input, feedback, 'error', 'Must start with 09 (e.g. 09123456789).');
+            return false;
+        }
+
+        if (val.length < 11) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', `Must be exactly 11 digits (${val.length}/11 entered).`);
+                return false;
+            }
+            setFieldStatus(input, feedback, 'warning', `11 digits required (${val.length}/11 entered).`);
+            return false;
+        }
+
+        setFieldStatus(input, feedback, 'success', '✓ Valid Philippine mobile number (11/11)');
+        return true;
+    }
+
+    function validateEmail(isSubmitted = false) {
+        const input = document.getElementById('email');
+        const feedback = document.getElementById('email-feedback');
+        if (!input) return true;
+
+        const val = input.value.trim();
+        if (!val) {
+            setFieldStatus(input, feedback, 'normal', '');
+            return true;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(val)) {
+            setFieldStatus(input, feedback, 'error', 'Please enter a valid email format (e.g. patient@example.com).');
+            return false;
+        }
+
+        setFieldStatus(input, feedback, 'success', '✓ Valid email address');
+        return true;
+    }
+
+    function validatePhilHealth(isSubmitted = false) {
+        const card = document.getElementById('card');
+        const idInput = document.getElementById('id-number');
+        const statusMsg = document.getElementById('philhealth-status-msg');
+        const relSelect = document.getElementById('philhealth_relation');
+
+        if (card && card.value === 'With PhilHealth Card') {
+            const val = (idInput ? idInput.value : '').trim();
+            const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
+
+            if (!val) {
+                if (isSubmitted) {
+                    setFieldStatus(idInput, statusMsg, 'error', 'PhilHealth ID Number is required.');
+                    return false;
+                }
+                return false;
+            }
+
+            if (!philHealthPattern.test(val)) {
+                setFieldStatus(idInput, statusMsg, 'error', 'Format must be XX-XXXXXXXXX-X (12 digits).');
+                return false;
+            }
+
+            if (relSelect && !relSelect.value) {
+                if (isSubmitted) {
+                    relSelect.classList.add('field-error');
+                    if (statusMsg) {
+                        statusMsg.innerText = "Please select patient's relation to ID.";
+                        statusMsg.className = 'text-xs text-red-600 mt-2 block font-medium';
+                    }
+                    return false;
+                }
+            } else if (relSelect) {
+                relSelect.classList.remove('field-error');
+            }
+
+            if (statusMsg && statusMsg.innerText.includes('already fully utilized')) {
+                return false;
+            }
+        }
+        return true;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         togglePhilHealthId();
 
-        const datepicker = new Datepicker(document.getElementById('birthdate'), {
+        const bdateInput = document.getElementById('birthdate');
+        const datepicker = new Datepicker(bdateInput, {
             autohide: true,
             format: 'yyyy-mm-dd',
             todayHighlight: true
         });
 
-        // Validate PhilHealth ID on form submit
-        document.querySelector('form[method="POST"]').addEventListener('submit', async function (e) {
-            // Check if already submitting
-            const submitBtn = document.getElementById('btn-submit');
-            if (submitBtn.disabled) {
-                e.preventDefault();
-                return;
+        // Datepicker event listeners
+        if (bdateInput) {
+            bdateInput.addEventListener('changeDate', () => validateBirthdate(true));
+            bdateInput.addEventListener('change', () => validateBirthdate(true));
+            bdateInput.addEventListener('input', () => validateBirthdate(false));
+            // Trigger initial age calculate if birthdate prefilled
+            if (bdateInput.value.trim()) {
+                validateBirthdate(false);
             }
+        }
 
-            // Prevent default immediately to handle async confirmation
+        // Live validation listeners for patient form fields
+        const fnInput = document.getElementById('first-name');
+        const lnInput = document.getElementById('last-name');
+        const mnInput = document.getElementById('middle-name');
+        const ctInput = document.getElementById('contact');
+        const emInput = document.getElementById('email');
+
+        if (fnInput) {
+            fnInput.addEventListener('input', () => {
+                validateFirstName(false);
+                scheduleNamesakeCheck();
+            });
+            fnInput.addEventListener('blur', () => {
+                validateFirstName(true);
+                checkNamesake();
+            });
+        }
+
+        if (lnInput) {
+            lnInput.addEventListener('input', () => {
+                validateLastName(false);
+                scheduleNamesakeCheck();
+            });
+            lnInput.addEventListener('blur', () => {
+                validateLastName(true);
+                checkNamesake();
+            });
+        }
+
+        if (mnInput) {
+            mnInput.addEventListener('input', () => {
+                validateMiddleName(false);
+            });
+            mnInput.addEventListener('blur', () => {
+                validateMiddleName(true);
+            });
+        }
+
+        if (ctInput) {
+            ctInput.addEventListener('input', () => validateContact(false));
+            ctInput.addEventListener('blur', () => validateContact(true));
+            if (ctInput.value.trim()) {
+                validateContact(false);
+            }
+        }
+
+        if (emInput) {
+            emInput.addEventListener('input', () => validateEmail(false));
+            emInput.addEventListener('blur', () => validateEmail(true));
+        }
+
+        // ── Form Submit Validation ───────────────────────────────────────────
+        document.querySelector('form[method="POST"]').addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            // ── Sync exam-selector required-check so browser validation passes ──
+            const submitBtn = document.getElementById('btn-submit');
+            if (submitBtn.disabled) return;
+
+            // Sync exam-selector required check
             document.querySelectorAll('.exam-ms-component').forEach(container => {
                 const hidden = container.querySelector('.exam-ms-hidden-input');
                 const reqCheck = container.querySelector('.exam-ms-required-check');
@@ -418,49 +837,81 @@
                 }
             });
 
-            const card = document.getElementById('card');
-            const idInput = document.getElementById('id-number');
-            if (card.value === 'With PhilHealth Card') {
-                const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
-                if (!idInput.value.trim()) {
-                    idInput.setCustomValidity('PhilHealth ID Number is required.');
-                    idInput.reportValidity();
-                    idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
-                    return;
-                } else if (!philHealthPattern.test(idInput.value.trim())) {
-                    idInput.setCustomValidity('Format must be XX-XXXXXXXXX-X (digits only).');
-                    idInput.reportValidity();
-                    idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
-                    return;
-                }
-            }
-
-            // Validate birthdate is not in the future (for new-patient mode)
             const formMode = document.getElementById('form-mode').value;
+            let invalidElements = [];
+
             if (formMode === 'new-patient') {
-                const birthdateVal = document.getElementById('birthdate').value;
-                if (birthdateVal) {
-                    const bdate = new Date(birthdateVal);
-                    const today = new Date();
-                    bdate.setHours(0, 0, 0, 0);
-                    today.setHours(0, 0, 0, 0);
-                    if (bdate > today) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Invalid Birthdate',
-                            text: 'Birthdate cannot be in the future.',
-                            confirmButtonColor: '#dc2626'
-                        });
-                        return;
-                    }
+                await checkNamesake();
+                const isFnValid = validateFirstName(true);
+                const isMnValid = validateMiddleName(true);
+                const isLnValid = validateLastName(true);
+                const isBdValid = validateBirthdate(true);
+                const isCtValid = validateContact(true);
+                const isEmValid = validateEmail(true);
+                const isPhValid = validatePhilHealth(true);
+
+                // Exam validation
+                let isExamValid = true;
+                const examReqCheck = document.querySelector('.exam-ms-required-check');
+                const examContainer = document.querySelector('.exam-ms-component');
+                if (examReqCheck && !examReqCheck.value.trim()) {
+                    isExamValid = false;
+                    examContainer?.classList.add('field-error', 'rounded-lg');
+                } else {
+                    examContainer?.classList.remove('field-error');
                 }
+
+                if (!isFnValid) invalidElements.push(document.getElementById('first-name'));
+                if (!isMnValid) invalidElements.push(document.getElementById('middle-name'));
+                if (!isLnValid) invalidElements.push(document.getElementById('last-name'));
+                if (!isBdValid) invalidElements.push(document.getElementById('birthdate'));
+                if (!isCtValid) invalidElements.push(document.getElementById('contact'));
+                if (!isEmValid) invalidElements.push(document.getElementById('email'));
+                if (!isPhValid) invalidElements.push(document.getElementById('id-number') || document.getElementById('philhealth_relation'));
+                if (!isExamValid) invalidElements.push(examContainer || examReqCheck);
+            } else {
+                // Existing Patient Mode
+                const existingPatientId = document.getElementById('existing-patient-id')?.value;
+                if (!existingPatientId) {
+                    const searchInput = document.getElementById('search-patient');
+                    invalidElements.push(searchInput);
+                    searchInput?.classList.add('field-error');
+                }
+
+                const isPhValid = validatePhilHealth(true);
+                if (!isPhValid) invalidElements.push(document.getElementById('id-number') || document.getElementById('philhealth_relation'));
+
+                let isExamValid = true;
+                const examReqCheck = document.querySelector('.exam-ms-required-check');
+                const examContainer = document.querySelector('.exam-ms-component');
+                if (examReqCheck && !examReqCheck.value.trim()) {
+                    isExamValid = false;
+                    examContainer?.classList.add('field-error', 'rounded-lg');
+                } else {
+                    examContainer?.classList.remove('field-error');
+                }
+                if (!isExamValid) invalidElements.push(examContainer || examReqCheck);
             }
 
-            // Show confirmation before proceeding
+            invalidElements = invalidElements.filter(Boolean);
+
+            // If there are errors, focus and shake the first invalid field immediately!
+            // Do NOT open the confirmation modal or show a SweetAlert error modal.
+            if (invalidElements.length > 0) {
+                const firstInvalid = invalidElements[0];
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof firstInvalid.focus === 'function') {
+                    firstInvalid.focus();
+                }
+                firstInvalid.classList.add('animate-shake');
+                setTimeout(() => firstInvalid.classList.remove('animate-shake'), 400);
+                return;
+            }
+
+            // Only prompt confirmation if 100% valid!
             const confirmed = await confirmAlert('Confirm Registration', 'Would you like to confirm registering this patient and creating a new case?');
             if (!confirmed.isConfirmed) return;
 
-            // If we reached here, form is valid and ready to submit
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
             document.body.style.cursor = 'wait';
@@ -473,21 +924,166 @@
                 Processing...
             `;
 
-            // Use the native form.submit() to bypass this listener
             this.submit();
         });
 
-        // Check if form-mode is preserved in case of an error, otherwise default to new-patient
+        // Mode initialization
         const currentMode = document.getElementById('form-mode').value || 'new-patient';
         switchTab(currentMode);
 
-        // If an existing patient was selected before submission error, simulate the click
-        const existingPatientId = document.getElementById('existing-patient-id').value;
-        if (existingPatientId) {
-            // we could fetch patient details, but just simple reset is easier, 
-            // since they probably got an error BEFORE selecting correctly.
+        // Run initial check if names are already pre-filled (e.g. after POST reload)
+        if (fnInput && lnInput && fnInput.value.trim() && lnInput.value.trim()) {
+            checkNamesake();
         }
     });
+
+    // ── Namesake / Duplicate Name Real-Time Detection ────────────────────────
+    let namesakeTimeout = null;
+    window.__hasNamesake = false;
+    window.__namesakeMatches = [];
+
+    function safeEscape(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function checkNamesake() {
+        const formMode = document.getElementById('form-mode')?.value;
+        if (formMode !== 'new-patient') return Promise.resolve(false);
+
+        const fnInput = document.getElementById('first-name');
+        const lnInput = document.getElementById('last-name');
+        const warningBox = document.getElementById('namesake-warning');
+        const namesakeList = document.getElementById('namesake-list');
+
+        if (!fnInput || !lnInput) return Promise.resolve(false);
+
+        const fn = fnInput.value.trim();
+        const ln = lnInput.value.trim();
+
+        if (fn.length < 2 || ln.length < 2) {
+            window.__hasNamesake = false;
+            window.__namesakeMatches = [];
+            if (warningBox) warningBox.classList.add('hidden');
+            validateMiddleName(false);
+            return Promise.resolve(false);
+        }
+
+        return fetch(`index.php?role=radtech&page=patient-registration&check_duplicate_name=1&first_name=${encodeURIComponent(fn)}&last_name=${encodeURIComponent(ln)}`)
+            .then(res => {
+                if (!res.ok) throw new window.Error("Network response was not ok");
+                return res.json();
+            })
+            .then(data => {
+                if (data.has_duplicate) {
+                    window.__hasNamesake = true;
+                    window.__namesakeMatches = data.matches || [];
+
+                    if (warningBox) warningBox.classList.remove('hidden');
+
+                    // Immediately re-validate middle name with duplicate context
+                    validateMiddleName(true);
+
+                    if (namesakeList && data.matches) {
+                        namesakeList.innerHTML = data.matches.map(m => `
+                            <div class="bg-white p-3 rounded-lg border border-amber-200 shadow-2xs hover:border-amber-300 transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs font-bold text-gray-900">${safeEscape(m.first_name)} ${safeEscape(m.middle_name ? m.middle_name + ' ' : '')}${safeEscape(m.last_name)}</span>
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold border border-gray-200">ID: ${safeEscape(m.patient_number || 'N/A')}</span>
+                                    </div>
+                                    <div class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-gray-500">
+                                        <span><strong class="text-gray-700">Birthdate:</strong> ${safeEscape(m.birthdate || 'N/A')} (${safeEscape(String(m.age || ''))} yrs)</span>
+                                        <span>•</span>
+                                        <span><strong class="text-gray-700">Sex:</strong> ${safeEscape(m.sex || 'N/A')}</span>
+                                        <span>•</span>
+                                        <span><strong class="text-gray-700">Branch:</strong> ${safeEscape(m.branch_name || 'Branch N/A')}</span>
+                                        ${m.contact_number ? `<span>•</span><span><strong class="text-gray-700">Contact:</strong> ${safeEscape(m.contact_number)}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="shrink-0">
+                                    <button type="button" onclick="useExistingPatientById(${m.id})" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition shadow-2xs">
+                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                                        Use This Profile
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                } else {
+                    window.__hasNamesake = false;
+                    window.__namesakeMatches = [];
+                    if (warningBox) warningBox.classList.add('hidden');
+                    validateMiddleName(false);
+                }
+            })
+            .catch(err => {
+                console.error("Namesake check error:", err);
+            });
+    }
+
+    function scheduleNamesakeCheck() {
+        clearTimeout(namesakeTimeout);
+        namesakeTimeout = setTimeout(checkNamesake, 300);
+    }
+
+    function useExistingPatientById(id) {
+        const match = window.__namesakeMatches?.find(m => String(m.id) === String(id));
+        if (!match) return;
+
+        switchTab('existing-patient');
+        selectPatient({
+            id: match.id,
+            first_name: match.first_name,
+            middle_name: match.middle_name || '',
+            last_name: match.last_name,
+            patient_number: match.patient_number,
+            age: match.age,
+            sex: match.sex,
+            contact_number: match.contact_number
+        });
+
+        const selectedDispName = `${match.first_name}${match.middle_name ? ' ' + match.middle_name : ''} ${match.last_name}`;
+
+        // Clear feedback modal - guide user to specify examination and submit
+        Swal.fire({
+            icon: 'info',
+            title: 'Patient Profile Selected',
+            html: `Loaded record for <strong>${safeEscape(selectedDispName)}</strong> (${safeEscape(match.patient_number || 'N/A')}).<br><br><span class="text-sm text-gray-600">Please choose the <strong>Exam Type</strong> below and click <strong>"Create Case"</strong> to add them to the Patient Queue.</span>`,
+            confirmButtonText: 'Proceed to Exam Details',
+            confirmButtonColor: '#2563eb',
+            customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+            }
+        }).then(() => {
+            const examBox = document.querySelector('.exam-ms-component');
+            if (examBox) {
+                examBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+        document.getElementById('selected-patient-info')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function focusMiddleName() {
+        const mnInput = document.getElementById('middle-name');
+        if (mnInput) {
+            mnInput.focus();
+            mnInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Flash ring
+            mnInput.classList.add('ring-4', 'ring-amber-300');
+            setTimeout(() => {
+                mnInput.classList.remove('ring-4', 'ring-amber-300');
+            }, 1200);
+        }
+    }
 
     // AJAX Search logic using Event Delegation since Vue.js replaces the DOM nodes!
     let searchTimeout;
@@ -539,11 +1135,12 @@
                 if (data.length > 0) {
                     data.forEach(p => {
                         const li = document.createElement('li');
+                        const patFullDisp = safeEscape(p.first_name) + (p.middle_name ? ' ' + safeEscape(p.middle_name) : '') + ' ' + safeEscape(p.last_name);
                         li.className = 'cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 text-gray-900 border-b border-gray-100 last:border-0';
                         li.innerHTML = `
                             <div class="flex flex-col">
-                                <span class="font-medium">${p.first_name} ${p.last_name}</span>
-                                <span class="text-xs text-gray-500">Patient No: ${p.patient_number || 'N/A'} | Age: ${p.age} | Contact: ${p.contact_number || 'N/A'}</span>
+                                <span class="font-medium">${patFullDisp}</span>
+                                <span class="text-xs text-gray-500">Patient No: ${safeEscape(p.patient_number || 'N/A')} | Age: ${safeEscape(p.age)} | Contact: ${safeEscape(p.contact_number || 'N/A')}</span>
                             </div>
                         `;
                         li.onclick = () => selectPatient(p);
@@ -575,7 +1172,8 @@
         const searchInput = document.getElementById('search-patient');
         const resultsList = document.getElementById('search-results');
         document.getElementById('existing-patient-id').value = p.id;
-        document.getElementById('sp-name').innerText = p.first_name + ' ' + p.last_name;
+        const pFull = (p.first_name || '') + (p.middle_name ? ' ' + p.middle_name : '') + ' ' + (p.last_name || '');
+        document.getElementById('sp-name').innerText = pFull.trim();
         document.getElementById('sp-patient-no').innerText = p.patient_number || 'N/A';
         document.getElementById('sp-age').innerText = p.age;
         document.getElementById('sp-sex').innerText = p.sex;
