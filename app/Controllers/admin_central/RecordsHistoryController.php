@@ -20,7 +20,7 @@ class RecordsHistoryController
         $history = [];
 
         // Pagination logic
-        $itemsPerPage = 5;
+        $itemsPerPage = 7;
         $currentPage = isset($_GET['p']) ? max(1, (int) $_GET['p']) : 1;
         $offset = ($currentPage - 1) * $itemsPerPage;
         $totalItems = 0;

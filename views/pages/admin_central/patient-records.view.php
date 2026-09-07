@@ -289,7 +289,7 @@
 <script>
     // Pagination State
     let currentPage = parseInt(sessionStorage.getItem('Citilife_adminPatients_page')) || 1;
-    const itemsPerPage = 8;
+    const itemsPerPage = 7;
     let editDatePicker = null;
 
     function openEditModal(patient) {

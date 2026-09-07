@@ -1184,7 +1184,7 @@ function applyFilters() {
     visibleCount = matchedRows.length;
     
     // Pagination Logic
-    const itemsPerPage = 8;
+    const itemsPerPage = 7;
     let totalPages = Math.ceil(visibleCount / itemsPerPage);
     if (window.currentApprovalPage === undefined) window.currentApprovalPage = 1;
     if (window.currentApprovalPage > totalPages && totalPages > 0) window.currentApprovalPage = totalPages;

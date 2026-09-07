@@ -85,8 +85,8 @@
 </div>
 
 
-<div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden">
-    <div class="overflow-x-auto overflow-y-auto max-h-[480px]">
+<div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden" id="report-ready-card">
+    <div class="overflow-x-auto">
         <table class="w-full text-sm ">
             <thead class="sticky top-0 z-10">
                 <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
@@ -233,23 +233,41 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Footer -->
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="report-ready-pagination-container">
+        <!-- Record count -->
+        <span id="report-ready-count" class="text-xs text-gray-500 font-medium"></span>
+
+        <!-- Pagination Controls -->
+        <div class="flex items-center flex-wrap gap-1.5" id="report-ready-pagination-controls">
+            <!-- Dynamic page buttons inserted by JS -->
+        </div>
+    </div>
 </div>
 
 <script>
+    const ROWS_PER_PAGE = 7;
+    let currentPage = parseInt(sessionStorage.getItem('Citilife_reportReady_page')) || 1;
+
     document.addEventListener('input', (e) => {
         if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'sort-date')) {
+            currentPage = 1;
+            sessionStorage.setItem('Citilife_reportReady_page', 1);
             applyFilters();
         }
     });
 
     document.addEventListener('change', (e) => {
         if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'sort-date')) {
+            currentPage = 1;
+            sessionStorage.setItem('Citilife_reportReady_page', 1);
             applyFilters();
         }
     });
 
     function applyFilters() {
-        const search = (document.getElementById('search-input')?.value || '').toLowerCase();
+        const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
         const priority = document.getElementById('filter-priority')?.value || 'Filter by Priority';
         const sort = document.getElementById('sort-date')?.value || 'Sort by:';
 
@@ -257,7 +275,6 @@
         if (!tbody) return;
 
         let rows = Array.from(tbody.querySelectorAll('tr.record-row'));
-        let visibleCount = 0;
 
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
@@ -276,23 +293,32 @@
         }
 
         // Filter
-        rows.forEach(row => {
+        const matchedRows = rows.filter(row => {
             const name = (row.dataset.name || '').toLowerCase();
             const id = (row.dataset.id || '').toLowerCase();
             const rowPriority = row.dataset.priority || '';
-            const matchSearch = name.includes(search) || id.includes(search) || rowPriority.toLowerCase().includes(search);
+            const matchSearch = !search || name.includes(search) || id.includes(search) || rowPriority.toLowerCase().includes(search);
             const matchPriority = priority === 'Filter by Priority' || priority === 'All' || priority === rowPriority;
 
-            if (matchSearch && matchPriority) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+            return matchSearch && matchPriority;
         });
 
+        const totalFiltered = matchedRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalFiltered / ROWS_PER_PAGE));
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        sessionStorage.setItem('Citilife_reportReady_page', currentPage);
+
+        const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+        const endIdx = startIdx + ROWS_PER_PAGE;
+
+        // Show only current page slice
+        rows.forEach(r => r.style.display = 'none');
+        matchedRows.slice(startIdx, endIdx).forEach(r => r.style.display = '');
+
         let emptyMsg = document.getElementById('empty-msg-row');
-        if (visibleCount === 0 && rows.length > 0) {
+        if (totalFiltered === 0 && rows.length > 0) {
             if (!emptyMsg) {
                 emptyMsg = document.createElement('tr');
                 emptyMsg.id = 'empty-msg-row';
@@ -304,6 +330,92 @@
         } else if (emptyMsg) {
             emptyMsg.style.display = 'none';
         }
+
+        updatePaginationUI(totalFiltered, totalPages);
+    }
+
+    function updatePaginationUI(totalFiltered, totalPages) {
+        const recordCountInfo = document.getElementById('report-ready-count');
+        const container = document.getElementById('report-ready-pagination-controls');
+
+        const startNum = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
+        const endNum = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
+
+        if (recordCountInfo) {
+            recordCountInfo.innerHTML = totalFiltered === 0
+                ? 'No records'
+                : `Showing <span class="font-semibold text-gray-800">${startNum}</span> to <span class="font-semibold text-gray-800">${endNum}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> record${totalFiltered !== 1 ? 's' : ''}`;
+        }
+
+        if (!container) return;
+        container.innerHTML = '';
+
+        function createButton(label, page, disabled, isActive = false) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.innerHTML = label;
+
+            if (isActive) {
+                btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+            }
+
+            if (disabled) {
+                btn.disabled = true;
+            } else {
+                btn.onclick = () => {
+                    currentPage = page;
+                    applyFilters();
+                    const card = document.getElementById('report-ready-card');
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                };
+            }
+            return btn;
+        }
+
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+            span.innerText = '...';
+            return span;
+        }
+
+        container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+        container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) {
+                container.appendChild(createButton(i, i, false, i === currentPage));
+            }
+        } else {
+            if (currentPage <= 4) {
+                for (let i = 1; i <= 5; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+            } else if (currentPage >= totalPages - 3) {
+                container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                container.appendChild(createEllipsis());
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                    container.appendChild(createButton(i, i, false, i === currentPage));
+                }
+            } else {
+                container.appendChild(createButton(1, 1, false, 1 === currentPage));
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+                container.appendChild(createButton(currentPage, currentPage, false, true));
+                container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+                container.appendChild(createEllipsis());
+                container.appendChild(createButton(totalPages, totalPages, false, false));
+            }
+        }
+
+        container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+        container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
     }
 
     function handleHighlight() {
@@ -316,13 +428,27 @@
         const filterPriority = document.getElementById('filter-priority');
         if (searchInput) searchInput.value = '';
         if (filterPriority) filterPriority.value = 'All';
+
+        const rows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
+        const hlLower = highlightId.trim().toLowerCase();
+        let targetIndex = -1;
+
+        rows.forEach((row, idx) => {
+            if ((row.dataset.id || '').toLowerCase() === hlLower ||
+                (row.dataset.caseId || '').toLowerCase() === hlLower) {
+                targetIndex = idx;
+            }
+        });
+
+        if (targetIndex !== -1) {
+            currentPage = Math.floor(targetIndex / ROWS_PER_PAGE) + 1;
+            sessionStorage.setItem('Citilife_reportReady_page', currentPage);
+        }
+
         applyFilters();
 
         setTimeout(() => {
-            const rows = document.querySelectorAll('#table-body tr.record-row');
             let targetRow = null;
-            const hlLower = highlightId.trim().toLowerCase();
-
             rows.forEach(row => {
                 if ((row.dataset.id || '').toLowerCase() === hlLower ||
                     (row.dataset.caseId || '').toLowerCase() === hlLower) {
@@ -333,14 +459,7 @@
             if (targetRow) {
                 targetRow.style.display = '';
 
-                // Scroll table container or window smoothly to the row
-                const tableWrapper = targetRow.closest('.overflow-y-auto');
-                if (tableWrapper) {
-                    const rowTop = targetRow.offsetTop - tableWrapper.offsetTop;
-                    tableWrapper.scrollTo({ top: Math.max(0, rowTop - 40), behavior: 'smooth' });
-                } else {
-                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                 // Flash highlight animation
                 targetRow.style.transition = 'background-color 0.4s ease';
@@ -393,10 +512,10 @@
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const sortSelect = document.getElementById('sort-date');
-            if (sortSelect && sortSelect.value === 'Sort by:') {
+            if (sortSelect && (sortSelect.value === 'Sort by:' || !sortSelect.value)) {
                 sortSelect.value = 'Newest Case';
-                applyFilters();
             }
+            applyFilters();
             handleHighlight();
         }, 100);
     });

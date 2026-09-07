@@ -160,7 +160,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ROWS_PER_PAGE = 6;
+        const ROWS_PER_PAGE = 7;
         let currentPage = parseInt(sessionStorage.getItem('Citilife_recordRequests_page')) || 1;
 
         const searchInput = document.getElementById('search-input');

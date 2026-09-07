@@ -213,16 +213,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             z-index: 99999 !important;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
         }
-        
-        @media (max-width: 768px) {
-            html body .datepicker-dropdown {
-                position: fixed !important;
-                top: 50% !important;
-                left: 50% !important;
-                transform: translate(-50%, -50%) !important;
-                margin: 0 !important;
-            }
-        }
 
         .step {
             display: none;
@@ -333,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- DESKTOP FORM (SINGLE PAGE GRID LAYOUT)         -->
         <!-- ============================================== -->
         <div id="desktopFormContainer"
-            class="glass-panel w-full max-w-2xl sm:rounded-2xl sm:shadow-2xl overflow-hidden hidden sm:block">
+            class="glass-panel w-full max-w-2xl sm:rounded-2xl sm:shadow-2xl overflow-visible hidden sm:block">
             <div class="p-8">
                 <div class="text-center mb-8">
                     <div
@@ -590,14 +580,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">When is your birthday?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
-                            <div class="relative mb-6">
+                            <div class="relative mb-6 overflow-visible" id="m_birthdate_container" style="min-height: 330px;">
                                 <input type="text" id="m_birthdate" name="birthdate" required readonly
-                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
+                                    class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all cursor-pointer"
                                     placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
                                 <i data-lucide="calendar"
                                     class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Birthdate <span class="text-red-500">*</span></label>
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all cursor-pointer">Birthdate <span class="text-red-500">*</span></label>
                             </div>
                             <button type="button" onclick="nextStep(2)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -751,8 +741,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     <?php endif; ?>
-
+ 
     <script>
+        function sendHeight() {
+            if (window.self !== window.top) {
+                const height = document.body.scrollHeight;
+                window.parent.postMessage({ type: 'resizeIframe', height: height }, '*');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) {
                 window.lucide.createIcons();
@@ -762,14 +759,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 autohide: true,
                 format: 'yyyy-mm-dd',
                 todayHighlight: true,
-                container: document.body
+                orientation: 'bottom left'
             };
 
             if (document.getElementById('d_birthdate')) {
                 new Datepicker(document.getElementById('d_birthdate'), datepickerOptions);
             }
-            if (document.getElementById('m_birthdate')) {
-                new Datepicker(document.getElementById('m_birthdate'), datepickerOptions);
+            const mBirthInput = document.getElementById('m_birthdate');
+            if (mBirthInput) {
+                new Datepicker(mBirthInput, datepickerOptions);
+                mBirthInput.addEventListener('changeDate', () => {
+                    setTimeout(sendHeight, 60);
+                });
             }
         });
 
@@ -782,7 +783,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const stepEl = document.getElementById('step' + step);
             if (stepEl) stepEl.classList.add('active');
 
-            // Back button is now strictly visible at all steps
+            if (step === 2) {
+                const mInput = document.getElementById('m_birthdate');
+                if (mInput && mInput.datepicker) {
+                    mInput.datepicker.show();
+                }
+            }
+
+            setTimeout(sendHeight, 60);
+            setTimeout(sendHeight, 200);
         }
 
         function nextStep(step) {
@@ -953,12 +962,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (mobileContainer) {
                 mobileContainer.classList.remove('min-h-screen');
             }
-
-            // Function to send current height to parent
-            const sendHeight = () => {
-                const height = document.body.scrollHeight;
-                window.parent.postMessage({ type: 'resizeIframe', height: height }, '*');
-            };
 
             // Send height on load and resize
             window.addEventListener('load', sendHeight);

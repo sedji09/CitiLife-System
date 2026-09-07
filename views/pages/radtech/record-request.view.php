@@ -85,8 +85,8 @@
         </div>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white mt-5 shadow-sm">
-        <div class="overflow-x-auto overflow-y-auto custom-scrollbar relative" style="max-height: 400px !important;">
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white mt-5 shadow-sm" id="record-requests-card">
+        <div class="overflow-x-auto">
             <table class="w-full text-sm border-separate border-spacing-0">
                 <thead class="sticky top-0 z-10">
                     <tr class="bg-gray-50 text-gray-600 border-b border-gray-200">
@@ -95,7 +95,7 @@
                         </th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Exam Type</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Exam Date</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Form Branch</th>
+                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">From Branch</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Date Requested</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Status</th>
                         <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Action</th>
@@ -103,7 +103,7 @@
                 </thead>
                 <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
                     <?php if (count($requests) === 0): ?>
-                        <tr>
+                        <tr id="empty-table-row">
                             <td colspan="8" class="text-center py-8 text-gray-500">No record requests found.</td>
                         </tr>
                     <?php else: ?>
@@ -173,6 +173,17 @@
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="record-request-pagination-container">
+            <!-- Record count -->
+            <span id="record-request-count" class="text-xs text-gray-500 font-medium"></span>
+
+            <!-- Pagination Controls -->
+            <div class="flex items-center flex-wrap gap-1.5" id="record-request-pagination-controls">
+                <!-- Dynamic page buttons inserted by JS -->
+            </div>
         </div>
     </div>
 </div>

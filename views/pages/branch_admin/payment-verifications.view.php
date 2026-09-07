@@ -538,7 +538,7 @@
             let hasNoData = allRows.length === 0; // truly no records in DB
             let filteredRows = [];
             let currentPage = 1;
-            const itemsPerPage = 5;
+            const itemsPerPage = 7;
 
             function updateTable() {
                 // If there are no rows at all, leave the static empty state and show pagination as disabled

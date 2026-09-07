@@ -597,12 +597,12 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 
         const worklistTbody = document.getElementById('worklist-tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
-        const ROWS_PER_PAGE = 8;
+        const ROWS_PER_PAGE = 7;
         let currentPage = 1;
 
         const releaseTbody = document.getElementById('release-tbody');
         let allReleaseRows = Array.from(document.querySelectorAll('tr.release-record-row'));
-        const RELEASE_ROWS_PER_PAGE = 8;
+        const RELEASE_ROWS_PER_PAGE = 7;
         let currentReleasePage = 1;
 
         function saveWorklistState() {

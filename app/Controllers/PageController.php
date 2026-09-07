@@ -103,11 +103,13 @@ class PageController
             'record-requests' => 'record_requests',
             'audit-logs' => 'audit_logs',
             'reports' => 'global_reports',
+            'feedback' => 'patient_feedback',
             'security-settings' => 'system_security',
             'user-role-settings' => 'system_security',
             'settings' => 'system_security',
             'backup-maintenance' => 'backup_mgmt',
-            'service-pricing' => 'system_security'
+            'service-pricing' => 'service_pricing',
+            'patient-records' => 'patient_history'
         ];
 
         if (isset($pagePermMap[$page])) {

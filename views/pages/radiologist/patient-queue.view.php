@@ -224,7 +224,7 @@ sort($examTypes);
         const tbody = document.querySelector('tbody');
         let allRows = Array.from(document.querySelectorAll('tr.record-row'));
 
-        const ROWS_PER_PAGE = 8;
+        const ROWS_PER_PAGE = 7;
         let currentPage = 1;
 
         function updateTable() {

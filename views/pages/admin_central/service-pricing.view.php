@@ -609,7 +609,7 @@
 
     // Pagination State
     let currentPage = parseInt(sessionStorage.getItem('Citilife_servicePricing_page')) || 1;
-    const itemsPerPage = 8;
+    const itemsPerPage = 7;
 
     function filterAndSortServices(resetPage = true) {
         if (resetPage) currentPage = 1;

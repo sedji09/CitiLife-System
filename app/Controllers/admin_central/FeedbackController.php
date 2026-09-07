@@ -24,7 +24,7 @@ class FeedbackController
         $feedbacks = [];
         $stats = null;
 
-        $limit = 5;
+        $limit = 7;
         $page_num = isset($_GET['p']) ? (int)$_GET['p'] : 1;
         if ($page_num < 1) $page_num = 1;
         $offset = ($page_num - 1) * $limit;

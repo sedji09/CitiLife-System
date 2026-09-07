@@ -36,6 +36,7 @@ $permissions = [
         'backup_mgmt'       => ['label' => 'Backup & Maintenance', 'desc' => 'Download DB backups and server health.'],
         'user_mgmt'         => ['label' => 'Staff User Management', 'desc' => 'Create/Edit/Delete staff accounts.'],
         'branch_mgmt'       => ['label' => 'Branch Management', 'desc' => 'Manage clinical branch locations.'],
+        'service_pricing'   => ['label' => 'Service Pricing Management', 'desc' => 'Manage X-ray examinations and procedure fees.'],
     ],
     'Clinical' => [
         'worklist'          => ['label' => 'Clinical Worklist', 'desc' => 'View list of patients waiting for diagnosis.'],
@@ -50,6 +51,7 @@ $permissions = [
         'record_requests'   => ['label' => 'Handle Record Requests', 'desc' => 'Manage requests for old hard-copy records.'],
     ],
     'Utility' => [
+        'patient_feedback'  => ['label' => 'Patient Feedback', 'desc' => 'View and review patient feedback and ratings.'],
         'audit_logs'        => ['label' => 'View System Audit Logs', 'desc' => 'Track all system activities and timestamped logs.'],
         'global_reports'    => ['label' => 'View Statistical Reports', 'desc' => 'Access analytics and branch performance.'],
         'dashboard'         => ['label' => 'Access UI Dashboard', 'desc' => 'View the main summary board for their role.'],

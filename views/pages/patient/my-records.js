@@ -8,7 +8,7 @@
     
     window.__RECORDS_INIT_DONE__ = true;
 
-    const ROWS_PER_PAGE = 10;
+    const ROWS_PER_PAGE = 7;
 
     // State per tab
     const state = {

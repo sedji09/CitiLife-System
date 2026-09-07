@@ -148,7 +148,7 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
 
 <script>
     (function () {
-        const ROWS_PER_PAGE = 8;
+        const ROWS_PER_PAGE = 7;
         let currentPage = parseInt(sessionStorage.getItem('Citilife_radHistory_page')) || 1;
 
         function getFilteredRows() {

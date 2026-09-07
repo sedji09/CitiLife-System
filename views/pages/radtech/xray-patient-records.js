@@ -1,5 +1,5 @@
 (function () {
-    const ROWS_PER_PAGE = 8;
+    const ROWS_PER_PAGE = 7;
     let currentPages = {
         completed: parseInt(sessionStorage.getItem('Citilife_radtechXray_page_completed')) || 1,
         disputes: parseInt(sessionStorage.getItem('Citilife_radtechXray_page_disputes')) || 1

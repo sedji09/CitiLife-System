@@ -1,56 +1,76 @@
-// ── Filters & Sorting ────────────────────────────────────────────────────────
+// ── Filters, Sorting & Pagination ────────────────────────────────────────────
+const ROWS_PER_PAGE = 7;
+let currentPage = parseInt(sessionStorage.getItem('Citilife_radtechRecordRequests_page')) || 1;
+
 document.addEventListener('input', (e) => {
     if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-branch' || e.target.id === 'sort-date')) {
+        currentPage = 1;
+        sessionStorage.setItem('Citilife_radtechRecordRequests_page', 1);
         applyFilters();
     }
 });
 
 document.addEventListener('change', (e) => {
     if (e.target && (e.target.id === 'filter-branch' || e.target.id === 'sort-date')) {
+        currentPage = 1;
+        sessionStorage.setItem('Citilife_radtechRecordRequests_page', 1);
         applyFilters();
     }
 });
 
 function applyFilters() {
-    const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const branch = document.getElementById('filter-branch')?.value || 'Filter by Branch';
-    const sort = document.getElementById('sort-date')?.value || 'Sort by:';
+    const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+    const branch = document.getElementById('filter-branch')?.value || 'All Branches';
+    const sort = document.getElementById('sort-date')?.value || 'Newest Request';
 
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
 
     let rows = Array.from(tbody.querySelectorAll('tr.record-row'));
-    let visibleCount = 0;
 
     // Sort
     if (sort === 'Newest Request' || sort === 'Oldest Request') {
         rows.sort((a, b) => {
-            const dateA = new Date(a.dataset.date).getTime();
-            const dateB = new Date(b.dataset.date).getTime();
+            const dateA = new Date(a.dataset.date || 0).getTime();
+            const dateB = new Date(b.dataset.date || 0).getTime();
             return sort === 'Newest Request' ? dateB - dateA : dateA - dateB;
         });
         rows.forEach(row => tbody.appendChild(row));
     }
 
     // Filter
-    rows.forEach(row => {
+    const matchedRows = rows.filter(row => {
         const name = (row.dataset.name || '').toLowerCase();
         const id = (row.dataset.id || '').toLowerCase();
         const rowBranch = row.dataset.branch || '';
 
-        const matchSearch = name.includes(search) || id.includes(search);
+        const matchSearch = !search || name.includes(search) || id.includes(search);
         const matchBranch = branch === 'All Branches' || branch === 'Filter by Branch' || branch === 'All' || branch === rowBranch;
 
-        row.style.display = (matchSearch && matchBranch) ? '' : 'none';
-        if (matchSearch && matchBranch) visibleCount++;
+        return matchSearch && matchBranch;
     });
 
+    const totalFiltered = matchedRows.length;
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / ROWS_PER_PAGE));
+
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    sessionStorage.setItem('Citilife_radtechRecordRequests_page', currentPage);
+
+    const startIdx = (currentPage - 1) * ROWS_PER_PAGE;
+    const endIdx = startIdx + ROWS_PER_PAGE;
+
+    // Show only the current page slice
+    rows.forEach(r => r.style.display = 'none');
+    matchedRows.slice(startIdx, endIdx).forEach(r => r.style.display = '');
+
+    // Empty state
     let emptyMsg = document.getElementById('empty-msg-row');
-    if (visibleCount === 0 && rows.length > 0) {
+    if (totalFiltered === 0 && rows.length > 0) {
         if (!emptyMsg) {
             emptyMsg = document.createElement('tr');
             emptyMsg.id = 'empty-msg-row';
-            emptyMsg.innerHTML = `<td colspan="10" class="text-center py-8 text-gray-500">No requests match your filters.</td>`;
+            emptyMsg.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No requests match your filters.</td>`;
             tbody.appendChild(emptyMsg);
         } else {
             emptyMsg.style.display = '';
@@ -58,16 +78,110 @@ function applyFilters() {
     } else if (emptyMsg) {
         emptyMsg.style.display = 'none';
     }
+
+    // Update pagination UI
+    updatePaginationUI(totalFiltered, totalPages);
+}
+
+function updatePaginationUI(totalFiltered, totalPages) {
+    const recordCountInfo = document.getElementById('record-request-count');
+    const container = document.getElementById('record-request-pagination-controls');
+
+    const startNum = totalFiltered === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
+    const endNum = Math.min(currentPage * ROWS_PER_PAGE, totalFiltered);
+
+    if (recordCountInfo) {
+        recordCountInfo.innerHTML = totalFiltered === 0
+            ? 'No records'
+            : `Showing <span class="font-semibold text-gray-800">${startNum}</span> to <span class="font-semibold text-gray-800">${endNum}</span> of <span class="font-semibold text-gray-800">${totalFiltered}</span> record${totalFiltered !== 1 ? 's' : ''}`;
+    }
+
+    if (!container) return;
+    container.innerHTML = '';
+
+    function createButton(label, page, disabled, isActive = false) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.innerHTML = label;
+
+        if (isActive) {
+            btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
+        } else {
+            btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
+        }
+
+        if (disabled) {
+            btn.disabled = true;
+        } else {
+            btn.onclick = () => {
+                currentPage = page;
+                applyFilters();
+                const card = document.getElementById('record-requests-card');
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };
+        }
+        return btn;
+    }
+
+    function createEllipsis() {
+        const span = document.createElement('span');
+        span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
+        span.innerText = '...';
+        return span;
+    }
+
+    // First Button
+    container.appendChild(createButton('&laquo; First', 1, currentPage <= 1));
+
+    // Back Button
+    container.appendChild(createButton('&lsaquo; Back', currentPage - 1, currentPage <= 1));
+
+    // Numbered page buttons
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) {
+            container.appendChild(createButton(i, i, false, i === currentPage));
+        }
+    } else {
+        if (currentPage <= 4) {
+            for (let i = 1; i <= 5; i++) {
+                container.appendChild(createButton(i, i, false, i === currentPage));
+            }
+            container.appendChild(createEllipsis());
+            container.appendChild(createButton(totalPages, totalPages, false, totalPages === currentPage));
+        } else if (currentPage >= totalPages - 3) {
+            container.appendChild(createButton(1, 1, false, 1 === currentPage));
+            container.appendChild(createEllipsis());
+            for (let i = totalPages - 4; i <= totalPages; i++) {
+                container.appendChild(createButton(i, i, false, i === currentPage));
+            }
+        } else {
+            container.appendChild(createButton(1, 1, false, 1 === currentPage));
+            container.appendChild(createEllipsis());
+            container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
+            container.appendChild(createButton(currentPage, currentPage, false, true));
+            container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
+            container.appendChild(createEllipsis());
+            container.appendChild(createButton(totalPages, totalPages, false, false));
+        }
+    }
+
+    // Next Button
+    container.appendChild(createButton('Next &rsaquo;', currentPage + 1, currentPage >= totalPages));
+
+    // Last Button
+    container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
 }
 
 // Initial sorting on load
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const sortSelect = document.getElementById('sort-date');
-        if (sortSelect && sortSelect.value === 'Sort by:') {
+        if (sortSelect && (sortSelect.value === 'Sort by:' || !sortSelect.value)) {
             sortSelect.value = 'Newest Request';
-            applyFilters();
         }
+        applyFilters();
     }, 100);
 });
 
