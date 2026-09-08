@@ -816,8 +816,8 @@ $statusBadge = [
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">What needs to be corrected? <span
                                 class="text-red-500">*</span></label>
-                        <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
-                            class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                        <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()" data-no-custom="true"
+                            class="w-full rounded-xl border border-gray-300 pl-3.5 pr-8 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer shadow-sm">
                             <option value="" disabled selected>-- Select Category --</option>
                             <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)
                             </option>
@@ -913,8 +913,8 @@ $statusBadge = [
                                 <label class="block text-[11px] font-bold text-gray-700 mb-1">
                                     Correct Sex <span class="text-red-500">*</span>
                                 </label>
-                                <select id="input-correct-sex"
-                                    class="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                                <select id="input-correct-sex" data-no-custom="true"
+                                    class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer shadow-sm">
                                     <option value="" disabled selected>-- Select Correct Sex --</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>

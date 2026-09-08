@@ -2063,6 +2063,6 @@ echo '<script src="/' . PROJECT_DIR . '/views/pages/patient/my-records.js?v=' . 
 </script>
 
 <!-- Modern Custom Select Dropdowns Engine, Custom Tooltips & TimePicker -->
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-select.js?v=<?= time() ?>"></script>
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-select.js?v=<?= time() ?>"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>

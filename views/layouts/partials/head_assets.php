@@ -1228,6 +1228,6 @@
   </script>
 
   <!-- Modern Custom Select Dropdowns, Tooltips & Clock TimePicker -->
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-select.css?v=<?= time() ?>">
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-tooltip.css?v=<?= time() ?>">
-  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-timepicker.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-select.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-tooltip.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-timepicker.css?v=<?= time() ?>">

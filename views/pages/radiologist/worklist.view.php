@@ -139,8 +139,8 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 </div>
 
 <!-- Controls for Worklist & Pending Release -->
-<div id="worklist-controls" class="mt-6 px-4">
-    <div class="flex flex-nowrap items-center gap-2.5 w-full overflow-x-auto pb-1">
+<div id="worklist-controls" class="relative z-30 mt-6 px-4">
+    <div class="flex flex-wrap items-center gap-2.5 w-full">
         <!-- Search -->
         <div class="relative flex-1 max-w-[320px] min-w-[200px] group shrink-0">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -750,6 +750,13 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     window.switchRadTab(savedTab);
                 }
             }
+
+            // Sync custom select labels if already initialized
+            [filterBranch, filterPriority, filterStatus, filterDate, sortOption].forEach(sel => {
+                if (sel && sel._customSelect && typeof sel._customSelect.sync === 'function') {
+                    sel._customSelect.sync();
+                }
+            });
         }
 
         // --- Pending Worklist Table Logic ---
@@ -806,15 +813,26 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             // Apply filtering
             let filteredRows = [];
             allRows.forEach(row => {
-                const matchesSearch = !searchTerm || row.dataset.search.includes(searchTerm);
-                const matchesBranch = branchValue === '' || row.dataset.branch === branchValue;
-                let rowPriority = row.dataset.priority;
+                const rowSearch = (row.dataset.search || '').toLowerCase();
+                const matchesSearch = !searchTerm || rowSearch.includes(searchTerm);
+                const matchesBranch = branchValue === '' || (row.dataset.branch || '') === branchValue;
+                let rowPriority = row.dataset.priority || '';
                 let mappedPriority = rowPriority;
                 if (rowPriority === 'Normal' || rowPriority === 'Priority') {
                     mappedPriority = 'Routine';
                 }
                 const matchesPriority = priorityValue === '' || rowPriority === priorityValue || mappedPriority === priorityValue;
-                const matchesStatus = statusValue === '' || (row.dataset.status || '') === statusValue;
+
+                const rowStatus = row.dataset.status || '';
+                let matchesStatus = true;
+                if (statusValue !== '') {
+                    if (statusValue === 'Pending') {
+                        // "Pending" includes both regular Pending and Overdue cases
+                        matchesStatus = (rowStatus === 'Pending' || rowStatus === 'Overdue');
+                    } else {
+                        matchesStatus = (rowStatus === statusValue);
+                    }
+                }
 
                 const isToday = row.dataset.isToday === 'true';
                 let matchesDate = true;
@@ -868,6 +886,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             // Update Pagination UI
             updatePaginationUI(filteredRows.length, totalPages);
         }
+        window.updateTable = updateTable;
 
         function updatePaginationUI(totalFiltered, totalPages) {
             const recordCountInfo = document.getElementById('worklist-record-count');
@@ -1009,9 +1028,10 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             // Apply filtering
             let filteredReleaseRows = [];
             allReleaseRows.forEach(row => {
-                const matchesSearch = !searchTerm || row.dataset.search.includes(searchTerm);
-                const matchesBranch = branchValue === '' || row.dataset.branch === branchValue;
-                let rowPriority = row.dataset.priority;
+                const rowSearch = (row.dataset.search || '').toLowerCase();
+                const matchesSearch = !searchTerm || rowSearch.includes(searchTerm);
+                const matchesBranch = branchValue === '' || (row.dataset.branch || '') === branchValue;
+                let rowPriority = row.dataset.priority || '';
                 let mappedPriority = rowPriority;
                 if (rowPriority === 'Normal' || rowPriority === 'Priority') {
                     mappedPriority = 'Routine';
@@ -1318,11 +1338,12 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     const newWorklistTbody = doc.getElementById('worklist-tbody');
                     const curWorklistTbody = document.getElementById('worklist-tbody');
                     if (newWorklistTbody && curWorklistTbody) {
-                        const newWlContent = newWorklistTbody.innerHTML.trim();
                         const newWlCount = newWorklistTbody.querySelectorAll('tr.record-row').length;
                         const curWlCount = curWorklistTbody.querySelectorAll('tr.record-row').length;
-                        if (newWlContent !== curWorklistTbody.innerHTML.trim() || newWlCount !== curWlCount) {
-                            curWorklistTbody.innerHTML = newWlContent;
+                        const newCaseIds = Array.from(newWorklistTbody.querySelectorAll('tr.record-row')).map(r => (r.dataset.id || '') + ':' + (r.dataset.status || '')).join('|');
+                        const curCaseIds = allRows.map(r => (r.dataset.id || '') + ':' + (r.dataset.status || '')).join('|');
+                        if (newWlCount !== curWlCount || newCaseIds !== curCaseIds) {
+                            curWorklistTbody.innerHTML = newWorklistTbody.innerHTML;
                             allRows = Array.from(curWorklistTbody.querySelectorAll('tr.record-row'));
                             updateTable();
                         }
@@ -1332,11 +1353,12 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     const newReleaseTbody = doc.getElementById('release-tbody');
                     const curReleaseTbody = document.getElementById('release-tbody');
                     if (newReleaseTbody && curReleaseTbody) {
-                        const newRelContent = newReleaseTbody.innerHTML.trim();
                         const newRelCount = newReleaseTbody.querySelectorAll('tr.release-record-row').length;
                         const curRelCount = curReleaseTbody.querySelectorAll('tr.release-record-row').length;
-                        if (newRelContent !== curReleaseTbody.innerHTML.trim() || newRelCount !== curRelCount) {
-                            curReleaseTbody.innerHTML = newRelContent;
+                        const newRelCaseIds = Array.from(newReleaseTbody.querySelectorAll('tr.release-record-row')).map(r => (r.dataset.id || '') + ':' + (r.dataset.status || '')).join('|');
+                        const curRelCaseIds = allReleaseRows.map(r => (r.dataset.id || '') + ':' + (r.dataset.status || '')).join('|');
+                        if (newRelCount !== curRelCount || newRelCaseIds !== curRelCaseIds) {
+                            curReleaseTbody.innerHTML = newReleaseTbody.innerHTML;
                             allReleaseRows = Array.from(curReleaseTbody.querySelectorAll('tr.release-record-row'));
                             updateReleaseTable();
                         }

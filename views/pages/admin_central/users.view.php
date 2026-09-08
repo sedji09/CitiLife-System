@@ -86,13 +86,12 @@
                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
                 <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400"></i>
             </div>
-            <div class="flex gap-3 w-full md:w-auto">
+            <div class="flex gap-3 w-full md:w-auto items-center">
                 <select id="branchFilter" onchange="filterAndSortUsers()"
                     class="flex-1 md:w-48 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
                     <option value="">All Branches</option>
                     <?php foreach ($branches as $b): ?>
-                        <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>
-                        <option value="<?= htmlspecialchars($b['name']) ?>"><?= $displayName ?></option>
+                        <option value="<?= htmlspecialchars($b['name']) ?>"><?= htmlspecialchars($b['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <select id="statusFilter" onchange="filterAndSortUsers()"
@@ -222,7 +221,7 @@
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Inactive">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-200 hover:bg-orange-50 transition shadow-sm"
+                                                        class="p-1.5 rounded-md border border-gray-300 bg-gray-100 text-gray-500 hover:bg-gray-600 hover:text-white hover:border-gray-600 transition shadow-sm inline-flex items-center justify-center"
                                                         title="Deactivate">
                                                         <i data-lucide="user-minus" class="w-4 h-4"></i>
                                                     </button>
@@ -233,7 +232,7 @@
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Active">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
+                                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center"
                                                         title="Activate">
                                                         <i data-lucide="user-check" class="w-4 h-4"></i>
                                                     </button>
@@ -242,14 +241,14 @@
 
                                             <button type="button"
                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($u)) ?>)"
-                                                class="p-1.5 rounded-md border border-blue-100 bg-blue-50 text-blue-500 hover:bg-blue-100 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Edit User">
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
 
                                             <button type="button"
                                                 onclick="confirmDelete(<?= $u['id'] ?>, '<?= htmlspecialchars($u['email']) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Delete Account">
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>
@@ -337,8 +336,7 @@
                         class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
-                            <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>
-                            <option value="<?= $b['id'] ?>"><?= $displayName ?></option>
+                            <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -412,8 +410,7 @@
                         class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
-                            <?php $displayName = htmlspecialchars($b['name']) . ($b['address'] ? ' (' . htmlspecialchars($b['address']) . ')' : ''); ?>
-                            <option value="<?= $b['id'] ?>"><?= $displayName ?></option>
+                            <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

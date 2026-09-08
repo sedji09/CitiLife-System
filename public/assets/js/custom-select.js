@@ -16,8 +16,10 @@
             this.select = selectEl;
             if (!this.select || this.select._customSelect) return;
 
-            // Skip if explicitly flagged or already processed
-            if (this.select.hasAttribute('data-no-custom') || this.select.classList.contains('no-custom-select')) {
+            // Skip if explicitly flagged or inside modals/dialogs where absolute dropdowns get trapped by overflow-hidden/auto
+            if (this.select.hasAttribute('data-no-custom') || 
+                this.select.classList.contains('no-custom-select') || 
+                this.select.closest('#dispute-modal, .modal, [role="dialog"], [id*="modal"]')) {
                 return;
             }
 
@@ -31,15 +33,31 @@
             this.wrapper = document.createElement('div');
             this.wrapper.className = 'cs-wrapper';
 
-            // Transfer custom classes like w-full, etc. if appropriate
+            // Transfer layout, width, flex, margin, and sizing classes from native select
             if (this.select.className) {
-                const classes = this.select.className.split(' ');
+                const classes = this.select.className.split(/\s+/);
                 classes.forEach(c => {
-                    if (['w-full', 'max-w-xs', 'max-w-sm', 'max-w-md', 'flex-1'].includes(c)) {
+                    if (!c) return;
+                    // Layout, sizing, flex, margin, visibility classes go to wrapper
+                    if (/^(sm:|md:|lg:|xl:|2xl:)?(w-|min-w-|max-w-|flex-|shrink|grow|self-|m-|mx-|my-|mt-|mb-|ml-|mr-|hidden|block|inline|order-)/.test(c) ||
+                        c === 'shrink-0' || c === 'flex-1' || c === 'flex-none' || c === 'w-full' || c === 'w-auto') {
                         this.wrapper.classList.add(c);
+                    }
+                    // Typography & aesthetic classes on trigger
+                    if (/^(text-xs|text-sm|rounded-|font-)/.test(c)) {
+                        this.wrapper.classList.add(c);
+                    }
+                    if (c === 'py-2' || c === 'text-xs') {
+                        this.wrapper.classList.add('cs-compact');
                     }
                 });
             }
+
+            // Copy inline style dimensions if present
+            if (this.select.style.width) this.wrapper.style.width = this.select.style.width;
+            if (this.select.style.minWidth) this.wrapper.style.minWidth = this.select.style.minWidth;
+            if (this.select.style.maxWidth) this.wrapper.style.maxWidth = this.select.style.maxWidth;
+            if (this.select.style.flex) this.wrapper.style.flex = this.select.style.flex;
 
             // Insert wrapper before select and move select inside
             this.select.parentNode.insertBefore(this.wrapper, this.select);
@@ -50,6 +68,18 @@
             this.trigger = document.createElement('button');
             this.trigger.type = 'button';
             this.trigger.className = 'cs-trigger';
+
+            if (this.wrapper.classList.contains('cs-compact')) {
+                this.trigger.classList.add('cs-compact');
+            }
+
+            if (this.select.classList.contains('rounded-lg')) {
+                this.trigger.classList.add('rounded-lg');
+            } else if (this.select.classList.contains('rounded-xl')) {
+                this.trigger.classList.add('rounded-xl');
+            } else if (this.select.classList.contains('rounded-full')) {
+                this.trigger.classList.add('rounded-full');
+            }
 
             this.label = document.createElement('span');
             this.label.className = 'cs-label';
@@ -105,18 +135,16 @@
         }
 
         selectOption(value, index) {
-            if (this.select.selectedIndex !== index) {
-                this.select.selectedIndex = index;
-                this.select.value = value;
+            this.select.selectedIndex = index;
+            this.select.value = value;
 
-                // Dispatch native events so Vue, listeners & filters respond
-                this.select.dispatchEvent(new Event('change', { bubbles: true }));
-                this.select.dispatchEvent(new Event('input', { bubbles: true }));
+            // Dispatch native events so Vue, listeners & filters respond
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+            this.select.dispatchEvent(new Event('input', { bubbles: true }));
 
-                // Run inline onchange if defined
-                if (typeof this.select.onchange === 'function') {
-                    this.select.onchange();
-                }
+            // Run inline onchange if defined
+            if (typeof this.select.onchange === 'function') {
+                this.select.onchange();
             }
 
             this.sync();
@@ -163,13 +191,22 @@
                 this.wrapper.classList.remove('cs-dropup');
             }
 
+            // Check horizontal space: if close to right edge, open towards left
+            if (rect.right + 100 > window.innerWidth || rect.left + 220 > window.innerWidth) {
+                this.wrapper.classList.add('cs-dropdown-right');
+            } else {
+                this.wrapper.classList.remove('cs-dropdown-right');
+            }
+
             this.wrapper.classList.add('cs-open');
+            this.wrapper.style.zIndex = '9999';
             this.isOpen = true;
             activeSelect = this;
         }
 
         close() {
             this.wrapper.classList.remove('cs-open');
+            this.wrapper.style.zIndex = '';
             this.isOpen = false;
             if (activeSelect === this) {
                 activeSelect = null;
@@ -227,6 +264,12 @@
         if (!root) return;
         const selects = root.querySelectorAll('select:not([data-no-custom]):not(.no-custom-select)');
         selects.forEach(select => {
+            if (select.closest('#dispute-modal, .modal, [role="dialog"], [id*="modal"]')) {
+                if (select._customSelect && typeof select._customSelect.destroy === 'function') {
+                    select._customSelect.destroy();
+                }
+                return;
+            }
             if (!select._customSelect && select.offsetParent !== null) {
                 new CustomSelect(select);
             }

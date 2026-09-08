@@ -24,43 +24,42 @@
     <?php endif; ?>
 
     <!-- Search & Filters -->
-    <div class="flex flex-col md:flex-row gap-4">
-        <div class="relative flex-1 group" style="position: relative; flex: 1 1 0%;">
-            <div
-                style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
-                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors"
-                    style="width: 1.1rem; height: 1.1rem;"></i>
-            </div>
+    <div class="flex flex-col md:flex-row gap-3 items-center">
+        <div class="relative flex-1 w-full min-w-0">
             <input type="text" id="search-input" placeholder="Search by patient name or case number..."
-                style="padding-left: 2.75rem !important;"
-                class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
+            <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400"></i>
         </div>
-        <select id="filter-branch"
-            class="w-full md:w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
-            <option value="All">All Branches</option>
-            <?php
-            if (!empty($branchesList)) {
-                // Ensure array of branches is sorted by name
-                usort($branchesList, function($a, $b) {
-                    return strcmp($a['name'], $b['name']);
-                });
-                
-                foreach ($branchesList as $branch):
-                    // Skip the current admin's own branch if desired, or show all
-                    if ($branch['name'] !== $myBranchName):
-                    ?>
-                    <option value="<?= htmlspecialchars($branch['name']) ?>"><?= htmlspecialchars($branch['name']) ?></option>
-                <?php 
-                    endif;
-                endforeach;
-            }
-            ?>
-        </select>
-        <select id="sort-date"
-            class="w-full md:w-48 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
-            <option value="Newest">Newest First</option>
-            <option value="Oldest">Oldest First</option>
-        </select>
+        <div class="flex gap-3 w-full md:w-auto items-center shrink-0">
+            <select id="filter-branch"
+                style="width: 200px; min-width: 180px;"
+                class="w-full md:w-52 shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
+                <option value="All">All Branches</option>
+                <?php
+                if (!empty($branchesList)) {
+                    // Ensure array of branches is sorted by name
+                    usort($branchesList, function($a, $b) {
+                        return strcmp($a['name'], $b['name']);
+                    });
+                    
+                    foreach ($branchesList as $branch):
+                        // Skip the current admin's own branch if desired, or show all
+                        if ($branch['name'] !== $myBranchName):
+                        ?>
+                        <option value="<?= htmlspecialchars($branch['name']) ?>"><?= htmlspecialchars($branch['name']) ?></option>
+                    <?php 
+                        endif;
+                    endforeach;
+                }
+                ?>
+            </select>
+            <select id="sort-date"
+                style="width: 170px; min-width: 150px;"
+                class="w-full md:w-44 shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all cursor-pointer shadow-sm">
+                <option value="Newest">Newest First</option>
+                <option value="Oldest">Oldest First</option>
+            </select>
+        </div>
     </div>
 
     <!-- Table Container -->
@@ -186,9 +185,9 @@
 
             // Filtering
             return rows.filter(row => {
-                const name = row.getAttribute('data-name').toLowerCase();
-                const caseNo = row.getAttribute('data-case').toLowerCase();
-                const branch = row.getAttribute('data-branch');
+                const name = (row.getAttribute('data-name') || '').toLowerCase();
+                const caseNo = (row.getAttribute('data-case') || '').toLowerCase();
+                const branch = row.getAttribute('data-branch') || '';
 
                 const matchesSearch = name.includes(searchTerm) || caseNo.includes(searchTerm);
                 const matchesBranch = branchFilter === 'All' || branch === branchFilter;
