@@ -690,7 +690,7 @@
         const confirmed = await confirmAlert('Confirm Release', 'Would you like to confirm releasing this result and moving it to X-ray Patient Records?');
         if (!confirmed.isConfirmed) return;
 
-        const baseDir = '/<?= PROJECT_DIR ?>';
+        const baseDir = '<?= (defined("PROJECT_DIR") && PROJECT_DIR) ? "/" . PROJECT_DIR : "" ?>';
         const overlay = document.getElementById('release-loading-overlay');
         const statusText = document.getElementById('release-status-text');
 
@@ -710,7 +710,7 @@
             iframe.style.height = '1200px';
             iframe.style.border = 'none';
 
-            iframe.src = `${baseDir}/index.php?page=print-report&id=${caseId}&no_shadow=1&snapshot=1`;
+            iframe.src = `${baseDir}/print-report?id=${caseId}&no_shadow=1&snapshot=1`;
             document.body.appendChild(iframe);
 
             iframe.onload = async () => {

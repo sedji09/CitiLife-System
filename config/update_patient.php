@@ -124,16 +124,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtUp->execute([$philhealth, $philhealthIdToSave, $philhealthRelationToSave, $caseId]);
                 }
 
-                header('Location: ' . $redirectBase . '/patient-approval?success=1');
-                exit;
+                redirect(url('patient-approval?success=1'));
             }
         } catch (Exception $e) {
             error_log('update_patient error: ' . $e->getMessage());
-            header('Location: ' . $redirectBase . '/patient-approval?error=' . urlencode($e->getMessage()));
-            exit;
+            redirect(url('patient-approval?error=' . urlencode($e->getMessage())));
         }
     }
 }
 
-header('Location: ' . $redirectBase . '/patient-approval');
-exit;
+redirect(url('patient-approval'));

@@ -293,14 +293,8 @@ class PatientDetailsController
                     : 'Amendment saved. Dispute marked as Correction Completed.';
 
                 $fromParam = $_GET['from'] ?? ($dId ? 'disputes' : 'queue');
-                $redirectUrl = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . $caseId . "&from=" . urlencode($fromParam);
-                if ($dId) {
-                    $redirectUrl .= "&dispute_id=" . $dId;
-                }
-                $redirectUrl .= "&saved=1";
-
-                header("Location: " . $redirectUrl);
-                exit;
+                $qs = "role=radtech&id=" . $caseId . "&from=" . urlencode($fromParam) . ($dId ? "&dispute_id=" . $dId : "") . "&saved=1";
+                redirect(url("patient-details?" . $qs));
             } catch (\Throwable $e) {
                 $errorMsg = "Error saving amendment: " . $e->getMessage();
             }
@@ -394,9 +388,8 @@ class PatientDetailsController
 
                 $_SESSION['flash_success'] = 'Patient information updated successfully.';
                 $fromParam = $_GET['from'] ?? '';
-                $redirectUrl = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . $caseId . ($fromParam ? "&from=" . urlencode($fromParam) : "");
-                header("Location: " . $redirectUrl);
-                exit;
+                $qs = "role=radtech&id=" . $caseId . ($fromParam ? "&from=" . urlencode($fromParam) : "");
+                redirect(url("patient-details?" . $qs));
             } catch (\Throwable $e) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                     header('Content-Type: application/json');
@@ -430,12 +423,8 @@ class PatientDetailsController
                 if ($result['success']) {
                     $_SESSION['flash_success'] = $result['message'];
                     $fromParam = $_GET['from'] ?? '';
-                    $redirectUrl = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-details&id=" . $caseId;
-                    if ($fromParam) {
-                        $redirectUrl .= "&from=" . urlencode($fromParam);
-                    }
-                    header("Location: " . $redirectUrl);
-                    exit;
+                    $qs = "role=radtech&id=" . $caseId . ($fromParam ? "&from=" . urlencode($fromParam) : "");
+                    redirect(url("patient-details?" . $qs));
                 } else {
                     $errorMsg = $result['message'];
                 }

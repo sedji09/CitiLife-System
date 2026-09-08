@@ -41,17 +41,8 @@ if (ini_get("session.use_cookies")) {
 
 // Redirect to appropriate page based on role
 $reason = $_GET['reason'] ?? '';
-$base = PROJECT_DIR ? '/' . PROJECT_DIR : '';
-if ($role === 'patient') {
-    // Redirect patient directly to the public home page (without auto-opening login modal)
-    $redirect = $base . '/';
-} else {
-    // Staff logout redirects to the staff login page
-    $redirect = $base . '/login';
-}
-
+$page = ($role === 'patient') ? '' : 'login';
 if ($reason) {
-    $redirect .= (strpos($redirect, '?') !== false ? '&' : '?') . 'reason=' . urlencode($reason);
+    $page .= ($page ? '?' : '?') . 'reason=' . urlencode($reason);
 }
-header("Location: " . $redirect);
-exit;
+redirect(url($page));

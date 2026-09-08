@@ -124,10 +124,9 @@ class RegistrationController
                                     $result['patient_id'] ?? $userId,
                                     "Patient requested a new X-ray via portal (New Patient)",
                                     $regData['branch_id']
-                                );
+                                    );
                             }
-                            header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=dashboard&registered=1");
-                            exit;
+                            redirect(url('dashboard?registered=1'));
                         }
 
                     } elseif ($formAction === 'request_xray') {
@@ -170,8 +169,7 @@ class RegistrationController
                                     $regData['branch_id']
                                 );
                             }
-                            header("Location: /" . PROJECT_DIR . "/index.php?role=patient&page=dashboard&registered=1");
-                            exit;
+                            redirect(url('dashboard?registered=1'));
                         }
                     }
                 } catch (\Exception $e) {

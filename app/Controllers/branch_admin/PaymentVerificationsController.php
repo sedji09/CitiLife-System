@@ -176,14 +176,12 @@ class PaymentVerificationsController
                             break;
                         }
                     }
-                    header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");
-                    exit;
+                    redirect(url('payment-verifications'));
                 } elseif ($_POST['action'] === 'reject') {
                     $rejectionReason = trim($_POST['rejection_reason'] ?? '');
                     if (empty($rejectionReason)) {
                         $_SESSION['flash_error'] = "A reason is required to reject a payment confirmation.";
-                        header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");
-                        exit;
+                        redirect(url('payment-verifications'));
                     }
 
                     try {
@@ -219,7 +217,7 @@ class PaymentVerificationsController
                                 $notifModel->add(
                                     "Payment Rejected",
                                     "Your payment for request {$patData['request_number']} was returned: \"{$rejectionReason}\". Please resubmit your payment details with the correct reference number and receipt screenshot.",
-                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=dashboard",
+                                    url('dashboard'),
                                     $patData['user_id'],
                                     'patient'
                                 );
@@ -238,8 +236,7 @@ class PaymentVerificationsController
                         }
                         $_SESSION['flash_error'] = "Error rejecting payment: " . $e->getMessage();
                     }
-                    header("Location: /" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications");
-                    exit;
+                    redirect(url('payment-verifications'));
                 }
             }
         }

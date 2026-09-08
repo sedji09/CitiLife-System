@@ -362,7 +362,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
                                         <!-- Print Result — active when Report Ready -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?id=' . $row['id']) ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
@@ -1025,7 +1025,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         const confirmed = await confirmAlert('Confirm Release', 'Would you like to confirm releasing this result and moving it to X-ray Patient Records?');
         if (!confirmed.isConfirmed) return;
 
-        const baseDir = '/<?= PROJECT_DIR ?>';
+        const baseDir = '<?= (defined("PROJECT_DIR") && PROJECT_DIR) ? "/" . PROJECT_DIR : "" ?>';
         const overlay = document.getElementById('release-loading-overlay');
         const statusText = document.getElementById('release-status-text');
 
@@ -1049,7 +1049,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
             iframe.style.border = 'none';
 
             // Use snapshot=1 to skip auto-print in the iframe
-            iframe.src = `${baseDir}/index.php?page=print-report&id=${caseId}&no_shadow=1&snapshot=1`;
+            iframe.src = `${baseDir}/print-report?id=${caseId}&no_shadow=1&snapshot=1`;
             document.body.appendChild(iframe);
 
             iframe.onload = async () => {

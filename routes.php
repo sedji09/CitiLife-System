@@ -117,8 +117,6 @@ $router->get('/patient-queue', function() {
         }
     }
     $highlight = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_id'] ?? '';
-    $projectDir = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
-    $redirectUrl = $projectDir . '/worklist';
     $params = [];
     if (!empty($branchName)) {
         $params[] = 'branch=' . urlencode($branchName);
@@ -126,11 +124,8 @@ $router->get('/patient-queue', function() {
     if (!empty($highlight)) {
         $params[] = 'highlight_case=' . urlencode($highlight);
     }
-    if (!empty($params)) {
-        $redirectUrl .= '?' . implode('&', $params);
-    }
-    header("Location: " . $redirectUrl);
-    exit;
+    $query = !empty($params) ? '?' . implode('&', $params) : '';
+    redirect(url('worklist' . $query));
 }, ['auth']);
 
 // Redirect legacy /xray-status to dashboard

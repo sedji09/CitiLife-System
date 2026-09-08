@@ -21,8 +21,7 @@ class ViewRecordRequestController
 
         $id = $_GET['id'] ?? null;
         if (!$id) {
-            header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=record-request");
-            exit;
+            redirect(url('record-request'));
         }
 
         $branchId = $_SESSION['branch_id'] ?? null;
@@ -32,8 +31,7 @@ class ViewRecordRequestController
 
         // 2. Security Check: Ensure the request belongs to the RadTech's branch
         if (!$request || $request['branch_id'] != $branchId) {
-            header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=record-request");
-            exit;
+            redirect(url('record-request'));
         }
 
         // 3. Prepare View Data

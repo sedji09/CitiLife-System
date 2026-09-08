@@ -192,8 +192,7 @@ class PatientApprovalController
                     $_SESSION['flash_error'] = "Rejection failed: " . $e->getMessage();
                 }
                 
-                header("Location: " . $redirectBase . "/patient-approval");
-                exit;
+                redirect(url('patient-approval'));
             }
         }
 

@@ -118,11 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // if it exists, or just redirect back to prevent double processing.
                 $lastId = $_SESSION['last_reg_case_id'] ?? '';
                 if ($lastId) {
-                    header("Location: index.php?role=radtech&page=patient-details&id=" . urlencode($lastId));
+                    redirect(url('patient-details?role=radtech&id=' . urlencode($lastId)));
                 } else {
-                    header("Location: index.php?role=radtech&page=patient-registration");
+                    redirect(url('patient-registration'));
                 }
-                exit;
             }
 
             // --- BACKEND VALIDATION FOR PHILHEALTH ID ---
@@ -230,9 +229,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ? "Patient registered successfully! Case #{$caseNum} has been added to the Patient Queue." 
                 : "Case #{$caseNum} created successfully and added to the Patient Queue.";
             
-            $redirectUrl = "index.php?role=radtech&page=patient-lists&highlight_case=" . urlencode($caseNum);
-            header("Location: $redirectUrl");
-            exit;
+            $redirectUrl = url("patient-lists?highlight_case=" . urlencode($caseNum));
+            redirect($redirectUrl);
         }
     } catch (\Exception $e) {
         $error = "Registration failed: " . $e->getMessage();

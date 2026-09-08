@@ -40,11 +40,11 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
 $userRole = $_SESSION['role'] ?? 'radtech';
 $from = $_GET['from'] ?? '';
 
-$backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records";
+$backLink = url('xray-patient-records');
 if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records";
+    $backLink = url('branch-xray-cases?tab=records');
 } elseif ($userRole === 'admin_central' || $from === 'patient-records') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?page=patient-records";
+    $backLink = url('patient-records');
 }
 ?>
 
@@ -157,7 +157,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                 class="flex-1 bg-[#0a0a0a] relative overflow-hidden group flex items-center justify-center p-4">
                 <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['findings'])): ?>
                     <?php
-                    $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
+                    $reportUrl = url("print-report?id=" . $caseId . "&preview=true");
                     ?>
 
                     <button type="button" aria-label="Download or Print Report"

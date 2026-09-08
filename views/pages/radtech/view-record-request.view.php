@@ -120,12 +120,12 @@
                 </div>
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
-                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseDetails['id'] ?>&download=true"
+                    <a href="<?= url('print-report?id=' . $caseDetails['id'] . '&download=true') ?>"
                         target="_blank"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
                         <i data-lucide="download" class="w-4 h-4"></i> Download PDF
                     </a>
-                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseDetails['id'] ?>" target="_blank"
+                    <a href="<?= url('print-report?id=' . $caseDetails['id']) ?>" target="_blank"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#1f2937] text-sm font-semibold rounded-lg shadow-sm border border-gray-300 transition">
                         <i data-lucide="printer" class="w-4 h-4"></i> Print
                     </a>
@@ -147,7 +147,7 @@
                         class="flex-1 min-h-0 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
                         <?php if (in_array($caseDetails['status'] ?? '', ['Completed', 'Report Ready', 'Released']) || !empty($caseDetails['findings'])): ?>
                             <?php
-                            $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseDetails['id'] . "&preview=true";
+                            $reportUrl = url('print-report?id=' . $caseDetails['id'] . '&preview=true');
                             ?>
 
                             <button type="button" aria-label="Open Findings Preview" onclick="openReportViewer('<?= $reportUrl ?>')"

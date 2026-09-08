@@ -27,15 +27,13 @@ $refToken = base64_encode('Citilife_Case_' . $id);
 $patientId = $_SESSION['patient_id'] ?? null;
 
 if (!$id || !$patientId) {
-    header("Location: /" . PROJECT_DIR . "/view-report?ref=" . $refToken);
-    exit;
+    redirect(url('view-report?ref=' . $refToken));
 }
 
 // Access control:
 $case = $caseModel->getCaseById($id);
 if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
-    header("Location: /" . PROJECT_DIR . "/view-report?ref=" . $refToken);
-    exit;
+    redirect(url('view-report?ref=' . $refToken));
 }
 
 // The code below is refactored for decoupling but currently unreachable due to redirect above
@@ -55,8 +53,7 @@ if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
 // 3-Month Availability Check
 $isExpired = strtotime($case['created_at']) < strtotime('-3 months');
 if ($isExpired) {
-    header("Location: /" . PROJECT_DIR . "/my-records?expired=1");
-    exit;
+    redirect(url('my-records?expired=1'));
 }
 
 $isReleased = in_array($case['status'], ['Released', 'Completed']) || !empty($case['released']);

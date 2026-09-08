@@ -42,8 +42,7 @@ if (!function_exists('guardPermission')) {
     function guardPermission($role, $permKey, $redirect = true) {
         if (hasPermission($role, $permKey) === 0) {
             if ($redirect) {
-                header("Location: /" . PROJECT_DIR . "/?page=dashboard&error=unauthorized");
-                exit();
+                redirect(url('dashboard?error=unauthorized'));
             }
             return false;
         }

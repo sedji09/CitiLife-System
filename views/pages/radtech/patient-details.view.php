@@ -55,21 +55,19 @@ if (!function_exists('getXrayImageLabel')) {
 $from = $_GET['from'] ?? '';
 
 if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases";
+    $backLink = url('branch-xray-cases');
 } elseif ($userRole === 'admin_central' || $from === 'patient-records') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?page=patient-records";
+    $backLink = url('patient-records');
 } elseif ($from === 'report-ready') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=report-ready";
+    $backLink = url('report-ready');
 } elseif ($from === 'approval' || $from === 'patient-approval') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval";
+    $backLink = url('patient-approval');
 } elseif ($from === 'queue' || $from === 'patient-queue') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
-} elseif ($from === 'disputes') {
-    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes";
-} elseif (!empty($activeDispute) || !empty($_GET['dispute_id'])) {
-    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes";
+    $backLink = url('patient-lists');
+} elseif ($from === 'disputes' || !empty($activeDispute) || !empty($_GET['dispute_id'])) {
+    $backLink = url('patient-lists?tab=disputes');
 } else {
-    $backLink = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists";
+    $backLink = url('patient-lists');
 }
 ?>
 
@@ -1110,7 +1108,7 @@ $catBadgeLabel = match ($dCategory) {
                         </button>
                     <?php endif; ?>
                         <a href="javascript:void(0)"
-                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
+                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?id=' . $caseId) ?>', 'Yes, Print', true, event)"
                             class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
                             <i data-lucide="printer" class="w-4 h-4"></i>
                             Print Result

@@ -20,19 +20,13 @@ if (empty($branchName) && !empty($branchId)) {
 
 $highlight = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_id'] ?? '';
 
-$base = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
-$redirectUrl = $base . '/index.php?role=radiologist&page=worklist';
 $params = [];
-
 if (!empty($branchName)) {
     $params[] = 'branch=' . urlencode($branchName);
 }
 if (!empty($highlight)) {
     $params[] = 'highlight_case=' . urlencode($highlight);
 }
-if (!empty($params)) {
-    $redirectUrl .= '&' . implode('&', $params);
-}
+$query = !empty($params) ? '?' . implode('&', $params) : '';
 
-header("Location: " . $redirectUrl);
-exit;
+redirect(url('worklist' . $query));

@@ -56,8 +56,6 @@ class PageController
                 }
             }
             $highlight = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_id'] ?? '';
-            $projectDir = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
-            $redirectUrl = $projectDir . '/index.php?role=radiologist&page=worklist';
             $params = [];
             if (!empty($branchName)) {
                 $params[] = 'branch=' . urlencode($branchName);
@@ -65,11 +63,8 @@ class PageController
             if (!empty($highlight)) {
                 $params[] = 'highlight_case=' . urlencode($highlight);
             }
-            if (!empty($params)) {
-                $redirectUrl .= '&' . implode('&', $params);
-            }
-            header("Location: " . $redirectUrl);
-            exit;
+            $query = !empty($params) ? '?' . implode('&', $params) : '';
+            redirect(url('worklist' . $query));
         }
 
         // Whitelist pages (same as legacy index.php)

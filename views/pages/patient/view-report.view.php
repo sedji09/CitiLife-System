@@ -52,8 +52,7 @@ function showSecureError($message)
 // This completely cleans the URL bar so panelists/users don't see any parameters!
 if (isset($_GET['ref'])) {
     $_SESSION['active_report_ref'] = $_GET['ref'];
-    header("Location: /" . PROJECT_DIR . "/view-report");
-    exit;
+    redirect(url('view-report'));
 }
 
 // Retrieve the token from session instead of URL
@@ -70,8 +69,7 @@ if (!empty($refToken)) {
     $id = (int) ($_GET['id'] ?? 0);
     if ($id > 0) {
         $_SESSION['active_report_ref'] = base64_encode('Citilife_Case_' . $id);
-        header("Location: /" . PROJECT_DIR . "/view-report");
-        exit;
+        redirect(url('view-report'));
     }
 }
 
@@ -90,8 +88,7 @@ if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
 // 3-Month Availability Check
 $isExpired = strtotime($case['created_at']) < strtotime('-3 months');
 if ($isExpired) {
-    header("Location: /" . PROJECT_DIR . "/my-records?expired=1");
-    exit;
+    redirect(url('my-records?expired=1'));
 }
 
 // Log view action

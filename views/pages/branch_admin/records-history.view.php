@@ -128,7 +128,7 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
                 class="flex-1 min-h-0 h-[480px] flex flex-col transition-all overflow-hidden p-4 bg-white border-x border-b border-gray-100 rounded-b-2xl">
                 <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['findings'])): ?>
                     <?php
-                    $reportUrl = "/" . PROJECT_DIR . "/index.php?page=print-report&id=" . $caseId . "&preview=true";
+                    $reportUrl = url("print-report?id=" . $caseId . "&preview=true");
                     ?>
 
                     <button type="button" aria-label="Open Findings Preview" onclick="openReportViewer('<?= $reportUrl ?>')"

@@ -18,9 +18,7 @@ class PatientDetailsController
 
         if (!$patient) {
             // Redirect back to patient records if patient not found
-            $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false) ? '/' . PROJECT_DIR : '';
-            header("Location: {$redirectBase}/patient-records");
-            exit;
+            redirect(url('patient-records'));
         }
 
         // Fetch cases for this patient (most recent first)

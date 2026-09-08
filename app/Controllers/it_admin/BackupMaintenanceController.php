@@ -104,8 +104,7 @@ class BackupMaintenanceController
                     $_SESSION['error'] = "Backup failed: " . ($lastError ?: "Unable to export database snapshot.");
                 }
 
-                header("Location: ?page=backup-maintenance");
-                exit();
+                redirect(url('backup-maintenance'));
             }
 
             if ($action === 'delete_backup') {
@@ -121,8 +120,7 @@ class BackupMaintenanceController
                 } else {
                     $_SESSION['error'] = "Invalid file or access denied.";
                 }
-                header("Location: ?page=backup-maintenance");
-                exit();
+                redirect(url('backup-maintenance'));
             }
         }
 
@@ -143,8 +141,7 @@ class BackupMaintenanceController
                 exit();
             } else {
                 $_SESSION['error'] = "File not found.";
-                header("Location: ?page=backup-maintenance");
-                exit();
+                redirect(url('backup-maintenance'));
             }
         }
 

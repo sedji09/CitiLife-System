@@ -50,13 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         $pdo->commit();
         $_SESSION['success'] = "Security policies updated successfully.";
-        header("Location: ?page=security-settings");
-        exit();
+        redirect(url('security-settings'));
     } catch (\Exception $e) {
         $pdo->rollBack();
         $_SESSION['error'] = "Failed to update settings: " . $e->getMessage();
-        header("Location: ?page=security-settings");
-        exit();
+        redirect(url('security-settings'));
     }
 }
 

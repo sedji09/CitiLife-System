@@ -217,7 +217,7 @@ if (isset($_GET['action'])) {
                             $notificationModel->add(
                                 $notifTitle,
                                 $notifMsg,
-                                "/" . PROJECT_DIR . "/case-status?case_id={$id}",
+                                url("case-status?case_id={$id}"),
                                 $patientUserId
                             );
                         }
@@ -226,7 +226,7 @@ if (isset($_GET['action'])) {
                         $notificationModel->add(
                             "Report Released",
                             "Official report for Case {$caseData['case_number']} (" . formatFullName($caseData) . ") has been released and is available in Patient Records.",
-                            "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records&highlight=" . urlencode($caseData['case_number']),
+                            url("branch-xray-cases?tab=records&highlight=" . urlencode($caseData['case_number'])),
                             null,
                             'branch_admin',
                             $branchId
@@ -238,7 +238,7 @@ if (isset($_GET['action'])) {
                             if ($patientUser && !empty($patientUser['email'])) {
                                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
                                 $patientName = formatFullName($caseData);
-                                $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
+                                $reportUrl = appBaseUrl() . url("case-status?case_id=" . $id);
 
                                 if ($activeDispute) {
                                     $subject = "Correction Request Resolved - Citilife Diagnostic Center";
@@ -277,13 +277,12 @@ if (isset($_GET['action'])) {
                             }
                         }
                     }
-            header("Location: /" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists");
-            exit;
-        } catch (\Exception $e) {
-            $errorMsg = "Failed to release result: " . $e->getMessage();
+                    redirect(url('patient-lists'));
+                } catch (\Exception $e) {
+                    $errorMsg = "Failed to release result: " . $e->getMessage();
+                }
+            }
         }
-    }
-}
 
 // 3. Fetch and Filter Data
 $branchId = $_SESSION['branch_id'] ?? 1;

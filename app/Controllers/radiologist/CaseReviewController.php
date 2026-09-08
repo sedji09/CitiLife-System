@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
 
                 if ($isFinal) {
-                    $redirectUrl = (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=radiologist&page=worklist';
+                    $redirectUrl = url('worklist');
                     if (isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
                         if (ob_get_length()) ob_clean();
                         header('Content-Type: application/json');
@@ -78,8 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]);
                         exit();
                     }
-                    header("Location: " . $redirectUrl);
-                    exit();
+                    redirect($redirectUrl);
                 }
 
                 // Re-fetch to get updated status
