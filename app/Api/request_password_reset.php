@@ -41,10 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $updateStmt = $pdo->prepare("UPDATE users SET reset_password_token = ?, reset_password_expires_at = ? WHERE id = ?");
         $updateStmt->execute([$token, $expiresAt, $user['id']]);
 
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-        // Assuming PROJECT_DIR is defined globally, else fallback
-        $projDir = defined('PROJECT_DIR') ? PROJECT_DIR : 'Citilife-System';
-        $resetLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . $projDir . '/reset-password?token=' . $token;
+        $resetLink = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('reset-password?token=' . $token) : ('/reset-password?token=' . $token));
 
         $firstName = 'User';
         if ($user['role'] === 'patient' && !empty($user['first_name'])) {

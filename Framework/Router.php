@@ -47,8 +47,16 @@ class Router
      */
     public function route($uri, $method)
     {
+        // Normalize any protocol-relative double slashes e.g. //reset-password?token=... -> /reset-password?token=...
+        if (strpos($uri, '//') === 0 && strpos($uri, '://') === false) {
+            $uri = '/' . ltrim($uri, '/');
+        }
+
         // Parse the URL to get the path
         $path = parse_url($uri, PHP_URL_PATH);
+        if ($path === null || $path === false) {
+            $path = '/';
+        }
 
         // Strip project root prefix if it is present (case-insensitive for compatibility)
         if (defined('PROJECT_DIR') && PROJECT_DIR !== '') {
@@ -59,11 +67,11 @@ class Router
         }
 
         // Standardize leading and trailing slash
-        $path = '/' . trim($path, '/');
+        $path = '/' . trim((string)$path, '/');
 
         foreach ($this->routes as $route) {
             // Normalize route uri
-            $routeUri = '/' . trim($route['uri'], '/');
+            $routeUri = '/' . trim((string)($route['uri'] ?? ''), '/');
 
             if ($routeUri === $path && $route['method'] === $method) {
                 // Execute middleware first

@@ -86,8 +86,7 @@ class PatientApprovalController
                         );
 
                         if (!empty($patUser['email'])) {
-                            $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                            $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                            $portalUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('dashboard') : '/dashboard');
                             $patientName = $patUser['name'] ?: 'Patient';
                             $subject = "Your X-ray Request ({$caseNumber}) is Approved - Citilife System";
                             $emailBody = renderNotificationEmail(
@@ -110,28 +109,21 @@ class PatientApprovalController
 
                     $pdo->commit();
                     $_SESSION['flash_success'] = "Patient request has been finally approved. They can now proceed to X-ray.";
-                    
-                    $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') : '';
-                    header("Location: " . $redirectBase . "/patient-details?role=radtech&id=" . urlencode($newCaseId) . "&from=approval");
-                    exit;
+                    redirect(url('patient-details?role=radtech&id=' . urlencode($newCaseId) . '&from=approval'));
                 } catch (\Throwable $e) {
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
                     }
                     $_SESSION['flash_error'] = "Approval failed: " . $e->getMessage();
-                    $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') : '';
-                    header("Location: " . $redirectBase . "/patient-approval");
-                    exit;
+                    redirect(url('patient-approval'));
                 }
             } elseif ((($_GET['action'] ?? '') === 'reject' || ($_POST['action'] ?? '') === 'reject') && (isset($_GET['id']) || isset($_POST['id']))) {
                 $requestId = (int)($_POST['id'] ?? $_GET['id']);
                 $reason = trim($_POST['rejection_reason'] ?? '');
-                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') : '';
 
                 if (empty($reason)) {
                     $_SESSION['flash_error'] = "A reason is required to reject a patient request.";
-                    header("Location: " . $redirectBase . "/patient-approval");
-                    exit;
+                    redirect(url('patient-approval'));
                 }
 
                 try {
@@ -413,8 +405,7 @@ class PatientApprovalController
                         );
 
                         if (!empty($patUser['email'])) {
-                            $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                            $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                            $portalUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('dashboard') : '/dashboard');
                             $patientName = $patUser['name'] ?: 'Patient';
                             $subject = "Payment Required for Your X-ray Request ({$reqNum}) - Citilife System";
                             $emailBody = renderNotificationEmail(
@@ -443,9 +434,7 @@ class PatientApprovalController
                     $_SESSION['flash_error'] = "Assignment failed: " . $e->getMessage();
                 }
                 
-                $redirectBase = (strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) ? '/' . PROJECT_DIR : '';
-                header("Location: " . $redirectBase . "/patient-approval");
-                exit;
+                redirect(url('patient-approval'));
             }
         }
 

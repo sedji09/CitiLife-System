@@ -127,8 +127,7 @@ class PatientDetailsController
                                 try {
                                     require_once __DIR__ . '/../../Helpers/mailer_helper.php';
                                     require_once __DIR__ . '/../../Helpers/email_template_helper.php';
-                                    $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
-                                    $reportUrl = (function_exists('appBaseUrl') ? appBaseUrl() : ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'))) . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
+                                    $reportUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('case-status?case_id=' . $id) : ('/case-status?case_id=' . $id));
 
                                     if (!empty($activeDispute)) {
                                         $subject = "Correction Request Resolved - Citilife Diagnostic Center";

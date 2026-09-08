@@ -190,8 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmtInsertToken->execute([$verificationToken, $patientId, $patientEmail]);
 
                         // Construct verification link
-                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-                        $verifyLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/verify?token=' . $verificationToken;
+                        $verifyLink = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('verify?token=' . $verificationToken) : ('/verify?token=' . $verificationToken));
 
                         require_once basePath('app/Helpers/mailer_helper.php');
                         require_once basePath('app/Helpers/email_template_helper.php');

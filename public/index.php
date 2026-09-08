@@ -63,8 +63,11 @@ $router = new Router();
 require_once basePath('routes.php');
 
 // 8. Match and execute the current request route
-$uri = $_SERVER['REQUEST_URI'];
-$method = $_SERVER['REQUEST_METHOD'];
+$uri = $_SERVER['REQUEST_URI'] ?? '/';
+if (strpos($uri, '//') === 0 && strpos($uri, '://') === false) {
+    $uri = '/' . ltrim($uri, '/');
+}
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 ob_start();
 

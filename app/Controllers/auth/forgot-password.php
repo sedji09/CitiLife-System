@@ -50,11 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $updateStmt->execute([$token, $expiresAt, $user['id']]);
 
             // Construct Reset Link
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-            $resetLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/reset-password?token=' . $token;
-            if ($isStaffPortal) {
-                $resetLink .= '&portal=staff';
-            }
+            $resetPath = 'reset-password?token=' . $token . ($isStaffPortal ? '&portal=staff' : '');
+            $resetLink = appBaseUrl() . url($resetPath);
 
             // Send Email
             $firstName = 'User';
