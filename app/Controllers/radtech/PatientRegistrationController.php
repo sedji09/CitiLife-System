@@ -21,6 +21,29 @@ $auditLogModel = new \AuditLogModel($pdo);
 $currentUserId = $_SESSION['user_id'] ?? 0;
 
 // --- 1. AJAX Endpoints ---
+if (isset($_GET['check_duplicate_name'])) {
+    header('Content-Type: application/json');
+    $fn = trim($_GET['first_name'] ?? '');
+    $ln = trim($_GET['last_name'] ?? '');
+    $excludeId = !empty($_GET['exclude_id']) ? (int)$_GET['exclude_id'] : null;
+
+    if (strlen($fn) < 2 || strlen($ln) < 2) {
+        echo json_encode(['has_duplicate' => false, 'count' => 0, 'matches' => []]);
+    } else {
+        try {
+            $matches = $patientModel->findNamesakes($fn, $ln, $excludeId);
+            echo json_encode([
+                'has_duplicate' => !empty($matches),
+                'count'         => count($matches),
+                'matches'       => $matches
+            ]);
+        } catch (\Exception $e) {
+            echo json_encode(['error' => $e->getMessage(), 'has_duplicate' => false, 'count' => 0, 'matches' => []]);
+        }
+    }
+    exit;
+}
+
 if (isset($_GET['ajax_search'])) {
     header('Content-Type: application/json');
     $query = trim($_GET['q'] ?? '');
@@ -75,6 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Please fill in all required patient fields.";
         } elseif ($regData['form_mode'] === 'new-patient' && !preg_match('/^[0-9]{11}$/', $regData['contact_number'])) {
             $error = "Contact Number must be exactly 11 digits.";
+        } elseif ($regData['form_mode'] === 'new-patient' && empty($regData['middle_name']) && !empty($patientModel->findNamesakes($regData['first_name'], $regData['last_name']))) {
+            $error = "A patient named '" . htmlspecialchars($regData['first_name'] . ' ' . $regData['last_name']) . "' already exists in the system. Middle Name is required to prevent duplicate records.";
         } else {
             // --- IDEMPOTENCY CHECK ---
             // Prevent duplicate submissions within 60 seconds
@@ -200,10 +225,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['last_reg_time'] = time();
             $_SESSION['last_reg_case_id'] = $result['case_id'] ?? null;
 
-            // PRG Pattern: Store success in session and redirect to Patient Details
-            $_SESSION['flash_success'] = ($regData['form_mode'] === 'new-patient') ? "Patient registered successfully." : "Case created successfully.";
+            // PRG Pattern: Store success in session and redirect to Patient Queue
+            $caseNum = $result['case_number'] ?? '';
+            $_SESSION['flash_success'] = ($regData['form_mode'] === 'new-patient') 
+                ? "Patient registered successfully! Case #{$caseNum} has been added to the Patient Queue." 
+                : "Case #{$caseNum} created successfully and added to the Patient Queue.";
             
-            $redirectUrl = "index.php?role=radtech&page=patient-details&id=" . urlencode($result['case_id'] ?? '');
+            $redirectUrl = "index.php?role=radtech&page=patient-lists&highlight_case=" . urlencode($caseNum);
             header("Location: $redirectUrl");
             exit;
         }

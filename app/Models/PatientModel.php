@@ -25,10 +25,10 @@ class PatientModel
         $stmt = $this->pdo->prepare("SELECT p.id, p.patient_number, p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
                                FROM patients p
                                LEFT JOIN users u ON u.patient_id = p.id
-                               WHERE p.patient_number LIKE ? OR p.first_name LIKE ? OR p.last_name LIKE ? OR u.email LIKE ?
+                               WHERE p.patient_number LIKE ? OR p.first_name LIKE ? OR p.middle_name LIKE ? OR p.last_name LIKE ? OR CONCAT_WS(' ', p.first_name, p.middle_name, p.last_name) LIKE ? OR u.email LIKE ?
                                ORDER BY p.first_name ASC 
                                LIMIT " . (int) $limit);
-        $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+        $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         return $stmt->fetchAll();
     }
 
@@ -283,6 +283,18 @@ class PatientModel
                     $stmtEmailUp->execute([$data['email'], $patientId]);
                 }
             } else {
+                // Check if patient has a namesake and middle_name is missing
+                $fn = trim((string)($data['first_name'] ?? ''));
+                $ln = trim((string)($data['last_name'] ?? ''));
+                $mn = trim((string)($data['middle_name'] ?? ''));
+
+                if (empty($mn) && !empty($fn) && !empty($ln)) {
+                    $namesakes = $this->findNamesakes($fn, $ln);
+                    if (!empty($namesakes)) {
+                        throw new \Exception("A patient named '{$fn} {$ln}' already exists in the system. Middle Name is required to avoid duplicate records.");
+                    }
+                }
+
                 // Register New Patient
                 $patientId = $this->registerPatient([
                     'first_name' => $data['first_name'],
@@ -394,6 +406,37 @@ class PatientModel
         ");
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Find existing patients with matching first and last name (namesake check).
+     */
+    public function findNamesakes($firstName, $lastName, $excludeId = null)
+    {
+        $firstName = trim((string) $firstName);
+        $lastName  = trim((string) $lastName);
+        if ($firstName === '' || $lastName === '') {
+            return [];
+        }
+
+        $sql = "SELECT p.id, p.patient_number, p.first_name, p.middle_name, p.last_name, p.birthdate, 
+                       (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, b.name AS branch_name
+                FROM patients p
+                LEFT JOIN branches b ON p.branch_id = b.id
+                WHERE LOWER(TRIM(p.first_name)) = LOWER(TRIM(?))
+                  AND LOWER(TRIM(p.last_name)) = LOWER(TRIM(?))";
+        $params = [$firstName, $lastName];
+
+        if ($excludeId) {
+            $sql .= " AND p.id != ?";
+            $params[] = (int) $excludeId;
+        }
+
+        $sql .= " ORDER BY p.id DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**

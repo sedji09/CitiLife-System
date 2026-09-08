@@ -81,16 +81,18 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($records as $row): ?>
+                    <?php foreach ($records as $row): 
+                        $pFullName = formatFullName($row);
+                    ?>
                         <tr class="transition-colors record-row" data-id="<?= htmlspecialchars($row['case_number']) ?>"
-                            data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($pFullName) ?>"
                             data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                             data-date="<?= $row['date_completed'] ? htmlspecialchars($row['date_completed']) : htmlspecialchars($row['created_at']) ?>">
                             <td class="py-3 px-5">
                                 <div class="font-medium text-gray-900"><?= htmlspecialchars($row['case_number']) ?></div>
                             </td>
                             <td class="py-3 px-5">
-                                <div class="font-medium"><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                <div class="font-medium"><?= htmlspecialchars($pFullName) ?>
                                 </div>
                             </td>
                             <td class="py-3 px-5">

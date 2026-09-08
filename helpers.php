@@ -359,5 +359,51 @@ if (!function_exists('getSignatureUrl')) {
     }
 }
 
+if (!function_exists('formatFullName')) {
+    /**
+     * Format a full name cleanly with optional middle name or middle initial.
+     * Supports either positional arguments: formatFullName($first, $middle, $last)
+     * or an associative array/record: formatFullName($row)
+     *
+     * @param string|array|null $firstNameOrData
+     * @param string|null|bool $middleName
+     * @param string|null $lastName
+     * @param bool $middleInitialOnly
+     * @return string
+     */
+    function formatFullName($firstNameOrData, $middleName = '', $lastName = '', $middleInitialOnly = false)
+    {
+        if (is_array($firstNameOrData)) {
+            $fn = trim((string)($firstNameOrData['first_name'] ?? $firstNameOrData['p_first_name'] ?? ''));
+            $mn = trim((string)($firstNameOrData['middle_name'] ?? $firstNameOrData['p_middle_name'] ?? ''));
+            $ln = trim((string)($firstNameOrData['last_name'] ?? $firstNameOrData['p_last_name'] ?? ''));
+            $initialOnly = is_bool($middleName) ? $middleName : false;
+        } else {
+            $fn = trim((string)($firstNameOrData ?? ''));
+            $mn = trim((string)($middleName ?? ''));
+            $ln = trim((string)($lastName ?? ''));
+            $initialOnly = (bool)$middleInitialOnly;
+        }
+
+        $parts = [];
+        if ($fn !== '') {
+            $parts[] = $fn;
+        }
+        if ($mn !== '') {
+            if ($initialOnly) {
+                $parts[] = strtoupper(mb_substr($mn, 0, 1)) . '.';
+            } else {
+                $parts[] = $mn;
+            }
+        }
+        if ($ln !== '') {
+            $parts[] = $ln;
+        }
+
+        return implode(' ', $parts);
+    }
+}
+
+
 
 

@@ -326,6 +326,17 @@ class PatientDetailsController
                     throw new Exception("Please provide all required patient details (First Name, Last Name, Birthdate, Sex, Contact Number).");
                 }
 
+                require_once __DIR__ . '/../../Models/PatientModel.php';
+                $patMdl = new \PatientModel($pdo);
+
+                // Enforce middle name if another patient shares the same first and last name
+                if (empty($middleName)) {
+                    $namesakes = $patMdl->findNamesakes($firstName, $lastName, $patientId);
+                    if (!empty($namesakes)) {
+                        throw new Exception("A patient named '{$firstName} {$lastName}' already exists in the system. Middle Name is required to avoid duplicate records.");
+                    }
+                }
+
                 $hasPhilHealth = ($philhealthStatus === 'With PhilHealth Card');
                 $philhealthIdToSave = $hasPhilHealth ? $philhealthId : null;
                 $philhealthRelationToSave = $hasPhilHealth ? $philhealthRelation : null;

@@ -16,7 +16,7 @@ if (!$caseDetails) {
     exit;
 }
 
-$fullName = htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']);
+$fullName = htmlspecialchars(formatFullName($caseDetails));
 
 // Parse uploaded images (JSON array or legacy single path)
 $imagePaths = [];

@@ -34,7 +34,7 @@ $stmtU->execute([$userId]);
 $userPatientRow = $stmtU->fetch();
 
 $patientRow = $userPatientRow; // For compatibility
-$patientFullName = trim(($patientRow['first_name'] ?? '') . ' ' . ($patientRow['last_name'] ?? ''));
+$patientFullName = formatFullName($patientRow);
 $userAccountStatus = $userPatientRow['user_status'] ?? 'Pending';
 $patientId = $patientRow['id'] ?? null;
 

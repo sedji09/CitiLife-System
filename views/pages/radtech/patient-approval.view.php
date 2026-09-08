@@ -175,11 +175,12 @@ foreach ($allServices as $service) {
                     <?php 
                     $apprIndex = 0;
                     foreach ($pendingPatients as $patient): 
+                        $patFullName = formatFullName($patient);
                         $initialDisplay = ($apprIndex >= 8) ? 'style="display: none;"' : '';
                     ?>
                         <tr class="border-b hover:bg-gray-50 transition-colors record-row" <?= $initialDisplay ?>
                             data-id="<?= htmlspecialchars($patient['request_number']) ?>"
-                            data-name="<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-priority="<?= htmlspecialchars($patient['priority']) ?>"
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($patient['created_at']) ?>">
@@ -187,8 +188,8 @@ foreach ($allServices as $service) {
                             <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
-                                title="<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>">
-                                <?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>
+                                title="<?= htmlspecialchars($patFullName) ?>">
+                                <?= htmlspecialchars($patFullName) ?>
                             </td>
                             <td class="py-3 px-3"><?= htmlspecialchars($patient['age']) ?></td>
                             <td class="py-3 px-3"><?= htmlspecialchars($patient['sex']) ?></td>
@@ -231,19 +232,19 @@ foreach ($allServices as $service) {
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
                                     <button
-                                        onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
+                                        onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patFullName) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
                                         class="text-sm font-medium text-gray-600 hover:text-gray-700 transition cursor-pointer" title="View Patient Details">
                                         <i data-lucide="eye"
                                             class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
                                     </button>
                                     
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>', false)"
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
                                             class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Examination">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
                                         </button>
                                     <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>', true)"
+                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
                                             class="text-sm font-medium text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View Assigned Examination Details (Read-Only)">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 px-1 py-1 rounded-md border border-gray-300"></i>
                                         </button>
@@ -251,7 +252,7 @@ foreach ($allServices as $service) {
 
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
                                         <button type="button"
-                                            onclick="promptRejectRequest(<?= (int)$patient['id'] ?>, '<?= htmlspecialchars($patient['request_number'] ?? ('REQ-' . str_pad($patient['id'], 5, '0', STR_PAD_LEFT)), ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name'], ENT_QUOTES) ?>')"
+                                            onclick="promptRejectRequest(<?= (int)$patient['id'] ?>, '<?= htmlspecialchars($patient['request_number'] ?? ('REQ-' . str_pad($patient['id'], 5, '0', STR_PAD_LEFT)), ENT_QUOTES) ?>', '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>')"
                                             class="text-sm font-medium text-red-600 hover:text-red-700 transition cursor-pointer" title="Reject Request">
                                             <i data-lucide="circle-x"
                                                 class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>

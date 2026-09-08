@@ -141,9 +141,10 @@
                                 </td>
                             </tr>
                             <?php foreach ($patients as $p): ?>
+                                <?php $patFullName = formatFullName($p); ?>
                                 <tr class="hover:bg-gray-50 transition-colors group patient-row"
                                     data-id="<?= htmlspecialchars(strtolower($p['patient_number'])) ?>"
-                                    data-name="<?= htmlspecialchars(strtolower($p['first_name'] . ' ' . $p['last_name'])) ?>"
+                                    data-name="<?= htmlspecialchars(strtolower($patFullName)) ?>"
                                     data-branch="<?= htmlspecialchars(strtolower($p['branch_name'] ?? 'general')) ?>"
                                     data-case-date="<?= htmlspecialchars($p['latest_case_date'] ?? '0000-00-00 00:00:00') ?>">
                                     <td class="py-3 px-3 whitespace-nowrap text-gray-500">
@@ -152,7 +153,7 @@
                                     <td class="py-3 px-3">
                                         <div class="group flex flex-col items-start cursor-default">
                                             <div class="font-medium text-gray-900 leading-tight">
-                                                <?= htmlspecialchars($p['first_name'] . ' ' . $p['last_name']) ?>
+                                                <?= htmlspecialchars($patFullName) ?>
                                             </div>
                                             <?php if ($p['latest_case_date']): ?>
                                                 <span class="text-[10px] text-gray-400 font-medium tracking-tight">

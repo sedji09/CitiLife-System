@@ -51,11 +51,13 @@ $records = $caseModel->getReleasedRecords($branchId);
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($records as $row): ?>
+                    <?php foreach ($records as $row): 
+                        $patFullName = formatFullName($row);
+                    ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
                             data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
-                            data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>">
                             <td class="py-3 px-3 whitespace-nowrap">
@@ -65,9 +67,9 @@ $records = $caseModel->getReleasedRecords($branchId);
                                 <div class="font-medium"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></div>
                             </td>
                             <td class="py-3 px-3 truncate max-w-[200px]"
-                                title="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>">
+                                title="<?= htmlspecialchars($patFullName) ?>">
                                 <div class="font-medium truncate">
-                                    <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                    <?= htmlspecialchars($patFullName) ?>
                                 </div>
                             </td>
                             <td class="py-3 px-3 max-w-[180px]">

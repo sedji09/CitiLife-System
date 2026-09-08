@@ -94,7 +94,7 @@ if ($radName !== 'Radiologist on Duty' && !str_contains(strtoupper($radFullNameW
     $radFullNameWithTitle = 'DR. ' . $radFullNameWithTitle;
 }
 
-$fullName = htmlspecialchars(strtoupper($case['first_name'] . ' ' . $case['last_name']));
+$fullName = htmlspecialchars(strtoupper(formatFullName($case)));
 $examType = $case['exam_type'];
 $examTypeArray = array_filter(array_map('trim', explode(',', $examType)));
 $caseNum = htmlspecialchars($case['case_number']);

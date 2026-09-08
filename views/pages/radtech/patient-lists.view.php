@@ -58,14 +58,27 @@ $currentTab = $_GET['tab'] ?? 'completed';
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Success!',
+                    title: 'Registration Successful',
                     text: <?= json_encode($successMsg) ?>,
-                    showConfirmButton: false,
-                    timer: 2500,
-                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                    showConfirmButton: true,
+                    confirmButtonColor: '#10b981',
+                    timer: 3500,
+                    timerProgressBar: true,
+                    customClass: {
+                        popup: 'rounded-3xl border-0 shadow-2xl',
+                        confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                    }
                 });
             } else if (typeof toast === 'function') {
                 toast(<?= json_encode($successMsg) ?>, 'success');
+            }
+        });
+        setTimeout(() => {
+            const el = document.getElementById('flash-success-alert');
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => el.remove(), 500);
             }
         });
     </script>
@@ -175,6 +188,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             continue;
                         }
 
+                        $patFullName = formatFullName($row);
                         $isReportReady = ($row['status'] === 'Report Ready');
                         $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d'));
                         
@@ -199,7 +213,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             
                             $sLower = strtolower($defaultSearch);
                             if ($sLower !== '') {
-                                $nMatch = strpos(strtolower($row['first_name'] . ' ' . $row['last_name']), $sLower) !== false;
+                                $nMatch = strpos(strtolower($patFullName), $sLower) !== false;
                                 $cMatch = strpos(strtolower($row['case_number']), $sLower) !== false;
                                 $pMatch = strpos(strtolower($row['patient_number'] ?? ''), $sLower) !== false;
                                 if (!$nMatch && !$cMatch && !$pMatch) {
@@ -213,7 +227,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
                             data-case-id="<?= (int)$row['id'] ?>"
                             data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
-                            data-name="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>"
@@ -226,8 +240,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                 <?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?>
                             </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
-                                title="<?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>">
-                                <?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?>
+                                title="<?= htmlspecialchars($patFullName) ?>">
+                                <?= htmlspecialchars($patFullName) ?>
                             </td>
                             <td class="py-3 px-3 max-w-[180px]">
                                 <?php
@@ -1262,10 +1276,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             }
                         }
 
+                        $disputePatName = formatFullName($d);
                         $disputePayload = [
                             'id' => $d['id'],
                             'case_number' => $d['case_number'],
-                            'patient_name' => $d['first_name'] . ' ' . $d['last_name'],
+                            'patient_name' => $disputePatName,
                             'patient_number' => $d['patient_number'] ?? '',
                             'description' => $fullText,
                             'status' => $d['status'],
@@ -1278,14 +1293,14 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             data-id="<?= htmlspecialchars($d['case_number']) ?>" 
                             data-dispute-id="<?= $d['id'] ?>" 
                             data-case="<?= htmlspecialchars($d['case_number']) ?>"
-                            data-name="<?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?>"
+                            data-name="<?= htmlspecialchars($disputePatName) ?>"
                             data-patient-number="<?= htmlspecialchars($d['patient_number'] ?? '') ?>"
                             data-correction="<?= htmlspecialchars($catLabel) ?>"
                             data-date="<?= htmlspecialchars($d['created_at']) ?>"
                             data-timestamp="<?= strtotime($d['created_at']) ?: 0 ?>">
                             <td class="py-3 px-4 font-medium"><?= htmlspecialchars($d['case_number']) ?></td>
                             <td class="py-3 px-4">
-                                <div class="font-medium"><?= htmlspecialchars($d['first_name'] . ' ' . $d['last_name']) ?></div>
+                                <div class="font-medium"><?= htmlspecialchars($disputePatName) ?></div>
                                 <div class="text-xs text-gray-500"><?= htmlspecialchars($d['patient_number'] ?? '') ?></div>
                             </td>
                             <td class="py-3 px-4 max-w-[220px] align-middle">
