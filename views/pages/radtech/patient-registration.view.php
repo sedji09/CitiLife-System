@@ -489,29 +489,25 @@
             if (window.FormValidator && message) {
                 window.FormValidator.showError(inputEl, message);
             }
-        } else {
+        } else if (state === 'warning') {
             if (window.FormValidator) {
                 window.FormValidator.clearError(inputEl);
             }
+            inputEl.classList.add('field-warning');
             if (feedbackEl) {
-                feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200';
-                if (message) {
-                    feedbackEl.innerHTML = message;
-                    feedbackEl.classList.remove('hidden');
-                } else {
-                    feedbackEl.innerHTML = '';
-                    feedbackEl.classList.add('hidden');
-                }
+                feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200 text-amber-700 font-medium';
+                feedbackEl.innerHTML = message;
+                feedbackEl.classList.remove('hidden');
             }
-
-            if (state === 'warning') {
-                inputEl.classList.add('field-warning');
-                if (feedbackEl) feedbackEl.classList.add('text-amber-700', 'font-medium');
-            } else if (state === 'success') {
-                inputEl.classList.add('field-success');
-                if (feedbackEl) feedbackEl.classList.add('text-emerald-600', 'font-medium');
-            } else {
-                inputEl.classList.add('border-gray-300');
+        } else {
+            // Normal or Valid/Success: Walang message sa ilalim, malinis na normal input lang
+            if (window.FormValidator) {
+                window.FormValidator.clearError(inputEl);
+            }
+            inputEl.classList.add('border-gray-300');
+            if (feedbackEl) {
+                feedbackEl.innerHTML = '';
+                feedbackEl.classList.add('hidden');
             }
         }
     }
