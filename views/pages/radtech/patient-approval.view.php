@@ -342,15 +342,17 @@ foreach ($allServices as $service) {
                 <!-- Conditional PhilHealth Details Box -->
                 <div id="assign_philhealth_details" class="hidden p-4 sm:p-5 bg-blue-50/50 border border-blue-200/80 rounded-2xl space-y-3.5 shadow-2xs">
                     <div>
-                        <label class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500">*</span></label>
+                        <label for="assign_philhealth_id" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500">*</span></label>
                         <input type="text" name="philhealth_id" id="assign_philhealth_id" inputmode="numeric" maxlength="14"
+                            data-label="PhilHealth ID Number"
                             oninput="formatPhilHealthInput(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
                             placeholder="XX-XXXXXXXXX-X"
                             class="w-full text-sm font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
-                        <select name="philhealth_relation" id="assign_philhealth_relation" onchange="checkAssignPhilHealthDup(); recalculateAssignPricing();"
+                        <label for="assign_philhealth_relation" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
+                        <select name="philhealth_relation" id="assign_philhealth_relation" onchange="if (this.value && window.FormValidator) window.FormValidator.clearError(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
+                            data-label="Patient's Relation to ID"
                             class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                             <option value="">-- Select relation --</option>
                             <option value="Principal Member" id="assign-opt-owner">Principal Member</option>
@@ -612,7 +614,7 @@ foreach ($allServices as $service) {
                         </div>
                     </div>
                     <div>
-                        <label for="swal-rad-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
+                        <label for="swal-rad-rejection-reason" class="block text-xs font-bold text-gray-700 tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
                         <textarea id="swal-rad-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:border-red-500 focus:outline-none outline-none text-gray-800 transition" placeholder="State why this request is being rejected so the patient understands..."></textarea>
                     </div>
                 </div>

@@ -346,18 +346,28 @@ function toggleAssignPhilHealth(isWithCard) {
     if (detailsBox) {
         if (isWithCard) {
             detailsBox.classList.remove('hidden');
-            if (idInput) idInput.required = true;
-            if (relSelect) relSelect.required = true;
+            if (idInput) {
+                idInput.required = true;
+                idInput.setAttribute('data-required', 'true');
+            }
+            if (relSelect) {
+                relSelect.required = true;
+                relSelect.setAttribute('data-required', 'true');
+            }
             checkAssignPhilHealthDup();
         } else {
             detailsBox.classList.add('hidden');
             if (idInput) {
                 idInput.required = false;
+                idInput.removeAttribute('data-required');
                 idInput.setCustomValidity('');
+                if (window.FormValidator) window.FormValidator.clearError(idInput);
             }
             if (relSelect) {
                 relSelect.required = false;
+                relSelect.removeAttribute('data-required');
                 relSelect.disabled = false;
+                if (window.FormValidator) window.FormValidator.clearError(relSelect);
             }
         }
     }
@@ -804,15 +814,19 @@ function validateAssignForm(e) {
 
         const cleanDigits = idInput ? idInput.value.replace(/\D/g, '') : '';
         if (cleanDigits.length !== 12) {
-            if (typeof Swal !== 'undefined') {
+            const errText = !cleanDigits ? 'PhilHealth ID Number is required.' : 'PhilHealth ID must contain 12 digits (format: XX-XXXXXXXXX-X).';
+            if (window.FormValidator && idInput) {
+                window.FormValidator.showError(idInput, errText);
+            }
+            if (typeof toast === 'function') {
+                toast(errText, 'error');
+            } else if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Incomplete PhilHealth ID',
-                    text: 'Please enter a complete 12-digit PhilHealth ID (XX-XXXXXXXXX-X).',
+                    text: errText,
                     customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-blue-600' }
                 });
-            } else {
-                alert('Please enter a complete 12-digit PhilHealth ID (XX-XXXXXXXXX-X).');
             }
             if (idInput) idInput.focus();
             return false;
@@ -834,15 +848,19 @@ function validateAssignForm(e) {
         }
 
         if (relSelect && !relSelect.value) {
-            if (typeof Swal !== 'undefined') {
+            const relErr = "Patient's Relation to ID is required.";
+            if (window.FormValidator && relSelect) {
+                window.FormValidator.showError(relSelect, relErr);
+            }
+            if (typeof toast === 'function') {
+                toast(relErr, 'error');
+            } else if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Relation Required',
                     text: 'Please select patient\'s relation to the PhilHealth ID (Principal Member or Qualified Dependent).',
                     customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-blue-600' }
                 });
-            } else {
-                alert('Please select patient\'s relation to the PhilHealth ID.');
             }
             relSelect.focus();
             return false;
@@ -1055,6 +1073,9 @@ function formatPhilHealthInput(input) {
     }
     input.value = formatted;
     input.setCustomValidity('');
+    if (digits.length === 12 && window.FormValidator) {
+        window.FormValidator.clearError(input);
+    }
 }
 
 function saveEditModal() {
