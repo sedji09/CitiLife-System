@@ -177,21 +177,22 @@
                                         </div>
                                     </td>
                                     <td class="py-3 px-3 text-left">
-                                        <div class="flex items-center justify-start gap-2">
-                                            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-details?id=<?= $p['id'] ?>" class="opacity-80"
+                                        <div class="flex items-center justify-start gap-1.5">
+                                            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-details?id=<?= $p['id'] ?>"
+                                                class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm inline-flex items-center justify-center"
                                                 title="View Profile">
-                                                <i data-lucide="eye"
-                                                    class="w-6 h-6 bg-blue-100 px-1 py-1 rounded-md border border-blue-500 text-blue-500"></i>
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
                                             </a>
-                                            <button type="button" class="opacity-80" title="Edit Patient"
-                                                onclick='openEditModal(<?= json_encode($p) ?>)'>
-                                                <i data-lucide="edit-3"
-                                                    class="w-6 h-6 bg-green-100 px-1 py-1 rounded-md border border-green-500 text-green-500"></i>
+                                            <button type="button"
+                                                onclick='openEditModal(<?= json_encode($p) ?>)'
+                                                class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm inline-flex items-center justify-center"
+                                                title="Edit Patient">
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
                                             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>records-history?patient_number=<?= urlencode($p['patient_number']) ?>&source=records"
-                                                class="opacity-80" title="Medical History">
-                                                <i data-lucide="file-text"
-                                                    class="w-6 h-6 bg-yellow-100 px-1 py-1 rounded-md border border-yellow-500 text-yellow-500"></i>
+                                                class="p-1.5 rounded-md border border-yellow-500 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition shadow-sm inline-flex items-center justify-center"
+                                                title="Medical History">
+                                                <i data-lucide="file-text" class="w-4 h-4"></i>
                                             </a>
                                         </div>
                                     </td>
