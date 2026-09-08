@@ -146,7 +146,7 @@
                                             <?php if ($payment['payment_method'] === 'GCash'): ?>
                                                 <button type="button" title="View Receipt"
                                                     onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float) ($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float) ($payment['discount_amount'] ?? 0) ?>, <?= (float) $payment['amount'] ?>, '<?= htmlspecialchars($payment['exam_type'] ?? 'Exam') ?>')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-700 transition">
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-blue-100 border border-blue-500 text-blue-600 hover:bg-blue-200 transition">
                                                     <i data-lucide="image" class="w-4 h-4"></i>
                                                 </button>
                                             <?php endif; ?>
@@ -155,7 +155,7 @@
                                                 <input type="hidden" name="action" value="verify">
                                                 <button type="button" title="Verify Payment"
                                                     onclick="confirmAction(this.form, 'verify')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 transition">
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-100 border border-green-500 text-green-600 hover:bg-green-200 transition">
                                                     <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -164,7 +164,7 @@
                                                 <input type="hidden" name="action" value="reject">
                                                 <button type="button" title="Reject Payment"
                                                     onclick="confirmAction(this.form, 'reject')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-100 border border-red-500 text-red-600 hover:bg-red-200 transition">
                                                     <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>

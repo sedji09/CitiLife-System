@@ -233,9 +233,9 @@ foreach ($allServices as $service) {
                                 <div class="flex items-center gap-2">
                                     <button type="button"
                                         onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patFullName) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
-                                        class="text-sm font-medium text-gray-600 hover:text-gray-700 transition cursor-pointer" title="View Patient Details">
+                                        class="text-sm font-medium text-blue-500 hover:text-blue-700 transition cursor-pointer" title="View Patient Details">
                                         <i data-lucide="eye"
-                                            class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
+                                            class="w-6 h-6 mr-1 bg-blue-100 text-blue-500 px-1 py-1 rounded-md border border-blue-500"></i>
                                     </button>
                                     
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>

@@ -202,41 +202,41 @@
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <?php if ($currentTab === 'queue'): ?>
-                                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $row['id'] ?>&from=branch-xray-cases"
-                                            class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                                            title="View Case Detals">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </a>
-                                        <?php if ($row['status'] === 'Report Ready'): ?>
-                                            <a href="javascript:void(0)"
-                                                onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                                class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                                                title="Print Preliminary Report">
-                                                <i data-lucide="printer" class="w-4 h-4"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                    <?php else: ?>
-                                        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=records-history&id=<?= $row['id'] ?>&from=branch-xray-cases"
-                                            class="p-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                                            title="View Record Details">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </a>
-                                        <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                            class="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                                            title="Print Report">
-                                            <i data-lucide="printer" class="w-4 h-4"></i>
-                                        </a>
-                                        <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
-                                            class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                                            title="Download PDF">
-                                            <i data-lucide="download" class="w-4 h-4"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
+                                 <div class="flex items-center justify-center gap-2">
+                                     <?php if ($currentTab === 'queue'): ?>
+                                         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $row['id'] ?>&from=branch-xray-cases"
+                                             class="p-1.5 rounded-lg border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                             title="View Case Detals">
+                                             <i data-lucide="eye" class="w-4 h-4"></i>
+                                         </a>
+                                         <?php if ($row['status'] === 'Report Ready'): ?>
+                                             <a href="javascript:void(0)"
+                                                 onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                                 class="p-1.5 rounded-lg border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                                                 title="Print Preliminary Report">
+                                                 <i data-lucide="printer" class="w-4 h-4"></i>
+                                             </a>
+                                         <?php endif; ?>
+                                     <?php else: ?>
+                                         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=records-history&id=<?= $row['id'] ?>&from=branch-xray-cases"
+                                             class="p-1.5 rounded-lg border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                             title="View Record Details">
+                                             <i data-lucide="eye" class="w-4 h-4"></i>
+                                         </a>
+                                         <a href="javascript:void(0)"
+                                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                             class="p-1.5 rounded-lg border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                                             title="Print Report">
+                                             <i data-lucide="printer" class="w-4 h-4"></i>
+                                         </a>
+                                         <a href="javascript:void(0)"
+                                             onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
+                                             class="p-1.5 rounded-lg border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                             title="Download PDF">
+                                             <i data-lucide="download" class="w-4 h-4"></i>
+                                         </a>
+                                     <?php endif; ?>
+                                 </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

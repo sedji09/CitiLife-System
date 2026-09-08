@@ -171,52 +171,52 @@
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-start gap-1.5">
-                                            <?php if ($b['status'] === 'Active'): ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Inactive">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition shadow-sm"
-                                                        title="Deactivate (Set Inactive)">
-                                                        <i data-lucide="minus-circle" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php else: ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Active">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-green-100 bg-green-50 text-green-600 hover:bg-green-100 transition shadow-sm"
-                                                        title="Activate (Set Active)">
-                                                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
+                                             <?php if ($b['status'] === 'Active'): ?>
+                                                 <form action="" method="POST" class="inline">
+                                                     <input type="hidden" name="action" value="toggle-status">
+                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
+                                                     <input type="hidden" name="new_status" value="Inactive">
+                                                     <button type="submit"
+                                                         class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition shadow-sm"
+                                                         title="Deactivate (Set Inactive)">
+                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 </form>
+                                             <?php else: ?>
+                                                 <form action="" method="POST" class="inline">
+                                                     <input type="hidden" name="action" value="toggle-status">
+                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
+                                                     <input type="hidden" name="new_status" value="Active">
+                                                     <button type="submit"
+                                                         class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm"
+                                                         title="Activate (Set Active)">
+                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 </form>
+                                             <?php endif; ?>
 
-                                            <button type="button"
-                                                onclick="openEditModal(<?= htmlspecialchars(json_encode($b)) ?>)"
-                                                class="p-1.5 rounded-md border border-blue-100 bg-blue-50 text-blue-500 hover:bg-blue-100 transition shadow-sm"
-                                                title="Edit Branch">
-                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                            </button>
+                                             <button type="button"
+                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($b)) ?>)"
+                                                 class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm"
+                                                 title="Edit Branch">
+                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                             </button>
 
-                                            <button type="button"
-                                                onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
-                                                class="p-1.5 rounded-md border border-purple-100 bg-purple-50 text-purple-500 hover:bg-purple-100 transition shadow-sm"
-                                                title="Manage GCash QR">
-                                                <i data-lucide="qr-code" class="w-4 h-4"></i>
-                                            </button>
+                                             <button type="button"
+                                                 onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
+                                                 class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-200 transition shadow-sm"
+                                                 title="Manage GCash QR">
+                                                 <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                             </button>
 
-                                            <button type="button"
-                                                onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
-                                                class="p-1.5 rounded-md border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition shadow-sm"
-                                                title="Delete Branch">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    </td>
+                                             <button type="button"
+                                                 onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
+                                                 class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition shadow-sm"
+                                                 title="Delete Branch">
+                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                             </button>
+                                         </div>
+                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
