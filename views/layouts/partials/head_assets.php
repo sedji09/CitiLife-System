@@ -13,6 +13,62 @@
 
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
   <style>
+    /* ===== Global Table Action Buttons Hover Color Effects ===== */
+    a[class*="border-blue-500"]:hover, button[class*="border-blue-500"]:hover,
+    a:hover > i[class*="border-blue-500"], button:hover > i[class*="border-blue-500"],
+    i[class*="border-blue-500"]:hover {
+      background-color: #2563eb !important;
+      border-color: #2563eb !important;
+      color: #ffffff !important;
+    }
+    a[class*="border-green-500"]:hover, button[class*="border-green-500"]:hover,
+    a:hover > i[class*="border-green-500"], button:hover > i[class*="border-green-500"],
+    i[class*="border-green-500"]:hover {
+      background-color: #16a34a !important;
+      border-color: #16a34a !important;
+      color: #ffffff !important;
+    }
+    a[class*="border-yellow-500"]:hover, button[class*="border-yellow-500"]:hover,
+    a[class*="border-yellow-400"]:hover, button[class*="border-yellow-400"]:hover,
+    a:hover > i[class*="border-yellow-500"], button:hover > i[class*="border-yellow-500"],
+    a:hover > i[class*="border-yellow-400"], button:hover > i[class*="border-yellow-400"],
+    i[class*="border-yellow-500"]:hover, i[class*="border-yellow-400"]:hover {
+      background-color: #eab308 !important;
+      border-color: #ca8a04 !important;
+      color: #ffffff !important;
+    }
+    a[class*="border-red-500"]:hover, button[class*="border-red-500"]:hover,
+    a:hover > i[class*="border-red-500"], button:hover > i[class*="border-red-500"],
+    i[class*="border-red-500"]:hover {
+      background-color: #dc2626 !important;
+      border-color: #dc2626 !important;
+      color: #ffffff !important;
+    }
+    a[class*="border-gray-400"]:hover, button[class*="border-gray-400"]:hover,
+    a[class*="border-gray-300"]:hover, button[class*="border-gray-300"]:hover,
+    a:hover > i[class*="border-gray-400"], button:hover > i[class*="border-gray-400"],
+    i[class*="border-gray-400"]:hover {
+      background-color: #4b5563 !important;
+      border-color: #4b5563 !important;
+      color: #ffffff !important;
+    }
+    a[class*="border-purple-500"]:hover, button[class*="border-purple-500"]:hover,
+    a:hover > i[class*="border-purple-500"], button:hover > i[class*="border-purple-500"],
+    i[class*="border-purple-500"]:hover {
+      background-color: #9333ea !important;
+      border-color: #9333ea !important;
+      color: #ffffff !important;
+    }
+    a[class*="border-blue-500"]:hover svg, button[class*="border-blue-500"]:hover svg,
+    a[class*="border-green-500"]:hover svg, button[class*="border-green-500"]:hover svg,
+    a[class*="border-yellow-500"]:hover svg, button[class*="border-yellow-500"]:hover svg,
+    a[class*="border-yellow-400"]:hover svg, button[class*="border-yellow-400"]:hover svg,
+    a[class*="border-red-500"]:hover svg, button[class*="border-red-500"]:hover svg,
+    a[class*="border-gray-400"]:hover svg, button[class*="border-gray-400"]:hover svg,
+    a[class*="border-purple-500"]:hover svg, button[class*="border-purple-500"]:hover svg {
+      stroke: #ffffff !important;
+    }
+
     /* ===== Settings Modal Responsive Styles ===== */
     .settings-modal-shell {
       background-color: var(--modal-bg, #fff);

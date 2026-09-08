@@ -102,20 +102,20 @@
         </div>
 
         <!-- Patients Table Card -->
-        <div id="patients-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="patients-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50/80 border-b border-gray-200">
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 whitespace-nowrap">Patient No.</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Patient Name</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Age</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Sex</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Branch</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left whitespace-nowrap">Actions</th>
+                <table class="w-full text-sm">
+                    <thead class="sticky top-0 z-10">
+                        <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient No.</th>
+                            <th class="text-left font-semibold px-3 py-3 truncate max-w-[200px]">Patient Name</th>
+                            <th class="text-left font-semibold px-3 py-3">Age</th>
+                            <th class="text-left font-semibold px-3 py-3">Sex</th>
+                            <th class="text-left font-semibold px-3 py-3">Branch</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="patientsTableBody" class="divide-y divide-gray-100">
+                    <tbody id="patientsTableBody" class="text-gray-800 bg-white divide-y divide-gray-100">
                         <?php if (empty($patients)): ?>
                             <tr>
                                 <td colspan="6" class="px-6 py-12 text-center text-gray-500">
@@ -142,54 +142,54 @@
                             </tr>
                             <?php foreach ($patients as $p): ?>
                                 <?php $patFullName = formatFullName($p); ?>
-                                <tr class="hover:bg-gray-50/30 transition-colors group patient-row"
+                                <tr class="hover:bg-gray-50 transition-colors group patient-row"
                                     data-id="<?= htmlspecialchars(strtolower($p['patient_number'])) ?>"
                                     data-name="<?= htmlspecialchars(strtolower($patFullName)) ?>"
                                     data-branch="<?= htmlspecialchars(strtolower($p['branch_name'] ?? 'general')) ?>"
                                     data-case-date="<?= htmlspecialchars($p['latest_case_date'] ?? '0000-00-00 00:00:00') ?>">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-bold text-gray-800 tracking-tight font-mono"><?= htmlspecialchars($p['patient_number']) ?></span>
+                                    <td class="py-3 px-3 whitespace-nowrap font-medium text-gray-900">
+                                        <?= htmlspecialchars($p['patient_number']) ?>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="text-sm font-bold text-gray-800 tracking-tight">
+                                    <td class="py-3 px-3">
+                                        <div class="flex flex-col items-start cursor-default">
+                                            <div class="font-medium text-gray-900 leading-tight">
                                                 <?= htmlspecialchars($patFullName) ?>
-                                            </span>
+                                            </div>
                                             <?php if ($p['latest_case_date']): ?>
-                                                <span class="text-[10px] text-gray-400 font-medium tracking-tight">
+                                                <span class="text-[10px] text-gray-400 font-medium">
                                                     Last case: <?= date('M d, Y', strtotime($p['latest_case_date'])) ?>
                                                 </span>
                                             <?php else: ?>
-                                                <span class="text-[10px] text-gray-400 font-medium tracking-tight">No case history</span>
+                                                <span class="text-[10px] text-gray-400 font-medium">No case history</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-left">
-                                        <span class="text-sm font-medium text-gray-600"><?= htmlspecialchars($p['age']) ?></span>
+                                    <td class="py-3 px-3 text-left">
+                                        <span class="text-sm text-gray-600"><?= htmlspecialchars($p['age']) ?></span>
                                     </td>
-                                    <td class="px-6 py-4 text-left">
-                                        <span class="text-sm font-medium text-gray-600"><?= htmlspecialchars($p['sex']) ?></span>
+                                    <td class="py-3 px-3 text-left">
+                                        <span class="text-sm text-gray-600"><?= htmlspecialchars($p['sex']) ?></span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-500 tracking-tight">
+                                    <td class="py-3 px-3">
+                                        <div class="text-sm text-gray-600">
                                             <?= htmlspecialchars($p['branch_name'] ?? 'General') ?>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-left whitespace-nowrap">
+                                    <td class="py-3 px-3 text-left whitespace-nowrap">
                                         <div class="flex items-center justify-start gap-1.5">
                                             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-details?id=<?= $p['id'] ?>"
-                                                class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm inline-flex items-center justify-center"
+                                                class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="View Profile">
                                                 <i data-lucide="eye" class="w-4 h-4"></i>
                                             </a>
                                             <button type="button"
                                                 onclick='openEditModal(<?= json_encode($p) ?>)'
-                                                class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm inline-flex items-center justify-center"
+                                                class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Edit Patient">
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
                                             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>records-history?patient_number=<?= urlencode($p['patient_number']) ?>&source=records"
-                                                class="p-1.5 rounded-md border border-yellow-500 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition shadow-sm inline-flex items-center justify-center"
+                                                class="p-1.5 rounded-md border border-yellow-500 bg-yellow-100 text-yellow-600 hover:bg-yellow-500 hover:text-white hover:border-yellow-500 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Medical History">
                                                 <i data-lucide="file-text" class="w-4 h-4"></i>
                                             </a>
