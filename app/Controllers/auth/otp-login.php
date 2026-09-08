@@ -6,8 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 global $pdo;
 
 if (!isset($_SESSION['temp_user_id'])) {
-    header("Location: /" . PROJECT_DIR . "/login");
-    exit;
+    redirect(url('login'));
 }
 
 $error = '';
@@ -126,10 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                     }
 
-                    $redirectTarget = $_SESSION['temp_redirect_url'] ?? ('/' . PROJECT_DIR . '/dashboard');
+                    $redirectTarget = $_SESSION['temp_redirect_url'] ?? url('dashboard');
                     unset($_SESSION['temp_redirect_url'], $_SESSION['redirect_url']);
-                    header("Location: " . $redirectTarget);
-                    exit;
+                    redirect($redirectTarget);
                 } else {
                     $error = "The verification code has expired. Please request a new one.";
                 }

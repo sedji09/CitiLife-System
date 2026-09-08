@@ -32,8 +32,7 @@ if (!function_exists('clearStaffLoginLock')) {
 
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['role'])) {
-    header("Location: /" . PROJECT_DIR . "/dashboard");
-    exit;
+    redirect(url('dashboard'));
 }
 
 $error = '';
@@ -133,8 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                                     $user['branch_id']
                                 );
 
-                                header("Location: /" . PROJECT_DIR . "/dashboard");
-                                exit;
+                                redirect(url('dashboard'));
                             }
                         }
 
@@ -149,8 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         $_SESSION['avatar'] = $user['avatar'] ?? null;
                         $_SESSION['branch_id'] = $user['branch_id'];
 
-                        header("Location: /" . PROJECT_DIR . "/dashboard");
-                        exit;
+                        redirect(url('dashboard'));
                     }
                 }
             } else {
@@ -167,8 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
                 if ($attempts['attempts'] >= 5) {
                     persistStaffLoginLock($pdo, $email, $attempts['locked_until']);
-                    header("Location: /" . PROJECT_DIR . "/login");
-                    exit;
+                    redirect(url('login'));
                 }
 
                 $error = 'Invalid email or password.';

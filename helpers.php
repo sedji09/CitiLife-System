@@ -149,6 +149,21 @@ if (!function_exists('inspectAndDie')) {
     }
 }
 
+if (!function_exists('url')) {
+    /**
+     * Generate application URL properly accounting for local XAMPP subfolder or root domain
+     *
+     * @param string $path
+     * @return string
+     */
+    function url($path = '')
+    {
+        $path = ltrim($path, '/');
+        $base = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . PROJECT_DIR : '';
+        return $base . '/' . $path;
+    }
+}
+
 if (!function_exists('redirect')) {
     /**
      * Clean HTTP redirect helper
@@ -158,6 +173,10 @@ if (!function_exists('redirect')) {
      */
     function redirect($url)
     {
+        // Fix any accidentally produced protocol-relative double slashes like //dashboard
+        if (strpos($url, '//') === 0 && strpos($url, '://') === false) {
+            $url = '/' . ltrim($url, '/');
+        }
         header("Location: " . $url);
         exit();
     }

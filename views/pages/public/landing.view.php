@@ -514,7 +514,7 @@ $xrayCategories = array_keys($groupedRates);
                 <p>Welcome! Access your X-ray records.</p>
             </div>
             
-            <form action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-login" method="POST" class="modal-form">
+            <form action="<?= url('patient-login') ?>" method="POST" class="modal-form">
                 <?php if (!empty($_GET['redirect']) || !empty($_SESSION['redirect_url'])): ?>
                     <input type="hidden" name="redirect" value="<?= htmlspecialchars($_GET['redirect'] ?? $_SESSION['redirect_url']) ?>">
                 <?php endif; ?>
@@ -561,7 +561,7 @@ $xrayCategories = array_keys($groupedRates);
                 </div>
 
                 <div class="modal-forgot">
-                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>forgot-password">Forgot your password?</a>
+                    <a href="<?= url('forgot-password') ?>">Forgot your password?</a>
                 </div>
 
                 <button type="submit" class="modal-submit-btn">Log in</button>
@@ -577,7 +577,7 @@ $xrayCategories = array_keys($groupedRates);
     <div id="signupModal" class="modal-overlay">
         <div class="modal-card modal-card-large" style="max-width: 750px; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow-y: auto;">
             <button class="modal-close" onclick="closeSignupModal()" style="position: absolute; top: 16px; right: 16px; z-index: 100; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">&times;</button>
-            <iframe id="signupIframe" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-signup?iframe=1" style="width: 100%; height: 500px; border: none; border-radius: 24px; transition: height 0.3s ease;"></iframe>
+            <iframe id="signupIframe" src="<?= url('patient-signup?iframe=1') ?>" style="width: 100%; height: 500px; border: none; border-radius: 24px; transition: height 0.3s ease;"></iframe>
         </div>
     </div>
     <script>

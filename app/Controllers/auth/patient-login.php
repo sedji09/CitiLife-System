@@ -15,11 +15,9 @@ if (!empty($redirectUrl)) {
 if (isset($_SESSION['role'])) {
     if ($_SESSION['role'] === 'patient' && !empty($redirectUrl)) {
         unset($_SESSION['redirect_url']);
-        header("Location: " . $redirectUrl);
-        exit;
+        redirect($redirectUrl);
     }
-    header("Location: /" . PROJECT_DIR . "/dashboard");
-    exit;
+    redirect(url('dashboard'));
 }
 
 $error = '';
@@ -99,10 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                                 $user['branch_id']
                             );
 
-                            $dest = $redirectUrl ?: ('/' . PROJECT_DIR . '/dashboard');
+                            $dest = $redirectUrl ?: url('dashboard');
                             unset($_SESSION['redirect_url']);
-                            header("Location: " . $dest);
-                            exit;
+                            redirect($dest);
                         }
                     }
 
@@ -133,27 +130,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     $_SESSION['temp_portal'] = 'patient';
                     $_SESSION['temp_redirect_url'] = $redirectUrl;
 
-                    header("Location: /" . PROJECT_DIR . "/otp-login");
-                    exit;
+                    redirect(url('otp-login'));
                 }
             } else {
                 $attempts['attempts']++;
                 if ($attempts['attempts'] >= 8) {
                     $attempts['locked_until'] = time() + 900; // 15 minutes
-                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
-                    exit;
+                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } elseif ($attempts['attempts'] == 7) {
                     $attempts['locked_until'] = time() + 300; // 5 minutes
-                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
-                    exit;
+                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } elseif ($attempts['attempts'] == 6) {
                     $attempts['locked_until'] = time() + 60; // 1 minute
-                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
-                    exit;
+                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } elseif ($attempts['attempts'] == 5) {
                     $attempts['locked_until'] = time() + 30; // 30 seconds
-                    header("Location: /" . PROJECT_DIR . "/patient-login" . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : ''));
-                    exit;
+                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } else {
                     $error = 'Invalid email or password.';
                     if ($attempts['attempts'] >= 3) {
