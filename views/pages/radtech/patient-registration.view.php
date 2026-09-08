@@ -479,28 +479,40 @@
         if (!inputEl) return;
         inputEl.classList.remove('field-error', 'field-warning', 'field-success', 'border-red-400', 'border-gray-300');
 
-        if (feedbackEl) {
-            feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200';
-            if (message) {
-                feedbackEl.innerHTML = message;
-                feedbackEl.classList.remove('hidden');
-            } else {
+        if (state === 'error') {
+            inputEl.classList.add('field-error');
+            // Hide duplicate bottom feedback text so only the top FormValidator icon message remains
+            if (feedbackEl) {
                 feedbackEl.innerHTML = '';
                 feedbackEl.classList.add('hidden');
             }
-        }
-
-        if (state === 'error') {
-            inputEl.classList.add('field-error');
-            if (feedbackEl) feedbackEl.classList.add('text-red-600', 'font-medium');
-        } else if (state === 'warning') {
-            inputEl.classList.add('field-warning');
-            if (feedbackEl) feedbackEl.classList.add('text-amber-700', 'font-medium');
-        } else if (state === 'success') {
-            inputEl.classList.add('field-success');
-            if (feedbackEl) feedbackEl.classList.add('text-emerald-600', 'font-medium');
+            if (window.FormValidator && message) {
+                window.FormValidator.showError(inputEl, message);
+            }
         } else {
-            inputEl.classList.add('border-gray-300');
+            if (window.FormValidator) {
+                window.FormValidator.clearError(inputEl);
+            }
+            if (feedbackEl) {
+                feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200';
+                if (message) {
+                    feedbackEl.innerHTML = message;
+                    feedbackEl.classList.remove('hidden');
+                } else {
+                    feedbackEl.innerHTML = '';
+                    feedbackEl.classList.add('hidden');
+                }
+            }
+
+            if (state === 'warning') {
+                inputEl.classList.add('field-warning');
+                if (feedbackEl) feedbackEl.classList.add('text-amber-700', 'font-medium');
+            } else if (state === 'success') {
+                inputEl.classList.add('field-success');
+                if (feedbackEl) feedbackEl.classList.add('text-emerald-600', 'font-medium');
+            } else {
+                inputEl.classList.add('border-gray-300');
+            }
         }
     }
 
