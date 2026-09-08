@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'create') {
         $email = trim($_POST['email'] ?? '');
-        $password = trim($_POST['password'] ?? '');
+        $name = trim($_POST['name'] ?? '');
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
 
@@ -48,48 +48,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $branchId = null;
         }
 
-        // Automatically generate a secure initial password if not provided by the form
-        if (empty($password)) {
-            $year = date('Y');
-            $password = $year . '_' . random_int(10000, 99999);
-        }
-
         if (empty($email) || empty($inputRole)) {
-            $error = "All fields are required.";
+            $error = "All required fields must be filled out.";
         } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = "Please include an '@' in the email address. '" . htmlspecialchars($email) . "' is missing an '@'.";
+            $error = "Please provide a valid email address.";
         } else {
             if ($userModel->getUserByEmail($email)) {
                 $error = "The email '" . htmlspecialchars($email) . "' is already registered.";
-            } else if (strlen($password) < $minPassLength) {
-                $error = "Password must be at least $minPassLength characters long.";
-            } else if ($userModel->createStaffUser($email, $password, $inputRole, $branchId)) {
-                $success = "User account created successfully! An email with credentials has been sent to " . htmlspecialchars($email) . ".";
-                $auditLogModel->addLog($currentAdminId, "Created $inputRole account: $email", 'User Management', 'User', $pdo->lastInsertId(), "Email: $email, Role: $inputRole, Branch: $branchId", $currentBranchId);
-                
-                require_once __DIR__ . '/../../Helpers/mailer_helper.php';
-                $subject = "Your New Account Credentials - Citilife Diagnostic Center";
-                $roleName = ucwords(str_replace('_', ' ', $inputRole));
-                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-                $loginUrl = "http://{$host}/" . PROJECT_DIR . "/login.php";
-                
-                $body = renderNotificationEmail(
-                    "Staff Member",
-                    "Welcome to Citilife Diagnostic Center",
-                    "A new staff account has been created for you with the role of <strong>{$roleName}</strong>. Please find your temporary login credentials below:",
-                    [
+            } else {
+                // Generate a cryptographically secure 7-day invitation/activation token
+                $token = bin2hex(random_bytes(32));
+                $expiresAt = date('Y-m-d H:i:s', strtotime('+7 days'));
+                $tempPassword = bin2hex(random_bytes(16)); // Secure placeholder until user sets password
+
+                if ($userModel->createStaffUser($email, $tempPassword, $inputRole, $branchId, $name, $token, $expiresAt, 'Pending')) {
+                    $newUserId = $pdo->lastInsertId();
+                    $success = "Staff account created! An activation link has been sent to " . htmlspecialchars($email) . ".";
+                    $auditLogModel->addLog($currentAdminId, "Created $inputRole account (Pending Activation): $email", 'User Management', 'User', $newUserId, "Email: $email, Role: $inputRole, Branch: $branchId", $currentBranchId);
+                    
+                    require_once __DIR__ . '/../../Helpers/mailer_helper.php';
+                    $subject = "Activate Your Staff Account - Citilife Diagnostic Center";
+                    $roleName = ucwords(str_replace('_', ' ', $inputRole));
+                    $greeting = !empty($name) ? htmlspecialchars($name) : "Staff Member";
+
+                    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                    $baseDir = PROJECT_DIR ? '/' . PROJECT_DIR : '';
+                    $activationUrl = "{$scheme}://{$host}{$baseDir}/set-password?token=" . urlencode($token);
+
+                    $details = [
                         'Role' => htmlspecialchars($roleName),
                         'Email / Username' => htmlspecialchars($email),
-                        'Temporary Password' => '<code style="background-color: #f6f8fa; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 14px;">' . htmlspecialchars($password) . '</code>',
-                    ],
-                    "Log in to Staff Portal",
-                    $loginUrl,
-                    "You're receiving this email because a staff account was provisioned for you by the Citilife administrator.",
+                    ];
+                    if (!empty($branchId)) {
+                        $branch = $branchModel->getBranchById($branchId);
+                        if ($branch) {
+                            $details['Assigned Branch'] = htmlspecialchars($branch['name']);
+                        }
+                    }
+                    $details['Link Expiration'] = '7 Days';
+
+                    $body = renderNotificationEmail(
+                        $greeting,
+                        "Welcome to Citilife Diagnostic Center",
+                        "A new staff account has been provisioned for you with the role of <strong>{$roleName}</strong>. To get started, please click the button below to set your password and activate your account:",
+                        $details,
+                        "Activate Account & Set Password",
+                        $activationUrl,
+                        "This invitation link will expire in 7 days. If you did not expect this invitation, please contact your administrator.",
+                        "#dc2626"
+                    );
+                    sendEmail($email, $greeting, $subject, $body);
+                } else {
+                    $error = "Failed to create user account.";
+                }
+            }
+        }
+    }
+
+    if ($action === 'resend_invite') {
+        $userId = $_POST['user_id'] ?? null;
+        if ($userId) {
+            $user = $userModel->getUserById($userId);
+            if ($user && $user['status'] === 'Pending') {
+                $token = bin2hex(random_bytes(32));
+                $expiresAt = date('Y-m-d H:i:s', strtotime('+7 days'));
+
+                $stmtUpdate = $pdo->prepare("UPDATE users SET reset_password_token = ?, reset_password_expires_at = ? WHERE id = ?");
+                $stmtUpdate->execute([$token, $expiresAt, $userId]);
+
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $baseDir = PROJECT_DIR ? '/' . PROJECT_DIR : '';
+                $activationUrl = "{$scheme}://{$host}{$baseDir}/set-password?token=" . urlencode($token);
+
+                require_once __DIR__ . '/../../Helpers/mailer_helper.php';
+                $roleName = ucwords(str_replace('_', ' ', $user['role']));
+                $greeting = !empty($user['name']) ? htmlspecialchars($user['name']) : "Staff Member";
+                $subject = "Account Activation Reminder - Citilife Diagnostic Center";
+
+                $details = [
+                    'Role' => htmlspecialchars($roleName),
+                    'Email / Username' => htmlspecialchars($user['email']),
+                    'Link Expiration' => '7 Days'
+                ];
+
+                $body = renderNotificationEmail(
+                    $greeting,
+                    "Activate Your Citilife Staff Account",
+                    "Here is your new activation link for your <strong>{$roleName}</strong> account. Please click the button below to set your password:",
+                    $details,
+                    "Activate Account & Set Password",
+                    $activationUrl,
+                    "This invitation link will expire in 7 days. If you have already activated your account, you can disregard this email.",
                     "#dc2626"
                 );
-                sendEmail($email, "Staff", $subject, $body);
+                sendEmail($user['email'], $greeting, $subject, $body);
+
+                $success = "A new activation link has been emailed to " . htmlspecialchars($user['email']) . ".";
+                $auditLogModel->addLog($currentAdminId, "Resent activation invite: " . $user['email'], 'User Management', 'User', $userId, "Email: " . $user['email'], $currentBranchId);
             } else {
-                $error = "Failed to create user account.";
+                $error = "User not found or account is already active.";
             }
         }
     }
@@ -114,6 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update') {
         $userId = $_POST['user_id'] ?? null;
         $email = trim($_POST['email'] ?? '');
+        $name = trim($_POST['name'] ?? '');
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
 
@@ -128,7 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $existing = $userModel->getUserByEmail($email);
                 if ($existing && $existing['id'] != $userId) {
                     $error = "The email '" . htmlspecialchars($email) . "' is already taken by another account.";
-                } else if ($userModel->updateStaffUser($userId, $email, $inputRole, $branchId)) {
+                } else if ($password && strlen($password) < $minPassLength) {
+                    $error = "The new password must be at least $minPassLength characters long.";
+                } else if ($userModel->updateStaffUser($userId, $email, $inputRole, $branchId, $password, $name)) {
                     $success = "User account updated successfully!";
                     $details = "Updated user $email (Role: $inputRole)";
                     $auditLogModel->addLog($currentAdminId, "Updated staff account details", 'User Management', 'User', $userId, $details, $currentBranchId);

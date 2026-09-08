@@ -9,7 +9,7 @@
     <!-- Mobile Header (hidden on desktop) -->
     <div class="settings-mobile-header">
       <span style="font-size:16px; font-weight:700; color:var(--modal-text);"
-        v-text="settingsActiveTab === 'general' ? 'General' : settingsActiveTab === 'profile' ? 'Profile' : settingsActiveTab === 'appearance' ? 'Appearance' : 'Report Settings'"></span>
+        v-text="settingsActiveTab === 'general' ? 'General' : settingsActiveTab === 'profile' ? 'Profile' : 'Report Settings'"></span>
     </div>
 
     <!-- Close Button -->
@@ -38,13 +38,6 @@
         :class="{ active: settingsActiveTab === 'profile' }">
         <i data-lucide="user" style="width:16px;height:16px;flex-shrink:0;"></i>
         <span>Profile</span>
-      </button>
-
-      <!-- Appearance Tab -->
-      <button @click="selectSettingsTab('appearance')" class="settings-tab-btn"
-        :class="{ active: settingsActiveTab === 'appearance' }">
-        <i data-lucide="palette" style="width:16px;height:16px;flex-shrink:0;"></i>
-        <span>Appearance</span>
       </button>
 
       <!-- Report Settings Tab (radtech / radiologist only) -->
@@ -142,6 +135,74 @@
                     ? 'position:absolute;top:3px;left:21px;width:18px;height:18px;border-radius:50%;background-color: var(--modal-bg, #fff);transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);'
                     : 'position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background-color: var(--modal-bg, #fff);transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);'"></span>
           </label>
+        </div>
+
+        <!-- SECTION: Appearance / Theme -->
+        <p
+          style="font-size:10px;font-weight:700;color: var(--modal-text-light, #9ca3af);text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px 0;">
+          Appearance</p>
+
+        <!-- Theme row -->
+        <div class="settings-flex-row"
+          style="padding:14px 0;border-bottom:1px solid var(--modal-border-light, #f3f4f6); position:relative;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--modal-text,#111827);">Color Theme</div>
+            <div style="font-size:11px;color:var(--modal-text-light,#9ca3af);margin-top:2px;">Choose between light,
+              dark, or system default</div>
+          </div>
+          <!-- Custom dropdown trigger -->
+          <div style="position:relative;flex-shrink:0;" ref="themeDropdownRef">
+            <button @click="themeDropdownOpen = !themeDropdownOpen"
+              style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--modal-border,#e5e7eb);background:var(--modal-bg-alt,#f9fafb);color:var(--modal-text,#111827);cursor:pointer;font-size:12px;font-weight:600;min-width:108px;justify-content:space-between;">
+              <span style="display:flex;align-items:center;gap:6px;">
+                <span v-show="themeMode === 'system'" style="display:flex;align-items:center;"><i data-lucide="monitor"
+                    style="width:14px;height:14px;"></i></span>
+                <span v-show="themeMode === 'dark'" style="display:flex;align-items:center;"><i data-lucide="moon"
+                    style="width:14px;height:14px;"></i></span>
+                <span v-show="themeMode === 'light'" style="display:flex;align-items:center;"><i data-lucide="sun"
+                    style="width:14px;height:14px;"></i></span>
+                <span>{{ themeMode === 'system' ? 'System' : themeMode === 'dark' ? 'Dark' : 'Light' }}</span>
+              </span>
+              <i data-lucide="chevron-down" style="width:13px;height:13px;opacity:0.5;"
+                :style="themeDropdownOpen ? 'transform:rotate(180deg);transition:transform 0.2s;' : 'transform:rotate(0deg);transition:transform 0.2s;'"></i>
+            </button>
+
+            <!-- Dropdown options -->
+            <div v-show="themeDropdownOpen"
+              style="position:absolute;right:0;top:calc(100% + 6px);z-index:999;min-width:150px;background:var(--modal-bg,#fff);border:1px solid var(--modal-border,#e5e7eb);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);overflow:hidden;display:none;"
+              :style="themeDropdownOpen ? 'display:block;' : 'display:none;'">
+              <button @click="setTheme('system'); themeDropdownOpen = false"
+                :style="themeMode === 'system' ? 'background:var(--modal-bg-alt,#f9fafb);font-weight:600;' : ''"
+                style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:none;cursor:pointer;font-size:13px;color:var(--modal-text,#111827);text-align:left;background:none;">
+                <span style="display:flex;align-items:center;gap:8px;">
+                  <i data-lucide="monitor" style="width:14px;height:14px;opacity:0.7;"></i>
+                  <span>System</span>
+                </span>
+                <span v-show="themeMode === 'system'" style="display:flex;align-items:center;"><i data-lucide="check"
+                    style="width:14px;height:14px;color:#dc2626;"></i></span>
+              </button>
+              <button @click="setTheme('light'); themeDropdownOpen = false"
+                :style="themeMode === 'light' ? 'background:var(--modal-bg-alt,#f9fafb);font-weight:600;' : ''"
+                style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:none;cursor:pointer;font-size:13px;color:var(--modal-text,#111827);text-align:left;background:none;">
+                <span style="display:flex;align-items:center;gap:8px;">
+                  <i data-lucide="sun" style="width:14px;height:14px;opacity:0.7;"></i>
+                  <span>Light</span>
+                </span>
+                <span v-show="themeMode === 'light'" style="display:flex;align-items:center;"><i data-lucide="check"
+                    style="width:14px;height:14px;color:#dc2626;"></i></span>
+              </button>
+              <button @click="setTheme('dark'); themeDropdownOpen = false"
+                :style="themeMode === 'dark' ? 'background:var(--modal-bg-alt,#f9fafb);font-weight:600;' : ''"
+                style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:none;cursor:pointer;font-size:13px;color:var(--modal-text,#111827);text-align:left;background:none;">
+                <span style="display:flex;align-items:center;gap:8px;">
+                  <i data-lucide="moon" style="width:14px;height:14px;opacity:0.7;"></i>
+                  <span>Dark</span>
+                </span>
+                <span v-show="themeMode === 'dark'" style="display:flex;align-items:center;"><i data-lucide="check"
+                    style="width:14px;height:14px;color:#dc2626;"></i></span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- SECTION: Availability (Radiologist Only) -->
@@ -361,85 +422,6 @@
       </div>
 
       <!-- ======================================= -->
-      <!-- TAB: Appearance                         -->
-      <!-- ======================================= -->
-      <div v-show="settingsActiveTab === 'appearance'">
-        <h3 style="font-size:18px;font-weight:700;color: var(--modal-text, #111827);margin:0 0 16px 0;">Appearance</h3>
-        <div style="height:1px;background-color: var(--modal-border-light, #f3f4f6);margin-bottom:24px;"></div>
-
-        <!-- SECTION: Theme -->
-        <p
-          style="font-size:10px;font-weight:700;color: var(--modal-text-light, #9ca3af);text-transform:uppercase;letter-spacing:0.08em;margin:0 0 10px 0;">
-          Appearance</p>
-
-        <!-- Theme row — matches General settings-flex-row style -->
-        <div class="settings-flex-row"
-          style="padding:14px 0;border-bottom:1px solid var(--modal-border-light, #f3f4f6); position:relative;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--modal-text,#111827);">Color Theme</div>
-            <div style="font-size:11px;color:var(--modal-text-light,#9ca3af);margin-top:2px;">Choose between light,
-              dark, or system default</div>
-          </div>
-          <!-- Custom dropdown trigger -->
-          <div style="position:relative;flex-shrink:0;" ref="themeDropdownRef">
-            <button @click="themeDropdownOpen = !themeDropdownOpen"
-              style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--modal-border,#e5e7eb);background:var(--modal-bg-alt,#f9fafb);color:var(--modal-text,#111827);cursor:pointer;font-size:12px;font-weight:600;min-width:108px;justify-content:space-between;">
-              <span style="display:flex;align-items:center;gap:6px;">
-                <span v-show="themeMode === 'system'" style="display:flex;align-items:center;"><i data-lucide="monitor"
-                    style="width:14px;height:14px;"></i></span>
-                <span v-show="themeMode === 'dark'" style="display:flex;align-items:center;"><i data-lucide="moon"
-                    style="width:14px;height:14px;"></i></span>
-                <span v-show="themeMode === 'light'" style="display:flex;align-items:center;"><i data-lucide="sun"
-                    style="width:14px;height:14px;"></i></span>
-                <span>{{ themeMode === 'system' ? 'System' : themeMode === 'dark' ? 'Dark' : 'Light' }}</span>
-              </span>
-              <i data-lucide="chevron-down" style="width:13px;height:13px;opacity:0.5;"
-                :style="themeDropdownOpen ? 'transform:rotate(180deg);transition:transform 0.2s;' : 'transform:rotate(0deg);transition:transform 0.2s;'"></i>
-            </button>
-
-            <!-- Dropdown options -->
-            <div v-show="themeDropdownOpen"
-              style="position:absolute;right:0;top:calc(100% + 6px);z-index:999;min-width:150px;background:var(--modal-bg,#fff);border:1px solid var(--modal-border,#e5e7eb);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);overflow:hidden;display:none;"
-              :style="themeDropdownOpen ? 'display:block;' : 'display:none;'">
-              <button @click="setTheme('system'); themeDropdownOpen = false"
-                :style="themeMode === 'system' ? 'background:var(--modal-bg-alt,#f9fafb);font-weight:600;' : ''"
-                style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:none;cursor:pointer;font-size:13px;color:var(--modal-text,#111827);text-align:left;background:none;">
-                <span style="display:flex;align-items:center;gap:8px;">
-                  <i data-lucide="monitor" style="width:14px;height:14px;opacity:0.7;"></i>
-                  <span>System</span>
-                </span>
-                <span v-show="themeMode === 'system'" style="display:flex;align-items:center;"><i data-lucide="check"
-                    style="width:14px;height:14px;color:#dc2626;"></i></span>
-              </button>
-              <button @click="setTheme('light'); themeDropdownOpen = false"
-                :style="themeMode === 'light' ? 'background:var(--modal-bg-alt,#f9fafb);font-weight:600;' : ''"
-                style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:none;cursor:pointer;font-size:13px;color:var(--modal-text,#111827);text-align:left;background:none;">
-                <span style="display:flex;align-items:center;gap:8px;">
-                  <i data-lucide="sun" style="width:14px;height:14px;opacity:0.7;"></i>
-                  <span>Light</span>
-                </span>
-                <span v-show="themeMode === 'light'" style="display:flex;align-items:center;"><i data-lucide="check"
-                    style="width:14px;height:14px;color:#dc2626;"></i></span>
-              </button>
-              <button @click="setTheme('dark'); themeDropdownOpen = false"
-                :style="themeMode === 'dark' ? 'background:var(--modal-bg-alt,#f9fafb);font-weight:600;' : ''"
-                style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:none;cursor:pointer;font-size:13px;color:var(--modal-text,#111827);text-align:left;background:none;">
-                <span style="display:flex;align-items:center;gap:8px;">
-                  <i data-lucide="moon" style="width:14px;height:14px;opacity:0.7;"></i>
-                  <span>Dark</span>
-                </span>
-                <span v-show="themeMode === 'dark'" style="display:flex;align-items:center;"><i data-lucide="check"
-                    style="width:14px;height:14px;color:#dc2626;"></i></span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-
-      </div>
-
-
-      <!-- ======================================= -->
       <!-- TAB: Report Settings                    -->
       <!-- ======================================= -->
       <div v-show="settingsActiveTab === 'reports'">
@@ -506,6 +488,6 @@
   </div><!-- end modal shell -->
 </div><!-- end settings modal -->
 
-<!-- Vanilla JS Datepicker for Settings Modal -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<!-- Modern Custom DatePicker for Settings Modal -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>

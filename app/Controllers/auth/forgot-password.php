@@ -5,21 +5,37 @@ if (session_status() === PHP_SESSION_NONE) {
 
 global $pdo;
 
+require_once basePath('app/Helpers/mailer_helper.php');
+
 $error = '';
 $success = '';
+
+$portal = $_GET['portal'] ?? ($_POST['portal'] ?? '');
+if (empty($portal) && isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'login') !== false && strpos($_SERVER['HTTP_REFERER'], '?login=1') === false) {
+    $portal = 'staff';
+}
+$isStaffPortal = ($portal === 'staff');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
 
     if (empty($email)) {
         $error = "Please enter your email address.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Please enter a valid email address.";
     } else {
-        // Check if email exists
+        // Check if email exists, prioritizing appropriate role based on portal
+        $orderBy = $isStaffPortal 
+            ? "CASE WHEN u.role != 'patient' THEN 1 ELSE 2 END" 
+            : "CASE WHEN u.role = 'patient' THEN 1 ELSE 2 END";
+
         $stmt = $pdo->prepare("
             SELECT u.id, u.name, u.role, p.first_name 
             FROM users u 
             LEFT JOIN patients p ON u.patient_id = p.id 
-            WHERE u.email = ? LIMIT 1
+            WHERE u.email = ? 
+            ORDER BY {$orderBy} 
+            LIMIT 1
         ");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
@@ -36,12 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Construct Reset Link
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
             $resetLink = $protocol . $_SERVER['HTTP_HOST'] . '/' . PROJECT_DIR . '/reset-password?token=' . $token;
+            if ($isStaffPortal) {
+                $resetLink .= '&portal=staff';
+            }
 
             // Send Email
             $firstName = 'User';
             if ($user['role'] === 'patient' && !empty($user['first_name'])) {
                 $firstName = $user['first_name'];
-            } else if (!empty($user['name'])) {
+            } elseif (!empty($user['name'])) {
                 $firstName = explode(' ', $user['name'])[0];
             }
 
@@ -49,11 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $emailBody = renderActionEmail(
                 $firstName,
                 "Reset your password, <strong>" . htmlspecialchars($firstName) . "</strong>",
-                "We received a request to reset the password for your Citilife account. Click the button below to choose a new password:",
+                "We received a request to reset the password for your Citilife " . ($isStaffPortal ? "staff " : "") . "account. Click the button below to choose a new password:",
                 "Reset Password",
                 $resetLink,
                 "This reset link is valid for <strong>30 minutes</strong> and can only be used once.",
-                "<strong>Security Notice:</strong> If you did not request a password reset, please ignore this email or change your password if you suspect unauthorized activity.",
+                "<strong>Security Notice:</strong> If you did not request a password reset, please ignore this email or contact your system administrator.",
                 "You're receiving this email because a password reset was requested for your account.",
                 "#dc2626"
             );
@@ -64,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Failed to send the reset email. Please try again later.";
             }
         } else {
-            // For security, don't reveal if the email exists. Use the same success message or a generic one.
+            // For security, show generic success message
             $success = "If that email exists in our system, a reset link has been sent.";
         }
     }
@@ -75,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - Citilife System</title>
+    <title><?= $isStaffPortal ? 'Staff Password Reset' : 'Forgot Password' ?> - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>
         .glass-panel {
@@ -92,34 +111,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body class="bg-pattern min-h-screen flex items-center justify-center p-4">
-    <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-8">
+    <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-8 transform transition-all duration-300">
         <div class="text-center mb-8">
-            <div class="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100">
+            <div class="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-sm">
                 <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
             </div>
-            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Forgot Password?</h1>
-            <p class="text-sm text-gray-500 mt-2">Enter your email and we'll send you a link to reset your password.</p>
+            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
+                <?= $isStaffPortal ? 'Staff Password Reset' : 'Forgot Password?' ?>
+            </h1>
+            <p class="text-sm text-gray-500 mt-2">
+                <?= $isStaffPortal 
+                    ? "Enter your staff email and we'll send you a link to reset your password." 
+                    : "Enter your email and we'll send you a link to reset your password." ?>
+            </p>
         </div>
 
         <?php if ($error): ?>
-            <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                <?= htmlspecialchars($error) ?>
+            <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                </svg>
+                <span><?= htmlspecialchars($error) ?></span>
             </div>
         <?php endif; ?>
+
         <?php if ($success): ?>
-            <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
-                <?= htmlspecialchars($success) ?>
+            <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-start gap-2">
+                <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                </svg>
+                <span><?= htmlspecialchars($success) ?></span>
             </div>
         <?php endif; ?>
 
         <form method="POST" action="" class="space-y-6">
+            <?php if ($portal): ?>
+                <input type="hidden" name="portal" value="<?= htmlspecialchars($portal) ?>">
+            <?php endif; ?>
             <div>
-                <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
-                <input type="email" name="email" id="email" required 
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-                    placeholder="name@example.com">
+                <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">
+                    <?= $isStaffPortal ? 'Staff Email Address' : 'Email Address' ?>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                    </div>
+                    <input type="email" name="email" id="email" required 
+                        class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-sm"
+                        placeholder="<?= $isStaffPortal ? 'staff@example.com' : 'name@example.com' ?>">
+                </div>
             </div>
 
             <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
@@ -130,7 +175,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mt-8 pt-6 border-t border-gray-100 text-center">
             <p class="text-sm text-gray-600">
                 Remembered your password? 
-                <a href="/<?= PROJECT_DIR ?>/?login=1" class="font-bold text-red-600 hover:underline">Back to Login</a>
+                <a href="<?= $isStaffPortal ? '/' . PROJECT_DIR . '/login' : '/' . PROJECT_DIR . '/?login=1' ?>" 
+                   class="font-bold text-red-600 hover:underline">
+                    <?= $isStaffPortal ? 'Back to Staff Login' : 'Back to Login' ?>
+                </a>
             </p>
         </div>
     </div>

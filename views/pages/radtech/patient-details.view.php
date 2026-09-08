@@ -9,9 +9,9 @@ if (isset($caseNotFound) && $caseNotFound) {
 }
 ?>
 
-<!-- Vanilla JS Datepicker -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<!-- Modern Custom DatePicker -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 
 <!-- html2canvas for Report Release snapshot -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1255,13 +1255,13 @@ $catBadgeLabel = match ($dCategory) {
 
     function initModalPatientDatePicker() {
         const bdayInput = document.getElementById('modal_pat_birthdate');
-        if (bdayInput && typeof Datepicker !== 'undefined') {
+        if (bdayInput && typeof ModernDatePicker !== 'undefined') {
             if (!modalPatientDatePicker) {
-                modalPatientDatePicker = new Datepicker(bdayInput, {
-                    autohide: true,
-                    format: 'yyyy-mm-dd',
-                    todayHighlight: true,
-                    maxDate: new Date()
+                modalPatientDatePicker = new ModernDatePicker(bdayInput, {
+                    maxDate: new Date(),
+                    onSelect: function () {
+                        updateModalPatientAge();
+                    }
                 });
                 bdayInput.addEventListener('changeDate', function () {
                     updateModalPatientAge();

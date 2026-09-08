@@ -5,7 +5,7 @@
  */
 ?>
 
-<main class="flex-1 overflow-y-auto p-4 lg:p-6">
+<main class="flex-1 overflow-y-auto p-4 lg:p-6 notranslate" translate="no">
     <div class="mx-auto max-w-6xl space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -101,13 +101,13 @@
         <div id="branches-table-card"
             class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="sticky top-0 z-10">
-                        <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
-                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Branch Name</th>
-                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Created Date</th>
-                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Status</th>
-                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Actions</th>
+                <table class="w-full text-left border-collapse notranslate" translate="no">
+                    <thead>
+                        <tr class="bg-gray-50/80 border-b border-gray-200">
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Branch Name</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Created Date</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="branchesTableBody" class="text-gray-800 bg-white divide-y divide-gray-100">
