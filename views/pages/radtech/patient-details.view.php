@@ -211,11 +211,22 @@ $catBadgeLabel = match ($dCategory) {
 <?php endif; ?>
 
 <?php if ($successMsg ?? false): ?>
-    <div
-        class="mt-5 rounded-lg bg-green-50 border border-green-300 p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-600 shrink-0"></i>
-        <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: <?= json_encode($successMsg) ?>,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                });
+            } else if (typeof toast === 'function') {
+                toast(<?= json_encode($successMsg) ?>, 'success');
+            }
+        });
+    </script>
 <?php endif; ?>
 
 <?php if (empty($activeDispute) && !($isAmendMode ?? false)): ?>
@@ -649,7 +660,8 @@ $catBadgeLabel = match ($dCategory) {
             if (showFindings) {
                 const f = form.querySelector('textarea[name="amend_findings"]');
                 if (f && !f.value.trim()) {
-                    Swal.fire('Findings Required', 'Please enter the report findings before saving.', 'warning');
+                    if (window.FormValidator) window.FormValidator.showError(f, 'Please enter the report findings before saving.');
+                    if (typeof toast === 'function') toast('Please enter the report findings.', 'error');
                     f.focus();
                     return;
                 }
@@ -658,7 +670,8 @@ $catBadgeLabel = match ($dCategory) {
             if (showRename) {
                 const t = form.querySelector('input[name="amend_exam_type"]');
                 if (t && !t.value.trim()) {
-                    Swal.fire('Exam Template Required', 'Please specify the corrected X-ray template / body part name.', 'warning');
+                    if (window.FormValidator) window.FormValidator.showError(t, 'Please specify the corrected X-ray template / body part name.');
+                    if (typeof toast === 'function') toast('Please specify the corrected template name.', 'error');
                     t.focus();
                     return;
                 }
@@ -1384,13 +1397,15 @@ $catBadgeLabel = match ($dCategory) {
         const saveBtn = document.getElementById('modal_pat_save_btn');
         if (!form) return false;
 
+        if (window.FormValidator) {
+            window.FormValidator.clearAllErrors(form);
+        }
+
         const phoneInput = document.getElementById('modal_pat_contact');
         if (phoneInput && !/^09\d{9}$/.test(phoneInput.value.trim())) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'warning', title: 'Invalid Contact Number', text: 'Contact number must be 11 digits starting with 09.' });
-            } else {
-                alert('Contact number must be 11 digits starting with 09.');
-            }
+            const msg = 'Contact number must be 11 digits starting with 09.';
+            if (window.FormValidator) window.FormValidator.showError(phoneInput, msg);
+            if (typeof toast === 'function') toast(msg, 'error');
             phoneInput.focus();
             return false;
         }
@@ -1400,20 +1415,16 @@ $catBadgeLabel = match ($dCategory) {
             const idInput = document.getElementById('modal_pat_philhealth_id');
             const relSelect = document.getElementById('modal_pat_philhealth_relation');
             if (idInput && idInput.value.trim().length !== 14) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ icon: 'warning', title: 'Incomplete PhilHealth ID', text: 'Please enter a valid 12-digit PhilHealth ID (XX-XXXXXXXXX-X).' });
-                } else {
-                    alert('Please enter a valid 12-digit PhilHealth ID (XX-XXXXXXXXX-X).');
-                }
+                const msg = 'Please enter a valid 12-digit PhilHealth ID (XX-XXXXXXXXX-X).';
+                if (window.FormValidator) window.FormValidator.showError(idInput, msg);
+                if (typeof toast === 'function') toast(msg, 'error');
                 idInput.focus();
                 return false;
             }
             if (relSelect && !relSelect.value) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ icon: 'warning', title: 'Relation Required', text: 'Please select patient\'s relation to the PhilHealth ID.' });
-                } else {
-                    alert('Please select patient\'s relation to the PhilHealth ID.');
-                }
+                const msg = "Please select patient's relation to the PhilHealth ID.";
+                if (window.FormValidator) window.FormValidator.showError(relSelect, msg);
+                if (typeof toast === 'function') toast(msg, 'error');
                 relSelect.focus();
                 return false;
             }

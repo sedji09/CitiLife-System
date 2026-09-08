@@ -61,23 +61,22 @@ if ($activeDispute && $backPage === 'worklist') {
 </div>
 
 <?php if ($successMsg): ?>
-    <div class="mb-5 rounded-xl bg-green-50 border border-green-300 p-4 flex items-center justify-between shadow-sm">
-        <div class="flex items-center gap-3">
-            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-            <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
-        </div>
-        <a href="<?= htmlspecialchars($backUrl) ?>" class="text-xs font-bold text-green-700 hover:underline">
-            <?php
-            if ($backPage === 'patient-records-history') {
-                echo 'Return to Patient Record';
-            } elseif ($backPage === 'patient-history') {
-                echo 'Return to Patient History';
-            } else {
-                echo 'Return to Worklist';
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: <?= json_encode($successMsg) ?>,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                });
+            } else if (typeof toast === 'function') {
+                toast(<?= json_encode($successMsg) ?>, 'success');
             }
-            ?> &rarr;
-        </a>
-    </div>
+        });
+    </script>
 <?php endif; ?>
 
 <?php if ($errorMsg): ?>

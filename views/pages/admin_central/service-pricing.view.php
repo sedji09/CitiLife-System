@@ -73,13 +73,22 @@
         </div>
 
         <?php if (!empty($success)): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if (!empty($error)): ?>
@@ -770,5 +779,108 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Add Service Modal Validation
+        document.querySelector('#addServiceModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#addServiceModal');
+            const cat = document.getElementById('category');
+            const customCat = document.getElementById('custom_category');
+            const exam = document.getElementById('exam_type');
+            const price = document.getElementById('price');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!cat || !cat.value) {
+                if (window.FormValidator) window.FormValidator.showError(cat, 'Please select a category.');
+                hasError = true;
+                firstError = cat;
+            } else if (cat.value === '__new__' && (!customCat || !customCat.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(customCat, 'Please enter a new category name.');
+                if (!hasError) firstError = customCat;
+                hasError = true;
+            }
+
+            if (!exam || !exam.value.trim()) {
+                if (window.FormValidator) window.FormValidator.showError(exam, 'Exam procedure name is required.');
+                if (!hasError) firstError = exam;
+                hasError = true;
+            }
+
+            if (!price || !price.value || parseFloat(price.value) < 0) {
+                if (window.FormValidator) window.FormValidator.showError(price, 'Please enter a valid price.');
+                if (!hasError) firstError = price;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the procedure details.', 'error');
+                return false;
+            }
+        });
+
+        // Edit Service Modal Validation
+        document.querySelector('#editServiceModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#editServiceModal');
+            const cat = document.getElementById('edit_category');
+            const customCat = document.getElementById('edit_custom_category');
+            const exam = document.getElementById('edit_exam_type');
+            const price = document.getElementById('edit_price');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!cat || !cat.value) {
+                if (window.FormValidator) window.FormValidator.showError(cat, 'Please select a category.');
+                hasError = true;
+                firstError = cat;
+            } else if (cat.value === '__new__' && (!customCat || !customCat.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(customCat, 'Please enter a new category name.');
+                if (!hasError) firstError = customCat;
+                hasError = true;
+            }
+
+            if (!exam || !exam.value.trim()) {
+                if (window.FormValidator) window.FormValidator.showError(exam, 'Exam procedure name is required.');
+                if (!hasError) firstError = exam;
+                hasError = true;
+            }
+
+            if (!price || !price.value || parseFloat(price.value) < 0) {
+                if (window.FormValidator) window.FormValidator.showError(price, 'Please enter a valid price.');
+                if (!hasError) firstError = price;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the procedure details.', 'error');
+                return false;
+            }
+        });
+
+        <?php if (!empty($error) && ($_POST['action'] ?? '') === 'create'): ?>
+            openAddServiceModal();
+            const examField = document.getElementById('exam_type');
+            if (examField) {
+                examField.value = <?= json_encode($_POST['exam_type'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(examField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php elseif (!empty($error) && ($_POST['action'] ?? '') === 'update'): ?>
+            const editModal = document.getElementById('editServiceModal');
+            if (editModal) editModal.classList.remove('hidden');
+            const editExamField = document.getElementById('edit_exam_type');
+            if (editExamField) {
+                editExamField.value = <?= json_encode($_POST['exam_type'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(editExamField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php endif; ?>
     });
 </script>

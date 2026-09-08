@@ -53,20 +53,21 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 <?php if ($successMsg): ?>
-    <div id="flash-success-alert"
-        class="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 flex items-center gap-3 shadow-sm transition-all">
-        <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500 shrink-0"></i>
-        <p class="text-sm font-bold text-green-800"><?= htmlspecialchars($successMsg) ?></p>
-    </div>
     <script>
-        setTimeout(() => {
-            const el = document.getElementById('flash-success-alert');
-            if (el) {
-                el.style.opacity = '0';
-                el.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => el.remove(), 500);
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: <?= json_encode($successMsg) ?>,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                });
+            } else if (typeof toast === 'function') {
+                toast(<?= json_encode($successMsg) ?>, 'success');
             }
-        }, 5000);
+        });
     </script>
 <?php endif; ?>
 

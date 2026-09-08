@@ -16,10 +16,22 @@
 <div class="flex-1 p-4 lg:p-6 relative">
 
     <?php if ($successMsg): ?>
-        <div class="mb-4 rounded-lg bg-green-50 border border-green-300 p-4 flex items-center gap-3">
-            <i data-lucide="check-circle-2" class="w-6 h-6 text-green-600"></i>
-            <p class="text-sm text-green-800 font-medium"><?= htmlspecialchars($successMsg) ?></p>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: <?= json_encode($successMsg) ?>,
+                        showConfirmButton: false,
+                        timer: 2500,
+                        customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                    });
+                } else if (typeof toast === 'function') {
+                    toast(<?= json_encode($successMsg) ?>, 'success');
+                }
+            });
+        </script>
     <?php endif; ?>
     <?php if ($errorMsg): ?>
         <div class="mb-4 rounded-lg bg-red-50 border border-red-300 p-4 text-sm text-red-700">

@@ -209,8 +209,13 @@ function initRequestModal() {
         const pName = searchName.value.trim();
         const branch = searchBranch.value;
 
+        if (window.FormValidator) window.FormValidator.clearAllErrors('#step-1-search');
+
         if (!pName || !branch) {
+            if (!pName && window.FormValidator) window.FormValidator.showError(searchName, 'Please enter a patient name.');
+            if (!branch && window.FormValidator) window.FormValidator.showError(searchBranch, 'Please select a branch.');
             toast("Please enter a patient name and select a branch.", "error");
+            if (!pName) searchName.focus(); else searchBranch.focus();
             return;
         }
 

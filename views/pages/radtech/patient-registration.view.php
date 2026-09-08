@@ -19,8 +19,24 @@
         $regSuccess = $_SESSION['registration_success'] ?? null;
         if ($regSuccess):
             unset($_SESSION['registration_success']); // Clear for next load
-        endif; 
         ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($regSuccess) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($regSuccess) ?>, 'success');
+                    }
+                });
+            </script>
+        <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="rounded-lg bg-red-50 border border-red-300 p-4 mb-6">
@@ -57,19 +73,19 @@
                         <div>
                             <label for="first-name" class="block text-sm font-medium text-gray-700 mb-2">First Name
                                 <span class="text-red-500">*</span></label>
-                            <input type="text" id="first-name" name="first-name"
+                            <input type="text" id="first-name" name="first-name" required data-label="First Name"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
                             <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle
                                 Name</label>
-                            <input type="text" id="middle-name" name="middle-name"
+                            <input type="text" id="middle-name" name="middle-name" data-label="Middle Name"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         </div>
                         <div>
                             <label for="last-name" class="block text-sm font-medium text-gray-700 mb-2">Last Name <span
                                     class="text-red-500">*</span></label>
-                            <input type="text" id="last-name" name="last-name"
+                            <input type="text" id="last-name" name="last-name" required data-label="Last Name"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                     </div>
@@ -79,7 +95,7 @@
                                     class="text-red-500">*</span></label>
                             <?php $birthdateValue = $_POST['birthdate'] ?? ''; ?>
                             <div class="relative">
-                                <input type="text" id="birthdate" name="birthdate" required
+                                <input type="text" id="birthdate" name="birthdate" required data-label="Birthdate"
                                     placeholder="Select birthdate" readonly
                                     value="<?= htmlspecialchars($birthdateValue) ?>"
                                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
@@ -89,7 +105,7 @@
                         <div>
                             <label for="sex" class="block text-sm font-medium text-gray-700 mb-2">Sex <span
                                     class="text-red-500">*</span></label>
-                            <select id="sex" name="sex"
+                            <select id="sex" name="sex" required data-label="Sex"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
@@ -100,8 +116,8 @@
                         <div>
                             <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number
                                 <span class="text-red-500">*</span></label>
-                            <input type="tel" id="contact" name="contact" pattern="[0-9]{11}" maxlength="11"
-                                minlength="11" title="Please enter exactly 11 digits" placeholder="e.g. 09123456789"
+                            <input type="tel" id="contact" name="contact" required pattern="09[0-9]{9}" maxlength="11"
+                                minlength="11" data-label="Contact Number" title="Contact number must be 11 digits starting with 09" placeholder="e.g. 09123456789"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500 req-new">
                         </div>
                         <div>
@@ -382,6 +398,9 @@
 
         if (isChanging) {
             clearExaminationDetails();
+            if (window.FormValidator) {
+                window.FormValidator.clearAllErrors(document.querySelector('form'));
+            }
         }
     }
 
@@ -391,10 +410,11 @@
         const datepicker = new Datepicker(document.getElementById('birthdate'), {
             autohide: true,
             format: 'yyyy-mm-dd',
-            todayHighlight: true
+            todayHighlight: true,
+            maxDate: new Date()
         });
 
-        // Validate PhilHealth ID on form submit
+        // Validate on form submit
         document.querySelector('form[method="POST"]').addEventListener('submit', async function (e) {
             // Check if already submitting
             const submitBtn = document.getElementById('btn-submit');
@@ -405,6 +425,20 @@
 
             // Prevent default immediately to handle async confirmation
             e.preventDefault();
+
+            const formMode = document.getElementById('form-mode').value;
+
+            // ── Validate Existing Patient Selection ──
+            if (formMode === 'existing-patient') {
+                const existingId = document.getElementById('existing-patient-id').value;
+                const searchInput = document.getElementById('search-patient');
+                if (!existingId) {
+                    if (window.FormValidator) window.FormValidator.showError(searchInput, 'Please search and select an existing patient.');
+                    if (typeof toast === 'function') toast('Please search and select an existing patient.', 'error');
+                    searchInput.focus();
+                    return;
+                }
+            }
 
             // ── Sync exam-selector required-check so browser validation passes ──
             document.querySelectorAll('.exam-ms-component').forEach(container => {
@@ -423,34 +457,29 @@
             if (card.value === 'With PhilHealth Card') {
                 const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
                 if (!idInput.value.trim()) {
-                    idInput.setCustomValidity('PhilHealth ID Number is required.');
-                    idInput.reportValidity();
-                    idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
+                    if (window.FormValidator) window.FormValidator.showError(idInput, 'PhilHealth ID Number is required.');
+                    if (typeof toast === 'function') toast('PhilHealth ID Number is required.', 'error');
+                    idInput.focus();
                     return;
                 } else if (!philHealthPattern.test(idInput.value.trim())) {
-                    idInput.setCustomValidity('Format must be XX-XXXXXXXXX-X (digits only).');
-                    idInput.reportValidity();
-                    idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
+                    if (window.FormValidator) window.FormValidator.showError(idInput, 'Format must be XX-XXXXXXXXX-X (digits only).');
+                    if (typeof toast === 'function') toast('Invalid PhilHealth ID format.', 'error');
+                    idInput.focus();
                     return;
                 }
             }
 
-            // Validate birthdate is not in the future (for new-patient mode)
-            const formMode = document.getElementById('form-mode').value;
+            // Validate birthdate (for new-patient mode)
             if (formMode === 'new-patient') {
-                const birthdateVal = document.getElementById('birthdate').value;
+                const birthdateEl = document.getElementById('birthdate');
+                const birthdateVal = birthdateEl ? birthdateEl.value.trim() : '';
                 if (birthdateVal) {
-                    const bdate = new Date(birthdateVal);
-                    const today = new Date();
-                    bdate.setHours(0, 0, 0, 0);
-                    today.setHours(0, 0, 0, 0);
-                    if (bdate > today) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Invalid Birthdate',
-                            text: 'Birthdate cannot be in the future.',
-                            confirmButtonColor: '#dc2626'
-                        });
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    if (birthdateVal > todayStr) {
+                        const msg = 'Please select a valid birthdate.';
+                        if (window.FormValidator) window.FormValidator.showError(birthdateEl, msg);
+                        if (typeof toast === 'function') toast(msg, 'error');
+                        birthdateEl.focus();
                         return;
                     }
                 }
@@ -581,6 +610,10 @@
         document.getElementById('sp-sex').innerText = p.sex;
         document.getElementById('sp-contact').innerText = p.contact_number || 'N/A';
 
+        if (window.FormValidator && searchInput) {
+            window.FormValidator.clearError(searchInput);
+        }
+
         document.getElementById('selected-patient-info').classList.remove('hidden');
         if (resultsList) resultsList.classList.add('hidden');
         if (searchInput) {
@@ -595,6 +628,9 @@
         document.getElementById('selected-patient-info').classList.add('hidden');
         if (searchInput) {
             searchInput.disabled = false;
+            if (window.FormValidator) {
+                window.FormValidator.clearError(searchInput);
+            }
             searchInput.focus();
         }
     }

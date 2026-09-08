@@ -8,6 +8,7 @@
     href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/sweetalert2/sweetalert2.min.css?v=<?= time() ?>">
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/alerts.js?v=<?= time() ?>"></script>
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/form-validator.js?v=<?= time() ?>"></script>
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
 
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
@@ -616,6 +617,12 @@
     body.theme-dark #findings-report-name,
     body.theme-dark #xray-filename {
       color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    /* SweetAlert Toast spacing from browser top edge */
+    .swal2-container.swal2-top-end {
+      top: 24px !important;
+      right: 24px !important;
     }
 
     /* Toast slide-in animation and keyframes */

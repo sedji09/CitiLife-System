@@ -958,7 +958,7 @@
                 showSuccess('Report settings updated!');
               }
             } else {
-              alert(data.error || 'Failed to update settings.');
+              if (typeof window.toast === 'function') window.toast(data.error || 'Failed to update settings.', 'error');
             }
           })
           .catch(err => {
@@ -1072,18 +1072,20 @@
               this.emailChangeState = 'editable';
               if (window.showSuccess) showSuccess('Email verified. You can now change it.');
             } else {
-              alert(data.error || 'Invalid OTP.');
+              if (typeof window.toast === 'function') window.toast(data.error || 'Invalid OTP.', 'error');
+              const otpEl = document.querySelector('input[v-model="otpCode"]');
+              if (otpEl && window.FormValidator) window.FormValidator.showError(otpEl, data.error || 'Invalid OTP.');
             }
           })
           .catch(err => {
             console.error(err);
-            alert('Network error occurred.');
+            if (typeof window.toast === 'function') window.toast('Network error occurred.', 'error');
           });
       },
       saveProfile() {
         if (this.role === 'patient') {
           if (!this.editFirstName || !this.editLastName || !this.editEmail || !this.editBirthdate || !this.editContactNumber) {
-            alert('Please fill out all required fields.');
+            if (typeof window.toast === 'function') window.toast('Please fill out all required fields.', 'error');
             return;
           }
         } else {
@@ -1209,13 +1211,15 @@
                 showSuccess('Password updated successfully!');
               }
             } else {
-              alert(data.error || 'Failed to update password.');
+              if (typeof window.toast === 'function') window.toast(data.error || 'Failed to update password.', 'error');
+              const pwInput = document.querySelector('input[v-model="editPassword"]');
+              if (pwInput && window.FormValidator) window.FormValidator.showError(pwInput, data.error || 'Failed to update password.');
             }
           })
           .catch(err => {
             console.error(err);
             this.savingPassword = false;
-            alert('A network error occurred.');
+            if (typeof window.toast === 'function') window.toast('A network error occurred.', 'error');
           });
       },
       toggleSidebar() {

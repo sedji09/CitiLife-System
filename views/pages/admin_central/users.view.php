@@ -50,13 +50,22 @@
         </div>
 
         <?php if ($success): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -743,5 +752,103 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Inline form validation for Add User Modal
+        document.querySelector('#addUserModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#addUserModal');
+            const email = document.getElementById('email');
+            const role = document.getElementById('role');
+            const branch = document.getElementById('branch_id');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(email, 'Please enter a valid email address.');
+                hasError = true;
+                firstError = email;
+            }
+            if (!role.value) {
+                if (window.FormValidator) window.FormValidator.showError(role, 'Please select a role.');
+                if (!hasError) firstError = role;
+                hasError = true;
+            }
+            if (['branch_admin', 'radtech'].includes(role.value) && !branch.value) {
+                if (window.FormValidator) window.FormValidator.showError(branch, 'Branch is required for this role.');
+                if (!hasError) firstError = branch;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the required fields.', 'error');
+                return false;
+            }
+        });
+
+        // Inline form validation for Edit User Modal
+        document.querySelector('#editUserModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#editUserModal');
+            const email = document.getElementById('edit_email');
+            const role = document.getElementById('edit_role');
+            const branch = document.getElementById('edit_branch_id');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(email, 'Please enter a valid email address.');
+                hasError = true;
+                firstError = email;
+            }
+            if (!role.value) {
+                if (window.FormValidator) window.FormValidator.showError(role, 'Please select a role.');
+                if (!hasError) firstError = role;
+                hasError = true;
+            }
+            if (['branch_admin', 'radtech'].includes(role.value) && !branch.value) {
+                if (window.FormValidator) window.FormValidator.showError(branch, 'Branch is required for this role.');
+                if (!hasError) firstError = branch;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the required fields.', 'error');
+                return false;
+            }
+        });
+
+        <?php if (!empty($error) && ($_POST['action'] ?? '') === 'create'): ?>
+            openAddUserModal();
+            const emailField = document.getElementById('email');
+            if (emailField) {
+                emailField.value = <?= json_encode($_POST['email'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(emailField, <?= json_encode($error) ?>);
+            }
+            const roleField = document.getElementById('role');
+            if (roleField) {
+                roleField.value = <?= json_encode($_POST['role'] ?? '') ?>;
+                toggleBranchSelect();
+            }
+            const branchField = document.getElementById('branch_id');
+            if (branchField) {
+                branchField.value = <?= json_encode($_POST['branch_id'] ?? '') ?>;
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php elseif (!empty($error) && ($_POST['action'] ?? '') === 'update'): ?>
+            const editModal = document.getElementById('editUserModal');
+            if (editModal) editModal.classList.remove('hidden');
+            const editEmailField = document.getElementById('edit_email');
+            if (editEmailField) {
+                editEmailField.value = <?= json_encode($_POST['email'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(editEmailField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php endif; ?>
     });
 </script>

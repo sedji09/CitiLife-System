@@ -495,7 +495,8 @@ foreach ($allServices as $service) {
             modalDatePicker = new Datepicker(modalBirthdateInput, {
                 autohide: true,
                 format: 'yyyy-mm-dd',
-                todayHighlight: true
+                todayHighlight: true,
+                maxDate: new Date()
             });
         }
     });
