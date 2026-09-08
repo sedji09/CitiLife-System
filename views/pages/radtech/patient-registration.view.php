@@ -5,8 +5,8 @@
  */
 ?>
 
-<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
+<link rel="stylesheet" href="<?= url('public/assets/css/custom-datepicker.css') ?>?v=<?= time() ?>">
+<script src="<?= url('public/assets/js/custom-datepicker.js') ?>?v=<?= time() ?>"></script>
 
 <style>
 @keyframes inputShake {

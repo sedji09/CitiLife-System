@@ -2,8 +2,10 @@
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/noc-theme.css?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/drive-preview.css?v=<?= time() ?>">
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/drive-preview.js?v=<?= time() ?>"></script>
-  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-timepicker.css?v=<?= time() ?>">
-  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>
+  <link rel="stylesheet" href="<?= url('public/assets/css/custom-timepicker.css') ?>?v=<?= time() ?>">
+  <script src="<?= url('public/assets/js/custom-timepicker.js') ?>?v=<?= time() ?>"></script>
+  <link rel="stylesheet" href="<?= url('public/assets/css/custom-datepicker.css') ?>?v=<?= time() ?>">
+  <script src="<?= url('public/assets/js/custom-datepicker.js') ?>?v=<?= time() ?>"></script>
 
   <!-- Premium Alerts & Dialogs (SweetAlert2) -->
   <link rel="stylesheet"
