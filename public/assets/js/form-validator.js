@@ -315,27 +315,35 @@
      */
     getFieldLabel: function (el) {
       if (el.dataset.label) return el.dataset.label;
-      if (el.placeholder && !el.placeholder.includes('•') && el.placeholder.length < 30) {
-        return el.placeholder;
-      }
 
-      // Check for <label for="id">
+      // 1. Prioritize explicit <label for="id">
       if (el.id) {
         const label = document.querySelector(`label[for="${el.id}"]`);
         if (label && label.innerText) {
-          return label.innerText.replace(/[*:]/g, '').trim();
+          const clean = label.innerText.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
+          if (clean) return clean;
         }
       }
 
-      // Check parent label
+      // 2. Check for wrapping parent <label>
       const parentLabel = el.closest('label');
       if (parentLabel && parentLabel.innerText) {
-        return parentLabel.innerText.replace(/[*:]/g, '').trim();
+        const clean = parentLabel.innerText.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
+        if (clean) return clean;
       }
 
-      // Fallback to name or id formatted nicely
-      const name = el.name || el.id || 'Field';
-      return name.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      // 3. Fallback to name or id formatted nicely (e.g. contact_number -> Contact Number)
+      const name = el.name || el.id;
+      if (name) {
+        return name.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      }
+
+      // 4. Last resort: placeholder (only if not a sample number or email)
+      if (el.placeholder && !el.placeholder.includes('•') && !/^\d+$/.test(el.placeholder) && !el.placeholder.includes('@')) {
+        return el.placeholder;
+      }
+
+      return 'Field';
     },
 
     /**
