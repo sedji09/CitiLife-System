@@ -41,11 +41,12 @@
       const parentLabel = el.closest('label');
       if (parentLabel && parentLabel.innerText.includes('*')) return true;
 
-      // 3. Check sibling label inside the parent form-group or container div
-      const container = el.closest('.form-group') || el.closest('div');
-      if (container) {
-        const siblingLabel = container.querySelector('label');
-        if (siblingLabel && siblingLabel.innerText.includes('*')) return true;
+      // 3. Check if any enclosing container has a label with an asterisk '*'
+      let cur = el.parentElement;
+      while (cur && cur.tagName !== 'FORM' && cur.tagName !== 'BODY') {
+        const siblingLabel = cur.querySelector('label');
+        if (siblingLabel && siblingLabel.innerText && siblingLabel.innerText.includes('*')) return true;
+        cur = cur.parentElement;
       }
 
       return false;
@@ -68,16 +69,25 @@
       el.setAttribute('aria-invalid', 'true');
 
       // Find best placement for inline error container:
-      // If the input is wrapped in a relative/input-group container with an icon, place error below that wrapper
       let container = el;
-      const parent = el.parentElement;
-      if (parent) {
-        if (
-          parent.classList.contains('relative') ||
-          parent.classList.contains('input-group') ||
-          (parent.classList.contains('flex') && parent.children.length > 1)
-        ) {
-          container = parent;
+      const msComp = el.closest('.exam-ms-component');
+      if (msComp) {
+        container = msComp;
+        const msBox = msComp.querySelector('.exam-ms-box');
+        if (msBox) {
+          this.errorInputClasses.forEach(cls => msBox.classList.add(cls));
+          msBox.classList.remove('border-gray-300', 'border-gray-200');
+        }
+      } else {
+        const parent = el.parentElement;
+        if (parent) {
+          if (
+            parent.classList.contains('relative') ||
+            parent.classList.contains('input-group') ||
+            (parent.classList.contains('flex') && parent.children.length > 1)
+          ) {
+            container = parent;
+          }
         }
       }
 
@@ -139,23 +149,37 @@
         el.classList.add('border-gray-300');
       }
 
+      // Handle exam-ms-component box
+      const msComp = el.closest('.exam-ms-component');
+      if (msComp) {
+        const msBox = msComp.querySelector('.exam-ms-box');
+        if (msBox) {
+          this.errorInputClasses.forEach(cls => msBox.classList.remove(cls));
+          if (!msBox.classList.contains('border-gray-300')) msBox.classList.add('border-gray-300');
+        }
+      }
+
       // Find existing error container
       let container = el;
-      const parent = el.parentElement;
-      if (parent && (
-        parent.classList.contains('relative') ||
-        parent.classList.contains('input-group') ||
-        (parent.classList.contains('flex') && parent.children.length > 1)
-      )) {
-        container = parent;
+      if (msComp) {
+        container = msComp;
+      } else {
+        const parent = el.parentElement;
+        if (parent && (
+          parent.classList.contains('relative') ||
+          parent.classList.contains('input-group') ||
+          (parent.classList.contains('flex') && parent.children.length > 1)
+        )) {
+          container = parent;
+        }
       }
 
       const nextEl = container.nextElementSibling;
       if (nextEl && nextEl.classList.contains('citilife-inline-error')) {
         nextEl.remove();
-      } else if (parent) {
-        // Fallback search inside parent
-        const inlineError = parent.querySelector('.citilife-inline-error');
+      } else if (container.parentElement) {
+        // Fallback search inside container parent
+        const inlineError = container.parentElement.querySelector('.citilife-inline-error');
         if (inlineError) inlineError.remove();
       }
     },
@@ -299,12 +323,24 @@
         if (el.validity.tooLong) {
           return `${labelText} is too long.`;
         }
-        if (el.validationMessage && !el.validationMessage.includes('match the requested format')) {
-          return el.validationMessage;
+      // 5. Custom dynamic data-rules support
+      const rules = el.dataset.rules ? el.dataset.rules.split('|') : [];
+      for (const rule of rules) {
+        if (rule.startsWith('min:')) {
+          const minLen = parseInt(rule.split(':')[1], 10);
+          if (val.length < minLen) {
+            return `${labelText} must be at least ${minLen} characters.`;
+          }
+        }
+        if (rule.startsWith('max:')) {
+          const maxLen = parseInt(rule.split(':')[1], 10);
+          if (val.length > maxLen) {
+            return `${labelText} cannot exceed ${maxLen} characters.`;
+          }
         }
       }
 
-      // 10. Search Existing Patient in Patient Registration
+      // 6. Special custom field rules
       if (el.id === 'search-patient') {
         const formMode = document.getElementById('form-mode');
         if (formMode && formMode.value === 'existing-patient') {
@@ -325,6 +361,15 @@
     getFieldLabel: function (el) {
       if (el.dataset.label) return el.dataset.label;
 
+      const msComp = el.closest('.exam-ms-component');
+      if (msComp) {
+        const customLbl = msComp.getAttribute('data-label') || msComp.parentElement?.querySelector('label')?.innerText;
+        if (customLbl) {
+          return customLbl.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
+        }
+        return 'Examination Procedure';
+      }
+
       // 1. Prioritize explicit <label for="id">
       if (el.id) {
         const label = document.querySelector(`label[for="${el.id}"]`);
@@ -341,14 +386,15 @@
         if (clean) return clean;
       }
 
-      // 3. Check for sibling <label> inside parent container or form-group
-      const container = el.closest('.form-group') || el.closest('div');
-      if (container) {
-        const siblingLabel = container.querySelector('label');
-        if (siblingLabel && siblingLabel.innerText) {
+      // 3. Check for sibling <label> inside any ancestor container
+      let cur = el.parentElement;
+      while (cur && cur.tagName !== 'FORM' && cur.tagName !== 'BODY') {
+        const siblingLabel = cur.querySelector('label');
+        if (siblingLabel && siblingLabel.innerText && !siblingLabel.contains(el)) {
           const clean = siblingLabel.innerText.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
           if (clean) return clean;
         }
+        cur = cur.parentElement;
       }
 
       // 4. Fallback to name or id formatted nicely (e.g. contact_number -> Contact Number)
@@ -359,10 +405,13 @@
 
       // 5. Last resort: placeholder (only if not a sample number or email)
       if (el.placeholder && !el.placeholder.includes('•') && !/^\d+$/.test(el.placeholder) && !el.placeholder.includes('@')) {
-        return el.placeholder;
+        const cleanPh = el.placeholder.replace(/^Select\s+/i, '').replace(/\.+$/, '').trim();
+        if (cleanPh.length > 2 && cleanPh.length < 35) {
+          return cleanPh;
+        }
       }
 
-      return 'Field';
+      return 'This field';
     },
 
     /**
