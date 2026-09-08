@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $isActivation ? 'Set Password & Activate Account' : 'Reset Password' ?> - Citilife System</title>
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);

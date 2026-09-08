@@ -112,7 +112,7 @@ if (empty($token)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Password - <?= htmlspecialchars(getSystemName()) ?></title>
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);

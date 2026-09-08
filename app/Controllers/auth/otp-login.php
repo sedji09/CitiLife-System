@@ -175,7 +175,7 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Security - Citilife System</title>
     <!-- Use generated Tailwind CSS -->
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);
@@ -252,7 +252,7 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
         </form>
         
         <div class="mt-4 border-t pt-4">
-            <a href="<?= $_SESSION['temp_portal'] === 'patient' ? 'patient-login' : 'login' ?>" class="text-sm text-gray-500 hover:text-gray-800">Cancel and Return to Login</a>
+            <a href="<?= url($_SESSION['temp_portal'] === 'patient' ? 'patient-login' : 'login') ?>" class="text-sm text-gray-500 hover:text-gray-800">Cancel and Return to Login</a>
         </div>
     </div>
 
