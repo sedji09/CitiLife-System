@@ -421,23 +421,33 @@
                   <td class="px-4 py-3 font-medium text-main dash-table-td">
                     <?= htmlspecialchars(($case['first_name'] ?? '') . ' ' . ($case['last_name'] ?? '')) ?>
                   </td>
-                  <td class="px-4 py-3 dash-table-td">
+                  <td class="px-4 py-3 whitespace-nowrap">
                     <?php
-                    $displayStatus = ($case['approval_status'] === 'Rejected' || $case['status'] === 'Rejected') ? 'Rejected' : $case['status'];
-                    $sColor = 'gray';
-                    if ($displayStatus === 'Report Ready')
-                      $sColor = 'indigo';
-                    elseif ($displayStatus === 'Under Reading')
-                      $sColor = 'blue';
-                    elseif ($displayStatus === 'Completed')
-                      $sColor = 'green';
-                    elseif ($displayStatus === 'Pending')
-                      $sColor = 'yellow';
-                    elseif ($displayStatus === 'Rejected')
-                      $sColor = 'red';
+                    $displayStatus = $case['status'] ?: 'Pending';
+                    $sBorder = '1.5px solid #facc15';
+                    $sBg = '#fefce8';
+                    $sColor = '#a16207';
+                    if ($displayStatus === 'Report Ready') {
+                      $sBorder = '1.5px solid #818cf8';
+                      $sBg = '#eef2ff';
+                      $sColor = '#4338ca';
+                    } elseif ($displayStatus === 'Under Reading') {
+                      $sBorder = '1.5px solid #60a5fa';
+                      $sBg = '#eff6ff';
+                      $sColor = '#1d4ed8';
+                    } elseif ($displayStatus === 'Completed') {
+                      $sBorder = '1.5px solid #4ade80';
+                      $sBg = '#f0fdf4';
+                      $sColor = '#15803d';
+                    } elseif ($displayStatus === 'Rejected' || $displayStatus === 'Overdue') {
+                      $sBorder = '1.5px solid #f87171';
+                      $sBg = '#fef2f2';
+                      $sColor = '#b91c1c';
+                    }
                     ?>
                     <span
-                      class="inline-flex items-center rounded-full border border-<?= $sColor === 'red' ? 'red-600' : $sColor . '-400' ?> bg-<?= $sColor ?>-50 px-2 py-0.5 text-[11px] font-semibold text-<?= $sColor ?>-700 status-badge">
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold status-badge"
+                      style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
                       <?= htmlspecialchars($displayStatus ?: 'Pending') ?>
                     </span>
                   </td>

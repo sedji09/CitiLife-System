@@ -449,9 +449,10 @@ if ($activeDispute && $backPage === 'worklist') {
                         <!-- Impression -->
                         <div class="flex flex-col flex-1 min-h-0">
                             <div class="flex items-center justify-between mb-1.5">
-                                <label class="text-xs font-bold uppercase tracking-wider text-gray-400">Impression</label>
+                                <label class="text-xs font-bold uppercase tracking-wider text-gray-400">Diagnostic Impression</label>
                                 <span id="impression-count-<?= $idx ?>" class="text-[11px] text-gray-400">0 words</span>
                             </div>
+
                             <textarea
                                 class="exam-impression flex-1 w-full rounded-xl border border-gray-200 <?= $isCompleted ? 'bg-gray-50 cursor-not-allowed text-gray-600' : 'bg-white focus:ring-2 focus:ring-red-100 focus:border-red-300' ?> px-4 py-3 text-sm text-gray-800 outline-none transition resize-none"
                                 placeholder="Enter definitive diagnostic impression..." data-exam-idx="<?= $idx ?>"

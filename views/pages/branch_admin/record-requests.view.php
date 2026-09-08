@@ -70,11 +70,11 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
-                        <th class="text-left font-semibold px-4 py-3.5 whitespace-nowrap">Patient Details</th>
-                        <th class="text-left font-semibold px-4 py-3.5">Exam Type / Reason</th>
-                        <th class="text-left font-semibold px-4 py-3.5">Requested By</th>
-                        <th class="text-left font-semibold px-4 py-3.5">Date Requested</th>
-                        <th class="text-center font-semibold px-4 py-3.5">Actions</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient Details</th>
+                        <th class="text-left font-semibold px-3 py-3">Exam Type / Reason</th>
+                        <th class="text-left font-semibold px-3 py-3">Requested By</th>
+                        <th class="text-left font-semibold px-3 py-3">Date Requested</th>
+                        <th class="text-center font-semibold px-3 py-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
@@ -95,13 +95,13 @@
                                 data-case="<?= htmlspecialchars($req['patient_no']) ?>"
                                 data-branch="<?= htmlspecialchars($req['requester_branch_name']) ?>"
                                 data-date="<?= htmlspecialchars($req['created_at']) ?>">
-                                <td class="px-4 py-3.5">
+                                <td class="py-3 px-3">
                                     <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($req['patient_name']) ?>
                                     </div>
                                     <div class="text-[11px] text-gray-500">Case No: <?= htmlspecialchars($req['patient_no']) ?>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5">
+                                <td class="py-3 px-3">
                                     <div class="text-[13px] text-gray-900 font-bold"><?= htmlspecialchars($req['exam_type']) ?>
                                     </div>
                                     <div class="text-[11px] text-gray-500 line-clamp-2 mt-0.5"
@@ -109,34 +109,34 @@
                                         <?= htmlspecialchars($req['reason']) ?>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5 whitespace-nowrap">
+                                <td class="py-3 px-3 whitespace-nowrap">
                                     <span
                                         class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-400">
                                         <?= htmlspecialchars($req['requester_branch_name'] ?: 'Unknown Branch') ?>
                                     </span>
                                 </td>
-                                <td class="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-500">
+                                <td class="py-3 px-3 whitespace-nowrap text-[13px] text-gray-500">
                                     <div class="font-medium text-gray-900"><?= date('F j, Y', strtotime($req['created_at'])) ?>
                                     </div>
                                     <div class="text-[11px] opacity-70"><?= date('h:i A', strtotime($req['created_at'])) ?>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5 text-center">
-                                    <form method="POST" action="" class="flex items-center justify-center gap-2">
-                                        <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
-                                        <button type="button" name="action" value="Approve"
-                                            class="p-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                            onclick="confirmFormAction(this, 'Approve', 'Confirm Approval', 'Would you like to confirm approving this record request? This will allow the requesting branch to view this patient\'s records.', 'action', event)"
-                                            title="Approve Request">
-                                            <i data-lucide="check" class="w-4 h-4"></i>
-                                        </button>
-                                        <button type="button"
-                                            class="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
-                                            onclick="promptDenyRecordRequest(<?= (int)$req['id'] ?>, '<?= htmlspecialchars($req['patient_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['patient_no'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['requester_branch_name'] ?? 'Requesting Branch', ENT_QUOTES) ?>')"
-                                            title="Deny Request">
-                                            <i data-lucide="x" class="w-4 h-4"></i>
-                                        </button>
-                                    </form>
+                                <td class="py-3 px-3 text-center">
+                                     <form method="POST" action="" class="flex items-center justify-center gap-1.5">
+                                         <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
+                                         <button type="button" name="action" value="Approve"
+                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                             onclick="confirmFormAction(this, 'Approve', 'Confirm Approval', 'Would you like to confirm approving this record request? This will allow the requesting branch to view this patient\'s records.', 'action', event)"
+                                             title="Approve Request">
+                                             <i data-lucide="check" class="w-4 h-4"></i>
+                                         </button>
+                                         <button type="button"
+                                             class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                             onclick="promptDenyRecordRequest(<?= (int)$req['id'] ?>, '<?= htmlspecialchars($req['patient_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['patient_no'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['requester_branch_name'] ?? 'Requesting Branch', ENT_QUOTES) ?>')"
+                                             title="Deny Request">
+                                             <i data-lucide="x" class="w-4 h-4"></i>
+                                         </button>
+                                     </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

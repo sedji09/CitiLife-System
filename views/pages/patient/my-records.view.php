@@ -236,7 +236,7 @@ $statusBadge = [
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Case
                                         No.</span>
                                     <span
-                                        class="font-mono text-sm font-bold text-gray-800"><?= htmlspecialchars($c['case_number']) ?></span>
+                                        class="text-sm font-bold text-gray-800"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
                                 <span
                                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold <?= $badge['bg'] ?> <?= $badge['text'] ?> <?= $badge['border'] ?>">
@@ -370,7 +370,7 @@ $statusBadge = [
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Request
                                         No.</span>
                                     <span
-                                        class="font-mono text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
+                                        class="text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
                                 <span
                                     class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40 uppercase tracking-wider">Rejected</span>
@@ -481,7 +481,7 @@ $statusBadge = [
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Request
                                         No.</span>
                                     <span
-                                        class="font-mono text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
+                                        class="text-sm font-bold text-gray-800 dark:text-gray-100"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
                                 <span
                                     class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 uppercase tracking-wider">Cancelled</span>
@@ -589,7 +589,7 @@ $statusBadge = [
                                         class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">Case
                                         No.</span>
                                     <span
-                                        class="font-mono text-sm font-bold text-gray-800"><?= htmlspecialchars($disp['case_number']) ?></span>
+                                        class="text-sm font-bold text-gray-800"><?= htmlspecialchars($disp['case_number']) ?></span>
                                 </div>
                                 <span
                                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold <?= $bCls ?>">
@@ -801,7 +801,7 @@ $statusBadge = [
             <!-- Case Info Bar -->
             <div
                 class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex flex-shrink-0 items-center justify-between text-xs text-gray-700">
-                <div>Case #: <span class="font-bold font-mono text-red-600" id="dispute-case-number"></span></div>
+                <div>Case #: <span class="font-bold text-red-600" id="dispute-case-number"></span></div>
                 <div class="font-medium text-gray-500" id="dispute-exam-type"></div>
             </div>
 

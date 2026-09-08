@@ -409,6 +409,16 @@ try {
                     "Radiologist issued an amended report. Verification required.",
                     "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId
                 ]);
+
+                $pdo->prepare("
+                    INSERT INTO notifications (role, branch_id, title, message, link, created_at)
+                    VALUES ('branch_admin', ?, ?, ?, ?, NOW())
+                ")->execute([
+                    $cData['branch_id'],
+                    "Amended Report Issued (" . $cData['case_number'] . ")",
+                    "Radiologist issued an amended report for Case {$cData['case_number']}.",
+                    "/" . (defined('PROJECT_DIR') && PROJECT_DIR ? PROJECT_DIR . '/' : '') . "index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number'])
+                ]);
             }
         }
 

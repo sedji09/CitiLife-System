@@ -72,7 +72,6 @@ $dashboardPages = [
     'patient-details',
     'records-history',
     'worklist',
-    'patient-queue',
     'case-review',
     'patient-history',
     'patient-records-history',
@@ -104,6 +103,35 @@ foreach ($dashboardPages as $page) {
     $router->get('/' . $page, 'App\Controllers\PageController@dispatch', ['auth']);
     $router->post('/' . $page, 'App\Controllers\PageController@dispatch', ['auth']);
 }
+
+// Redirect legacy /patient-queue to unified /worklist
+$router->get('/patient-queue', function() {
+    require_once __DIR__ . '/config/database.php';
+    $branchId = $_GET['branch_id'] ?? 0;
+    $branchName = $_GET['branch'] ?? '';
+    if (empty($branchName) && !empty($branchId)) {
+        $bModel = new \BranchModel($pdo);
+        $b = $bModel->getBranchById((int)$branchId);
+        if (!empty($b['name'])) {
+            $branchName = $b['name'];
+        }
+    }
+    $highlight = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_id'] ?? '';
+    $projectDir = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
+    $redirectUrl = $projectDir . '/worklist';
+    $params = [];
+    if (!empty($branchName)) {
+        $params[] = 'branch=' . urlencode($branchName);
+    }
+    if (!empty($highlight)) {
+        $params[] = 'highlight_case=' . urlencode($highlight);
+    }
+    if (!empty($params)) {
+        $redirectUrl .= '?' . implode('&', $params);
+    }
+    header("Location: " . $redirectUrl);
+    exit;
+}, ['auth']);
 
 // Redirect legacy /xray-status to dashboard
 $router->get('/xray-status', function() {

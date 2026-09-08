@@ -129,14 +129,14 @@
                                             class="text-xs font-black text-gray-400 tabular-nums"><?= \App\Controllers\it_admin\formatSize($backup['size']) ?></span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex gap-2">
+                                        <div class="flex items-center gap-1.5">
                                             <a href="?page=backup-maintenance&action=download_backup&filename=<?= urlencode($backup['name']) ?>"
-                                                class="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
+                                                class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Download SQL File">
                                                 <i data-lucide="download" class="w-4 h-4"></i>
                                             </a>
                                             <button onclick="confirmDelete('<?= htmlspecialchars($backup['name']) ?>')"
-                                                class="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm"
+                                                class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Delete Permanent">
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>

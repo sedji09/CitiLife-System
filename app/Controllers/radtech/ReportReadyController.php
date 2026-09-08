@@ -113,7 +113,19 @@ class ReportReadyController
                                 "/" . PROJECT_DIR . "/case-status?case_id={$id}",
                                 $patientUserId
                             );
+                        }
 
+                        // Notify Branch Admin
+                        $notificationModel->add(
+                            "Report Released",
+                            "Official report for Case {$caseData['case_number']} (" . formatFullName($caseData) . ") has been released and is available in Patient Records.",
+                            "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records&highlight=" . urlencode($caseData['case_number']),
+                            null,
+                            'branch_admin',
+                            $branchId
+                        );
+
+                        if ($patientUserId) {
                             // Send Email Notification
                             $patientUser = $userModel->getUserById($patientUserId);
                             if ($patientUser && !empty($patientUser['email'])) {
@@ -204,7 +216,19 @@ class ReportReadyController
                                 "/" . PROJECT_DIR . "/case-status?case_id={$id}",
                                 $patientUserId
                             );
+                        }
 
+                        // Notify Branch Admin
+                        $notificationModel->add(
+                            "Report Released",
+                            "Official report for Case {$caseData['case_number']} (" . formatFullName($caseData) . ") has been released and is available in Patient Records.",
+                            "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records&highlight=" . urlencode($caseData['case_number']),
+                            null,
+                            'branch_admin',
+                            $branchId
+                        );
+
+                        if ($patientUserId) {
                             // Send Email Notification
                             $patientUser = $userModel->getUserById($patientUserId);
                             if ($patientUser && !empty($patientUser['email'])) {

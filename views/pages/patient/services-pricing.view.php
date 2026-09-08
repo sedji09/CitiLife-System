@@ -106,7 +106,7 @@
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <span class="text-base font-bold text-gray-900 dark:text-white font-mono tracking-tight">
+                                    <span class="text-base font-bold text-gray-900 dark:text-white">
                                         ₱ <?= number_format($service['price'], 2) ?>
                                     </span>
                                     <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration" title="Request this exam"

@@ -14,6 +14,16 @@ $radiologistId = $_SESSION['user_id'] ?? null;
 $statusParam = $_GET['status'] ?? '';
 $tabParam = $_GET['tab'] ?? '';
 
+// Support branch URL filter (by name or ID)
+$urlBranch = $_GET['branch'] ?? '';
+if (empty($urlBranch) && !empty($_GET['branch_id'])) {
+    $bObj = $branchModel->getBranchById((int)$_GET['branch_id']);
+    if (!empty($bObj['name'])) {
+        $urlBranch = $bObj['name'];
+        $_GET['branch'] = $urlBranch;
+    }
+}
+
 // 1. Fetch Pending Worklist cases ('Pending', 'Under Reading', 'For Revision')
 if ($statusParam === 'overdue') {
     // Overdue: pending/under-reading for 3+ hours
@@ -68,7 +78,10 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         <?php
         $wlTitle = ($initialTab === 'release') ? 'Pending Release' : 'Worklist';
         $wlSubtitle = ($initialTab === 'release') ? 'Cases with completed readings awaiting release' : 'Manage pending cases across all branches';
-        if ($statusParam === 'overdue') {
+        if (!empty($urlBranch)) {
+            $wlTitle = ($initialTab === 'release') ? "Pending Release - {$urlBranch}" : "Worklist - {$urlBranch}";
+            $wlSubtitle = ($initialTab === 'release') ? "Cases with completed readings awaiting release for {$urlBranch} branch" : "Manage pending cases for {$urlBranch} branch";
+        } elseif ($statusParam === 'overdue') {
             $wlTitle = 'Overdue Cases';
             $wlSubtitle = 'Cases waiting 3+ hours without a completed reading';
         } elseif ($statusParam === 'completed_today') {
@@ -126,32 +139,29 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 </div>
 
 <!-- Controls for Worklist & Pending Release -->
-<div id="worklist-controls" class="mt-6 flex flex-col gap-4 px-4">
-    <div class="flex flex-wrap gap-4 items-center">
+<div id="worklist-controls" class="mt-6 px-4">
+    <div class="flex flex-nowrap items-center gap-2.5 w-full overflow-x-auto pb-1">
         <!-- Search -->
-        <div class="relative flex-1 min-w-[250px] group" style="position: relative; flex: 1 1 0%;">
-            <div
-                style="position: absolute; inset-y: 0; left: 0; padding-left: 1rem; display: flex; align-items: center; pointer-events: none; height: 100%; top: 0;">
-                <i data-lucide="search" class="text-gray-400 group-hover:text-red-500 transition-colors"
-                    style="width: 1.1rem; height: 1.1rem;"></i>
+        <div class="relative flex-1 max-w-[320px] min-w-[200px] group shrink-0">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors"></i>
             </div>
             <input type="text" id="searchInput" placeholder="Search by case no, patient name, branch..."
-                style="padding-left: 2.75rem !important;"
-                class="block w-full pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
+                class="block w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm font-normal">
         </div>
 
         <!-- Filter by Branch -->
         <select id="filterBranch"
-            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            class="w-32 lg:w-36 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
             <option value="">All Branches</option>
             <?php foreach ($branchesList as $b): ?>
-                <option value="<?= htmlspecialchars($b['name']) ?>"><?= htmlspecialchars($b['name']) ?></option>
+                <option value="<?= htmlspecialchars($b['name']) ?>" <?= $urlBranch === $b['name'] ? 'selected' : '' ?>><?= htmlspecialchars($b['name']) ?></option>
             <?php endforeach; ?>
         </select>
 
         <!-- Filter by Priority -->
         <select id="filterPriority"
-            class="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            class="w-28 lg:w-32 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
             <option value="">All Priorities</option>
             <option value="STAT">STAT</option>
             <option value="Urgent">Urgent</option>
@@ -159,29 +169,41 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         </select>
 
         <!-- Filter by Status -->
-        <?php $urlStatusFilter = $_GET['status'] ?? $_GET['filterStatus'] ?? ''; ?>
+        <?php 
+        $rawStatusUrl = $_GET['status'] ?? $_GET['filterStatus'] ?? '';
+        $normalizedStatus = '';
+        $lowerStatusUrl = strtolower(trim($rawStatusUrl));
+        if ($lowerStatusUrl === 'overdue') {
+            $normalizedStatus = 'Overdue';
+        } elseif (in_array($lowerStatusUrl, ['under reading', 'under_reading', 'in progress', 'inprogress'])) {
+            $normalizedStatus = 'In Progress';
+        } elseif (in_array($lowerStatusUrl, ['for revision', 'for_revision'])) {
+            $normalizedStatus = 'For Revision';
+        } elseif ($rawStatusUrl === 'Pending') {
+            $normalizedStatus = 'Pending';
+        }
+        ?>
         <select id="filterStatus"
-            class="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
-            <option value="">All Statuses</option>
-            <option value="For Revision" <?= $urlStatusFilter === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
-            <option value="Pending" <?= $urlStatusFilter === 'Pending' ? 'selected' : '' ?>>Pending</option>
-            <option value="In Progress" <?= $urlStatusFilter === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
-            <option value="Overdue" <?= $urlStatusFilter === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
+            class="w-28 lg:w-32 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
+            <option value="" <?= $normalizedStatus === '' ? 'selected' : '' ?>>All Statuses</option>
+            <option value="For Revision" <?= $normalizedStatus === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
+            <option value="Pending" <?= $normalizedStatus === 'Pending' ? 'selected' : '' ?>>Pending</option>
+            <option value="In Progress" <?= $normalizedStatus === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
+            <option value="Overdue" <?= $normalizedStatus === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
         </select>
 
         <!-- Filter by Date -->
         <?php $urlDateFilter = $_GET['date'] ?? $_GET['filterDate'] ?? (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) ? 'All' : 'Today'); ?>
         <select id="filterDate"
-            class="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            class="w-28 lg:w-32 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
             <option value="All" <?= $urlDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
-            <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's
-                Cases</option>
+            <option value="Today" <?= ($urlDateFilter === 'Today' || empty($urlDateFilter)) ? 'selected' : '' ?>>Today's Cases</option>
             <option value="Backlog" <?= $urlDateFilter === 'Backlog' ? 'selected' : '' ?>>Backlogs</option>
         </select>
 
         <!-- Sort by -->
         <select id="sortOption"
-            class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm bg-white">
+            class="w-36 lg:w-40 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
             <option value="date_desc">Newest Record</option>
             <option value="date_asc">Oldest Record</option>
             <option value="priority_desc">Priority (High-Low)</option>
@@ -315,16 +337,26 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 </td>
                                 <td class="py-3 px-3">
                                     <?php
-                                    $pColor = 'blue';
-                                    if ($row['priority'] === 'STAT')
-                                        $pColor = 'red';
-                                    if ($row['priority'] === 'Urgent')
-                                        $pColor = 'yellow';
-                                    if ($row['priority'] === 'Priority')
-                                        $pColor = 'orange';
+                                    $pBorder = '1.5px solid #60a5fa';
+                                    $pBg = '#eff6ff';
+                                    $pColor = '#1d4ed8';
+                                    if ($row['priority'] === 'STAT') {
+                                        $pBorder = '1.5px solid #f87171';
+                                        $pBg = '#fef2f2';
+                                        $pColor = '#b91c1c';
+                                    } elseif ($row['priority'] === 'Urgent') {
+                                        $pBorder = '1.5px solid #facc15';
+                                        $pBg = '#fefce8';
+                                        $pColor = '#a16207';
+                                    } elseif ($row['priority'] === 'Priority') {
+                                        $pBorder = '1.5px solid #fb923c';
+                                        $pBg = '#fff7ed';
+                                        $pColor = '#c2410c';
+                                    }
                                     ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-<?= $pColor ?>-400 bg-<?= $pColor ?>-50 px-2 py-1 text-xs font-semibold text-<?= $pColor ?>-700">
+                                        class="priority-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-2xs"
+                                        style="border:<?= $pBorder ?>;background-color:<?= $pBg ?>;color:<?= $pColor ?>">
                                         <?= htmlspecialchars($row['priority']) ?>
                                     </span>
                                 </td>
@@ -458,16 +490,26 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 </td>
                                 <td class="py-3 px-3">
                                     <?php
-                                    $pColor = 'blue';
-                                    if ($row['priority'] === 'STAT')
-                                        $pColor = 'red';
-                                    if ($row['priority'] === 'Urgent')
-                                        $pColor = 'yellow';
-                                    if ($row['priority'] === 'Priority')
-                                        $pColor = 'orange';
+                                    $pBorder = '1.5px solid #60a5fa';
+                                    $pBg = '#eff6ff';
+                                    $pColor = '#1d4ed8';
+                                    if ($row['priority'] === 'STAT') {
+                                        $pBorder = '1.5px solid #f87171';
+                                        $pBg = '#fef2f2';
+                                        $pColor = '#b91c1c';
+                                    } elseif ($row['priority'] === 'Urgent') {
+                                        $pBorder = '1.5px solid #facc15';
+                                        $pBg = '#fefce8';
+                                        $pColor = '#a16207';
+                                    } elseif ($row['priority'] === 'Priority') {
+                                        $pBorder = '1.5px solid #fb923c';
+                                        $pBg = '#fff7ed';
+                                        $pColor = '#c2410c';
+                                    }
                                     ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-<?= $pColor ?>-400 bg-<?= $pColor ?>-50 px-2 py-1 text-xs font-semibold text-<?= $pColor ?>-700">
+                                        class="priority-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-2xs"
+                                        style="border:<?= $pBorder ?>;background-color:<?= $pBg ?>;color:<?= $pColor ?>">
                                         <?= htmlspecialchars($row['priority']) ?>
                                     </span>
                                 </td>
@@ -624,7 +666,13 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 
             if (hasHighlight) {
                 if (filterDate) filterDate.value = 'All';
-                if (filterBranch) filterBranch.value = '';
+                if (params.has('branch')) {
+                    if (filterBranch) filterBranch.value = params.get('branch');
+                } else if (filterBranch && filterBranch.value) {
+                    // Retain server pre-selection
+                } else {
+                    if (filterBranch) filterBranch.value = '';
+                }
                 if (filterPriority) filterPriority.value = '';
                 if (filterStatus) filterStatus.value = '';
                 if (searchInput) searchInput.value = '';
@@ -644,7 +692,21 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                 }
 
                 if (params.has('status') || params.has('filterStatus')) {
-                    if (filterStatus) filterStatus.value = params.get('status') || params.get('filterStatus');
+                    const rawSt = (params.get('status') || params.get('filterStatus') || '').trim();
+                    const lowerSt = rawSt.toLowerCase();
+                    let mappedSt = '';
+                    if (lowerSt === 'overdue') {
+                        mappedSt = 'Overdue';
+                    } else if (lowerSt === 'under reading' || lowerSt === 'under_reading' || lowerSt === 'in progress') {
+                        mappedSt = 'In Progress';
+                    } else if (lowerSt === 'for revision' || lowerSt === 'for_revision') {
+                        mappedSt = 'For Revision';
+                    } else if (rawSt === 'Pending') {
+                        mappedSt = 'Pending';
+                    } else {
+                        mappedSt = ''; // All Statuses
+                    }
+                    if (filterStatus) filterStatus.value = mappedSt;
                 } else if (filterStatus) {
                     const savedStatus = sessionStorage.getItem('Citilife_radWorklist_status');
                     if (savedStatus !== null) filterStatus.value = savedStatus;
@@ -1138,17 +1200,25 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             }
 
             if (targetRow) {
+                // If branch filter is not set yet, sync it to the highlighted case's branch
+                if (filterBranch && !filterBranch.value && targetRow.dataset.branch) {
+                    filterBranch.value = targetRow.dataset.branch;
+                    sessionStorage.setItem('Citilife_radWorklist_branch', targetRow.dataset.branch);
+                }
+
                 if (isReleaseTab) {
                     if (typeof switchRadTab === 'function') switchRadTab('release');
-                    const relRows = document.querySelectorAll('.release-record-row');
-                    const index = Array.from(relRows).indexOf(targetRow);
-                    currentReleasePage = Math.floor(index / RELEASE_ROWS_PER_PAGE) + 1;
+                    const branchVal = filterBranch ? filterBranch.value : '';
+                    const validRelRows = Array.from(document.querySelectorAll('.release-record-row')).filter(r => !branchVal || r.dataset.branch === branchVal);
+                    const index = validRelRows.indexOf(targetRow);
+                    currentReleasePage = index >= 0 ? Math.floor(index / RELEASE_ROWS_PER_PAGE) + 1 : 1;
                     updateReleaseTable();
                 } else {
                     if (typeof switchRadTab === 'function') switchRadTab('worklist');
-                    const mainRows = document.querySelectorAll('.record-row');
-                    const index = Array.from(mainRows).indexOf(targetRow);
-                    currentPage = Math.floor(index / ROWS_PER_PAGE) + 1;
+                    const branchVal = filterBranch ? filterBranch.value : '';
+                    const validMainRows = Array.from(document.querySelectorAll('.record-row')).filter(r => !branchVal || r.dataset.branch === branchVal);
+                    const index = validMainRows.indexOf(targetRow);
+                    currentPage = index >= 0 ? Math.floor(index / ROWS_PER_PAGE) + 1 : 1;
                     updateTable();
                 }
 

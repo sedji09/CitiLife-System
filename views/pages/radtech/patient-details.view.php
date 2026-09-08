@@ -243,8 +243,8 @@ $catBadgeLabel = match ($dCategory) {
                 </div>
                 <?php if ($userRole === 'radtech' && !($isReadOnly && empty($activeDispute) && ($caseDetails['image_status'] ?? '') === 'Uploaded')): ?>
                     <button type="button" onclick="openEditPatientInfoModal()"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition shadow-2xs cursor-pointer">
-                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-blue-600"></i>
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 transition shadow-2xs cursor-pointer">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-600"></i>
                         <span>Edit Patient Information</span>
                     </button>
                 <?php endif; ?>
@@ -349,27 +349,45 @@ $catBadgeLabel = match ($dCategory) {
                     if ($displayStatus === 'Pending' && $isOverdue) {
                         $displayStatus = 'Overdue';
                     }
+                    $sBorder = '1.5px solid #facc15';
+                    $sBg = '#fefce8';
+                    $sColor = '#a16207';
                     if ($displayStatus === 'Completed' || $displayStatus === 'Resolved') {
-                        $sBadge = 'border border-green-200 bg-green-50 text-green-700';
+                        $sBorder = '1.5px solid #4ade80';
+                        $sBg = '#f0fdf4';
+                        $sColor = '#15803d';
                     } elseif ($displayStatus === 'Correction Completed' || $displayStatus === 'Pending RadTech Verification') {
-                        $sBadge = 'border border-blue-200 bg-blue-50 text-blue-700';
+                        $sBorder = '1.5px solid #60a5fa';
+                        $sBg = '#eff6ff';
+                        $sColor = '#1d4ed8';
                     } elseif ($displayStatus === 'Correction in Progress') {
-                        $sBadge = 'border border-indigo-200 bg-indigo-50 text-indigo-700';
+                        $sBorder = '1.5px solid #818cf8';
+                        $sBg = '#eef2ff';
+                        $sColor = '#4338ca';
                     } elseif ($displayStatus === 'For RadTech Review') {
-                        $sBadge = 'border border-amber-200 bg-amber-50 text-amber-700';
+                        $sBorder = '1.5px solid #facc15';
+                        $sBg = '#fefce8';
+                        $sColor = '#a16207';
                     } elseif (in_array($displayStatus, ['Issue Reported', 'Pending RadTech Review'])) {
-                        $sBadge = 'border border-rose-200 bg-rose-50 text-rose-700';
+                        $sBorder = '1.5px solid #fb7185';
+                        $sBg = '#fff1f2';
+                        $sColor = '#be123c';
                     } elseif ($displayStatus === 'Under Reading') {
-                        $sBadge = 'border border-blue-200 bg-blue-50 text-blue-700';
+                        $sBorder = '1.5px solid #60a5fa';
+                        $sBg = '#eff6ff';
+                        $sColor = '#1d4ed8';
                     } elseif ($displayStatus === 'Report Ready') {
-                        $sBadge = 'border border-purple-200 bg-purple-50 text-purple-700';
+                        $sBorder = '1.5px solid #818cf8';
+                        $sBg = '#eef2ff';
+                        $sColor = '#4338ca';
                     } elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected') {
-                        $sBadge = 'border border-red-200 bg-red-50 text-red-700';
-                    } else {
-                        $sBadge = 'border border-yellow-200 bg-yellow-50 text-yellow-700';
+                        $sBorder = '1.5px solid #f87171';
+                        $sBg = '#fef2f2';
+                        $sColor = '#b91c1c';
                     }
                     ?>
-                    <span id="case-status-badge" class="inline-block font-bold text-xs px-3 py-1.5 rounded-full transition-all duration-300 <?= $sBadge ?>">
+                    <span id="case-status-badge" class="inline-block font-bold text-xs px-3 py-1.5 rounded-full transition-all duration-300"
+                        style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
                         <?= htmlspecialchars($displayStatus) ?>
                     </span>
                 </div>
@@ -1853,30 +1871,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentCaseStatus = <?= json_encode($displayStatus) ?>;
 
-    function getStatusBadgeClass(status) {
+    function getStatusBadgeStyle(status) {
         switch (status) {
             case 'Completed':
             case 'Resolved':
-                return 'border border-green-200 bg-green-50 text-green-700';
+                return { border: '1.5px solid #4ade80', bg: '#f0fdf4', color: '#15803d' };
             case 'Correction Completed':
             case 'Pending RadTech Verification':
-                return 'border border-blue-200 bg-blue-50 text-blue-700';
+            case 'Under Reading':
+                return { border: '1.5px solid #60a5fa', bg: '#eff6ff', color: '#1d4ed8' };
             case 'Correction in Progress':
-                return 'border border-indigo-200 bg-indigo-50 text-indigo-700';
+            case 'Report Ready':
+                return { border: '1.5px solid #818cf8', bg: '#eef2ff', color: '#4338ca' };
             case 'For RadTech Review':
-                return 'border border-amber-200 bg-amber-50 text-amber-700';
+                return { border: '1.5px solid #facc15', bg: '#fefce8', color: '#a16207' };
             case 'Issue Reported':
             case 'Pending RadTech Review':
-                return 'border border-rose-200 bg-rose-50 text-rose-700';
-            case 'Under Reading':
-                return 'border border-blue-200 bg-blue-50 text-blue-700';
-            case 'Report Ready':
-                return 'border border-purple-200 bg-purple-50 text-purple-700';
+                return { border: '1.5px solid #fb7185', bg: '#fff1f2', color: '#be123c' };
             case 'Overdue':
             case 'Rejected':
-                return 'border border-red-200 bg-red-50 text-red-700';
+                return { border: '1.5px solid #f87171', bg: '#fef2f2', color: '#b91c1c' };
             default:
-                return 'border border-yellow-200 bg-yellow-50 text-yellow-700';
+                return { border: '1.5px solid #facc15', bg: '#fefce8', color: '#a16207' };
         }
     }
 
@@ -1888,7 +1904,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Immediate visual feedback on status badge
         const badge = document.getElementById('case-status-badge');
         if (badge) {
-            badge.className = 'inline-block font-bold text-xs px-3 py-1.5 rounded-full transition-all duration-300 ' + getStatusBadgeClass(newStatus);
+            const st = getStatusBadgeStyle(newStatus);
+            badge.className = 'inline-block font-bold text-xs px-3 py-1.5 rounded-full transition-all duration-300';
+            badge.style.border = st.border;
+            badge.style.backgroundColor = st.bg;
+            badge.style.color = st.color;
             badge.textContent = newStatus;
             badge.classList.add('scale-110', 'ring-2', 'ring-purple-400');
             setTimeout(() => {
@@ -1932,6 +1952,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const freshBadge = doc.getElementById('case-status-badge');
                 if (curBadge && freshBadge) {
                     curBadge.className = freshBadge.className;
+                    curBadge.style.cssText = freshBadge.style.cssText;
                     curBadge.textContent = freshBadge.textContent;
                 }
 

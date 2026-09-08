@@ -30,12 +30,12 @@ if (isset($caseNotFound) && $caseNotFound) {
 <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
     <!-- Patient Verification -->
-    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
         <div class="mb-3 flex items-center gap-2">
             <i data-lucide="user-check" class="h-5 w-5 text-green-600"></i>
             <h3 class="text-lg font-semibold text-gray-800">Patient Verification</h3>
         </div>
-        <div class="rounded-lg bg-gray-50 border border-gray-200 p-4">
+        <div class="rounded-lg bg-gray-50 border border-gray-200 p-4 flex-1 flex flex-col justify-center">
             <div class="px-2 space-y-2">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Case Number</span>
@@ -79,7 +79,7 @@ if (isset($caseNotFound) && $caseNotFound) {
     </div>
 
     <!-- Examination Details -->
-    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Examination Details</h3>
         <div class="space-y-4">
             <div>
@@ -98,16 +98,26 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div>
                 <label class="block text-gray-600 text-sm font-medium mb-1.5">Priority</label>
                 <?php
+                $pBorder = '1.5px solid #60a5fa';
+                $pBg = '#eff6ff';
+                $pColor = '#1d4ed8';
                 if ($caseDetails['priority'] === 'STAT') {
-                    $pClasses = 'border-red-400 bg-red-50 text-red-700';
+                    $pBorder = '1.5px solid #f87171';
+                    $pBg = '#fef2f2';
+                    $pColor = '#b91c1c';
                 } elseif ($caseDetails['priority'] === 'Urgent') {
-                    $pClasses = 'border-yellow-400 bg-yellow-50 text-yellow-700';
-                } else {
-                    $pClasses = 'border-blue-400 bg-blue-50 text-blue-700';
+                    $pBorder = '1.5px solid #facc15';
+                    $pBg = '#fefce8';
+                    $pColor = '#a16207';
+                } elseif ($caseDetails['priority'] === 'Priority') {
+                    $pBorder = '1.5px solid #fb923c';
+                    $pBg = '#fff7ed';
+                    $pColor = '#c2410c';
                 }
                 ?>
-                <span class="inline-flex items-center rounded-full border <?= $pClasses ?> px-2.5 py-1 text-xs font-semibold">
-                    <?= htmlspecialchars($caseDetails['priority']) ?>
+                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style="border:<?= $pBorder ?>;background-color:<?= $pBg ?>;color:<?= $pColor ?>">
+                    <?= htmlspecialchars($caseDetails['priority'] ?: 'Routine') ?>
                 </span>
             </div>
             <div class="pt-1">
@@ -119,18 +129,33 @@ if (isset($caseNotFound) && $caseNotFound) {
                     $displayStatus = 'Overdue';
                 }
 
-                if ($displayStatus === 'Completed')
-                    $sBadge = 'border border-green-400 bg-green-50 text-green-700';
-                elseif ($displayStatus === 'Under Reading')
-                    $sBadge = 'border border-blue-400 bg-blue-50 text-blue-700';
-                elseif ($displayStatus === 'Report Ready')
-                    $sBadge = 'border border-indigo-400 bg-indigo-50 text-indigo-700';
-                elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected')
-                    $sBadge = 'border border-red-400 bg-red-50 text-red-700';
-                else
-                    $sBadge = 'border border-yellow-400 bg-yellow-50 text-yellow-700';
+                $sBorder = '1.5px solid #facc15';
+                $sBg = '#fefce8';
+                $sColor = '#a16207';
+                if ($displayStatus === 'Report Ready') {
+                    $sBorder = '1.5px solid #818cf8';
+                    $sBg = '#eef2ff';
+                    $sColor = '#4338ca';
+                } elseif ($displayStatus === 'Under Reading') {
+                    $sBorder = '1.5px solid #60a5fa';
+                    $sBg = '#eff6ff';
+                    $sColor = '#1d4ed8';
+                } elseif ($displayStatus === 'Completed') {
+                    $sBorder = '1.5px solid #4ade80';
+                    $sBg = '#f0fdf4';
+                    $sColor = '#15803d';
+                } elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected') {
+                    $sBorder = '1.5px solid #f87171';
+                    $sBg = '#fef2f2';
+                    $sColor = '#b91c1c';
+                } elseif ($displayStatus === 'Released') {
+                    $sBorder = '1.5px solid #34d399';
+                    $sBg = '#ecfdf5';
+                    $sColor = '#047857';
+                }
                 ?>
-                <span class="inline-block font-bold text-xs px-3 py-1.5 rounded-full <?= $sBadge ?>">
+                <span class="inline-block font-bold text-xs px-3 py-1.5 rounded-full"
+                    style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
                     <?= htmlspecialchars($displayStatus) ?>
                 </span>
             </div>
@@ -141,17 +166,20 @@ if (isset($caseNotFound) && $caseNotFound) {
 </div>
 
 <!-- Image Archive -->
-<?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']); ?>
+<?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['date_completed']) || !empty($caseDetails['findings']); ?>
 
-<div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Archive</h3>
+<div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
+    <div class="mb-4">
+        <div class="flex items-center gap-2">
+            <i data-lucide="image" class="h-5 w-5 text-blue-600"></i>
+            <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Archive</h3>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Archived X-ray images and diagnostic files</p>
     </div>
-    <p class="text-xs text-gray-500 mb-5">Archived X-ray images and diagnostic files</p>
 
-    <div id="file-preview-area">
+    <div id="file-preview-area" class="flex-1 flex flex-col justify-center">
         <!-- Read-only image grid -->
         <?php
         if (!function_exists('getXrayImageLabel')) {
@@ -212,14 +240,21 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <p style="color:#9ca3af;font-size:0.875rem;font-style:italic;">No images uploaded yet.</p>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[200px]">
+                <div class="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                    <i data-lucide="image-off" class="h-6 w-6 text-gray-400"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-gray-700 mb-1">No Images Uploaded</h4>
+                <p class="text-xs text-gray-500 max-w-[280px]">No diagnostic X-ray images have been uploaded for this case yet.</p>
+            </div>
         <?php endif; ?>
     </div>
 
     <!-- Action Buttons -->
-    <div class="mt-8 flex gap-4">
+    <div class="mt-6 flex gap-4 shrink-0">
         <?php if ($isReportReady): ?>
-            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>" target="_blank"
+            <a href="javascript:void(0)"
+                onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $caseId ?>', 'Yes, Print', true, event)"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
                 <i data-lucide="printer" class="w-4 h-4"></i>
                 Print Result
@@ -235,10 +270,13 @@ if (isset($caseNotFound) && $caseNotFound) {
 </div>
 
     <!-- Radiologist Report Findings Card -->
-    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col h-full">
-        <div class="mb-4 flex items-center gap-2">
-            <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
-            <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-500' ?>">Radiologist Report Findings</h3>
+    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
+        <div class="mb-4">
+            <div class="flex items-center gap-2">
+                <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
+                <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-700' ?>">Radiologist Report Findings</h3>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Official radiological interpretation and clinical impression</p>
         </div>
         
         <?php if ($isReportReady): ?>

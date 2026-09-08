@@ -394,6 +394,74 @@ $branchId = $_SESSION['branch_id'] ?? null;
             </div>
         </div>
 
+        <!-- Diagnostic Findings & Disease Prevalence Ranking -->
+        <div class="lg:col-span-3 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>
+                        <h3 class="font-bold text-gray-900 text-base">Diagnostic Findings & Disease Prevalence Ranking</h3>
+                    </div>
+                    <p class="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">Clinical impression census and top diagnosed cases for the selected period</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-2xs">
+                    <i data-lucide="stethoscope" class="w-4 h-4 text-red-600"></i>
+                    <span id="diagTotalCasesAnalyzed">0 Diagnosed Cases</span>
+                </div>
+            </div>
+
+            <!-- Most Prevalent Case Highlight Banner -->
+            <div class="p-6 pb-2">
+                <div id="mostPrevalentCard" class="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-200">
+                            <i data-lucide="award" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Most Prevalent Case</span>
+                            <h4 id="mostPrevalentName" class="text-base font-bold text-gray-900 leading-tight">Analyzing findings...</h4>
+                            <p id="mostPrevalentDesc" class="text-xs text-gray-500 mt-0.5">Highest frequency among diagnosed cases for this period</p>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline gap-2 sm:text-right">
+                        <div>
+                            <div id="mostPrevalentCount" class="text-2xl font-black text-red-600">0</div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Cases</div>
+                        </div>
+                        <span class="text-gray-300 text-2xl font-light">/</span>
+                        <div>
+                            <div id="mostPrevalentRate" class="text-2xl font-black text-gray-800">0%</div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Share</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Findings Ranking Table -->
+            <div class="p-6 pt-3 overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-y border-gray-100">
+                        <tr>
+                            <th class="px-5 py-3 font-bold w-16 text-center">Rank</th>
+                            <th class="px-5 py-3 font-bold">Diagnostic Finding / Impression</th>
+                            <th class="px-5 py-3 font-bold text-center w-36">Total Cases</th>
+                            <th class="px-5 py-3 font-bold w-64">Prevalence Rate (% Share)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="diagnosticRankingTable" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+                                <div class="flex flex-col items-center gap-2">
+                                    <div class="animate-spin h-5 w-5 border-2 border-red-600 border-t-transparent rounded-full"></div>
+                                    <span>Compiling diagnostic findings...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Trend Chart (Always centered or spans) -->
         <div id="trendChartContainer" class="lg:col-span-3 bg-white rounded-xl border border-gray-200 shadow-sm hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">

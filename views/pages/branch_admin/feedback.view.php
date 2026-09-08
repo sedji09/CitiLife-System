@@ -7,7 +7,6 @@
     </div>
 
     <!-- Stats Summary -->
-    <?php if ($stats && $stats['total_feedback'] > 0): ?>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <!-- Average Rating -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
@@ -17,7 +16,7 @@
             <div>
                 <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Average Rating</p>
                 <div class="flex items-end gap-1">
-                    <span class="text-2xl font-bold text-gray-900"><?= number_format($stats['average_rating'], 1) ?></span>
+                    <span class="text-2xl font-bold text-gray-900"><?= number_format((float)($stats['average_rating'] ?? 0), 1) ?></span>
                     <span class="text-sm text-gray-400 mb-1">/ 5</span>
                 </div>
             </div>
@@ -30,7 +29,7 @@
             </div>
             <div>
                 <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Reviews</p>
-                <p class="text-2xl font-bold text-gray-900"><?= number_format($stats['total_feedback']) ?></p>
+                <p class="text-2xl font-bold text-gray-900"><?= number_format((int)($stats['total_feedback'] ?? 0)) ?></p>
             </div>
         </div>
 
@@ -41,7 +40,7 @@
             </div>
             <div>
                 <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">5-Star Ratings</p>
-                <p class="text-2xl font-bold text-gray-900"><?= number_format($stats['five_stars']) ?></p>
+                <p class="text-2xl font-bold text-gray-900"><?= number_format((int)($stats['five_stars'] ?? 0)) ?></p>
             </div>
         </div>
         
@@ -51,12 +50,11 @@
                 <i data-lucide="frown" class="w-6 h-6"></i>
             </div>
             <div>
-                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Critical Reviews</p>
-                <p class="text-2xl font-bold text-gray-900"><?= number_format($stats['one_stars'] + $stats['two_stars']) ?></p>
+                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Negative Feedback</p>
+                <p class="text-2xl font-bold text-gray-900"><?= number_format((int)($stats['one_stars'] ?? 0) + (int)($stats['two_stars'] ?? 0)) ?></p>
             </div>
         </div>
     </div>
-    <?php endif; ?>
 
     <!-- Feedback List -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

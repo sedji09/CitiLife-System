@@ -598,7 +598,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 <?php endif; ?>
                 <div>
                     <h2 class="font-bold text-gray-900"><?= htmlspecialchars($patientFullName ?: $displayName) ?></h2>
-                    <p class="text-xs text-red-600 font-mono">#
+                    <p class="text-xs text-red-600 font-semibold">#
                         <?= htmlspecialchars($patientRow['patient_number'] ?? 'PAT-UNKNOWN') ?>
                     </p>
                 </div>
@@ -856,7 +856,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Reference #</p>
-                                <p class="text-sm font-semibold text-red-600 font-mono">
+                                <p class="text-sm font-semibold text-red-600">
                                     <?= htmlspecialchars($latestCase['case_number']) ?>
                                 </p>
                             </div>
@@ -1081,7 +1081,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
                     <span class="text-sm font-bold text-black">Total Amount</span>
                     <span id="paymentAmountDisplay"
-                        class="text-sm font-extrabold text-red-600 font-mono tracking-tight">₱0.00</span>
+                        class="text-sm font-extrabold text-red-600">₱0.00</span>
                 </div>
             </div>
 
@@ -1318,7 +1318,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
         <div
             class="bg-gray-50 border-b border-gray-100 px-6 py-3 flex flex-shrink-0 items-center justify-between text-xs text-gray-700">
-            <div>Case #: <span class="font-bold font-mono text-red-600" id="dispute-case-number"></span></div>
+            <div>Case #: <span class="font-bold text-red-600" id="dispute-case-number"></span></div>
             <div class="font-medium text-gray-500" id="dispute-exam-type"></div>
         </div>
 
@@ -1578,7 +1578,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 breakdownContainer.innerHTML += `
                     <div class="flex items-center justify-between text-sm">
                         <span class="text-gray-500 font-medium">${exam}</span>
-                        <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span class="font-semibold text-gray-800">₱${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 `;
 
@@ -1586,7 +1586,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     breakdownContainer.innerHTML += `
                         <div class="flex items-center justify-between text-sm mt-1 mb-2">
                             <span class="text-emerald-600 font-medium">PhilHealth Discount</span>
-                            <span class="font-semibold text-emerald-600 font-mono tracking-tight">-₱${examData.discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span class="font-semibold text-emerald-600">-₱${examData.discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     `;
                 }
@@ -1595,7 +1595,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             breakdownContainer.innerHTML += `
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-500 font-medium">Regular Procedure Fee</span>
-                    <span class="font-semibold text-gray-800 font-mono tracking-tight">₱${origPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span class="font-semibold text-gray-800">₱${origPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
             `;
         }

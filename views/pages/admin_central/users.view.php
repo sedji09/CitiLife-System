@@ -51,7 +51,7 @@
 
         <?php if ($success): ?>
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function () {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
@@ -106,7 +106,8 @@
         </div>
 
         <!-- Users Table Card -->
-        <div id="users-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
+        <div id="users-table-card"
+            class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>

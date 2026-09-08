@@ -42,6 +42,35 @@ class PageController
             $page = $_GET['page'] ?? 'dashboard';
         }
 
+        // Automatic redirect for deprecated patient-queue to unified worklist
+        if ($page === 'patient-queue') {
+            require_once basePath('config/database.php');
+            $branchId = $_GET['branch_id'] ?? 0;
+            $branchName = $_GET['branch'] ?? '';
+            if (empty($branchName) && !empty($branchId)) {
+                $bModel = new \BranchModel($pdo);
+                $b = $bModel->getBranchById((int)$branchId);
+                if (!empty($b['name'])) {
+                    $branchName = $b['name'];
+                }
+            }
+            $highlight = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_id'] ?? '';
+            $projectDir = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
+            $redirectUrl = $projectDir . '/index.php?role=radiologist&page=worklist';
+            $params = [];
+            if (!empty($branchName)) {
+                $params[] = 'branch=' . urlencode($branchName);
+            }
+            if (!empty($highlight)) {
+                $params[] = 'highlight_case=' . urlencode($highlight);
+            }
+            if (!empty($params)) {
+                $redirectUrl .= '&' . implode('&', $params);
+            }
+            header("Location: " . $redirectUrl);
+            exit;
+        }
+
         // Whitelist pages (same as legacy index.php)
         $allowedPages = [
             'dashboard',
@@ -56,7 +85,6 @@ class PageController
             'patient-details',
             'records-history',
             'worklist',
-            'patient-queue',
             'case-review',
             'patient-history',
             'patient-records-history',

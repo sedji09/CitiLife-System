@@ -217,7 +217,7 @@
                                                     <input type="hidden" name="service_id" value="<?= $s['id'] ?>">
                                                     <input type="hidden" name="new_status" value="inactive">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition shadow-sm"
+                                                        class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white hover:border-gray-600 transition shadow-sm inline-flex items-center justify-center"
                                                         title="Hide">
                                                         <i data-lucide="eye-off" class="w-4 h-4"></i>
                                                     </button>
@@ -228,7 +228,7 @@
                                                     <input type="hidden" name="service_id" value="<?= $s['id'] ?>">
                                                     <input type="hidden" name="new_status" value="active">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm"
+                                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center"
                                                         title="Unhide">
                                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                                     </button>
@@ -237,14 +237,14 @@
 
                                             <button type="button"
                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($s)) ?>)"
-                                                class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Edit Procedure">
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
 
                                             <button type="button"
                                                 onclick="confirmDeleteService(<?= $s['id'] ?>, '<?= htmlspecialchars($s['exam_type'], ENT_QUOTES) ?>')"
-                                                class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Delete Procedure">
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>

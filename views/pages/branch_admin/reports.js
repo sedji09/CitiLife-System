@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     philhealthChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['With Card', 'Without Card'],
+            labels: ['With PhilHealth Card', 'Without PhilHealth Card'],
             datasets: [{
                 data: [0, 0],
                 backgroundColor: ['#EF4444', '#3B82F6'],
