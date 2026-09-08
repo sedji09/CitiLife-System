@@ -444,7 +444,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             <p>Welcome internal staff! Please enter your details.</p>
         </div>
 
-        <form id="loginForm" name="loginForm" method="POST" action="/<?= PROJECT_DIR ?>/login" autocomplete="on" class="modal-form">
+        <form id="loginForm" name="loginForm" method="POST" action="<?= url('login') ?>" autocomplete="on" class="modal-form">
             <?php if (isset($_GET['reason']) && $_GET['reason'] === 'timeout'): ?>
                 <div class="modal-alert-error">
                     Session expired due to inactivity. Please log in again.
@@ -470,13 +470,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             <?php endif; ?>
 
             <div class="input-group">
-                <label for="email">Email Address</label>
+                <label for="email">Email address</label>
                 <div class="input-wrapper">
                     <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                     </svg>
-                    <input type="email" id="email" name="email" required autocomplete="email" placeholder="Please enter your email">
+                    <input type="email" id="email" name="email" required placeholder="Please enter your email"
+                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" autocomplete="email" <?= $is_locked ? 'disabled' : '' ?>>
                 </div>
             </div>
 
@@ -487,18 +488,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••" style="padding-right: 42px;">
-                    <button type="button" onclick="toggleModalPassword('password', this)" tabindex="-1" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 0; cursor: pointer; color: #9ca3af;">
+                    <input type="password" id="password" name="password" required placeholder="••••••••"
+                        style="padding-right: 40px;" autocomplete="current-password" <?= $is_locked ? 'disabled' : '' ?>>
+                    <button type="button" onclick="toggleModalPassword('password', this)" tabindex="-1"
+                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 0; cursor: pointer; color: #9ca3af;">
                         <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path class="eye-slash-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path class="eye-slash-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                     </button>
                 </div>
             </div>
 
             <div class="modal-forgot">
-                <a href="/<?= PROJECT_DIR ?>/forgot-password?portal=staff">Forgot your password?</a>
+                <a href="<?= url('forgot-password?portal=staff') ?>">Forgot your password?</a>
             </div>
 
             <button type="submit" class="modal-submit-btn" <?= $is_locked ? 'disabled' : '' ?>>Log in</button>

@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mt-8 pt-6 border-t border-gray-100 text-center">
             <p class="text-sm text-gray-600">
                 Remembered your password? 
-                <a href="<?= $isStaffPortal ? '/' . PROJECT_DIR . '/login' : '/' . PROJECT_DIR . '/?login=1' ?>" 
+                <a href="<?= $isStaffPortal ? url('login') : url('?login=1') ?>" 
                    class="font-bold text-red-600 hover:underline">
                     <?= $isStaffPortal ? 'Back to Staff Login' : 'Back to Login' ?>
                 </a>

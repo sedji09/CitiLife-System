@@ -25,17 +25,18 @@ class PageController
             if ($branchStatus === 'Inactive') {
                 session_unset();
                 session_destroy();
-                header("Location: /" . PROJECT_DIR . "/login?error=branch_deactivated");
-                exit();
+                redirect(url('login?error=branch_deactivated'));
             }
         }
 
         // 1. Determine requested page from request URI
         $uri = $_SERVER['REQUEST_URI'];
         $path = parse_url($uri, PHP_URL_PATH);
-        $projectPrefix = '/' . PROJECT_DIR;
-        if (stripos($path, $projectPrefix) === 0) {
-            $path = substr($path, strlen($projectPrefix));
+        if (defined('PROJECT_DIR') && PROJECT_DIR !== '') {
+            $projectPrefix = '/' . PROJECT_DIR;
+            if (stripos($path, $projectPrefix) === 0) {
+                $path = substr($path, strlen($projectPrefix));
+            }
         }
         $page = trim($path, '/');
         if ($page === '' || $page === 'index.php') {

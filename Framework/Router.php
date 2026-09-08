@@ -51,9 +51,11 @@ class Router
         $path = parse_url($uri, PHP_URL_PATH);
 
         // Strip project root prefix if it is present (case-insensitive for compatibility)
-        $projectPrefix = '/' . PROJECT_DIR;
-        if (stripos($path, $projectPrefix) === 0) {
-            $path = substr($path, strlen($projectPrefix));
+        if (defined('PROJECT_DIR') && PROJECT_DIR !== '') {
+            $projectPrefix = '/' . PROJECT_DIR;
+            if (stripos($path, $projectPrefix) === 0) {
+                $path = substr($path, strlen($projectPrefix));
+            }
         }
 
         // Standardize leading and trailing slash

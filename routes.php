@@ -135,8 +135,7 @@ $router->get('/patient-queue', function() {
 
 // Redirect legacy /xray-status to dashboard
 $router->get('/xray-status', function() {
-    header("Location: /" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'Citilife-System') . "/dashboard");
-    exit;
+    redirect(url('dashboard'));
 }, ['auth']);
 
 // Legacy API Endpoints (mapped to app/api for absolute JS compatibility)

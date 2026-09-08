@@ -31,7 +31,7 @@ class Authorize
                 unset($_SESSION['redirect_url']);
                 return redirect($redirectTarget);
             }
-            return redirect('/' . PROJECT_DIR . '/dashboard');
+            return redirect(url('dashboard'));
         } elseif ($role === 'auth' && !$this->isAuthenticated()) {
             $currentUri = $_SERVER['REQUEST_URI'] ?? '';
             // If accessing patient pages or patient view report, route to patient-login with redirect
@@ -45,9 +45,9 @@ class Authorize
                 strpos($currentUri, 'feedback') !== false ||
                 strpos($currentUri, 'patient') !== false
             ) {
-                return redirect('/' . PROJECT_DIR . '/patient-login?redirect=' . urlencode($currentUri));
+                return redirect(url('patient-login?redirect=' . urlencode($currentUri)));
             }
-            return redirect('/' . PROJECT_DIR . '/login');
+            return redirect(url('login'));
         }
     }
 }

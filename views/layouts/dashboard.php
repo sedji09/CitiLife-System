@@ -24,8 +24,7 @@ if ($userId > 0) {
     session_unset();
     session_destroy();
     $reason = (!$currentUser) ? 'deleted' : 'deactivated';
-    header("Location: /" . PROJECT_DIR . "/login?error=" . $reason);
-    exit();
+    redirect(url('login?error=' . $reason));
   }
 
   // Check if user's branch has been deactivated (exclude central admins, IT admins, and patients)
@@ -34,8 +33,7 @@ if ($userId > 0) {
     if (!$userBranch || ($userBranch['status'] ?? '') === 'Inactive') {
       session_unset();
       session_destroy();
-      header("Location: /" . PROJECT_DIR . "/login?error=branch_deactivated");
-      exit();
+      redirect(url('login?error=branch_deactivated'));
     }
   }
 
