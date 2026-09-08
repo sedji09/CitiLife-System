@@ -323,6 +323,8 @@
         if (el.validity.tooLong) {
           return `${labelText} is too long.`;
         }
+      }
+
       // 5. Custom dynamic data-rules support
       const rules = el.dataset.rules ? el.dataset.rules.split('|') : [];
       for (const rule of rules) {
