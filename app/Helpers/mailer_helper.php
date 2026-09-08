@@ -22,8 +22,11 @@ require_once __DIR__ . '/email_template_helper.php';
  */
 if (!function_exists('sendViaBrevo')) {
     function sendViaBrevo($apiKey, $config, $toEmail, $toName, $subject, $body, $altBody = '') {
+        $senderEmail = $_SERVER['BREVO_SENDER_EMAIL'] ?? $_ENV['BREVO_SENDER_EMAIL'] ?? getenv('BREVO_SENDER_EMAIL') ?: 'seigipascual09@gmail.com';
+        $senderName = !empty($config['from_name']) ? $config['from_name'] : 'Citilife Diagnostic Center';
+
         $data = [
-            'sender' => ['name' => $config['from_name'], 'email' => $config['from_email']],
+            'sender' => ['name' => $senderName, 'email' => $senderEmail],
             'to' => [['email' => $toEmail, 'name' => $toName]],
             'subject' => $subject,
             'htmlContent' => $body,
