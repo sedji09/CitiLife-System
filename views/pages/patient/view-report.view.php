@@ -121,7 +121,7 @@ if ($radName !== 'Radiologist on Duty' && !str_contains(strtoupper($radFullNameW
     $radFullNameWithTitle = 'DR. ' . $radFullNameWithTitle;
 }
 
-$fullName = htmlspecialchars(strtoupper($case['first_name'] . ' ' . $case['last_name']));
+$fullName = htmlspecialchars(strtoupper(formatFullName($case)));
 $caseNum = htmlspecialchars($case['case_number']);
 $patientID = htmlspecialchars($case['patient_number'] ?? $case['patient_id']);
 $age = htmlspecialchars($case['age']);

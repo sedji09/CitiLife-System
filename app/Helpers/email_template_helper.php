@@ -28,18 +28,32 @@ if (!function_exists('renderGitHubStyleEmail')) {
         $footerNotice = $params['footerNotice'] ?? ("You received this email because of an activity related to your " . $systemName . " account.");
         $currentYear = date('Y');
 
-        if (!empty($params['brandLogoUrl'])) {
-            $logoUrl = $params['brandLogoUrl'];
-        } else {
+        // Email clients (e.g. Gmail image proxy, Apple Mail, Outlook) cannot load images from localhost or 127.0.0.1.
+        // When running locally, we must use a publicly accessible HTTPS URL so external mail clients can fetch it.
+        $logoUrl = $params['brandLogoUrl'] ?? '';
+        if (empty($logoUrl)) {
             $logoUrl = function_exists('getSystemLogoUrl') ? getSystemLogoUrl(true) : '';
-            if (empty($logoUrl)) {
-                $appUrl = getenv('APP_URL') ?: ($_SERVER['APP_URL'] ?? 'https://citilife-system-production.up.railway.app');
+        }
+
+        $isLocalUrl = empty($logoUrl)
+            || strpos($logoUrl, 'localhost') !== false
+            || strpos($logoUrl, '127.0.0.1') !== false
+            || strpos($logoUrl, '::1') !== false
+            || strpos($logoUrl, '192.168.') !== false
+            || strpos($logoUrl, '10.') !== false;
+
+        if ($isLocalUrl) {
+            $appUrl = getenv('APP_URL') ?: ($_SERVER['APP_URL'] ?? '');
+            if (!empty($appUrl) && strpos($appUrl, 'localhost') === false && strpos($appUrl, '127.0.0.1') === false) {
                 $logoUrl = rtrim($appUrl, '/') . '/public/assets/img/logo/citilife-logo.png';
+            } else {
+                // Highly available public HTTPS CDN fallback
+                $logoUrl = 'https://raw.githubusercontent.com/sedji09/CitiLife-System/main/public/assets/img/logo/citilife-logo.png';
             }
         }
 
         $logoHtml = '<div style="display: inline-block; margin-bottom: 16px;">
-            <img src="' . htmlspecialchars($logoUrl) . '" alt="' . htmlspecialchars($systemName) . '" width="56" height="56" style="display: block; width: 56px; height: 56px; max-width: 56px; border-radius: 50%; object-fit: contain; margin: 0 auto; border: 0;" />
+            <img src="' . htmlspecialchars($logoUrl) . '" alt="' . htmlspecialchars($systemName) . '" width="56" height="56" style="display: block; width: 56px; height: 56px; max-width: 56px; border-radius: 50%; object-fit: contain; margin: 0 auto; border: 0; outline: none; text-decoration: none;" />
         </div>';
 
         return '<!DOCTYPE html>

@@ -50,7 +50,7 @@ if (isset($caseNotFound) && $caseNotFound) {
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Full Name</span>
                     <span
-                        class="font-bold text-gray-900"><?= htmlspecialchars($caseDetails['first_name'] . ' ' . $caseDetails['last_name']) ?></span>
+                        class="font-bold text-gray-900"><?= htmlspecialchars(formatFullName($caseDetails)) ?></span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Age/Sex</span>

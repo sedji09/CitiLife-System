@@ -369,7 +369,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                 <td class="py-3 px-6 font-medium whitespace-nowrap">
                   <?= htmlspecialchars($case['patient_number'] ?? 'N/A') ?>
                 </td>
-                <td class="py-3 px-6 font-medium"><?= htmlspecialchars($case['first_name'] . ' ' . $case['last_name']) ?>
+                <td class="py-3 px-6 font-medium"><?= htmlspecialchars(formatFullName($case)) ?>
                 </td>
                 <td class="py-3 px-6">
                   <?php

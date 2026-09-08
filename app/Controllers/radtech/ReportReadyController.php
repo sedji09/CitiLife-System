@@ -96,7 +96,7 @@ class ReportReadyController
 
                         // Log the action
                         $branchId = $_SESSION['branch_id'] ?? 1;
-                        $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
+                        $patientName = formatFullName($caseData);
                         $details = "Patient: $patientName, Case: {$caseData['case_number']}";
                         $auditLogModel->addLog($currentUserId, "Released X-ray report", 'Patient Records', 'Case', $id, $details, $branchId);
 
@@ -118,7 +118,7 @@ class ReportReadyController
                             $patientUser = $userModel->getUserById($patientUserId);
                             if ($patientUser && !empty($patientUser['email'])) {
                                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
-                                $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
+                                $patientName = formatFullName($caseData);
                                 $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
 
                                 if ($activeDispute) {
@@ -187,7 +187,7 @@ class ReportReadyController
 
                         // Log the action
                         $branchId = $_SESSION['branch_id'] ?? 1;
-                        $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
+                        $patientName = formatFullName($caseData);
                         $details = "Patient: $patientName, Case: {$caseData['case_number']}";
                         $auditLogModel->addLog($currentUserId, "Released X-ray report", 'Patient Records', 'Case', $id, $details, $branchId);
 
@@ -209,7 +209,7 @@ class ReportReadyController
                             $patientUser = $userModel->getUserById($patientUserId);
                             if ($patientUser && !empty($patientUser['email'])) {
                                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
-                                $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
+                                $patientName = formatFullName($caseData);
                                 $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
 
                                 if ($activeDispute) {

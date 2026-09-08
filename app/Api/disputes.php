@@ -44,7 +44,7 @@ try {
         $description = trim($_POST['description'] ?? '');
 
         if (!$caseId || !$category || !$description) {
-            echo json_encode(['success' => false, 'message' => 'Kumpletuhin ang rason at detalye ng report.']);
+            echo json_encode(['success' => false, 'message' => 'Please complete the dispute reason and description.']);
             exit;
         }
 
@@ -54,14 +54,14 @@ try {
         $case = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$case) {
-            echo json_encode(['success' => false, 'message' => 'Hindi nahanap ang resulta ng rekurso.']);
+            echo json_encode(['success' => false, 'message' => 'Case record not found.']);
             exit;
         }
 
         // Check if existing pending dispute
         $activeDispute = $disputeModel->getActiveDisputeByCase($caseId);
         if ($activeDispute) {
-            echo json_encode(['success' => false, 'message' => 'Mayroon nang umiiral na report sa resultang ito na kasalukuyang tinitingnan.']);
+            echo json_encode(['success' => false, 'message' => 'There is already an active dispute report being reviewed for this case.']);
             exit;
         }
 
@@ -378,7 +378,7 @@ try {
         $amendmentNotes = trim($_POST['amendment_notes'] ?? '');
 
         if (!$caseId || !$findings || !$impression) {
-            echo json_encode(['success' => false, 'message' => 'Kumpletuhin ang findings, impression, at dahilan ng amendment.']);
+            echo json_encode(['success' => false, 'message' => 'Please provide the findings, impression, and reason for amendment.']);
             exit;
         }
 
@@ -414,7 +414,7 @@ try {
 
         $auditLog->addLog($userId, 'Report Amended', 'Radiology Reporting', 'Case', $caseId, "Amended findings & impression for case {$caseId}. Notes: {$amendmentNotes}");
 
-        echo json_encode(['success' => true, 'message' => 'Matagumpay na nai-save ang Amended Report! Ang ticket ay naipasa na kay RadTech para sa final approval at release.']);
+        echo json_encode(['success' => true, 'message' => 'Amended Report saved successfully! The ticket has been routed to RadTech for final approval and release.']);
         exit;
     } elseif ($action === 'get_case_for_amend') {
         // RadTech opens Amend Modal -> Fetch case details, patient info, and dispute
@@ -682,7 +682,7 @@ try {
             echo json_encode([
                 'success' => true,
                 'status' => 'Resolved',
-                'message' => 'Matagumpay na naiwasto at na-release ang Amended Report! Nai-notify na rin ang pasyente.'
+                'message' => 'Amended Report successfully corrected and released! The patient has also been notified.'
             ]);
             exit;
 
@@ -704,7 +704,7 @@ try {
             echo json_encode([
                 'success' => true,
                 'status' => 'Correction Completed',
-                'message' => 'Matagumpay na nai-save ang corrections bilang "Correction Completed"! Handa na ito para sa final release.'
+                'message' => 'Corrections successfully saved as "Correction Completed"! It is now ready for final release.'
             ]);
             exit;
         }
