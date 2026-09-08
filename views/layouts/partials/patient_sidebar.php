@@ -10,6 +10,13 @@
     <span class="font-bold text-gray-900 text-sm"><?= htmlspecialchars($appName) ?></span>
   </div>
   <div class="flex items-center gap-1" v-show="!mobileMenuOpen">
+    <!-- Mobile theme toggle for patient -->
+    <button @click.prevent="toggleTheme" type="button"
+      class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600 hover:text-gray-900 flex items-center justify-center cursor-pointer"
+      :aria-label="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+      <span v-show="isDark" class="flex items-center justify-center"><i data-lucide="sun" class="w-5 h-5 text-amber-500"></i></span>
+      <span v-show="!isDark" class="flex items-center justify-center"><i data-lucide="moon" class="w-5 h-5 text-gray-700"></i></span>
+    </button>
     <!-- Mobile notification bell for patient -->
     <div class="relative" ref="mobileNotifRef">
       <button @click.prevent="toggleNotificationMenu"
@@ -138,11 +145,6 @@
         <div class="text-[10px] text-white/50 uppercase tracking-widest font-bold">Patient Account</div>
       </div>
       <div class="p-1.5 space-y-0.5">
-        <button @click="openSettings('appearance')"
-          class="w-full flex items-center gap-3 px-3 py-2 text-left text-sm text-white hover:bg-white/10 rounded-lg transition">
-          <i data-lucide="palette" class="w-4 h-4 opacity-70"></i>
-          <span>Appearance</span>
-        </button>
         <button @click="openSettings('profile')"
           class="w-full flex items-center gap-3 px-3 py-2 text-left text-sm text-white hover:bg-white/10 rounded-lg transition">
           <i data-lucide="user" class="w-4 h-4 opacity-70"></i>
@@ -225,11 +227,6 @@
         <div class="text-xs text-white/60 truncate">Patient</div>
       </div>
       <div class="py-2">
-        <button @click="openSettings('appearance')"
-          class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition">
-          <i data-lucide="palette" class="text-base opacity-90"></i>
-          <span>Appearance</span>
-        </button>
         <button @click="openSettings('profile')"
           class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition">
           <i data-lucide="user" class="text-base opacity-90"></i>

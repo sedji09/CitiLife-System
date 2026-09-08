@@ -5,38 +5,9 @@
  */
 ?>
 
-<!-- Vanilla JS Datepicker styles/scripts -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
-
-<style>
-    /* Global override for Vanilla JS Datepicker to make selected date RED */
-    html body .datepicker-cell.selected,
-    html body .datepicker-cell.selected:hover,
-    html body .datepicker-cell.selected.focused,
-    html body .datepicker-picker .datepicker-cell.selected,
-    html body .datepicker-picker .datepicker-cell.selected:hover,
-    html body .datepicker-picker .datepicker-cell.selected.focused {
-        background-color: #dc2626 !important;
-        color: #ffffff !important;
-        border-color: #dc2626 !important;
-    }
-
-    /* Remove the default TEAL background from 'today' and make it clean */
-    html body .datepicker-cell.today:not(.selected),
-    html body .datepicker-picker .datepicker-cell.today:not(.selected) {
-        background-color: #f3f4f6 !important;
-        color: #111827 !important;
-        font-weight: 600 !important;
-        border: 1px solid #d1d5db !important;
-    }
-
-    html body .datepicker-cell.today.focused:not(.selected),
-    html body .datepicker-picker .datepicker-cell.today.focused:not(.selected) {
-        background-color: #e5e7eb !important;
-    }
-</style>
+<!-- Modern Custom DatePicker -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 
 <main class="flex-1 overflow-y-auto p-4 lg:p-6">
     <div class="mx-auto max-w-6xl space-y-6">
@@ -239,7 +210,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="birthdate" class="block text-sm font-semibold text-gray-700 mb-1.5">Birthdate</label>
-                    <div id="birthdate_container" data-birthdate-picker data-id="birthdate" data-name="birthdate" data-required></div>
+                    <div class="relative">
+                        <input type="text" id="birthdate" name="birthdate" required readonly placeholder="yyyy-mm-dd"
+                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all cursor-pointer">
+                        <i data-lucide="calendar" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                    </div>
                 </div>
                 <div>
                     <label for="sex" class="block text-sm font-semibold text-gray-700 mb-1.5">Sex</label>
@@ -295,12 +270,10 @@
         document.getElementById('first_name').value = patient.first_name;
         document.getElementById('last_name').value = patient.last_name;
         
-        const bdPicker = document.getElementById('birthdate_container')?._bdPicker;
-        if (bdPicker) {
-            bdPicker.setValue(patient.birthdate);
-        } else {
-            const birthdateInput = document.getElementById('birthdate');
-            if (birthdateInput) birthdateInput.value = patient.birthdate;
+        const birthdateInput = document.getElementById('birthdate');
+        birthdateInput.value = patient.birthdate;
+        if(editDatePicker) {
+            editDatePicker.setDate(patient.birthdate);
         }
 
         document.getElementById('sex').value = patient.sex;
@@ -488,6 +461,13 @@
         if (window.lucide) window.lucide.createIcons();
         filterAndSortPatients(false);
         
+        const bDateInput = document.getElementById('birthdate');
+        if (bDateInput && typeof ModernDatePicker !== 'undefined') {
+            editDatePicker = new ModernDatePicker(bDateInput, {
+                maxDate: new Date()
+            });
+        }
+
         // Alert auto-dismiss
         const alert = document.getElementById('statusAlert');
         if (alert) {

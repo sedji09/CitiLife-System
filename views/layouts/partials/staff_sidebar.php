@@ -83,11 +83,6 @@
 
       <!-- Menu Items -->
       <div class="py-2">
-        <button @click="openSettings('appearance')"
-          class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition">
-          <i data-lucide="palette" class="text-base opacity-90"></i>
-          <span>Appearance</span>
-        </button>
         <button @click="openSettings('profile')"
           class="w-full flex items-center gap-3 px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition">
           <i data-lucide="user" class="text-base opacity-90"></i>

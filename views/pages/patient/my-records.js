@@ -625,27 +625,40 @@ function calculateAgeFromBirthdate(birthdateStr) {
 }
 
 window.initDisputeDatePicker = function () {
-    const container = document.getElementById('input-correct-birthdate_container');
-    if (container && typeof BirthdatePicker !== 'undefined') {
-        if (!container._bdPicker) {
-            container._bdPicker = new BirthdatePicker(container, {
-                id: 'input-correct-birthdate',
-                name: 'correct_birthdate',
-                onChange: function (iso, age) {
-                    const ageInput = document.getElementById('input-correct-age');
-                    if (ageInput) ageInput.value = (age !== null && age >= 0) ? age : '';
+    const input = document.getElementById('input-correct-birthdate');
+    if (!input) return;
 
-                    const preview = document.getElementById('preview-calculated-age');
-                    const valSpan = document.getElementById('val-calculated-age');
-                    if (preview && valSpan) {
-                        if (age !== null && age >= 0) {
-                            valSpan.textContent = age + (age === 1 ? ' yr old' : ' yrs old');
-                            preview.classList.remove('hidden');
-                        } else {
-                            preview.classList.add('hidden');
-                        }
-                    }
+    function handleDateChange(bdateVal) {
+        const age = calculateAgeFromBirthdate(bdateVal);
+        const ageInput = document.getElementById('input-correct-age');
+        if (ageInput) ageInput.value = age !== '' ? age : '';
+
+        const preview = document.getElementById('preview-calculated-age');
+        const valSpan = document.getElementById('val-calculated-age');
+        if (preview && valSpan) {
+            if (age !== '') {
+                valSpan.textContent = age + (age === 1 ? ' yr old' : ' yrs old');
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+    }
+
+    if (typeof ModernDatePicker !== 'undefined') {
+        if (!input._customDatePicker) {
+            new ModernDatePicker(input, {
+                maxDate: new Date(),
+                onSelect: function (val) {
+                    handleDateChange(val);
                 }
+            });
+
+            input.addEventListener('changeDate', function () {
+                handleDateChange(input.value);
+            });
+            input.addEventListener('change', function () {
+                handleDateChange(input.value);
             });
         }
     }

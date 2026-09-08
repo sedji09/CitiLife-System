@@ -1,0 +1,146 @@
+/* ==========================================================================
+   CitiLife Custom Tooltip - Facebook-Style Floating Capsule Hover Bubble
+   Inspired by modern FB UI:
+   - Light mode: Dark translucent capsule (~70% opacity) with crisp white text
+   - Dark mode: Light gray capsule with dark text and deep shadow (FB Dark Mode style)
+   - Frosted glass backdrop-filter blur
+   - Smooth rounded pill-like corners (10px)
+   - Zero pointers/arrows, pure sleek floating badge
+   ========================================================================== */
+
+.c-tooltip {
+    position: fixed;
+    z-index: 999999;
+    pointer-events: none;
+    user-select: none;
+    padding: 7px 12px;
+    background: rgba(24, 25, 28, 0.70);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.14);
+    max-width: 260px;
+    min-width: 40px;
+    box-sizing: border-box;
+    opacity: 0;
+    transform: scale(0.96) translateY(2px);
+    transition: opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: inherit, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #ffffff;
+}
+
+/* Compact padding for single line */
+.c-tooltip.c-tooltip-single {
+    padding: 6px 11px;
+    white-space: nowrap;
+}
+
+.c-tooltip.c-tooltip-visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+/* Content Layout */
+.c-tooltip-content {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Title / Main Text (Light Mode) */
+.c-tooltip-title {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Multi-line Title weight */
+.c-tooltip:not(.c-tooltip-single) .c-tooltip-title {
+    font-weight: 600;
+}
+
+/* Secondary Description (Light Mode) */
+.c-tooltip-desc {
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.82);
+    margin-top: 3px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Danger / Delete Tooltips */
+.c-tooltip.c-tooltip-danger {
+    background: rgba(185, 28, 28, 0.78);
+    border-color: rgba(254, 202, 202, 0.2);
+}
+.c-tooltip.c-tooltip-danger .c-tooltip-title,
+.c-tooltip.c-tooltip-danger .c-tooltip-desc {
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Facebook Dark Mode Tooltip Style
+   In dark mode, FB uses a light gray pill capsule with dark charcoal text
+   and deep drop shadow for optimal readability against dark interfaces.
+   ========================================================================== */
+html.theme-dark .c-tooltip,
+body.theme-dark .c-tooltip,
+html.dark .c-tooltip,
+body.dark .c-tooltip,
+.theme-dark .c-tooltip {
+    background: rgba(228, 230, 235, 0.70);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #050505;
+}
+
+html.theme-dark .c-tooltip .c-tooltip-title,
+body.theme-dark .c-tooltip .c-tooltip-title,
+html.dark .c-tooltip .c-tooltip-title,
+body.dark .c-tooltip .c-tooltip-title,
+.theme-dark .c-tooltip .c-tooltip-title {
+    color: #050505;
+    text-shadow: none;
+    font-weight: 500;
+}
+
+html.theme-dark .c-tooltip:not(.c-tooltip-single) .c-tooltip-title,
+body.theme-dark .c-tooltip:not(.c-tooltip-single) .c-tooltip-title,
+html.dark .c-tooltip:not(.c-tooltip-single) .c-tooltip-title,
+body.dark .c-tooltip:not(.c-tooltip-single) .c-tooltip-title,
+.theme-dark .c-tooltip:not(.c-tooltip-single) .c-tooltip-title {
+    font-weight: 600;
+}
+
+html.theme-dark .c-tooltip .c-tooltip-desc,
+body.theme-dark .c-tooltip .c-tooltip-desc,
+html.dark .c-tooltip .c-tooltip-desc,
+body.dark .c-tooltip .c-tooltip-desc,
+.theme-dark .c-tooltip .c-tooltip-desc {
+    color: #475569;
+}
+
+/* Danger in Dark Mode */
+html.theme-dark .c-tooltip.c-tooltip-danger,
+body.theme-dark .c-tooltip.c-tooltip-danger,
+html.dark .c-tooltip.c-tooltip-danger,
+body.dark .c-tooltip.c-tooltip-danger,
+.theme-dark .c-tooltip.c-tooltip-danger {
+    background: rgba(254, 226, 226, 0.96);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+html.theme-dark .c-tooltip.c-tooltip-danger .c-tooltip-title,
+body.theme-dark .c-tooltip.c-tooltip-danger .c-tooltip-title {
+    color: #dc2626;
+}
+html.theme-dark .c-tooltip.c-tooltip-danger .c-tooltip-desc,
+body.theme-dark .c-tooltip.c-tooltip-danger .c-tooltip-desc {
+    color: #991b1b;
+}

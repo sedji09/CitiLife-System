@@ -66,9 +66,11 @@
                             <p class="text-[11px] text-gray-400">Used in titles, reports, emails, and browser tabs</p>
                         </div>
                         <div class="md:col-span-2">
-                            <input type="text" name="system_name" value="<?= htmlspecialchars($currentSystemName) ?>" required
+                            <input type="text" name="system_name" value="<?= htmlspecialchars($currentSystemName) ?>"
+                                required
                                 class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
-                            <p class="mt-1.5 text-[10px] text-gray-400 italic">Changing the system name will update all navigation headers, reports, and outgoing emails across the entire system.</p>
+                            <p class="mt-1.5 text-[10px] text-gray-400 italic">Changing the system name will update all
+                                navigation headers, reports, and outgoing emails across the entire system.</p>
                         </div>
                     </div>
 
@@ -88,10 +90,12 @@
                                     <img id="logoPreviewImg" src="<?= getSystemLogoUrl() ?>"
                                         class="h-full w-full object-contain p-2 transition-transform group-hover:scale-110 <?= empty($currentLogo) ? 'hidden' : '' ?>"
                                         alt="Logo Preview">
-                                    <div id="logoPlaceholder" class="flex flex-col items-center justify-center text-gray-300 <?= !empty($currentLogo) ? 'hidden' : '' ?>">
+                                    <div id="logoPlaceholder"
+                                        class="flex flex-col items-center justify-center text-gray-300 <?= !empty($currentLogo) ? 'hidden' : '' ?>">
                                         <i data-lucide="image-plus" class="w-8 h-8"></i>
                                     </div>
-                                    <span id="previewBadge" class="hidden absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-600/90 text-white text-[9px] font-bold rounded-full uppercase tracking-wider backdrop-blur-sm shadow-sm whitespace-nowrap">
+                                    <span id="previewBadge"
+                                        class="hidden absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-600/90 text-white text-[9px] font-bold rounded-full uppercase tracking-wider backdrop-blur-sm shadow-sm whitespace-nowrap">
                                         New Preview
                                     </span>
                                 </div>
@@ -99,14 +103,18 @@
                                 <div class="flex-1 w-full">
                                     <label class="block">
                                         <span class="sr-only">Choose logo</span>
-                                        <input type="file" id="clinicLogoInput" name="clinic_logo" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp, image/svg+xml" class="block w-full text-sm text-gray-500
+                                        <input type="file" id="clinicLogoInput" name="clinic_logo"
+                                            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp, image/svg+xml"
+                                            class="block w-full text-sm text-gray-500
                                                         file:mr-4 file:py-2.5 file:px-4
                                                         file:rounded-xl file:border-0
                                                         file:text-sm file:font-bold
                                                         file:bg-blue-50 file:text-blue-700
                                                         hover:file:bg-blue-100 transition-all cursor-pointer">
                                     </label>
-                                    <p class="mt-2 text-[10px] text-gray-400 italic">Changing the logo will automatically update it across all branch reports, portal pages, and outgoing emails.</p>
+                                    <p class="mt-2 text-[10px] text-gray-400 italic">Changing the logo will
+                                        automatically update it across all branch reports, portal pages, and outgoing
+                                        emails.</p>
                                 </div>
                             </div>
                         </div>
@@ -123,7 +131,8 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-bold text-gray-900">System Status</h3>
-                            <p class="text-xs text-gray-500">Temporarily close the portal for patients requesting X-rays</p>
+                            <p class="text-xs text-gray-500">Temporarily close the portal for patients requesting X-rays
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -137,45 +146,65 @@
                         </div>
                         <div class="md:col-span-2">
                             <div class="flex items-center gap-3">
-                                <span class="text-sm font-bold transition-colors <?= $systemStatus !== 'closed' ? 'text-gray-900' : 'text-gray-400' ?>" id="labelOpen">Open</span>
-                                
+                                <span
+                                    class="text-sm font-bold transition-colors <?= $systemStatus !== 'closed' ? 'text-gray-900' : 'text-gray-400' ?>"
+                                    id="labelOpen">Open</span>
+
                                 <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" name="system_status" value="closed" class="sr-only" id="systemStatusToggle" <?= $systemStatus === 'closed' ? 'checked' : '' ?>>
-                                    <div id="toggleBg" class="relative w-14 h-7 rounded-full transition-colors duration-300 <?= $systemStatus === 'closed' ? 'bg-red-600' : 'bg-gray-200' ?>">
-                                        <div id="toggleKnob" class="absolute bg-white rounded-full shadow-sm transition-transform duration-300" 
-                                             style="top: 2px; left: 2px; height: 24px; width: 24px; <?= $systemStatus === 'closed' ? 'transform: translateX(28px);' : 'transform: translateX(0);' ?>"></div>
+                                    <input type="checkbox" name="system_status" value="closed" class="sr-only"
+                                        id="systemStatusToggle" <?= $systemStatus === 'closed' ? 'checked' : '' ?>>
+                                    <div id="toggleBg"
+                                        class="relative w-14 h-7 rounded-full transition-colors duration-300 <?= $systemStatus === 'closed' ? 'bg-red-600' : 'bg-gray-200' ?>">
+                                        <div id="toggleKnob"
+                                            class="absolute bg-white rounded-full shadow-sm transition-transform duration-300"
+                                            style="top: 2px; left: 2px; height: 24px; width: 24px; <?= $systemStatus === 'closed' ? 'transform: translateX(28px);' : 'transform: translateX(0);' ?>">
+                                        </div>
                                     </div>
                                 </label>
-                                
-                                <span class="text-sm font-bold transition-colors <?= $systemStatus === 'closed' ? 'text-red-600' : 'text-gray-400' ?>" id="labelClosed">Closed</span>
+
+                                <span
+                                    class="text-sm font-bold transition-colors <?= $systemStatus === 'closed' ? 'text-red-600' : 'text-gray-400' ?>"
+                                    id="labelClosed">Closed</span>
                             </div>
                         </div>
                     </div>
 
-                    <div id="closedSettingsWrapper" class="space-y-6 <?= $systemStatus === 'closed' ? 'block' : 'hidden' ?>">
+                    <div id="closedSettingsWrapper"
+                        class="space-y-6 <?= $systemStatus === 'closed' ? 'block' : 'hidden' ?>">
                         <hr class="border-gray-50">
 
                         <!-- Closed Branches Selection -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                             <div class="space-y-1">
                                 <label class="text-sm font-bold text-gray-700">Closed Branches</label>
-                                <p class="text-[11px] text-gray-400">Select which branches are closed. Or select 'All Branches'.</p>
+                                <p class="text-[11px] text-gray-400">Select which branches are closed. Or select 'All
+                                    Branches'.</p>
                             </div>
                             <div class="md:col-span-2">
-                                <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-inner max-h-48 overflow-y-auto">
-                                    <label class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-                                        <input type="checkbox" name="closed_branches[]" value="all" <?= in_array('all', $closedBranchesArr) ? 'checked' : '' ?> class="rounded border-gray-300 text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer">
+                                <div
+                                    class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-inner max-h-48 overflow-y-auto">
+                                    <label
+                                        class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="closed_branches[]" value="all" <?= in_array('all', $closedBranchesArr) ? 'checked' : '' ?>
+                                            class="rounded border-gray-300 text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer">
                                         <span class="text-sm font-bold text-red-600">All Branches</span>
                                     </label>
                                     <?php foreach ($branches as $b): ?>
-                                        <label class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-0">
-                                            <input type="checkbox" name="closed_branches[]" value="<?= $b['id'] ?>" <?= in_array((string)$b['id'], $closedBranchesArr) && !in_array('all', $closedBranchesArr) ? 'checked' : '' ?> class="rounded border-gray-300 text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer">
-                                            <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars($b['name']) ?></span>
+                                        <label
+                                            class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors last:border-0">
+                                            <input type="checkbox" name="closed_branches[]" value="<?= $b['id'] ?>"
+                                                <?= in_array((string) $b['id'], $closedBranchesArr) && !in_array('all', $closedBranchesArr) ? 'checked' : '' ?>
+                                                class="rounded border-gray-300 text-red-600 focus:ring-red-500 w-4 h-4 cursor-pointer">
+                                            <span
+                                                class="text-sm font-medium text-gray-700"><?= htmlspecialchars($b['name']) ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
-                                <p class="text-[10px] text-gray-500 mt-2">Check the branches that should be temporarily closed.</p>
-                                <p id="branchErrorMsg" class="text-xs text-red-600 font-bold mt-1 hidden"><i data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1"></i>Please select at least one branch to close.</p>
+                                <p class="text-[10px] text-gray-500 mt-2">Check the branches that should be temporarily
+                                    closed.</p>
+                                <p id="branchErrorMsg" class="text-xs text-red-600 font-bold mt-1 hidden"><i
+                                        data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1"></i>Please select
+                                    at least one branch to close.</p>
                             </div>
                         </div>
 
@@ -186,7 +215,10 @@
                                 <p class="text-[11px] text-gray-400">Message to show to patients.</p>
                             </div>
                             <div class="md:col-span-2">
-                                <textarea name="closed_message" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all placeholder:text-gray-400" placeholder="e.g. We are temporarily closed for maintenance..." <?= $systemStatus === 'closed' ? 'required' : '' ?>><?= htmlspecialchars($closedMessage) ?></textarea>
+                                <textarea name="closed_message" rows="3"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all placeholder:text-gray-400"
+                                    placeholder="e.g. We are temporarily closed for maintenance..."
+                                    <?= $systemStatus === 'closed' ? 'required' : '' ?>><?= htmlspecialchars($closedMessage) ?></textarea>
                             </div>
                         </div>
                     </div>
@@ -221,17 +253,18 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-bold text-gray-900">Operating Hours</h3>
-                            <p class="text-xs text-gray-500">Clinic hours shown to patients on the registration portal</p>
+                            <p class="text-xs text-gray-500">Clinic hours shown to patients on the registration portal
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-6">
                     <?php
-                        $openTs    = strtotime($operatingHoursOpen)  ?: strtotime('08:00');
-                        $closeTs   = strtotime($operatingHoursClose) ?: strtotime('21:00');
-                        $openVal = date('H:i', $openTs);
-                        $closeVal = date('H:i', $closeTs);
+                    $openTs = strtotime($operatingHoursOpen) ?: strtotime('08:00');
+                    $closeTs = strtotime($operatingHoursClose) ?: strtotime('21:00');
+                    $openVal = date('H:i', $openTs);
+                    $closeVal = date('H:i', $closeTs);
                     ?>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -240,16 +273,16 @@
                             <p class="text-[11px] text-gray-400">Select clinic operating hours.</p>
                         </div>
                         <div class="md:col-span-2 flex items-center gap-3">
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Opens at</p>
-                                <input type="time" name="operating_hours_open" value="<?= $openVal ?>" required
-                                    class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-stone-50 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+                            <div class="w-40 sm:w-44">
+                                <p class="text-xs text-gray-500 mb-1 font-medium">Opens at</p>
+                                <input type="text" name="operating_hours_open" value="<?= $openVal ?>" required data-custom-timepicker
+                                    class="w-full">
                             </div>
-                            <span class="text-gray-300 font-bold text-lg mt-4">—</span>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Closes at</p>
-                                <input type="time" name="operating_hours_close" value="<?= $closeVal ?>" required
-                                    class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-stone-50 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+                            <span class="text-gray-300 font-bold text-lg mt-5">—</span>
+                            <div class="w-40 sm:w-44">
+                                <p class="text-xs text-gray-500 mb-1 font-medium">Closes at</p>
+                                <input type="text" name="operating_hours_close" value="<?= $closeVal ?>" required data-custom-timepicker
+                                    class="w-full">
                             </div>
                         </div>
                     </div>
@@ -308,29 +341,29 @@
                 if (isChecked) {
                     labelOpen.classList.replace('text-gray-900', 'text-gray-400');
                     labelClosed.classList.replace('text-gray-400', 'text-red-600');
-                    
+
                     closedSettingsWrapper.classList.remove('hidden');
                     // Add red background, remove gray
                     toggleBg.classList.remove('bg-gray-200');
                     toggleBg.classList.add('bg-red-600');
                     // Move knob
                     toggleKnob.style.transform = 'translateX(28px)';
-                    
+
                     if (msgBox) msgBox.setAttribute('required', 'required');
                 } else {
                     labelOpen.classList.replace('text-gray-400', 'text-gray-900');
                     labelClosed.classList.replace('text-red-600', 'text-gray-400');
-                    
+
                     closedSettingsWrapper.classList.add('hidden');
                     // Add gray background, remove red
                     toggleBg.classList.remove('bg-red-600');
                     toggleBg.classList.add('bg-gray-200');
                     // Move knob back
                     toggleKnob.style.transform = 'translateX(0)';
-                    
+
                     // Clear fields and remove required validation if it's open
                     if (msgBox) msgBox.removeAttribute('required');
-                    
+
                     if (isUserAction) {
                         if (masterCheckbox) masterCheckbox.checked = false;
                         if (childCheckboxes) childCheckboxes.forEach(cb => cb.checked = false);
@@ -366,7 +399,7 @@
             }
 
             // Listen for clicks on the "All Branches" checkbox
-            allBranchesCheckbox.addEventListener('change', function() {
+            allBranchesCheckbox.addEventListener('change', function () {
                 branchCheckboxes.forEach(cb => {
                     cb.checked = this.checked;
                 });
@@ -377,13 +410,13 @@
                 cb.addEventListener('change', updateAllCheckboxState);
             });
         }
-        
+
         // Form Validation for Branch Selection
         const settingsForm = document.getElementById('settingsForm');
         const branchErrorMsg = document.getElementById('branchErrorMsg');
-        
+
         if (settingsForm && systemStatusToggle) {
-            settingsForm.addEventListener('submit', function(e) {
+            settingsForm.addEventListener('submit', function (e) {
                 if (systemStatusToggle.checked) {
                     const anyBranchChecked = Array.from(document.querySelectorAll('input[name="closed_branches[]"]')).some(cb => cb.checked);
                     if (!anyBranchChecked) {
@@ -402,20 +435,20 @@
                     }
                 }
             });
-            
+
             // Hide error when they check a branch
             branchCheckboxes.forEach(cb => {
                 cb.addEventListener('change', () => {
-                     if (branchErrorMsg && cb.checked) {
-                         branchErrorMsg.classList.add('hidden');
-                     }
+                    if (branchErrorMsg && cb.checked) {
+                        branchErrorMsg.classList.add('hidden');
+                    }
                 });
             });
             if (allBranchesCheckbox) {
                 allBranchesCheckbox.addEventListener('change', () => {
-                     if (branchErrorMsg && allBranchesCheckbox.checked) {
-                         branchErrorMsg.classList.add('hidden');
-                     }
+                    if (branchErrorMsg && allBranchesCheckbox.checked) {
+                        branchErrorMsg.classList.add('hidden');
+                    }
                 });
             }
         }

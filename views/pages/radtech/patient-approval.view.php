@@ -40,10 +40,9 @@ foreach ($allServices as $service) {
 }
 ?>
 
-<!-- Vanilla JS Datepicker -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
+<!-- Modern Custom DatePicker -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 <style>
     html body .datepicker-cell.selected,
     html body .datepicker-cell.selected:hover,
@@ -390,8 +389,14 @@ foreach ($allServices as $service) {
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Birthdate</label>
-                        <div id="modalBirthdate_container" data-birthdate-picker data-id="modalBirthdate" data-name="modalBirthdate" data-required></div>
+                        <label class="block text-sm font-medium text-gray-700">Birthdate</label>
+                        <div class="relative mt-1">
+                            <input type="text" id="modalBirthdate" readonly placeholder="Select birthdate"
+                                class="text-sm text-gray-900 bg-gray-50 p-2 pr-8 rounded w-full border border-gray-200"
+                                required>
+                            <i data-lucide="calendar"
+                                class="absolute right-2 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Sex</label>
@@ -482,8 +487,16 @@ foreach ($allServices as $service) {
     src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
+    // ── Modern Custom Datepicker init ─────────────────────────────────────────────
+    let modalDatePicker = null;
     document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) window.lucide.createIcons();
+        const modalBirthdateInput = document.getElementById('modalBirthdate');
+        if (modalBirthdateInput) {
+            modalDatePicker = new ModernDatePicker(modalBirthdateInput, {
+                maxDate: new Date()
+            });
+        }
     });
 
     // ── Highlight row from notification ───────────────────────────────────────────

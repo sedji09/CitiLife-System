@@ -5,15 +5,7 @@ window.currentEditingPatientId = null;
 
 function setModalInputsDisabled(disabled) {
     if (document.getElementById('modalName')) document.getElementById('modalName').disabled = disabled;
-    const bdPicker = document.getElementById('modalBirthdate_container')?._bdPicker;
-    if (bdPicker) {
-        if (bdPicker.inputMM) bdPicker.inputMM.disabled = disabled;
-        if (bdPicker.inputDD) bdPicker.inputDD.disabled = disabled;
-        if (bdPicker.inputYYYY) bdPicker.inputYYYY.disabled = disabled;
-        if (bdPicker.calBtn) bdPicker.calBtn.style.display = disabled ? 'none' : 'block';
-    } else if (document.getElementById('modalBirthdate')) {
-        document.getElementById('modalBirthdate').disabled = disabled;
-    }
+    if (document.getElementById('modalBirthdate')) document.getElementById('modalBirthdate').disabled = disabled;
     if (document.getElementById('modalSex')) document.getElementById('modalSex').disabled = disabled;
     if (document.getElementById('modalContact')) document.getElementById('modalContact').disabled = disabled;
     if (document.getElementById('modalAddress')) document.getElementById('modalAddress').disabled = disabled;
@@ -36,14 +28,13 @@ function openEditModal(id, name, birthdate, sex, contact, homeAddress, philhealt
     currentEditId = id;
     setModalInputsDisabled(false);
     if (document.getElementById('modalName')) document.getElementById('modalName').value = name;
-    
-    // Set the datepicker date
-    const bdPicker = document.getElementById('modalBirthdate_container')?._bdPicker;
-    if (bdPicker) {
-        bdPicker.setValue(birthdate);
-    } else {
-        const modalBirthdateInput = document.getElementById('modalBirthdate');
-        if (modalBirthdateInput) modalBirthdateInput.value = birthdate;
+    // Set the datepicker date (use the picker if available, fallback to direct value)
+    const modalBirthdateInput = document.getElementById('modalBirthdate');
+    if (modalBirthdateInput) {
+        modalBirthdateInput.value = birthdate;
+        if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+            modalDatePicker.setDate(birthdate);
+        }
     }
     if (document.getElementById('modalSex')) document.getElementById('modalSex').value = sex;
     if (document.getElementById('modalContact')) document.getElementById('modalContact').value = contact;
@@ -69,14 +60,13 @@ function openViewModal(id, name, birthdate, sex, contact, homeAddress, philhealt
     currentEditId = id;
     setModalInputsDisabled(true);
     if (document.getElementById('modalName')) document.getElementById('modalName').value = name;
-    
-    // Set the datepicker date
-    const bdPicker = document.getElementById('modalBirthdate_container')?._bdPicker;
-    if (bdPicker) {
-        bdPicker.setValue(birthdate);
-    } else {
-        const modalBirthdateInput = document.getElementById('modalBirthdate');
-        if (modalBirthdateInput) modalBirthdateInput.value = birthdate;
+    // Set the datepicker date (use the picker if available, fallback to direct value)
+    const modalBirthdateInput = document.getElementById('modalBirthdate');
+    if (modalBirthdateInput) {
+        modalBirthdateInput.value = birthdate;
+        if (typeof modalDatePicker !== 'undefined' && modalDatePicker) {
+            modalDatePicker.setDate(birthdate);
+        }
     }
     if (document.getElementById('modalSex')) document.getElementById('modalSex').value = sex;
     if (document.getElementById('modalContact')) document.getElementById('modalContact').value = contact;

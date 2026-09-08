@@ -25,10 +25,11 @@ foreach ($xrayRates as $rate) {
 $xrayCategories = array_keys($groupedRates);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="notranslate" translate="no">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="Citilife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports through the Patient Portal.">

@@ -12,8 +12,9 @@ $branchName = $branchData['name'] ?? 'Your Branch';
 // Initial data for page load (optional, we can just let JS handle it)
 ?>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<!-- Modern Custom DatePicker -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 
 <style>
     /* Premium Dark Mode Hover Overrides (Vivid Glow) */
@@ -267,16 +268,14 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                 setTimeout(() => {
                     const df = document.getElementById('dateFrom');
                     const dt = document.getElementById('dateTo');
-                    if (df && dt && typeof Datepicker !== 'undefined') {
-                        new Datepicker(df, {
-                            autohide: true,
-                            format: 'yyyy-mm-dd',
-                            todayHighlight: true
+                    if (df && dt && typeof ModernDatePicker !== 'undefined') {
+                        new ModernDatePicker(df, {
+                            maxDate: null,
+                            onSelect: () => loadStats()
                         });
-                        new Datepicker(dt, {
-                            autohide: true,
-                            format: 'yyyy-mm-dd',
-                            todayHighlight: true
+                        new ModernDatePicker(dt, {
+                            maxDate: null,
+                            onSelect: () => loadStats()
                         });
                         
                         df.addEventListener('changeDate', loadStats);

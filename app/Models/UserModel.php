@@ -176,33 +176,36 @@ class UserModel {
     /**
      * Create a new staff account.
      */
-    public function createStaffUser($email, $password, $role, $branchId = null) {
+    public function createStaffUser($email, $password, $role, $branchId = null, $name = null, $token = null, $expiresAt = null, $status = 'Active') {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $this->pdo->prepare("
-            INSERT INTO users (email, password, role, branch_id, status) 
-            VALUES (?, ?, ?, ?, 'Active')
+            INSERT INTO users (email, password, role, branch_id, name, status, reset_password_token, reset_password_expires_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        return $stmt->execute([$email, $hashedPassword, $role, $branchId]);
+        return $stmt->execute([$email, $hashedPassword, $role, $branchId, $name, $status, $token, $expiresAt]);
     }
 
     /**
      * Update a staff account.
      */
-    public function updateStaffUser($id, $email, $role, $branchId = null, $password = null) {
-        if ($password) {
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $this->pdo->prepare("
-                UPDATE users SET email = ?, password = ?, role = ?, branch_id = ? 
-                WHERE id = ?
-            ");
-            return $stmt->execute([$email, $hashedPassword, $role, $branchId, $id]);
-        } else {
-            $stmt = $this->pdo->prepare("
-                UPDATE users SET email = ?, role = ?, branch_id = ? 
-                WHERE id = ?
-            ");
-            return $stmt->execute([$email, $role, $branchId, $id]);
+    public function updateStaffUser($id, $email, $role, $branchId = null, $password = null, $name = null) {
+        $fields = ["email = ?", "role = ?", "branch_id = ?"];
+        $params = [$email, $role, $branchId];
+
+        if ($name !== null) {
+            $fields[] = "name = ?";
+            $params[] = $name;
         }
+
+        if ($password) {
+            $fields[] = "password = ?";
+            $params[] = password_hash($password, PASSWORD_DEFAULT);
+        }
+
+        $params[] = $id;
+        $sql = "UPDATE users SET " . implode(", ", $fields) . " WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($params);
     }
 
     /**

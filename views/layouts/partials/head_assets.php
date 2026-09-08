@@ -2,6 +2,8 @@
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/noc-theme.css?v=<?= time() ?>">
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/drive-preview.css?v=<?= time() ?>">
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/drive-preview.js?v=<?= time() ?>"></script>
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-timepicker.css?v=<?= time() ?>">
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>
 
   <!-- Premium Alerts & Dialogs (SweetAlert2) -->
   <link rel="stylesheet"
@@ -868,89 +870,9 @@
       margin-left: 0 !important;
     }
 
-    /* ===== Premium Custom Tooltips ===== */
+    /* Old CSS tooltips retired in favor of universal modern floating tooltips */
     .has-tooltip {
       position: relative;
-    }
-
-    /* Styles apply to any element with data-tooltip */
-    [data-tooltip]::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      padding: 6px 12px;
-      background: rgba(17, 24, 39, 0.9);
-      backdrop-filter: blur(4px);
-      color: white;
-      font-size: 11px;
-      font-weight: 500;
-      border-radius: 8px;
-      white-space: nowrap;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.2s ease-in-out;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      z-index: 9999;
-      pointer-events: none;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Left side (Sidebar collapsed) */
-    .sidebar-tooltip::after {
-      left: 100%;
-      top: 50%;
-      margin-left: 12px;
-      transform: translateY(-50%) translateX(-10px);
-    }
-
-    /* Top side (for elements near bottom) */
-    .top-tooltip::after {
-      bottom: 100%;
-      left: 50%;
-      margin-bottom: 10px;
-      transform: translateX(-50%) translateY(10px);
-    }
-
-    /* Bottom side (Topbar) */
-    .bottom-tooltip::after {
-      top: 100%;
-      left: 50%;
-      margin-top: 10px;
-      transform: translateX(-50%) translateY(-10px);
-    }
-
-    .sidebar-tooltip:hover::after,
-    .top-tooltip:hover::after,
-    .bottom-tooltip:hover::after {
-      opacity: 1;
-      visibility: visible;
-      transform: translate(0, 0);
-      /* Simplified transform for stability */
-    }
-
-    /* Positioning for stability */
-    .sidebar-tooltip::after {
-      left: 100%;
-      top: 50%;
-      margin-left: 10px;
-      transform: translateY(-50%);
-    }
-
-    .top-tooltip::after {
-      bottom: 100%;
-      left: 50%;
-      margin-bottom: 10px;
-      transform: translateX(-50%);
-    }
-
-    .bottom-tooltip::after {
-      top: 100%;
-      left: 50%;
-      margin-top: 10px;
-      transform: translateX(-50%);
-    }
-
-    [data-tooltip=""]::after {
-      display: none !important;
     }
 
     /* Custom Expired Alert Modal styles */
@@ -1228,3 +1150,8 @@
       } catch (e) { }
     })();
   </script>
+
+  <!-- Modern Custom Select Dropdowns, Tooltips & Clock TimePicker -->
+  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-select.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-tooltip.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-timepicker.css?v=<?= time() ?>">

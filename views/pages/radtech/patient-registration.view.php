@@ -5,9 +5,8 @@
  */
 ?>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/birthdate-picker.js?v=<?= time() ?>"></script>
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 
 <style>
 @keyframes inputShake {
@@ -140,7 +139,13 @@
                             <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-2">Birthdate <span
                                     class="text-red-500">*</span></label>
                             <?php $birthdateValue = $_POST['birthdate'] ?? ''; ?>
-                            <div id="birthdate-picker-container" data-birthdate-picker data-id="birthdate" data-name="birthdate" data-value="<?= htmlspecialchars($birthdateValue) ?>" data-feedback-id="birthdate-feedback" data-required></div>
+                            <div class="relative">
+                                <input type="text" id="birthdate" name="birthdate" required
+                                    placeholder="Select birthdate" readonly
+                                    value="<?= htmlspecialchars($birthdateValue) ?>"
+                                    class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 req-new transition-all cursor-pointer shadow-sm">
+                                <i data-lucide="calendar" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            </div>
                             <p id="birthdate-feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
                         <div>
@@ -601,12 +606,6 @@
     }
 
     function validateBirthdate(isSubmitted = false) {
-        const picker = document.getElementById('birthdate-picker-container')?._bdPicker;
-        if (picker) {
-            const res = picker.validate(isSubmitted);
-            return res.isValid;
-        }
-
         const input = document.getElementById('birthdate');
         const feedback = document.getElementById('birthdate-feedback');
         if (!input) return true;
@@ -752,8 +751,20 @@
 
         const bdateInput = document.getElementById('birthdate');
         if (bdateInput) {
+            new ModernDatePicker(bdateInput, {
+                maxDate: new Date(),
+                onSelect: () => {
+                    validateBirthdate(true);
+                }
+            });
+        }
+
+        // Datepicker event listeners
+        if (bdateInput) {
+            bdateInput.addEventListener('changeDate', () => validateBirthdate(true));
             bdateInput.addEventListener('change', () => validateBirthdate(true));
             bdateInput.addEventListener('input', () => validateBirthdate(false));
+            // Trigger initial age calculate if birthdate prefilled
             if (bdateInput.value.trim()) {
                 validateBirthdate(false);
             }

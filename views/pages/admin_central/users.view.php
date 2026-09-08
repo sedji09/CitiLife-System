@@ -73,7 +73,7 @@
         <div class="flex flex-col md:flex-row gap-3 items-center">
             <div class="relative flex-1 w-full">
                 <input type="text" id="userSearch" oninput="filterAndSortUsers()"
-                    placeholder="Search by email or role..."
+                    placeholder="Search by name, email, or role..."
                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
                 <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400"></i>
             </div>
@@ -87,9 +87,10 @@
                     <?php endforeach; ?>
                 </select>
                 <select id="statusFilter" onchange="filterAndSortUsers()"
-                    class="flex-1 md:w-40 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
+                    class="flex-1 md:w-44 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
                     <option value="" selected>All Status</option>
                     <option value="Active">Active</option>
+                    <option value="Pending">Pending Activation</option>
                     <option value="Inactive">Inactive</option>
                 </select>
             </div>
@@ -101,7 +102,7 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50/80 border-b border-gray-200">
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Email Address / User</th>
+                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Staff Member / Email</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Role</th>
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Branch Assignment
                             </th>
@@ -125,7 +126,7 @@
                                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                                     <div class="flex flex-col items-center gap-3">
                                         <div
-                                            class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
+                                             class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
                                             <i data-lucide="search-x" class="w-8 h-8 text-gray-300"></i>
                                         </div>
                                         <h3 class="text-sm font-bold text-gray-800">No matching accounts</h3>
@@ -136,6 +137,7 @@
                             </tr>
                             <?php foreach ($users as $u): ?>
                                 <tr class="hover:bg-gray-50/30 transition-colors group user-row"
+                                    data-name="<?= htmlspecialchars(strtolower($u['name'] ?? '')) ?>"
                                     data-email="<?= htmlspecialchars(strtolower($u['email'])) ?>"
                                     data-role="<?= htmlspecialchars(strtolower($u['role'])) ?>"
                                     data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'universal')) ?>"
@@ -148,13 +150,17 @@
                                                  <?php if (!empty($uAvatarUrl)): ?>
                                                      <img src="<?= htmlspecialchars($uAvatarUrl) ?>" alt="Avatar"
                                                          class="h-full w-full object-cover">
-                                                <?php else: ?>
-                                                    <?= substr($u['email'], 0, 2) ?>
-                                                <?php endif; ?>
+                                                 <?php else: ?>
+                                                     <?= htmlspecialchars(strtoupper(substr(!empty($u['name']) ? $u['name'] : $u['email'], 0, 2))) ?>
+                                                 <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col">
-                                                <span
-                                                    class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['email']) ?></span>
+                                                <?php if (!empty($u['name'])): ?>
+                                                    <span class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['name']) ?></span>
+                                                    <span class="text-xs text-gray-500 font-normal"><?= htmlspecialchars($u['email']) ?></span>
+                                                <?php else: ?>
+                                                    <span class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['email']) ?></span>
+                                                <?php endif; ?>
                                                 <span class="text-[10px] text-gray-400 font-medium tracking-tight">Joined
                                                     <?= date('M d, Y', strtotime($u['created_at'])) ?></span>
                                             </div>
@@ -173,22 +179,34 @@
                                     <td class="px-6 py-4">
                                         <?php
                                         $badgeClass = 'bg-gray-100 text-gray-600 ring-gray-200';
+                                        $badgeLabel = $u['status'];
                                         if ($u['status'] === 'Active') {
                                             $badgeClass = 'bg-green-50 text-green-600 ring-green-100';
                                         } elseif ($u['status'] === 'Pending') {
-                                            $badgeClass = 'bg-yellow-50 text-yellow-600 ring-yellow-200';
+                                            $badgeClass = 'bg-amber-50 text-amber-700 ring-amber-200';
+                                            $badgeLabel = 'Pending Activation';
                                         } elseif ($u['status'] === 'Rejected' || $u['status'] === 'Inactive') {
                                             $badgeClass = 'bg-red-50 text-red-600 ring-red-100';
                                         }
                                         ?>
                                         <span
                                             class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold ring-1 ring-inset <?= $badgeClass ?>">
-                                            <?= htmlspecialchars($u['status']) ?>
+                                            <?= htmlspecialchars($badgeLabel) ?>
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-left">
                                         <div class="flex items-center justify-start gap-1.5">
-                                            <?php if ($u['status'] === 'Active'): ?>
+                                            <?php if ($u['status'] === 'Pending'): ?>
+                                                <form action="" method="POST" class="inline" onsubmit="return confirm('Resend account activation email to <?= htmlspecialchars($u['email']) ?>?')">
+                                                    <input type="hidden" name="action" value="resend_invite">
+                                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                    <button type="submit"
+                                                        class="p-1.5 rounded-md border border-amber-200 bg-amber-50 text-amber-600 hover:text-amber-800 hover:border-amber-300 hover:bg-amber-100 transition shadow-sm"
+                                                        title="Resend Activation Email">
+                                                        <i data-lucide="send" class="w-4 h-4"></i>
+                                                    </button>
+                                                </form>
+                                            <?php elseif ($u['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
@@ -266,6 +284,16 @@
             <input type="hidden" name="action" value="create">
 
             <div>
+                <label for="name" class="block text-sm font-semibold text-gray-700 mb-1.5">Staff Full Name</label>
+                <div class="relative">
+                    <i data-lucide="user" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                    <input type="text" id="name" name="name" required placeholder="Dr. Juan Dela Cruz"
+                        autocomplete="off"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                </div>
+            </div>
+
+            <div>
                 <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
                 <div class="relative">
                     <i data-lucide="mail" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
@@ -276,8 +304,8 @@
             </div>
 
             <div class="p-3 bg-blue-50/80 border border-blue-100 rounded-xl text-xs text-blue-800 flex items-center gap-2.5">
-                <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0"></i>
-                <span>An initial password will be automatically generated and sent directly to the staff member's email address.</span>
+                <i data-lucide="mail-check" class="w-4 h-4 text-blue-600 shrink-0"></i>
+                <span>An invitation link will be emailed to the staff member to set their password and activate their account (valid for 7 days).</span>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -312,8 +340,9 @@
                     Cancel
                 </button>
                 <button type="submit"
-                    class="flex-1 py-2.5 rounded-xl bg-red-600 text-sm font-bold text-white hover:bg-red-700 shadow-sm shadow-red-200 transition-all active:scale-95">
-                    Create Account
+                    class="flex-1 py-2.5 rounded-xl bg-red-600 text-sm font-bold text-white hover:bg-red-700 shadow-sm shadow-red-200 transition-all active:scale-95 inline-flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Create & Send Invitation</span>
                 </button>
             </div>
         </form>
@@ -335,6 +364,15 @@
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="user_id" id="edit_user_id">
+
+            <div>
+                <label for="edit_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Staff Full Name</label>
+                <div class="relative">
+                    <i data-lucide="user" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                    <input type="text" id="edit_name" name="name" placeholder="Dr. Juan Dela Cruz"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                </div>
+            </div>
 
             <div>
                 <label for="edit_email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
@@ -444,6 +482,8 @@
 
     function openAddUserModal() {
         // Clear inputs to prevent lingering values or autofill
+        const nameEl = document.getElementById('name');
+        if (nameEl) nameEl.value = '';
         document.getElementById('email').value = '';
         const passEl = document.getElementById('password');
         if (passEl) passEl.value = generateRandomPassword();
@@ -461,6 +501,8 @@
 
     function openEditModal(user) {
         document.getElementById('edit_user_id').value = user.id;
+        const editNameEl = document.getElementById('edit_name');
+        if (editNameEl) editNameEl.value = user.name || '';
         document.getElementById('edit_email').value = user.email;
         document.getElementById('edit_role').value = user.role;
         document.getElementById('edit_branch_id').value = user.branch_id || '';
@@ -547,12 +589,13 @@
         // 1. Filtering
         let visibleCount = 0;
         rows.forEach(row => {
+            const rowName = (row.dataset.name || "").toLowerCase();
             const rowEmail = (row.dataset.email || "").toLowerCase();
             const rowRole = (row.dataset.role || "").replace(/_/g, ' ').toLowerCase(); // Allow searching with spaces
             const rowBranch = (row.dataset.branch || "").toLowerCase();
             const rowStatus = row.dataset.status || "";
 
-            const matchesSearch = rowEmail.includes(query) || rowRole.includes(query) || (row.dataset.role || "").toLowerCase().includes(query);
+            const matchesSearch = rowName.includes(query) || rowEmail.includes(query) || rowRole.includes(query) || (row.dataset.role || "").toLowerCase().includes(query);
             const matchesBranch = branch === "" || rowBranch.includes(branch);
             const matchesStatus = status === "" || rowStatus.trim() === status;
 
