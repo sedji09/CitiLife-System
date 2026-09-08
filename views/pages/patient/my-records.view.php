@@ -990,4 +990,5 @@ $statusBadge = [
             });
         });
     </script>
+    <script src="<?= url('views/pages/patient/my-records.js?v=' . time()) ?>"></script>
 </div>

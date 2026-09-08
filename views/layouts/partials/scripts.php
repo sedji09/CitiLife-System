@@ -2040,7 +2040,7 @@
 </script>
 
 <?php
-echo '<script src="/' . PROJECT_DIR . '/views/pages/patient/my-records.js?v=' . time() . '"></script>';
+echo '<script src="' . url('views/pages/patient/my-records.js?v=' . time()) . '"></script>';
 ?>
 
 <script>

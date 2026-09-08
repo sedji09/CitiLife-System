@@ -163,7 +163,7 @@ if (empty($token)) {
                     <span><?= htmlspecialchars($message) ?></span>
                 </div>
                 <div class="text-center">
-                    <a href="/<?= PROJECT_DIR ?>/?signup=1"
+                    <a href="<?= url('?signup=1') ?>"
                         class="text-sm font-semibold text-red-600 hover:text-red-700 hover:underline transition-colors">
                         ← Return to Sign Up
                     </a>

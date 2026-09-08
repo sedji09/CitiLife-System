@@ -1392,7 +1392,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
                                             <?php if ($showAmendBtn): ?>
                                                 <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
-                                                <a href="/<?= PROJECT_DIR ?>/index.php?page=patient-details&role=radtech&id=<?= (int)$d['case_id'] ?>&from=disputes&dispute_id=<?= (int)$d['id'] ?>"
+                                                <a href="<?= url('patient-details?role=radtech&id=' . (int)$d['case_id'] . '&from=disputes&dispute_id=' . (int)$d['id']) ?>"
                                                    class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                    title="<?= htmlspecialchars($amendBtnTitle) ?>">
                                                     <i data-lucide="edit-3" class="w-4 h-4"></i>

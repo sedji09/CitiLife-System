@@ -9,11 +9,11 @@ $branchId = $_SESSION['branch_id'] ?? null;
 ?>
 
 <!-- Include Chart.js -->
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/chart.min.js"></script>
+<script src="<?= url('public/assets/js/chart.min.js') ?>"></script>
 
 <!-- Modern Custom DatePicker -->
-<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
-<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
+<link rel="stylesheet" href="<?= url('public/assets/css/custom-datepicker.css?v=' . time()) ?>">
+<script src="<?= url('public/assets/js/custom-datepicker.js?v=' . time()) ?>"></script>
 
 <div class="space-y-6 pb-10">
     <!-- Header -->
