@@ -231,7 +231,7 @@ foreach ($allServices as $service) {
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <button
+                                    <button type="button"
                                         onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patFullName) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
                                         class="text-sm font-medium text-gray-600 hover:text-gray-700 transition cursor-pointer" title="View Patient Details">
                                         <i data-lucide="eye"
@@ -239,12 +239,12 @@ foreach ($allServices as $service) {
                                     </button>
                                     
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
+                                        <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
                                             class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Examination">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
                                         </button>
                                     <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
+                                        <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
                                             class="text-sm font-medium text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View Assigned Examination Details (Read-Only)">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 px-1 py-1 rounded-md border border-gray-300"></i>
                                         </button>

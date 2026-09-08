@@ -16,7 +16,7 @@
     isElementVisible: function (el) {
       if (!el || el.disabled || el.type === 'hidden') return false;
       // If element is inside an explicitly hidden container
-      if (el.closest('.hidden') || el.closest('[style*="display: none"]') || el.closest('[style*="display:none"]')) {
+      if (el.closest('.hidden') || el.closest('[style*="display: none"]') || el.closest('[style*="display:none"]') || el.closest('[aria-hidden="true"]')) {
         return false;
       }
       return true;
@@ -41,12 +41,10 @@
       const parentLabel = el.closest('label');
       if (parentLabel && parentLabel.innerText.includes('*')) return true;
 
-      // 3. Check if any enclosing container has a label with an asterisk '*'
-      let cur = el.parentElement;
-      while (cur && cur.tagName !== 'FORM' && cur.tagName !== 'BODY') {
-        const siblingLabel = cur.querySelector('label');
-        if (siblingLabel && siblingLabel.innerText && siblingLabel.innerText.includes('*')) return true;
-        cur = cur.parentElement;
+      // 3. Check ONLY immediate parent container for a direct label with an asterisk '*'
+      if (el.parentElement) {
+        const directLabel = el.parentElement.querySelector(':scope > label, :scope > div > label');
+        if (directLabel && directLabel.innerText && directLabel.innerText.includes('*')) return true;
       }
 
       return false;
@@ -388,15 +386,13 @@
         if (clean) return clean;
       }
 
-      // 3. Check for sibling <label> inside any ancestor container
-      let cur = el.parentElement;
-      while (cur && cur.tagName !== 'FORM' && cur.tagName !== 'BODY') {
-        const siblingLabel = cur.querySelector('label');
-        if (siblingLabel && siblingLabel.innerText && !siblingLabel.contains(el)) {
-          const clean = siblingLabel.innerText.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
-          if (clean) return clean;
+      // 3. Check ONLY immediate parent container for a direct label
+      if (el.parentElement) {
+        const directLabel = el.parentElement.querySelector(':scope > label, :scope > div > label');
+        if (directLabel && directLabel.innerText && !directLabel.contains(el)) {
+          const clean = directLabel.innerText.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
+          if (clean && clean.length < 50) return clean;
         }
-        cur = cur.parentElement;
       }
 
       // 4. Fallback to name or id formatted nicely (e.g. contact_number -> Contact Number)
@@ -578,14 +574,28 @@
     const btn = e.target.closest('button, a[role="button"], input[type="submit"]');
     if (!btn) return;
 
-    // Check if clicking a submit button or a Next action button
-    const btnText = (btn.innerText || btn.value || '').trim().toLowerCase();
-    const isActionBtn = btn.type === 'submit' || btn.classList.contains('btn-next') || btnText.includes('next');
+    // Check if clicking a multi-step wizard Next action button
+    const isWizardNext = btn.classList.contains('btn-next') || btn.hasAttribute('data-next-step');
+    if (isWizardNext) {
+      const stepContainer = btn.closest('.step-pane, .form-step, [data-step]');
+      if (stepContainer) {
+        const isValid = FormValidator.validate(stepContainer);
+        if (!isValid) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
+      return;
+    }
 
-    if (isActionBtn) {
-      const container = btn.closest('form') || btn.closest('.modal') || btn.closest('[id$="Modal"]') || btn.closest('main');
-      if (container && !container.hasAttribute('data-no-validate')) {
-        const isValid = FormValidator.validate(container);
+    // Only intercept submit buttons that are actually inside a form
+    const form = btn.closest('form');
+    if (btn.type === 'submit' && form && !form.hasAttribute('data-no-validate')) {
+      // Check if button is inside a modal form
+      const isInsideModal = form.closest('.modal') || form.closest('[id$="Modal"]') || form.closest('.fixed');
+      if (isInsideModal || form.hasAttribute('data-validate')) {
+        const isValid = FormValidator.validate(form);
         if (!isValid) {
           e.preventDefault();
           e.stopPropagation();
