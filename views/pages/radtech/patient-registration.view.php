@@ -45,8 +45,29 @@
         $regSuccess = $_SESSION['registration_success'] ?? null;
         if ($regSuccess):
             unset($_SESSION['registration_success']); // Clear for next load
-        endif; 
         ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Registration Successful',
+                            text: <?= json_encode($regSuccess) ?>,
+                            showConfirmButton: true,
+                            confirmButtonColor: '#10b981',
+                            timer: 3500,
+                            timerProgressBar: true,
+                            customClass: {
+                                popup: 'rounded-3xl border-0 shadow-2xl',
+                                confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                            }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($regSuccess) ?>, 'success');
+                    }
+                });
+            </script>
+        <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="rounded-lg bg-red-50 border border-red-300 p-4 mb-6">
@@ -1179,6 +1200,10 @@
         document.getElementById('sp-sex').innerText = p.sex;
         document.getElementById('sp-contact').innerText = p.contact_number || 'N/A';
 
+        if (window.FormValidator && searchInput) {
+            window.FormValidator.clearError(searchInput);
+        }
+
         document.getElementById('selected-patient-info').classList.remove('hidden');
         if (resultsList) resultsList.classList.add('hidden');
         if (searchInput) {
@@ -1193,6 +1218,9 @@
         document.getElementById('selected-patient-info').classList.add('hidden');
         if (searchInput) {
             searchInput.disabled = false;
+            if (window.FormValidator) {
+                window.FormValidator.clearError(searchInput);
+            }
             searchInput.focus();
         }
     }
