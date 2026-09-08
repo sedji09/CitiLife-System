@@ -210,7 +210,7 @@
                                                          <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                          <input type="hidden" name="new_status" value="Inactive">
                                                          <button type="submit"
-                                                             class="p-1.5 rounded-md border border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 transition shadow-sm"
+                                                             class="p-1.5 rounded-md border border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition shadow-sm"
                                                              title="Deactivate (Set Inactive)">
                                                              <i data-lucide="minus-circle" class="w-4 h-4"></i>
                                                          </button>
