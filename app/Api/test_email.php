@@ -28,9 +28,9 @@ $testBody = renderOtpEmail(
 );
 
 $result = sendEmail(
-    $config['from_email'], 
-    'Test Recipient', 
-    'Citilife Email System Test', 
+    'seigipascual09@gmail.com', 
+    'Seigi Pascual', 
+    'Citilife Email System Test - Live Delivery', 
     $testBody
 );
 
