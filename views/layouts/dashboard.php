@@ -152,10 +152,12 @@ $appName = function_exists('getSystemName') ? getSystemName() : 'CitiLife Diagno
 $autoLogoutMinutes = function_exists('getSystemSetting') ? intval(getSystemSetting('auto_logout_minutes', 0)) : 0;
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="notranslate" translate="no">
 
 <head>
   <meta charset="UTF-8">
+  <meta name="google" content="notranslate">
+  <meta http-equiv="Content-Language" content="en">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($appName) ?></title>
   <link rel="icon" type="image/png" href="<?= $logoPath ?>">

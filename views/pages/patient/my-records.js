@@ -628,31 +628,37 @@ window.initDisputeDatePicker = function () {
     const input = document.getElementById('input-correct-birthdate');
     if (!input) return;
 
-    if (typeof Datepicker !== 'undefined') {
-        if (!input._datepicker) {
-            input._datepicker = new Datepicker(input, {
-                autohide: true,
-                format: 'yyyy-mm-dd',
-                todayHighlight: true,
-                maxDate: new Date()
+    function handleDateChange(bdateVal) {
+        const age = calculateAgeFromBirthdate(bdateVal);
+        const ageInput = document.getElementById('input-correct-age');
+        if (ageInput) ageInput.value = age !== '' ? age : '';
+
+        const preview = document.getElementById('preview-calculated-age');
+        const valSpan = document.getElementById('val-calculated-age');
+        if (preview && valSpan) {
+            if (age !== '') {
+                valSpan.textContent = age + (age === 1 ? ' yr old' : ' yrs old');
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+    }
+
+    if (typeof ModernDatePicker !== 'undefined') {
+        if (!input._customDatePicker) {
+            new ModernDatePicker(input, {
+                maxDate: new Date(),
+                onSelect: function (val) {
+                    handleDateChange(val);
+                }
             });
 
             input.addEventListener('changeDate', function () {
-                const bdateVal = input.value;
-                const age = calculateAgeFromBirthdate(bdateVal);
-                const ageInput = document.getElementById('input-correct-age');
-                if (ageInput) ageInput.value = age !== '' ? age : '';
-
-                const preview = document.getElementById('preview-calculated-age');
-                const valSpan = document.getElementById('val-calculated-age');
-                if (preview && valSpan) {
-                    if (age !== '') {
-                        valSpan.textContent = age + (age === 1 ? ' yr old' : ' yrs old');
-                        preview.classList.remove('hidden');
-                    } else {
-                        preview.classList.add('hidden');
-                    }
-                }
+                handleDateChange(input.value);
+            });
+            input.addEventListener('change', function () {
+                handleDateChange(input.value);
             });
         }
     }

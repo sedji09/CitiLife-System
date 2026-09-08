@@ -1,0 +1,219 @@
+/* ==========================================================================
+   CitiLife Custom Select - Modern Minimalist Dropdowns
+   Matches the CitiLife Red Card aesthetic with smooth popovers & floating menus
+   ========================================================================== */
+
+.cs-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    user-select: none;
+    font-family: inherit;
+}
+
+/* Original select is visually hidden but accessible for form submissions */
+.cs-native-hidden {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Trigger button simulating input box */
+.cs-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+    cursor: pointer;
+    text-align: left;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.cs-trigger:hover {
+    border-color: #f87171;
+}
+
+.cs-wrapper.cs-open .cs-trigger,
+.cs-trigger:focus-visible {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.cs-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.cs-chevron {
+    width: 16px;
+    height: 16px;
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.cs-wrapper.cs-open .cs-chevron {
+    transform: rotate(180deg);
+    color: #dc2626;
+}
+
+/* Dropdown Menu Panel */
+.cs-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    z-index: 99999;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+    padding: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+    pointer-events: none;
+    transform-origin: top center;
+    transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+}
+
+.cs-dropdown::-webkit-scrollbar {
+    width: 5px;
+}
+.cs-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.cs-wrapper.cs-open .cs-dropdown {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+/* Options */
+.cs-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.cs-option:hover {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+.cs-option.cs-selected {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    font-weight: 700;
+}
+
+.cs-option.cs-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.cs-check-icon {
+    width: 15px;
+    height: 15px;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+/* Inverted / Dropup when close to bottom */
+.cs-wrapper.cs-dropup .cs-dropdown {
+    top: auto;
+    bottom: calc(100% + 5px);
+    transform-origin: bottom center;
+}
+
+/* ==========================================================================
+   Dark Mode Styles
+   ========================================================================== */
+body.theme-dark .cs-trigger,
+.theme-dark .cs-trigger {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+body.theme-dark .cs-trigger:hover,
+.theme-dark .cs-trigger:hover {
+    border-color: #f87171;
+}
+
+body.theme-dark .cs-wrapper.cs-open .cs-trigger,
+.theme-dark .cs-wrapper.cs-open .cs-trigger {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+body.theme-dark .cs-chevron,
+.theme-dark .cs-chevron {
+    color: #64748b;
+}
+
+body.theme-dark .cs-dropdown,
+.theme-dark .cs-dropdown {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.5);
+    scrollbar-color: #475569 transparent;
+}
+
+body.theme-dark .cs-dropdown::-webkit-scrollbar-thumb,
+.theme-dark .cs-dropdown::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+body.theme-dark .cs-option,
+.theme-dark .cs-option {
+    color: #cbd5e1;
+}
+
+body.theme-dark .cs-option:hover,
+.theme-dark .cs-option:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+body.theme-dark .cs-option.cs-selected,
+.theme-dark .cs-option.cs-selected {
+    background-color: rgba(220, 38, 38, 0.25);
+    color: #fca5a5;
+}
+
+body.theme-dark .cs-check-icon,
+.theme-dark .cs-check-icon {
+    color: #f87171;
+}

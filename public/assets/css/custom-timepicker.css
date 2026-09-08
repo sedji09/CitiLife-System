@@ -1,0 +1,431 @@
+/* ==========================================================================
+   CitiLife Custom TimePicker - Modern Aesthetic Time Popover
+   Matches the CitiLife modern UI design system with signature CitiLife Red,
+   soft pill selection, dual 12-hour AM/PM columns, and dark mode support.
+   ========================================================================== */
+
+:root {
+  --ctp-bg: #ffffff;
+  --ctp-border: #e2e8f0;
+  --ctp-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.14), 0 6px 16px -2px rgba(15, 23, 42, 0.05);
+  --ctp-primary: #dc2626;
+  --ctp-primary-hover: #b91c1c;
+  --ctp-primary-light: #fef2f2;
+  --ctp-primary-text: #b91c1c;
+  --ctp-text-main: #0f172a;
+  --ctp-text-muted: #64748b;
+  --ctp-text-subtle: #94a3b8;
+  --ctp-hover-bg: #fef2f2;
+  --ctp-pill-bg: #f8fafc;
+  --ctp-divider: #f1f5f9;
+}
+
+.theme-dark {
+  --ctp-bg: #1e293b;
+  --ctp-border: #334155;
+  --ctp-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.5), 0 8px 20px -2px rgba(0, 0, 0, 0.3);
+  --ctp-primary: #ef4444;
+  --ctp-primary-hover: #dc2626;
+  --ctp-primary-light: rgba(239, 68, 68, 0.2);
+  --ctp-primary-text: #fca5a5;
+  --ctp-text-main: #f8fafc;
+  --ctp-text-muted: #94a3b8;
+  --ctp-text-subtle: #64748b;
+  --ctp-hover-bg: #334155;
+  --ctp-pill-bg: #0f172a;
+  --ctp-divider: #334155;
+}
+
+/* ==========================================================================
+   Input Trigger & Wrapper
+   ========================================================================== */
+.ctp-trigger-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ctp-trigger-btn,
+.ctp-text-input {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 36px 8px 14px;
+  background-color: #fafaf9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+.ctp-trigger-btn:hover,
+.ctp-text-input:hover {
+  background-color: #ffffff;
+  border-color: #fca5a5;
+  box-shadow: 0 2px 6px -1px rgba(220, 38, 38, 0.08);
+}
+
+.ctp-trigger-btn.ctp-active,
+.ctp-trigger-btn:focus-visible,
+.ctp-text-input:focus,
+.ctp-text-input.ctp-active {
+  background-color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15), 0 2px 6px -1px rgba(220, 38, 38, 0.1);
+}
+
+.ctp-icon-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.ctp-icon-btn:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.ctp-icon-btn svg,
+.ctp-trigger-icon {
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  transition: transform 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ctp-icon-btn:hover svg,
+.ctp-trigger-wrap:hover .ctp-icon-btn svg,
+.ctp-trigger-wrap.ctp-active .ctp-icon-btn svg {
+  color: #dc2626;
+}
+
+.theme-dark .ctp-text-input {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.theme-dark .ctp-text-input:hover {
+  background-color: #1e293b;
+  border-color: #ef4444;
+}
+
+.theme-dark .ctp-text-input:focus {
+  background-color: #1e293b;
+  border-color: #ef4444;
+}
+
+.theme-dark .ctp-icon-btn {
+  color: #94a3b8;
+}
+
+.theme-dark .ctp-icon-btn:hover {
+  background-color: #334155;
+  color: #fca5a5;
+}
+
+/* ==========================================================================
+   Popover Shell
+   ========================================================================== */
+.ctp-popover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  z-index: 99999;
+  width: 280px;
+  background: var(--ctp-bg);
+  border: 1px solid var(--ctp-border);
+  border-radius: 20px;
+  box-shadow: var(--ctp-shadow);
+  padding: 15px;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  opacity: 0;
+  transform: scale(0.96) translateY(8px);
+  transform-origin: bottom center;
+  pointer-events: none;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctp-popover.ctp-open {
+  display: block;
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   Popover Header: Title Bar
+   ========================================================================== */
+.ctp-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ctp-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ctp-text-muted);
+}
+
+.ctp-header-title svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ctp-primary);
+}
+
+.ctp-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--ctp-text-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ctp-close-btn:hover {
+  background: var(--ctp-hover-bg);
+  color: var(--ctp-text-main);
+}
+
+/* ==========================================================================
+   Digital Time Display Box
+   ========================================================================== */
+.ctp-display-box {
+  background: var(--ctp-pill-bg);
+  border: 1px solid var(--ctp-border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.ctp-digits-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.ctp-digit-pill {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ctp-text-main);
+  background: transparent;
+  border: 1.5px solid transparent;
+  padding: 3px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  line-height: 1.1;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.ctp-digit-pill:hover:not(.active) {
+  background: var(--ctp-hover-bg);
+}
+
+.ctp-digit-pill.active {
+  background: #ffffff;
+  border-color: var(--ctp-primary);
+  color: var(--ctp-primary);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
+}
+
+.theme-dark .ctp-digit-pill.active {
+  background: #0f172a;
+  border-color: #ef4444;
+  color: #fca5a5;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+.ctp-digit-colon {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ctp-text-subtle);
+  line-height: 1;
+}
+
+/* AM/PM Switch in Display Box */
+.ctp-period-toggle {
+  display: flex;
+  background: var(--ctp-bg);
+  border: 1px solid var(--ctp-border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.ctp-period-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ctp-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.ctp-period-btn:hover:not(.active) {
+  color: var(--ctp-text-main);
+}
+
+.ctp-period-btn.active {
+  background: var(--ctp-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px -1px rgba(220, 38, 38, 0.4);
+}
+
+/* ==========================================================================
+   Columns Layout: Hours & Minutes
+   ========================================================================== */
+.ctp-columns-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ctp-col-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.ctp-col-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ctp-text-subtle);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.ctp-scroll-col {
+  position: relative;
+  height: 150px;
+  overflow-y: auto;
+  border: 1px solid var(--ctp-border);
+  border-radius: 12px;
+  padding: 4px;
+  background: var(--ctp-pill-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ctp-border) transparent;
+  scroll-behavior: smooth;
+}
+
+.ctp-scroll-col::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ctp-scroll-col::-webkit-scrollbar-thumb {
+  background: var(--ctp-border);
+  border-radius: 4px;
+}
+
+.ctp-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  min-height: 30px;
+  width: 100%;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ctp-text-main);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-variant-numeric: tabular-nums;
+}
+
+.ctp-item-btn:hover:not(.selected) {
+  background: var(--ctp-hover-bg);
+  color: var(--ctp-primary);
+}
+
+.ctp-item-btn.selected {
+  background: var(--ctp-primary) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 6px -1px rgba(220, 38, 38, 0.4);
+}
+
+/* ==========================================================================
+   Footer Actions Bar
+   ========================================================================== */
+.ctp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid var(--ctp-divider);
+}
+
+.ctp-done-btn {
+  background: var(--ctp-primary);
+  color: #ffffff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px -1px rgba(220, 38, 38, 0.4);
+}
+
+.ctp-done-btn:hover {
+  background: var(--ctp-primary-hover);
+  transform: translateY(-1px);
+}
+
+.ctp-done-btn:active {
+  transform: scale(0.97);
+}

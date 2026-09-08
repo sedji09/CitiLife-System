@@ -36,6 +36,11 @@ $router->post('/reset-password', 'App\Controllers\AuthController@resetPassword',
 $router->get('/reset-password.php', 'App\Controllers\AuthController@resetPassword', []);
 $router->post('/reset-password.php', 'App\Controllers\AuthController@resetPassword', []);
 
+$router->get('/set-password', 'App\Controllers\AuthController@resetPassword', []);
+$router->post('/set-password', 'App\Controllers\AuthController@resetPassword', []);
+$router->get('/set-password.php', 'App\Controllers\AuthController@resetPassword', []);
+$router->post('/set-password.php', 'App\Controllers\AuthController@resetPassword', []);
+
 $router->get('/verify', 'App\Controllers\AuthController@verify', ['guest']);
 $router->post('/verify', 'App\Controllers\AuthController@verify', ['guest']);
 $router->get('/verify.php', 'App\Controllers\AuthController@verify', ['guest']);

@@ -201,166 +201,335 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?= htmlspecialchars(getSystemName()) ?></title>
-    <!-- Use generated Tailwind CSS -->
-    <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="/<?= PROJECT_DIR ?>/public/assets/js/security.js?v=<?= time() ?>"></script>
     <style>
-        /* Custom styles for a more premium look */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        .bg-pattern {
+        body {
             background-color: #f3f4f6;
             background-image: radial-gradient(#d1d5db 1px, transparent 1px);
             background-size: 24px 24px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+
+        .modal-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            width: 100%;
+            max-width: 440px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            transform: translateY(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-header {
+            text-align: center;
+            padding: 36px 32px 0;
+        }
+
+        .modal-logo-wrapper {
+            width: 72px;
+            height: 72px;
+            background: #fef2f2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            border: 1px solid #fecaca;
+        }
+
+        .modal-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .modal-header h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .modal-header p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 28px;
+        }
+
+        .modal-form {
+            padding: 0 32px 36px;
+        }
+
+        .modal-alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid #fecaca;
+            line-height: 1.4;
+        }
+
+        .modal-alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid #fde68a;
+            line-height: 1.4;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #0f172a;
+            background: #fff;
+            transition: all 0.2s;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #e20f10;
+            box-shadow: 0 0 0 3px rgba(226, 15, 16, 0.1);
+        }
+
+        .modal-forgot {
+            text-align: right;
+            margin-bottom: 24px;
+        }
+
+        .modal-forgot a {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e20f10;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .modal-forgot a:hover {
+            text-decoration: underline;
+        }
+
+        .modal-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #e20f10;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(226, 15, 16, 0.25);
+        }
+
+        .modal-submit-btn:hover:not(:disabled) {
+            background: #c10d0d;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(226, 15, 16, 0.35);
+        }
+
+        .modal-submit-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .login-footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .login-footer a {
+            font-size: 13px;
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.15s;
+        }
+
+        .login-footer a:hover {
+            color: #0f172a;
+        }
+
+        .login-footer p {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .modal-card { max-width: 100%; border-radius: 20px; }
+            .modal-header { padding: 28px 24px 0; }
+            .modal-form { padding: 0 24px 28px; }
+            .modal-logo-wrapper { width: 60px; height: 60px; }
+            .modal-logo { width: 32px; height: 32px; }
+            .modal-header h2 { font-size: 24px; }
         }
     </style>
 </head>
 
-<body class="bg-pattern min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
+<body>
 
-    <div
-        class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all hover:scale-[1.01] duration-300">
-        <div class="p-5 sm:p-8">
-            <div class="text-center mb-5 sm:mb-8">
-                <!-- Fallback to a styled text if logo image is missing -->
-                <div
-                    class="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-sm">
-                    <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo"
-                        class="h-10 w-10 sm:h-12 sm:w-12 object-contain"
-                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <svg class="h-8 w-8 sm:h-10 sm:w-10 text-red-600 hidden" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Staff Portal</h1>
-                <p class="text-sm text-gray-500 mt-2">Welcome internal staff! Please enter your details.</p>
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-logo-wrapper">
+                <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo" class="modal-logo"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <svg class="modal-logo" style="display:none; color: #dc2626;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
             </div>
+            <h2>Staff Portal</h2>
+            <p>Welcome internal staff! Please enter your details.</p>
+        </div>
 
+        <form id="loginForm" name="loginForm" method="POST" action="/<?= PROJECT_DIR ?>/login" autocomplete="on" class="modal-form">
             <?php if (isset($_GET['reason']) && $_GET['reason'] === 'timeout'): ?>
-                <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3 animate-pulse">
-                    <div
-                        class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <p class="text-xs font-bold text-red-700 leading-tight">
-                        Session expired due to inactivity. <span class="block text-[10px] font-normal opacity-70">Please log
-                            in again.</span>
-                    </p>
+                <div class="modal-alert-error">
+                    Session expired due to inactivity. Please log in again.
                 </div>
             <?php endif; ?>
 
             <?php if ($is_locked): ?>
-                <div class="mb-6 p-5 rounded-[20px] bg-red-50 text-red-700 flex flex-col items-center text-center">
-                    <div class="flex items-center justify-center w-full mb-2">
-                        <svg class="w-6 h-6 mr-2 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <h3 class="font-bold text-red-800 text-[16px]">Access Locked</h3>
-                    </div>
-                    <p class="text-[14px] text-red-700 px-2">Too many failed attempts. Please try again after <strong
-                            id="lockTimer" data-remaining="<?= $remaining ?>"><?= $time_str ?></strong>.</p>
+                <div class="modal-alert-error">
+                    <strong style="display: block; font-size: 15px; margin-bottom: 4px;">Access Locked</strong>
+                    Too many failed attempts. Please try again after <strong id="lockTimer" data-remaining="<?= $remaining ?>"><?= $time_str ?></strong>.
                 </div>
             <?php else: ?>
                 <?php if ($error): ?>
-                    <div class="mb-6 p-4 rounded-lg bg-red-50 border-l-4 border-red-500 text-red-700 text-sm flex items-start">
-                        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <span><?= htmlspecialchars($error) ?></span>
+                    <div class="modal-alert-error">
+                        <?= htmlspecialchars($error) ?>
                     </div>
                 <?php endif; ?>
                 <?php if ($warning): ?>
-                    <div
-                        class="mb-6 p-4 rounded-lg bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 text-sm flex items-start">
-                        <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <span><?= htmlspecialchars($warning) ?></span>
+                    <div class="modal-alert-warning">
+                        <?= htmlspecialchars($warning) ?>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
 
-            <form id="loginForm" name="loginForm" method="POST" action="/<?= PROJECT_DIR ?>/login" autocomplete="on"
-                class="space-y-4 sm:space-y-6">
-                <div>
-                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                            </svg>
-                        </div>
-                        <input id="email" name="email" type="email" required autocomplete="email"
-                            class="pl-10 appearance-none block w-full px-3 py-2.5 sm:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors sm:text-sm"
-                            placeholder="Please enter your email">
-                    </div>
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <div class="input-wrapper">
+                    <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                    </svg>
+                    <input type="email" id="email" name="email" required autocomplete="email" placeholder="Please enter your email">
                 </div>
+            </div>
 
-                <div>
-                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                        </div>
-                        <input id="password" name="password" type="password" required autocomplete="current-password"
-                            class="pl-10 pr-10 appearance-none block w-full px-3 py-2.5 sm:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors sm:text-sm"
-                            placeholder="••••••••">
-                        <button type="button" onclick="togglePassword('password', this)" tabindex="-1"
-                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pt-1 sm:pt-2">
-                    <button type="submit" <?= $is_locked ? 'disabled' : '' ?>
-                        class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white <?= $is_locked ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700' ?> focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                        Log in
+            <div class="input-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper" style="position: relative;">
+                    <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••" style="padding-right: 42px;">
+                    <button type="button" onclick="toggleModalPassword('password', this)" tabindex="-1" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 0; cursor: pointer; color: #9ca3af;">
+                        <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path class="eye-slash-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
                     </button>
                 </div>
+            </div>
 
-            </form>
-        </div>
-        <div class="px-6 py-4 sm:px-8 bg-gray-50 border-t border-gray-100 flex justify-center">
-            <p class="text-xs text-gray-400">&copy; <?= date('Y') ?> Citilife Diagnostic Center. All rights reserved.
-            </p>
-        </div>
+            <div class="modal-forgot">
+                <a href="/<?= PROJECT_DIR ?>/forgot-password?portal=staff">Forgot your password?</a>
+            </div>
+
+            <button type="submit" class="modal-submit-btn" <?= $is_locked ? 'disabled' : '' ?>>Log in</button>
+        </form>
     </div>
+
+    <div class="login-footer">
+        <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(getSystemName()) ?>. All rights reserved.</p>
+    </div>
+
     <script>
         sessionStorage.clear();
-        function togglePassword(inputId, btn) {
+
+        function toggleModalPassword(inputId, btn) {
             const input = document.getElementById(inputId);
-            const isPassword = input.getAttribute('type') === 'password';
-            input.setAttribute('type', isPassword ? 'text' : 'password');
-            btn.innerHTML = isPassword ?
-                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>' :
-                '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>';
+            const svgPath = btn.querySelector('svg path.eye-path');
+            const svgPathStrikethrough = btn.querySelector('svg path.eye-slash-path');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                svgPath.setAttribute('d', 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21');
+                svgPathStrikethrough.setAttribute('d', '');
+            } else {
+                input.type = 'password';
+                svgPath.setAttribute('d', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z');
+                svgPathStrikethrough.setAttribute('d', 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z');
+            }
         }
 
         const lockTimer = document.getElementById('lockTimer');

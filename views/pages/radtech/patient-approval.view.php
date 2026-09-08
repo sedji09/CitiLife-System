@@ -40,9 +40,9 @@ foreach ($allServices as $service) {
 }
 ?>
 
-<!-- Vanilla JS Datepicker -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+<!-- Modern Custom DatePicker -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 <style>
     html body .datepicker-cell.selected,
     html body .datepicker-cell.selected:hover,
@@ -492,16 +492,13 @@ foreach ($allServices as $service) {
     src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
 
 <script>
-    // ── Vanilla JS Datepicker init ─────────────────────────────────────────────
+    // ── Modern Custom Datepicker init ─────────────────────────────────────────────
     let modalDatePicker = null;
     document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) window.lucide.createIcons();
         const modalBirthdateInput = document.getElementById('modalBirthdate');
         if (modalBirthdateInput) {
-            modalDatePicker = new Datepicker(modalBirthdateInput, {
-                autohide: true,
-                format: 'yyyy-mm-dd',
-                todayHighlight: true,
+            modalDatePicker = new ModernDatePicker(modalBirthdateInput, {
                 maxDate: new Date()
             });
         }

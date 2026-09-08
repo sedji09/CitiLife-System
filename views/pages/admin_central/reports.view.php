@@ -11,19 +11,9 @@ $branchId = $_SESSION['branch_id'] ?? null;
 <!-- Include Chart.js -->
 <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/chart.min.js"></script>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
-
-<style>
-    /* Premium Red Override for Vanilla JS Datepicker */
-    .datepicker-cell.selected, .datepicker-cell.selected:hover {
-        background-color: #dc2626 !important; /* bg-red-600 */
-        color: white !important;
-    }
-    .datepicker-cell.focused:not(.selected) {
-        background-color: #fee2e2 !important; /* bg-red-100 */
-    }
-</style>
+<!-- Modern Custom DatePicker -->
+<link rel="stylesheet" href="/<?= PROJECT_DIR ?>/public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
 
 <div class="space-y-6 pb-10">
     <!-- Header -->
@@ -243,16 +233,12 @@ $branchId = $_SESSION['branch_id'] ?? null;
                 setTimeout(() => {
                     const df = document.getElementById('dateFrom');
                     const dt = document.getElementById('dateTo');
-                    if (df && dt && typeof Datepicker !== 'undefined') {
-                        new Datepicker(df, {
-                            autohide: true,
-                            format: 'yyyy-mm-dd',
-                            todayHighlight: true
+                    if (df && dt && typeof ModernDatePicker !== 'undefined') {
+                        new ModernDatePicker(df, {
+                            maxDate: null
                         });
-                        new Datepicker(dt, {
-                            autohide: true,
-                            format: 'yyyy-mm-dd',
-                            todayHighlight: true
+                        new ModernDatePicker(dt, {
+                            maxDate: null
                         });
                     }
                 }, 100);

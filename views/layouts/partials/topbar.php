@@ -1,5 +1,6 @@
 <!-- Topbar -->
-<div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-30 shadow-sm <?= $isPatient ? 'hidden md:block' : '' ?>">
+<div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 shadow-sm <?= $isPatient ? 'hidden md:block' : '' ?>"
+  :style="{ zIndex: (notificationMenuOpen || chatMenuOpen || profileMenuOpen) ? 9999 : 30 }">
   <div class="flex items-center justify-between gap-4">
     <div>
       <?php if ($role !== 'patient'): ?>
@@ -16,6 +17,15 @@
         <i data-lucide="calendar" class="w-4 h-4 text-orange-600"></i>
         <span id="topbarDateTime" class="whitespace-nowrap"></span>
       </div>
+
+      <!-- Theme Switcher (Dark / Light Mode) -->
+      <button @click.prevent="toggleTheme" type="button"
+        class="relative rounded-full border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-100 shadow-sm has-tooltip bottom-tooltip transition active:scale-95 flex items-center justify-center cursor-pointer"
+        :aria-label="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        :data-tooltip="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+        <span v-show="isDark" class="flex items-center justify-center"><i data-lucide="sun" class="w-5 h-5 text-amber-500"></i></span>
+        <span v-show="!isDark" class="flex items-center justify-center"><i data-lucide="moon" class="w-5 h-5 text-gray-700"></i></span>
+      </button>
 
       <div class="relative" v-if="role !== 'patient'">
         <button @click.prevent="toggleChatMenu"
@@ -234,7 +244,8 @@
           </span>
         </button>
         <div v-if="notificationMenuOpen" ref="notificationMenuRef"
-          class="absolute right-2 top-full mt-2 z-50 w-80 rounded-xl border border-gray-200 bg-white shadow-xl">
+          class="absolute right-2 top-full mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-2xl"
+          style="z-index: 10000 !important;">
           <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50 relative rounded-t-xl">
             <div class="text-sm font-bold text-gray-800">Notifications</div>
             
@@ -300,11 +311,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover"></template>
-        <span v-else class="text-blue-700 font-semibold text-sm" v-text="userInitials"></span>
       </div>
     </div>
   </div>

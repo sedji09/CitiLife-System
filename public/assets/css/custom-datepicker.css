@@ -1,0 +1,370 @@
+/* ==========================================================================
+   Custom DatePicker - Modern Minimalist Calendar Popover
+   Matches the clean card aesthetic with Month/Year dropdowns & soft pill selection
+   ========================================================================== */
+
+.cdp-popover {
+    position: absolute;
+    z-index: 99999;
+    width: 310px;
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+    padding: 20px 18px 16px 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+    pointer-events: none;
+    transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+}
+
+.cdp-popover.cdp-open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+/* Header Area */
+.cdp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.cdp-dropdown-triggers {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cdp-trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cdp-trigger-btn:hover,
+.cdp-trigger-btn.active {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.cdp-trigger-btn svg {
+    width: 14px;
+    height: 14px;
+    color: #64748b;
+    transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.cdp-trigger-btn.active svg {
+    transform: rotate(180deg);
+    color: #dc2626;
+}
+
+/* Nav Controls */
+.cdp-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cdp-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #dc2626;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.cdp-nav-btn:hover {
+    background: #fef2f2;
+}
+
+.cdp-nav-btn:active {
+    transform: scale(0.92);
+}
+
+.cdp-nav-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.2;
+}
+
+/* Days of Week */
+.cdp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.cdp-weekday {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 0;
+}
+
+/* Days Grid */
+.cdp-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 6px;
+    column-gap: 2px;
+}
+
+.cdp-day-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+}
+
+.cdp-day-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.cdp-day-btn:hover:not(.disabled):not(.selected) {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.cdp-day-btn:active:not(.disabled) {
+    transform: scale(0.92);
+}
+
+/* Selected Day Pill (CitiLife Red pill styling) */
+.cdp-day-btn.selected {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.2);
+}
+
+/* Today indicator (if not selected) */
+.cdp-day-btn.today:not(.selected)::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #dc2626;
+}
+
+/* Disabled/Future Days */
+.cdp-day-btn.disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* Empty filler days */
+.cdp-day-btn.empty {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Month Selection Overlay */
+.cdp-months-view,
+.cdp-years-view {
+    display: none;
+    animation: cdpFadeIn 0.15s ease;
+}
+
+.cdp-months-view.active {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.cdp-month-btn {
+    padding: 10px 4px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cdp-month-btn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.cdp-month-btn.selected {
+    background: #fee2e2;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* Year Selection Overlay */
+.cdp-years-view.active {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    max-height: 230px;
+    overflow-y: auto;
+    padding: 6px 2px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.cdp-years-view::-webkit-scrollbar {
+    width: 4px;
+}
+
+.cdp-years-view::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.cdp-year-btn {
+    padding: 8px 2px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cdp-year-btn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.cdp-year-btn.selected {
+    background: #fee2e2;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+@keyframes cdpFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Dark Mode support */
+.theme-dark .cdp-popover {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.4);
+}
+
+.theme-dark .cdp-trigger-btn {
+    color: #f1f5f9;
+}
+
+.theme-dark .cdp-trigger-btn:hover,
+.theme-dark .cdp-trigger-btn.active {
+    background: #334155;
+    color: #f87171;
+}
+
+.theme-dark .cdp-trigger-btn svg {
+    color: #94a3b8;
+}
+
+.theme-dark .cdp-trigger-btn.active svg {
+    color: #f87171;
+}
+
+.theme-dark .cdp-nav-btn {
+    color: #f87171;
+}
+
+.theme-dark .cdp-nav-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.theme-dark .cdp-weekday {
+    color: #64748b;
+}
+
+.theme-dark .cdp-day-btn {
+    color: #f1f5f9;
+}
+
+.theme-dark .cdp-day-btn:hover:not(.disabled):not(.selected) {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+.theme-dark .cdp-day-btn.selected {
+    background: rgba(220, 38, 38, 0.25) !important;
+    color: #fca5a5 !important;
+    box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.3);
+}
+
+.theme-dark .cdp-day-btn.today:not(.selected)::after {
+    background-color: #ef4444;
+}
+
+.theme-dark .cdp-month-btn,
+.theme-dark .cdp-year-btn {
+    color: #cbd5e1;
+}
+
+.theme-dark .cdp-month-btn:hover,
+.theme-dark .cdp-year-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+.theme-dark .cdp-month-btn.selected,
+.theme-dark .cdp-year-btn.selected {
+    background: rgba(220, 38, 38, 0.3);
+    color: #fca5a5;
+}

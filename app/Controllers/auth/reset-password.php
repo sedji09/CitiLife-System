@@ -17,7 +17,7 @@ if (empty($token)) {
 
 // Verify token
 $stmt = $pdo->prepare("
-    SELECT u.id, u.email, u.name, u.role, u.branch_id, u.patient_id, p.first_name, p.last_name 
+    SELECT u.id, u.email, u.name, u.role, u.branch_id, u.patient_id, u.avatar, u.status, p.first_name, p.last_name 
     FROM users u 
     LEFT JOIN patients p ON u.patient_id = p.id 
     WHERE u.reset_password_token = ? AND u.reset_password_expires_at > NOW() 
@@ -26,10 +26,12 @@ $stmt = $pdo->prepare("
 $stmt->execute([$token]);
 $user = $stmt->fetch();
 
+$isActivation = false;
 if ($user) {
     $validToken = true;
+    $isActivation = ($user['status'] === 'Pending') || (strpos($_SERVER['REQUEST_URI'] ?? '', 'set-password') !== false);
 } else {
-    $error = "The reset link is invalid or has expired. Please request a new one.";
+    $error = "The invitation or reset link is invalid or has expired. Please request a new one from your administrator.";
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
@@ -47,37 +49,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
     } else if ($password !== $confirmPassword) {
         $error = "Passwords do not match.";
     } else {
-        // Update password
+        // Update password & activate user
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $updateStmt = $pdo->prepare("UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires_at = NULL WHERE id = ?");
+        $updateStmt = $pdo->prepare("
+            UPDATE users 
+            SET password = ?, status = 'Active', is_email_verified = 1, reset_password_token = NULL, reset_password_expires_at = NULL, last_activity = NOW() 
+            WHERE id = ?
+        ");
         $updateStmt->execute([$hashedPassword, $user['id']]);
 
         require_once basePath('app/Models/AuditLogModel.php');
         $auditLogModel = new \AuditLogModel($pdo);
+        $logAction = $isActivation ? 'Staff Account Activated' : ($user['role'] === 'patient' ? 'Patient Password Reset' : 'Staff Password Reset');
+        $logDetails = $isActivation ? 'Staff member set password and activated account' : 'User successfully reset their password';
+
         $auditLogModel->addLog(
             $user['id'],
-            $user['role'] === 'patient' ? 'Patient Password Reset' : 'Staff Password Reset',
+            $logAction,
             $user['role'] === 'patient' ? 'Patient Portal' : 'Authentication',
             'User',
             $user['id'],
-            "User successfully reset their password",
+            $logDetails,
             $user['branch_id']
         );
 
-        // Auto-login for patient: immediately establish session and redirect to dashboard
-        if ($user['role'] === 'patient') {
+        // Auto-login for patient or activating staff: immediately establish session and redirect to dashboard
+        if ($isActivation || $user['role'] === 'patient') {
             session_regenerate_id(true);
 
-            $patientDisplayName = !empty($user['name'])
+            $displayName = !empty($user['name'])
                 ? $user['name']
-                : (!empty($user['first_name']) ? trim($user['first_name'] . ' ' . ($user['last_name'] ?? '')) : 'Patient');
+                : (!empty($user['first_name']) ? trim($user['first_name'] . ' ' . ($user['last_name'] ?? '')) : 'User');
 
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['role'] = 'patient';
+            $_SESSION['role'] = $user['role'];
             $_SESSION['email'] = $user['email'];
+            $_SESSION['name'] = $displayName;
+            $_SESSION['avatar'] = $user['avatar'] ?? null;
             $_SESSION['branch_id'] = $user['branch_id'];
-            $_SESSION['patient_id'] = $user['patient_id'];
-            $_SESSION['name'] = $patientDisplayName;
+
+            if ($user['role'] === 'patient') {
+                $_SESSION['patient_id'] = $user['patient_id'];
+            }
 
             // Remember device to prevent immediate OTP challenge
             $deviceToken = bin2hex(random_bytes(32));
@@ -87,10 +100,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
             setcookie('remember_device', $deviceToken, time() + (86400 * 30), "/");
 
             // Update last activity and clear temporary state
-            $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$user['id']]);
-            unset($_SESSION['login_attempts'], $_SESSION['temp_user_id'], $_SESSION['temp_role'], $_SESSION['temp_email'], $_SESSION['temp_branch_id'], $_SESSION['temp_patient_id'], $_SESSION['temp_name'], $_SESSION['temp_portal'], $_SESSION['temp_redirect_url']);
+            unset(
+                $_SESSION['staff_login_attempts'],
+                $_SESSION['login_attempts'],
+                $_SESSION['temp_user_id'],
+                $_SESSION['temp_role'],
+                $_SESSION['temp_email'],
+                $_SESSION['temp_branch_id'],
+                $_SESSION['temp_patient_id'],
+                $_SESSION['temp_name'],
+                $_SESSION['temp_portal'],
+                $_SESSION['temp_redirect_url']
+            );
 
-            header("Location: /" . PROJECT_DIR . "/dashboard?password_reset=1");
+            $redirectParam = $isActivation ? "account_activated=1" : "password_reset=1";
+            header("Location: /" . PROJECT_DIR . "/dashboard?" . $redirectParam);
             exit;
         }
 
@@ -104,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - Citilife System</title>
+    <title><?= $isActivation ? 'Set Password & Activate Account' : 'Reset Password' ?> - Citilife System</title>
     <link rel="stylesheet" href="/<?= PROJECT_DIR ?>/tailwind/src/output.css">
     <style>
         .glass-panel {
@@ -123,13 +147,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
 <body class="bg-pattern min-h-screen flex items-center justify-center p-4">
     <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-8">
         <div class="text-center mb-8">
-            <div class="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100">
-                <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+            <div class="mx-auto w-16 h-16 <?= $isActivation ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100' ?> rounded-full flex items-center justify-center mb-4 border">
+                <?php if ($isActivation): ?>
+                    <svg class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                <?php else: ?>
+                    <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                <?php endif; ?>
             </div>
             <?php
-            $greetName = 'User';
+            $greetName = 'Staff Member';
             if (isset($user['role'])) {
                 if ($user['role'] === 'patient' && !empty($user['first_name'])) {
                     $greetName = $user['first_name'];
@@ -138,8 +168,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                 }
             }
             ?>
-            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Reset Password</h1>
-            <p class="text-sm text-gray-500 mt-2">Hi <?= htmlspecialchars($greetName) ?>, please enter your new password below.</p>
+            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
+                <?= $isActivation ? 'Set Your Password' : 'Reset Password' ?>
+            </h1>
+            <p class="text-sm text-gray-500 mt-2">
+                <?= $isActivation 
+                    ? "Hi " . htmlspecialchars($greetName) . ", create a password to activate your staff account." 
+                    : "Hi " . htmlspecialchars($greetName) . ", please enter your new password below." ?>
+            </p>
         </div>
 
         <?php if ($error): ?>
@@ -155,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
             <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
                 <?= htmlspecialchars($success) ?>
             </div>
-            <a href="<?= (isset($user['role']) && $user['role'] === 'patient') ? '/' . PROJECT_DIR . '/?login=1' : 'login' ?>" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 text-center">
+            <a href="<?= (isset($user['role']) && $user['role'] === 'patient') ? '/' . PROJECT_DIR . '/?login=1' : '/' . PROJECT_DIR . '/login' ?>" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 text-center">
                 Go to Login
             </a>
         <?php endif; ?>
@@ -250,7 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                 </div>
 
                 <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
-                    Update Password
+                    <?= $isActivation ? 'Activate Account & Sign In' : 'Update Password' ?>
                 </button>
             </form>
         <?php endif; ?>

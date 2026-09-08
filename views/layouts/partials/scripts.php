@@ -155,6 +155,11 @@
         // Bubbles are everything else (minimized chats + overflow chats that didn't fit)
         return this.activeChats.filter(c => !visibleIds.includes(String(c.id)));
       },
+      isDark() {
+        if (this.themeMode === 'dark') return true;
+        if (this.themeMode === 'light') return false;
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      },
       pwPassedCount() {
         let count = 0;
         if (this.pwHasMinLength) count++;
@@ -583,6 +588,12 @@
         }
         this.saveActiveChats();
       },
+      startVoiceCall(chat) {
+        alert('Voice calling with ' + (chat.name || 'user') + ' will be available in the upcoming communications release.');
+      },
+      startVideoCall(chat) {
+        alert('Video calling with ' + (chat.name || 'user') + ' will be available in the upcoming communications release.');
+      },
       openChatWindow(conv) {
         this.addToRecentSearches(conv);
         const existing = this.activeChats.find(c => c.id == conv.id);
@@ -712,6 +723,42 @@
           }
         } catch (e) {
           console.error("bringChatToFront error:", e);
+        }
+      },
+      toggleReaction(msg) {
+        const reactions = ['😂', '❤️', '👍', '😮', '😢', '🙏'];
+        if (!msg.reaction) {
+          msg.reaction = '😂';
+        } else {
+          const idx = reactions.indexOf(msg.reaction);
+          if (idx !== -1 && idx < reactions.length - 1) {
+            msg.reaction = reactions[idx + 1];
+          } else {
+            msg.reaction = null;
+          }
+        }
+      },
+      setReply(chat, msg) {
+        const text = (msg.message || '').slice(0, 20);
+        chat.newMessage = 'Replying: ' + text + (text.length >= 20 ? '... ' : ' ');
+      },
+      getBubbleRadius(chat, msg, msgIndex) {
+        if (!chat.messages) return 'border-radius: 18px;';
+        const isOutgoing = (msg.sender_id == this.userId);
+        const prevMsg = chat.messages[msgIndex - 1];
+        const nextMsg = chat.messages[msgIndex + 1];
+        const isFirst = !prevMsg || prevMsg.sender_id != msg.sender_id;
+        const isLast = !nextMsg || nextMsg.sender_id != msg.sender_id;
+
+        if (isFirst && isLast) return 'border-radius: 18px;';
+        if (isOutgoing) {
+          if (isFirst) return 'border-radius: 18px 18px 4px 18px;';
+          if (isLast) return 'border-radius: 18px 4px 18px 18px;';
+          return 'border-radius: 18px 4px 4px 18px;';
+        } else {
+          if (isFirst) return 'border-radius: 18px 18px 18px 4px;';
+          if (isLast) return 'border-radius: 4px 18px 18px 18px;';
+          return 'border-radius: 4px 18px 18px 4px;';
         }
       },
       closeChatWindow(chat) {
@@ -871,18 +918,23 @@
           this.renderIcons();
           if (this.role === 'patient') {
             const birthdateInput = document.getElementById('settingsBirthdate');
-            if (birthdateInput && typeof Datepicker !== 'undefined') {
-              if (birthdateInput.datepicker) {
-                birthdateInput.datepicker.destroy();
+            if (birthdateInput && typeof ModernDatePicker !== 'undefined') {
+              if (birthdateInput._customDatePicker) {
+                birthdateInput._customDatePicker.setDate(this.editBirthdate || '');
+              } else {
+                new ModernDatePicker(birthdateInput, {
+                  maxDate: new Date(),
+                  onSelect: (val) => {
+                    this.editBirthdate = val;
+                  }
+                });
               }
-              const picker = new Datepicker(birthdateInput, {
-                autohide: true,
-                format: 'yyyy-mm-dd',
-                todayHighlight: true
-              });
 
               if (!birthdateInput._hasDatepickerListener) {
-                birthdateInput.addEventListener('changeDate', (e) => {
+                birthdateInput.addEventListener('changeDate', () => {
+                  this.editBirthdate = birthdateInput.value;
+                });
+                birthdateInput.addEventListener('change', () => {
                   this.editBirthdate = birthdateInput.value;
                 });
                 birthdateInput._hasDatepickerListener = true;
@@ -899,7 +951,7 @@
         this.openSettings('profile');
       },
       openPersonalizationModal() {
-        this.openSettings('appearance');
+        this.openSettings('general');
       },
       openRadtechSettingsModal() {
         this.openSettings('reports');
@@ -1038,6 +1090,10 @@
         this._applyTheme(themeName);
         // Re-render icons after theme change
         nextTick(() => this.renderIcons());
+      },
+      toggleTheme() {
+        const next = this.isDark ? 'light' : 'dark';
+        this.setTheme(next);
       },
       requestEmailChange() {
         this.emailChangeState = 'sending';
@@ -2005,3 +2061,8 @@ echo '<script src="/' . PROJECT_DIR . '/views/pages/patient/my-records.js?v=' . 
     }, 2000);
   });
 </script>
+
+<!-- Modern Custom Select Dropdowns Engine, Custom Tooltips & TimePicker -->
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-select.js?v=<?= time() ?>"></script>
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
+<script src="/<?= PROJECT_DIR ?>/public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>

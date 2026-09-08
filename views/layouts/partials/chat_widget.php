@@ -3,27 +3,37 @@
   <template v-if="role !== 'patient'">
 
     <!-- ── Visible Chat Windows (first 3) ──
-       Shifted right: 96px to leave room for the bubble sidebar column and a gap -->
+       Shifted right: 80px to leave room for the bubble sidebar column, 12px gap between windows -->
     <div v-for="(chat, chatIndex) in visibleChats.slice(0, 3)" :key="'win_' + chat.id"
-      :style="{ position: 'fixed', bottom: '0', right: (80 + chatIndex * 336) + 'px', zIndex: 50, height: '420px', maxHeight: '80vh' }"
-      class="w-80 bg-white shadow-2xl rounded-t-xl border border-gray-200 flex flex-col transition-all duration-200">
-      <!-- Header -->
+      :style="{ position: 'fixed', bottom: '0', right: (80 + chatIndex * 342) + 'px', width: '330px', zIndex: 50, height: '455px', maxHeight: '85vh' }"
+      class="bg-white shadow-2xl rounded-t-2xl border border-gray-200/90 flex flex-col transition-all duration-200 overflow-hidden font-sans">
+      
+      <!-- Header (FB Messenger Style) -->
       <div
-        class="flex items-center justify-between px-3 py-2 bg-red-50 border-b border-red-100 rounded-t-xl cursor-pointer select-none">
-        <div class="flex items-center gap-2 overflow-hidden">
-          <div
-            class="h-8 w-8 rounded-full bg-red-100 text-red-700 font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden">
-            <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
-            <span v-else>{{ chat.initials }}</span>
+        class="flex items-center justify-between px-3 py-2 bg-white border-b border-gray-100 rounded-t-2xl select-none z-10 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <!-- Contact Info -->
+        <div class="flex items-center gap-2 min-w-0 flex-1 cursor-pointer" @click="toggleChatMinimize(chat)">
+          <div class="relative shrink-0">
+            <div
+              class="h-9 w-9 rounded-full bg-red-100 text-red-700 font-semibold text-xs flex items-center justify-center overflow-hidden">
+              <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+              <span v-else>{{ chat.initials }}</span>
+            </div>
           </div>
-          <div class="text-sm font-bold text-gray-800 truncate">{{ chat.name }}</div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[13.5px] font-bold text-gray-900 truncate leading-tight">{{ chat.name }}</span>
+            <div class="text-[11px] text-gray-500 truncate leading-tight capitalize mt-0.5 flex items-center gap-1">
+              <span>{{ chat.role ? chat.role.replace(/_/g, ' ') : 'Active now' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="flex items-center gap-0.5 text-red-600">
-          <button @click.stop="toggleChatMinimize(chat)" class="p-1 hover:bg-red-100 rounded transition"
-            title="Minimize">
+
+        <!-- Right Header Action Icons (Minimize, Close) -->
+        <div class="flex items-center gap-0.5 text-gray-500">
+          <button @click.stop="toggleChatMinimize(chat)" class="p-1.5 hover:bg-gray-100 rounded-full hover:text-gray-800 transition" title="Minimize">
             <i data-lucide="minus" class="w-4 h-4"></i>
           </button>
-          <button @click.stop="closeChatWindow(chat)" class="p-1 hover:bg-red-100 rounded transition" title="Close">
+          <button @click.stop="closeChatWindow(chat)" class="p-1.5 hover:bg-red-50 rounded-full hover:text-red-600 transition" title="Close">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
@@ -35,65 +45,97 @@
         <!-- Loading -->
         <div v-if="chat.loading" class="flex-1 flex flex-col items-center justify-center gap-2">
           <div class="w-6 h-6 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-xs text-gray-400">Loading...</span>
+          <span class="text-xs text-gray-400">Loading messages...</span>
         </div>
 
-        <!-- Messages area (always shows profile header at top, like Messenger) -->
-        <div v-else class="flex-1 overflow-y-auto flex flex-col custom-scrollbar pb-1" :ref="'chatBody_' + chat.id">
+        <!-- Messages Area -->
+        <div v-else class="flex-1 overflow-y-auto overflow-x-hidden flex flex-col custom-scrollbar pb-2" :ref="'chatBody_' + chat.id" style="overflow-x: hidden !important;">
 
-          <!-- Spacer: pushes header + messages to the bottom when chat is empty -->
-          <div class="flex-1"></div>
-
-          <!-- Conversation header (avatar + name + lock note) — always visible at top -->
-          <div class="flex flex-col items-center gap-4 text-center px-6 pt-6 pb-4">
+          <!-- Conversation Intro (avatar + name + role) -->
+          <div class="flex flex-col items-center gap-2 text-center px-6 pt-7 pb-4 shrink-0">
             <div
-              class="h-16 w-16 rounded-full bg-red-100 text-red-700 font-bold text-xl flex items-center justify-center overflow-hidden shadow-md border border-gray-200">
+              class="h-14 w-14 rounded-full bg-red-100 text-red-700 font-bold text-lg flex items-center justify-center overflow-hidden shadow-sm border border-gray-100">
               <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
               <span v-else>{{ chat.initials }}</span>
             </div>
-            <div>
-              <div class="font-bold text-gray-900 text-sm leading-tight">{{ chat.name }}</div>
-              <div class="text-xs text-gray-400 mt-0.5 capitalize">{{ chat.role ? chat.role.replace(/_/g, ' ') : '' }}
+            <div class="flex flex-col items-center">
+              <div class="font-bold text-gray-900 text-[14px] leading-tight">{{ chat.name }}</div>
+              <div class="text-[11px] text-gray-500 mt-1 px-2.5 py-0.5 bg-gray-100 rounded-full font-medium capitalize">
+                {{ chat.role ? chat.role.replace(/_/g, ' ') : 'Staff Member' }}
+              </div>
+              <div class="text-[11px] text-gray-400 mt-1.5">
+                You're connected on CitiLife Chat
               </div>
             </div>
           </div>
 
-          <!-- Messages list -->
-          <div class="flex flex-col gap-2 px-3 pb-2">
-            <div v-for="(msg, msgIndex) in chat.messages" :key="msg.id" class="flex w-full" :class="[
-              msg.sender_id == userId ? 'justify-end' : 'justify-start',
-              (msgIndex === chat.messages.length - 1 || chat.messages[msgIndex + 1].sender_id !== msg.sender_id) ? 'mb-3' : ''
-            ]">
-              <div class="flex flex-col max-w-[75%] gap-1"
-                :class="msg.sender_id == userId ? 'items-end' : 'items-start'">
+          <!-- Messages list (FB Messenger Style) -->
+          <div class="flex flex-col px-3 pb-2 mt-auto">
+            <div v-for="(msg, msgIndex) in chat.messages" :key="msg.id" class="flex flex-col w-full min-w-0"
+              :style="(msgIndex > 0 && chat.messages[msgIndex - 1].sender_id !== msg.sender_id) ? 'margin-top: 16px;' : 'margin-top: 2px;'">
 
-                <!-- Attachment Rendering -->
-                <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
-                  :src="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment"
-                  class="rounded-xl max-w-full cursor-pointer shadow-sm border border-black/5 hover:opacity-90 transition-opacity"
-                  style="max-height: 180px; object-fit: contain;" @click="openLightbox(chat, msg)"
-                  @load="scrollToBottom(chat)">
-                <a v-else-if="msg.attachment" :href="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment" target="_blank"
-                  class="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-2 rounded-xl text-sm hover:bg-gray-300 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-                    <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
-                  </svg>
-                  View File
-                </a>
+              <!-- Message Row -->
+              <div class="flex w-full min-w-0 group relative"
+                :class="msg.sender_id == userId ? 'justify-end' : 'justify-start items-end gap-1.5'">
 
-                <!-- Text Message -->
-                <div v-if="msg.message" class="rounded-2xl px-3 py-1.5 text-[15px] break-words leading-snug"
-                  :class="msg.sender_id == userId ? 'bg-red-600 text-white rounded-br-[4px]' : 'bg-gray-100 text-gray-800 rounded-bl-[4px]'">
-                  {{ msg.message }}
-                </div>
+                <!-- Incoming Message Avatar (pinned beside the last message of the cluster) -->
+                <template v-if="msg.sender_id != userId">
+                  <div v-if="msgIndex === chat.messages.length - 1 || chat.messages[msgIndex + 1].sender_id != msg.sender_id"
+                    class="w-7 h-7 rounded-full bg-red-100 text-red-700 font-semibold text-[10px] flex items-center justify-center shrink-0 overflow-hidden shadow-xs border border-gray-100 mb-0.5">
+                    <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+                    <span v-else>{{ chat.initials }}</span>
+                  </div>
+                  <div v-else class="w-7 shrink-0"></div>
+                </template>
 
-                <!-- Message Status (Sent/Seen) on the very last message -->
-                <div v-if="msg.sender_id == userId && msgIndex === chat.messages.length - 1"
-                  class="text-[11px] mt-0.5 mr-1"
-                  :class="msg.is_read == 1 ? 'text-gray-500 font-medium' : 'text-gray-400'">
-                  {{ msg.is_read == 1 ? 'Seen' : 'Sent' }}
+                <!-- Main Content (Attachments + Bubble + Seen) -->
+                <div class="flex flex-col max-w-[85%] min-w-0"
+                  :class="msg.sender_id == userId ? 'items-end' : 'items-start'">
+
+                  <!-- Sender Name (perfectly aligned with the chat bubble) -->
+                  <div v-if="msg.sender_id != userId && (msgIndex === 0 || chat.messages[msgIndex - 1].sender_id != msg.sender_id)"
+                    class="text-[11px] text-gray-500 font-semibold mb-1 select-none leading-none">
+                    {{ chat.name }}
+                  </div>
+
+                  <!-- Attachment Rendering -->
+                  <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
+                    :src="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment"
+                    class="rounded-2xl max-w-full cursor-pointer shadow-sm border border-black/5 hover:opacity-95 transition-opacity"
+                    style="max-height: 200px; max-width: 205px; object-fit: contain;" @click="openLightbox(chat, msg)"
+                    @load="scrollToBottom(chat)">
+                  <a v-else-if="msg.attachment" :href="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment" target="_blank"
+                    class="flex items-center gap-2 bg-gray-100 text-gray-800 px-3 py-2 rounded-2xl text-xs hover:bg-gray-200 transition-colors border border-gray-200/80"
+                    style="max-width: 205px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                      <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
+                    </svg>
+                    <span class="truncate">View File</span>
+                  </a>
+
+                  <!-- Text Message Bubble (font: 13px, limit ~22 characters/spaces per line before auto-wrap) -->
+                  <div class="relative group/bubble w-fit">
+                    <div v-if="msg.message"
+                      class="px-3 py-1.5 text-[13px] leading-[18px] select-text shadow-xs transition-all w-fit"
+                      :style="(msg.sender_id != userId ? 'background-color: #f0f2f5; color: #050505;' : 'background-color: #dc2626; color: #ffffff;') + ' max-width: 205px; overflow-wrap: anywhere; word-break: normal; ' + getBubbleRadius(chat, msg, msgIndex)"
+                      :class="msg.sender_id == userId ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-900'">
+                      {{ msg.message }}
+                    </div>
+
+                  </div>
+
+                  <!-- Seen indicator: Miniature recipient avatar for Seen or 'Sent' text -->
+                  <div v-if="msg.sender_id == userId && msgIndex === chat.messages.length - 1"
+                    class="flex items-center gap-1 mt-0.5 mr-0.5">
+                    <div v-if="msg.is_read == 1" class="w-3.5 h-3.5 rounded-full overflow-hidden border border-white shadow-xs" title="Seen">
+                      <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+                      <div v-else class="w-full h-full bg-red-100 text-red-700 text-[8px] flex items-center justify-center font-bold">{{ chat.initials }}</div>
+                    </div>
+                    <span v-else class="text-[11px] text-gray-400 font-medium">Sent</span>
+                  </div>
+
                 </div>
 
               </div>
@@ -125,39 +167,41 @@
           </div>
         </div>
 
-        <!-- Input -->
-        <div class="p-2 border-t border-gray-100 flex items-center gap-1.5 shrink-0 bg-white">
-          <!-- Attachment Button -->
-          <div class="relative group">
-            <button @click="triggerChatAttachment(chat.id)"
-              class="text-red-600 hover:bg-red-50 p-1.5 rounded-full transition flex-shrink-0" :disabled="chat.sending">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
-                stroke="none">
-                <path
-                  d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-              </svg>
-            </button>
-            <!-- Tooltip with downward arrow -->
-            <div
-              class="absolute bottom-full left-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50 flex flex-col items-start">
-              <div class="px-3 py-1.5 text-white text-[13px] font-medium rounded-lg shadow-lg whitespace-nowrap"
-                style="background-color: #1a1a1a;">Attach a file up to 25 MB</div>
-              <!-- Arrow pointing down (aligned to button center ~10px from left) -->
-              <div
-                style="margin-left:10px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #1a1a1a;">
-              </div>
-            </div>
-          </div>
+        <!-- Input (FB Messenger Desktop Style) -->
+        <div class="px-2 py-2 border-t border-gray-100 flex items-center gap-1.5 shrink-0 bg-white">
+          <!-- Photo icon -->
+          <button type="button" @click="triggerChatAttachment(chat.id)"
+            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
+            title="Attach photo">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+            </svg>
+          </button>
+
           <input type="file" :ref="'chatAttachment_' + chat.id" class="hidden" accept="image/*,.pdf,.doc,.docx" multiple
             @change="handleChatAttachment(chat, $event)">
 
-          <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" placeholder="Aa"
-            class="flex-1 bg-gray-100 rounded-full px-3 py-1.5 text-[15px] focus:outline-none border-0"
-            style="pointer-events: auto !important; position: relative; z-index: 51;">
-          <button @click="sendMessage(chat)" class="text-red-600 hover:text-red-700 p-1 transition flex-shrink-0"
-            :disabled="(!chat.newMessage && (!chat.selectedAttachments || chat.selectedAttachments.length === 0)) || chat.sending">
-            <i data-lucide="send" class="w-5 h-5"
-              :class="(chat.newMessage || (chat.selectedAttachments && chat.selectedAttachments.length > 0)) ? '' : 'opacity-50'"></i>
+          <!-- Capsule input (with subtle border and soft gray background) -->
+          <div class="flex-1 relative flex items-center">
+            <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" placeholder="Aa"
+              class="w-full focus:bg-white rounded-full px-3.5 py-1.5 text-[14px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400 transition-all"
+              style="background-color: #f0f2f5; border: 1px solid #d1d5db; pointer-events: auto !important; position: relative; z-index: 51;">
+          </div>
+
+          <!-- Dynamic Thumbs Up / Send Button -->
+          <button v-if="chat.newMessage && chat.newMessage.trim() || (chat.selectedAttachments && chat.selectedAttachments.length > 0)"
+            @click="sendMessage(chat)" 
+            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
+            title="Send">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+          <button v-else
+            type="button" @click="chat.newMessage = '👍'; sendMessage(chat)"
+            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
+            title="Send a Like">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.77-.7-1.28-.56L10.5 4.3 6.8 8.01C6.29 8.52 6 9.22 6 9.94V19c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-.12z"/>
+            </svg>
           </button>
         </div>
       </div>
