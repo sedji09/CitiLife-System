@@ -80,7 +80,7 @@ class PatientApprovalController
                         $notificationModel->add(
                             "Request Approved",
                             "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.",
-                            "/" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') . "/index.php?role=patient&page=dashboard",
+                            url('dashboard'),
                             $patUser['id'],
                             'patient'
                         );
@@ -157,14 +157,13 @@ class PatientApprovalController
                         $notificationModel->add(
                             "Request Rejected",
                             "Your X-ray request ({$reqNum}) was rejected. Reason: \"{$reason}\". Please check your dashboard for details or submit a new request.",
-                            "/" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') . "/index.php?role=patient&page=dashboard",
+                            url('dashboard'),
                             $patUser['id'],
                             'patient'
                         );
 
                         if (!empty($patUser['email'])) {
-                            $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                            $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                            $portalUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('dashboard') : '/dashboard');
                             $patientName = $patUser['name'] ?: 'Patient';
                             $subject = "Update on Your X-ray Request ({$reqNum}) - Citilife System";
                             $emailBody = renderNotificationEmail(
@@ -399,7 +398,7 @@ class PatientApprovalController
                         $notificationModel->add(
                             "Payment Required",
                             "Your X-ray request ({$reqNum}) has been reviewed. Amount due: ₱{$formattedDue}. Please proceed to payment.",
-                            "/" . (defined('PROJECT_DIR') ? PROJECT_DIR : 'CitiLife-System') . "/index.php?role=patient&page=dashboard",
+                            url('dashboard'),
                             $patUser['id'],
                             'patient'
                         );

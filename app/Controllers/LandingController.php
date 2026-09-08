@@ -14,20 +14,14 @@ class LandingController
                 $page = 'dashboard';
             }
             
-            // Build the new URL path
-            $url = '/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'Citilife-System') . '/' . $page;
-            
-            // Reconstruct the query string without 'page' and 'role' if needed, or just append everything except 'page'
+            // Reconstruct query parameters
             $queryParams = $_GET;
             unset($queryParams['page']);
             
-            if (!empty($queryParams)) {
-                $url .= '?' . http_build_query($queryParams);
-            }
+            $queryString = !empty($queryParams) ? '?' . http_build_query($queryParams) : '';
+            $url = url($page . $queryString);
             
-            $statusCode = ($_SERVER['REQUEST_METHOD'] === 'POST') ? 307 : 302;
-            header("Location: $url", true, $statusCode);
-            exit;
+            redirect($url);
         }
 
         // Simply load the public landing view.

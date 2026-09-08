@@ -35,7 +35,7 @@
 <!-- âœ… Vue App -->
 <script>
   window.addEventListener('error', function (e) {
-    alert("JS Error: " + e.message + " in " + e.filename + " line " + e.lineno);
+    console.error("JS Error: " + e.message + " in " + e.filename + " line " + e.lineno);
   });
   const { createApp, nextTick } = Vue;
 
