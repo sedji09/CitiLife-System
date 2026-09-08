@@ -13,6 +13,11 @@
 
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
   <style>
+    /* ===== Global Consistent System Font (Matches Standard UI in Patient Queue) ===== */
+    body, input, select, textarea, button, table, th, td, h1, h2, h3, h4, h5, h6, p, span, div, .font-mono {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
     /* ===== Global Table Action Buttons Hover Color Effects ===== */
     a[class*="border-blue-500"]:hover, button[class*="border-blue-500"]:hover,
     a:hover > i[class*="border-blue-500"], button:hover > i[class*="border-blue-500"],

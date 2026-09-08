@@ -127,20 +127,20 @@
         </div>
 
         <!-- Services Table Card -->
-        <div id="services-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="services-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50/80 border-b border-gray-200">
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Exam Procedure</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Category</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Price (PHP)</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">PhilHealth Coverage</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Actions</th>
+                <table class="w-full text-sm">
+                    <thead class="sticky top-0 z-10">
+                        <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Exam Procedure</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Category</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Price (PHP)</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">PhilHealth Coverage</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Status</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="servicesTableBody" class="divide-y divide-gray-100">
+                    <tbody id="servicesTableBody" class="text-gray-800 bg-white divide-y divide-gray-100">
                         <?php if (empty($services)): ?>
                             <tr>
                                 <td colspan="6" class="px-6 py-12 text-center text-gray-500">
@@ -164,31 +164,31 @@
                                 </td>
                             </tr>
                             <?php foreach ($services as $s): ?>
-                                <tr class="hover:bg-gray-50/30 transition-colors group service-row"
+                                <tr class="hover:bg-gray-50 transition-colors group service-row"
                                     data-exam="<?= htmlspecialchars(strtolower($s['exam_type'])) ?>"
                                     data-category="<?= htmlspecialchars(strtolower($s['category'])) ?>"
                                     data-status="<?= htmlspecialchars($s['status']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px]">
-                                                <i data-lucide="activity" class="w-4 h-4"></i>
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="h-7 w-7 rounded-lg bg-red-100 flex items-center justify-center text-red-700 font-semibold text-[11px] shrink-0">
+                                                <i data-lucide="activity" class="w-3.5 h-3.5"></i>
                                             </div>
-                                            <span class="text-sm font-bold text-gray-800 tracking-tight">
+                                            <span class="font-medium text-gray-900">
                                                  <?= htmlspecialchars($s['exam_type']) ?>
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <span class="inline-flex items-center rounded-md bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-700">
                                             <?= htmlspecialchars($s['category']) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm font-bold text-gray-900 font-mono">
+                                    <td class="py-3 px-3">
+                                        <span class="font-medium text-gray-900">
                                             ₱<?= number_format($s['price'], 2) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if (!empty($s['is_philhealth_covered'])): ?>
                                             <span class="text-sm font-semibold text-emerald-600">
                                                 ₱<?= number_format($s['philhealth_discount'], 2) ?>
@@ -199,7 +199,7 @@
                                             </span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php
                                         $badgeClass = $s['status'] === 'active'
                                             ? 'bg-green-50 text-green-600 ring-green-100'
@@ -209,7 +209,7 @@
                                             <?= ucfirst(htmlspecialchars($s['status'])) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
+                                    <td class="py-3 px-3 text-left whitespace-nowrap">
                                         <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($s['status'] === 'active'): ?>
                                                 <form action="" method="POST" class="inline">

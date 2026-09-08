@@ -88,18 +88,18 @@
         </div>
         <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
-                <table class="w-full text-left text-sm text-gray-600 relative">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold sticky top-0 z-10 shadow-sm">
+                <table class="w-full text-left text-sm relative">
+                    <thead class="bg-gray-50 text-gray-600 font-semibold sticky top-0 z-10 border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-4">Request / Patient</th>
-                            <th class="px-6 py-4">Exam Type</th>
-                            <th class="px-6 py-4">PhilHealth Number</th>
-                            <th class="px-6 py-4">Amount & Ref #</th>
-                            <th class="px-6 py-4">Date Submitted</th>
-                            <th class="px-6 py-4">Actions</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Request / Patient</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Exam Type</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">PhilHealth Number</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Amount & Ref #</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Date Submitted</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100" id="pendingTableBody">
+                    <tbody class="text-gray-800 bg-white divide-y divide-gray-100" id="pendingTableBody">
                         <?php if (empty($pendingPayments)): ?>
                             <tr data-static-empty="1">
                                 <td colspan="6" class="p-12 text-center text-gray-500">No pending payments to verify.</td>
@@ -109,17 +109,17 @@
                                 <tr class="hover:bg-gray-50 transition pending-row"
                                     data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
                                     data-date="<?= strtotime($payment['created_at']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
+                                    <td class="py-3 px-3">
+                                        <div class="font-medium text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
                                         </div>
                                         <div class="text-xs text-gray-500">
                                             <?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <div class="text-sm font-medium text-gray-700">
                                             <?= htmlspecialchars($payment['exam_type']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
                                             <div class="text-sm font-medium text-gray-900">
                                                 <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
@@ -128,20 +128,20 @@
                                             <span class="text-xs text-gray-400 italic">None</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-red-600 font-mono">
+                                    <td class="py-3 px-3">
+                                        <div class="font-semibold text-red-600">
                                             ₱<?= number_format($payment['amount'], 2) ?></div>
-                                        <div class="text-xs text-gray-500 font-mono mt-1">Method:
+                                        <div class="text-xs text-gray-500 mt-0.5">Method:
                                             <?= htmlspecialchars($payment['payment_method']) ?></div>
                                         <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
-                                            <div class="text-xs text-gray-500 font-mono mt-1">Ref:
+                                            <div class="text-xs text-gray-500 mt-0.5">Ref:
                                                 <?= htmlspecialchars($payment['reference_number']) ?></div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4 text-gray-500">
+                                    <td class="py-3 px-3 text-gray-500">
                                         <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             <?php if ($payment['payment_method'] === 'GCash'): ?>
                                                 <button type="button" title="View Receipt"
@@ -213,18 +213,18 @@
 
         <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-4">Request / Patient</th>
-                            <th class="px-6 py-4">Exam Type</th>
-                            <th class="px-6 py-4">PhilHealth Number</th>
-                            <th class="px-6 py-4">Amount & Ref #</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Date Processed</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Request / Patient</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Exam Type</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">PhilHealth Number</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Amount & Ref #</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Status</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Date Processed</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100" id="historyTableBody">
+                    <tbody class="text-gray-800 bg-white divide-y divide-gray-100" id="historyTableBody">
                         <?php if (empty($paymentHistory)): ?>
                             <tr data-static-empty="1">
                                 <td colspan="6" class="p-12 text-center text-gray-500">No payment history found.</td>
@@ -234,17 +234,17 @@
                                 <tr class="hover:bg-gray-50 transition history-row"
                                     data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
                                     data-date="<?= strtotime($payment['updated_at']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
+                                    <td class="py-3 px-3">
+                                        <div class="font-medium text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
                                         </div>
                                         <div class="text-xs text-gray-500">
                                             <?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <div class="text-sm font-medium text-gray-700">
                                             <?= htmlspecialchars($payment['exam_type']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
                                             <div class="text-sm font-medium text-gray-900">
                                                 <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
@@ -253,17 +253,17 @@
                                             <span class="text-xs text-gray-400 italic">None</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-gray-900 font-mono">
+                                    <td class="py-3 px-3">
+                                        <div class="font-semibold text-gray-900">
                                             ₱<?= number_format($payment['amount'], 2) ?></div>
-                                        <div class="text-xs text-gray-500 font-mono mt-1">Method:
+                                        <div class="text-xs text-gray-500 mt-0.5">Method:
                                             <?= htmlspecialchars($payment['payment_method']) ?></div>
                                         <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
-                                            <div class="text-xs text-gray-500 font-mono mt-1">Ref:
+                                            <div class="text-xs text-gray-500 mt-0.5">Ref:
                                                 <?= htmlspecialchars($payment['reference_number']) ?></div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if ($payment['status'] === 'Verified'): ?>
                                             <span
                                                 class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400">

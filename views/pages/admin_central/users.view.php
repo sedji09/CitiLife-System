@@ -105,20 +105,19 @@
         </div>
 
         <!-- Users Table Card -->
-        <div id="users-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="users-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50/80 border-b border-gray-200">
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Email Address / User</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Role</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Branch Assignment
-                            </th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Status</th>
-                            <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Actions</th>
+                <table class="w-full text-sm">
+                    <thead class="sticky top-0 z-10">
+                        <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Email Address / User</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Role</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Branch Assignment</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Status</th>
+                            <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody" class="divide-y divide-gray-100">
+                    <tbody id="usersTableBody" class="text-gray-800 bg-white divide-y divide-gray-100">
                         <?php if (empty($users)): ?>
                             <tr>
                                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
@@ -144,42 +143,42 @@
                                 </td>
                             </tr>
                             <?php foreach ($users as $u): ?>
-                                <tr class="hover:bg-gray-50/30 transition-colors group user-row"
+                                <tr class="hover:bg-gray-50 transition-colors group user-row"
                                     data-email="<?= htmlspecialchars(strtolower($u['email'])) ?>"
                                     data-role="<?= htmlspecialchars(strtolower($u['role'])) ?>"
                                     data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'all branches')) ?>"
                                     data-status="<?= htmlspecialchars($u['status']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2.5">
                                             <div
-                                                class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
+                                                class="h-7 w-7 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
                                                  <?php $uAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($u['avatar']) : $u['avatar']; ?>
                                                  <?php if (!empty($uAvatarUrl)): ?>
                                                      <img src="<?= htmlspecialchars($uAvatarUrl) ?>" alt="Avatar"
                                                          class="h-full w-full object-cover">
-                                                <?php else: ?>
-                                                    <?= substr($u['email'], 0, 2) ?>
-                                                <?php endif; ?>
+                                                 <?php else: ?>
+                                                     <?= substr($u['email'], 0, 2) ?>
+                                                 <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col">
                                                 <span
-                                                    class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['email']) ?></span>
-                                                <span class="text-[10px] text-gray-400 font-medium tracking-tight">Joined
+                                                    class="font-medium text-gray-900"><?= htmlspecialchars($u['email']) ?></span>
+                                                <span class="text-[10px] text-gray-400 font-medium">Joined
                                                     <?= date('M d, Y', strtotime($u['created_at'])) ?></span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-gray-600 tracking-tight capitalize">
+                                    <td class="py-3 px-3">
+                                        <span class="text-sm text-gray-600 capitalize">
                                             <?= htmlspecialchars(str_replace('_', ' ', $u['role'])) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2 text-sm text-gray-500 tracking-tight">
+                                    <td class="py-3 px-3">
+                                        <div class="text-sm text-gray-600">
                                             <?= htmlspecialchars($u['branch_name'] ?? 'All Branches') ?>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php
                                         $badgeClass = 'bg-gray-100 text-gray-600 ring-gray-200';
                                         if ($u['status'] === 'Active') {

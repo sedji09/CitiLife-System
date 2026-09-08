@@ -185,7 +185,7 @@ foreach ($allServices as $service) {
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($patient['created_at']) ?>">
                             <?php $apprIndex++; ?>
-                            <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?>
+                            <td class="py-3 px-3 font-medium text-gray-900"><?= htmlspecialchars($patient['request_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
                                 title="<?= htmlspecialchars($patFullName) ?>">
