@@ -85,9 +85,10 @@ $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== fal
 
 // If running in production (e.g., Railway), fix hardcoded XAMPP paths to prevent 404 on CSS/JS and links
 if (!$isLocalhost) {
-    // Remove the XAMPP project folder only, KEEP the /public/ prefix because DocumentRoot is /app
-    // (e.g., /Citilife-System/public/assets -> /public/assets)
-    $output = str_replace('/' . PROJECT_DIR . '/', '/', $output);
+    if (!empty(PROJECT_DIR)) {
+        $output = str_replace('/' . PROJECT_DIR . '/', '/', $output);
+    }
+    $output = str_ireplace('/CitiLife-System/', '/', $output);
 }
 
 echo $output;
