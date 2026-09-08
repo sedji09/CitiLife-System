@@ -18,8 +18,10 @@ if (!defined('PROJECT_DIR')) {
     $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 
-    if ((!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
-        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)) {
+    if (
+        (!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
+        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)
+    ) {
         define('PROJECT_DIR', $folderName);
     } else {
         define('PROJECT_DIR', '');
