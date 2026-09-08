@@ -331,7 +331,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
 
         <!-- Card 1: Pending STAT -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?priority=STAT&status=pending"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?priority=STAT"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 p-2 rounded-lg">
@@ -352,7 +352,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 2: Total Pending -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?status=pending"
+        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #fed7aa;" onmouseenter="this.style.borderColor='#fb923c'"
             onmouseleave="this.style.borderColor='#fed7aa'">

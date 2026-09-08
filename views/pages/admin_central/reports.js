@@ -27,7 +27,7 @@ function initCharts() {
     philhealthChart = new Chart(phCtx, {
         type: 'doughnut',
         data: {
-            labels: ['With Card', 'Without Card'],
+            labels: ['With PhilHealth Card', 'Without PhilHealth Card'],
             datasets: [{
                 data: [0, 0],
                 backgroundColor: ['#EF4444', '#3b82f6'], // Red and Blue
@@ -180,7 +180,7 @@ async function loadStats() {
         const result = await response.json();
 
         if (result.success) {
-            renderDashboard(result.data, result.trends);
+            renderDashboard(result.data, result.trends, result.diagnostic_stats);
         } else {
             tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-500 font-medium">${result.message || 'Error occurred'}</td></tr>`;
         }
@@ -190,10 +190,20 @@ async function loadStats() {
     }
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 /**
  * Render stats to DOM and Charts
  */
-function renderDashboard(data, trends) {
+function renderDashboard(data, trends, diagStats) {
     const summary = {
         total: 0, philhealth: 0, stat: 0, urgent: 0, routine: 0, withoutPH: 0
     };
@@ -244,6 +254,70 @@ function renderDashboard(data, trends) {
 
     // Update Table
     document.getElementById('branchStatsTable').innerHTML = tableHtml;
+
+    // ── Diagnostic Findings & Prevalence Analysis ───────────────────────────
+    const totalDiagnosed = diagStats?.total_diagnosed || 0;
+    const diagTotalEl = document.getElementById('diagTotalCasesAnalyzed');
+    if (diagTotalEl) {
+        diagTotalEl.innerText = `${totalDiagnosed.toLocaleString()} Diagnosed Cases`;
+    }
+
+    // Most Prevalent Case Highlight
+    const prevCard = document.getElementById('mostPrevalentCard');
+    const prevName = document.getElementById('mostPrevalentName');
+    const prevDesc = document.getElementById('mostPrevalentDesc');
+    const prevCount = document.getElementById('mostPrevalentCount');
+    const prevRate = document.getElementById('mostPrevalentRate');
+
+    if (diagStats?.most_prevalent) {
+        const top = diagStats.most_prevalent;
+        if (prevName) prevName.innerText = top.diagnosis;
+        if (prevDesc) prevDesc.innerText = `Leading radiographic impression identified in ${top.count.toLocaleString()} cases for this period.`;
+        if (prevCount) prevCount.innerText = top.count.toLocaleString();
+        if (prevRate) prevRate.innerText = `${top.percentage}%`;
+        if (prevCard) prevCard.className = "bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs";
+    } else {
+        if (prevName) prevName.innerText = "No Diagnostic Cases Recorded";
+        if (prevDesc) prevDesc.innerText = "No radiologist impressions found for the selected date range.";
+        if (prevCount) prevCount.innerText = "0";
+        if (prevRate) prevRate.innerText = "0%";
+        if (prevCard) prevCard.className = "bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs";
+    }
+
+    // Diagnostic Ranking Table
+    const diagTableBody = document.getElementById('diagnosticRankingTable');
+    if (diagTableBody) {
+        if (diagStats?.ranking && diagStats.ranking.length > 0) {
+            let diagHtml = "";
+            diagStats.ranking.forEach(item => {
+                const isTop = item.rank === 1;
+                const rankBadge = item.rank === 1 ? 'bg-red-600 text-white font-black' : (item.rank === 2 ? 'bg-orange-500 text-white font-bold' : (item.rank === 3 ? 'bg-amber-500 text-white font-bold' : 'bg-gray-100 text-gray-600 font-semibold'));
+                diagHtml += `
+                <tr class="hover:bg-gray-50 transition border-b border-gray-100 last:border-0 ${isTop ? 'bg-red-50/40' : ''}">
+                    <td class="px-5 py-3.5 text-center">
+                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${rankBadge} shadow-2xs">${item.rank}</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <div class="font-bold text-gray-900 text-sm ${isTop ? 'text-red-700' : ''}">${escapeHtml(item.diagnosis)}</div>
+                    </td>
+                    <td class="px-5 py-3.5 text-center">
+                        <span class="font-bold text-gray-800 text-sm">${item.count.toLocaleString()}</span>
+                    </td>
+                    <td class="px-5 py-3.5">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="h-2 rounded-full ${isTop ? 'bg-red-600' : 'bg-blue-600'}" style="width: ${Math.min(item.percentage, 100)}%;"></div>
+                            </div>
+                            <span class="text-xs font-bold ${isTop ? 'text-red-700' : 'text-gray-700'} w-12 text-right">${item.percentage}%</span>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            diagTableBody.innerHTML = diagHtml;
+        } else {
+            diagTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-400">No diagnostic impressions recorded for this period.</td></tr>`;
+        }
+    }
 
     // Update PhilHealth Chart
     if (philhealthChart) {

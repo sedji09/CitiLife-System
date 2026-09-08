@@ -51,7 +51,7 @@
 
         <?php if ($success): ?>
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function () {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
@@ -172,52 +172,45 @@
                                     </td>
                                     <td class="py-3 px-3 text-left whitespace-nowrap">
                                         <div class="flex items-center justify-start gap-1.5">
-                                             <?php if ($b['status'] === 'Active'): ?>
-                                                 <form action="" method="POST" class="inline">
-                                                     <input type="hidden" name="action" value="toggle-status">
-                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
-                                                     <input type="hidden" name="new_status" value="Inactive">
-                                                     <button type="submit"
-                                                         class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition shadow-sm"
-                                                         title="Deactivate (Set Inactive)">
-                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
-                                                     </button>
-                                                 </form>
-                                             <?php else: ?>
-                                                 <form action="" method="POST" class="inline">
-                                                     <input type="hidden" name="action" value="toggle-status">
-                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
-                                                     <input type="hidden" name="new_status" value="Active">
-                                                     <button type="submit"
-                                                         class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm"
-                                                         title="Activate (Set Active)">
-                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                                                     </button>
-                                                 </form>
-                                             <?php endif; ?>
+                                            <?php if ($b['status'] === 'Active'): ?>
+                                                <form action="" method="POST" class="inline">
+                                                    <input type="hidden" name="action" value="toggle-status">
+                                                    <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
+                                                    <input type="hidden" name="new_status" value="Inactive">
+                                                    <button type="submit"
+                                                        class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white hover:border-gray-600 transition shadow-sm inline-flex items-center justify-center"
+                                                        title="Deactivate (Set Inactive)">
+                                                        <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                    </button>
+                                                </form>
+                                            <?php else: ?>
+                                                <form action="" method="POST" class="inline">
+                                                    <input type="hidden" name="action" value="toggle-status">
+                                                    <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
+                                                    <input type="hidden" name="new_status" value="Active">
+                                                    <button type="submit"
+                                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center"
+                                                        title="Activate (Set Active)">
+                                                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
 
-                                             <button type="button"
-                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($b)) ?>)"
-                                                 class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm"
-                                                 title="Edit Branch">
-                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                             </button>
+                                            <button type="button"
+                                                onclick="openEditModal(<?= htmlspecialchars(json_encode($b)) ?>)"
+                                                class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center"
+                                                title="Edit Branch">
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                            </button>
 
-                                             <button type="button"
-                                                 onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
-                                                 class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-200 transition shadow-sm"
-                                                 title="Manage GCash QR">
-                                                 <i data-lucide="qr-code" class="w-4 h-4"></i>
-                                             </button>
-
-                                             <button type="button"
-                                                 onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
-                                                 class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition shadow-sm"
-                                                 title="Delete Branch">
-                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                             </button>
-                                         </div>
-                                     </td>
+                                            <button type="button"
+                                                onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
+                                                class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center"
+                                                title="Manage GCash QR">
+                                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -457,10 +450,14 @@
                 <input type="hidden" name="branch_id" id="upload_qr_branch_id">
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2" id="uploadLabel">Upload New QR Code</label>
-                    <div class="relative w-full border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 bg-gray-50 hover:bg-green-50/50 transition-colors group p-4 flex flex-col items-center justify-center cursor-pointer">
-                        <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 group-hover:text-green-500 mb-2 transition-colors"></i>
-                        <p class="text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">Click to upload or drag and drop</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2" id="uploadLabel">Upload New QR
+                        Code</label>
+                    <div
+                        class="relative w-full border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 bg-gray-50 hover:bg-green-50/50 transition-colors group p-4 flex flex-col items-center justify-center cursor-pointer">
+                        <i data-lucide="upload-cloud"
+                            class="w-8 h-8 text-gray-400 group-hover:text-green-500 mb-2 transition-colors"></i>
+                        <p class="text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">
+                            Click to upload or drag and drop</p>
                         <p class="text-xs text-gray-400 mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
                         <input type="file" name="qr_code" accept="image/*" required
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

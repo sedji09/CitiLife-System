@@ -47,13 +47,7 @@ class BranchesController
             }
 
             if ($action === 'delete') {
-                $id = $_POST['branch_id'] ?? null;
-                if ($id && $branchModel->deleteBranch($id)) {
-                    $success = "Branch deleted successfully.";
-                    $auditLogModel->addLog($currentUserId, "Deleted branch", 'Branch Management', 'Branch', $id, "Deleted branch ID: $id", $id);
-                } else {
-                    $error = "Failed to delete branch.";
-                }
+                $error = "Deleting branches is disabled to protect patient and case records. You can set the branch status to 'Inactive' instead.";
             }
 
             if ($action === 'update') {

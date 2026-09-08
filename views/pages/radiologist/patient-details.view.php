@@ -98,32 +98,60 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div>
                 <label class="block text-gray-600 text-sm font-medium mb-1.5">Priority</label>
                 <?php
+                $pBorder = '1.5px solid #60a5fa';
+                $pBg = '#eff6ff';
+                $pColor = '#1d4ed8';
                 if ($caseDetails['priority'] === 'STAT') {
-                    $pClasses = 'border-red-400 bg-red-50 text-red-700';
+                    $pBorder = '1.5px solid #f87171';
+                    $pBg = '#fef2f2';
+                    $pColor = '#b91c1c';
                 } elseif ($caseDetails['priority'] === 'Urgent') {
-                    $pClasses = 'border-yellow-400 bg-yellow-50 text-yellow-700';
-                } else {
-                    $pClasses = 'border-blue-400 bg-blue-50 text-blue-700';
+                    $pBorder = '1.5px solid #facc15';
+                    $pBg = '#fefce8';
+                    $pColor = '#a16207';
+                } elseif ($caseDetails['priority'] === 'Priority') {
+                    $pBorder = '1.5px solid #fb923c';
+                    $pBg = '#fff7ed';
+                    $pColor = '#c2410c';
                 }
                 ?>
-                <span class="inline-flex items-center rounded-full border <?= $pClasses ?> px-2.5 py-1 text-xs font-semibold">
-                    <?= htmlspecialchars($caseDetails['priority']) ?>
+                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style="border:<?= $pBorder ?>;background-color:<?= $pBg ?>;color:<?= $pColor ?>">
+                    <?= htmlspecialchars($caseDetails['priority'] ?: 'Routine') ?>
                 </span>
             </div>
             <div class="pt-1">
                 <span class="block text-gray-600 text-sm font-medium mb-1.5">Status</span>
                 <?php
-                if ($caseDetails['status'] === 'Completed')
-                    $sBadge = 'border border-green-400 bg-green-50 text-green-700';
-                elseif ($caseDetails['status'] === 'Under Reading')
-                    $sBadge = 'border border-blue-400 bg-blue-50 text-blue-700';
-                elseif ($caseDetails['status'] === 'Report Ready')
-                    $sBadge = 'border border-indigo-400 bg-indigo-50 text-indigo-700';
-                else
-                    $sBadge = 'border border-yellow-400 bg-yellow-50 text-yellow-700';
+                $displayStatus = $caseDetails['status'] ?: 'Pending';
+                $sBorder = '1.5px solid #facc15';
+                $sBg = '#fefce8';
+                $sColor = '#a16207';
+                if ($displayStatus === 'Report Ready') {
+                    $sBorder = '1.5px solid #818cf8';
+                    $sBg = '#eef2ff';
+                    $sColor = '#4338ca';
+                } elseif ($displayStatus === 'Under Reading') {
+                    $sBorder = '1.5px solid #60a5fa';
+                    $sBg = '#eff6ff';
+                    $sColor = '#1d4ed8';
+                } elseif ($displayStatus === 'Completed') {
+                    $sBorder = '1.5px solid #4ade80';
+                    $sBg = '#f0fdf4';
+                    $sColor = '#15803d';
+                } elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected') {
+                    $sBorder = '1.5px solid #f87171';
+                    $sBg = '#fef2f2';
+                    $sColor = '#b91c1c';
+                } elseif ($displayStatus === 'Released') {
+                    $sBorder = '1.5px solid #34d399';
+                    $sBg = '#ecfdf5';
+                    $sColor = '#047857';
+                }
                 ?>
-                <span class="inline-block font-bold text-xs px-3 py-1.5 rounded-full <?= $sBadge ?>">
-                    <?= htmlspecialchars($caseDetails['status']) ?>
+                <span class="inline-block font-bold text-xs px-3 py-1.5 rounded-full"
+                    style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
+                    <?= htmlspecialchars($displayStatus) ?>
                 </span>
             </div>
         </div>

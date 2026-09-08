@@ -11,66 +11,74 @@
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/form-validator.js?v=<?= time() ?>"></script>
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
 
-  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
+  <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css?v=<?= filemtime(__DIR__ . '/../../../tailwind/src/output.css') ?>">
   <style>
     /* ===== Global Consistent System Font (Matches Standard UI in Patient Queue) ===== */
     body, input, select, textarea, button, table, th, td, h1, h2, h3, h4, h5, h6, p, span, div, .font-mono {
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     }
 
-    /* ===== Global Table Action Buttons Hover Color Effects ===== */
-    a[class*="border-blue-500"]:hover, button[class*="border-blue-500"]:hover,
-    a:hover > i[class*="border-blue-500"], button:hover > i[class*="border-blue-500"],
-    i[class*="border-blue-500"]:hover {
+
+    /* ===== Global Table Action Buttons Base & Colors ===== */
+    .bg-blue-600 { background-color: #2563eb !important; }
+    .bg-blue-600:hover, .hover\:bg-blue-700:hover { background-color: #1d4ed8 !important; }
+    .text-white { color: #ffffff !important; }
+    a.bg-blue-600, button.bg-blue-600,
+    a.bg-blue-600 *, button.bg-blue-600 * {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+    }
+    .bg-amber-100 { background-color: #fef3c7 !important; }
+    .border-amber-500 { border-color: #f59e0b !important; }
+    .text-amber-600, .text-amber-700 { color: #d97706 !important; }
+
+    /* ===== Global Table Action Buttons Hover (Strictly scoped to table action buttons) ===== */
+    table td a[class*="p-1.5"][class*="border-blue"]:hover,
+    table td button[class*="p-1.5"][class*="border-blue"]:hover {
       background-color: #2563eb !important;
       border-color: #2563eb !important;
       color: #ffffff !important;
     }
-    a[class*="border-green-500"]:hover, button[class*="border-green-500"]:hover,
-    a:hover > i[class*="border-green-500"], button:hover > i[class*="border-green-500"],
-    i[class*="border-green-500"]:hover {
+    table td a[class*="p-1.5"][class*="border-green"]:hover,
+    table td button[class*="p-1.5"][class*="border-green"]:hover,
+    table td a[class*="p-1.5"][class*="border-emerald"]:hover,
+    table td button[class*="p-1.5"][class*="border-emerald"]:hover {
       background-color: #16a34a !important;
       border-color: #16a34a !important;
       color: #ffffff !important;
     }
-    a[class*="border-yellow-500"]:hover, button[class*="border-yellow-500"]:hover,
-    a[class*="border-yellow-400"]:hover, button[class*="border-yellow-400"]:hover,
-    a:hover > i[class*="border-yellow-500"], button:hover > i[class*="border-yellow-500"],
-    a:hover > i[class*="border-yellow-400"], button:hover > i[class*="border-yellow-400"],
-    i[class*="border-yellow-500"]:hover, i[class*="border-yellow-400"]:hover {
-      background-color: #eab308 !important;
-      border-color: #ca8a04 !important;
+    table td a[class*="p-1.5"][class*="border-yellow"]:hover,
+    table td button[class*="p-1.5"][class*="border-yellow"]:hover,
+    table td a[class*="p-1.5"][class*="border-amber"]:hover,
+    table td button[class*="p-1.5"][class*="border-amber"]:hover {
+      background-color: #d97706 !important;
+      border-color: #d97706 !important;
       color: #ffffff !important;
     }
-    a[class*="border-red-500"]:hover, button[class*="border-red-500"]:hover,
-    a:hover > i[class*="border-red-500"], button:hover > i[class*="border-red-500"],
-    i[class*="border-red-500"]:hover {
+    table td a[class*="p-1.5"][class*="border-red"]:hover,
+    table td button[class*="p-1.5"][class*="border-red"]:hover {
       background-color: #dc2626 !important;
       border-color: #dc2626 !important;
       color: #ffffff !important;
     }
-    a[class*="border-gray-400"]:hover, button[class*="border-gray-400"]:hover,
-    a[class*="border-gray-300"]:hover, button[class*="border-gray-300"]:hover,
-    a:hover > i[class*="border-gray-400"], button:hover > i[class*="border-gray-400"],
-    i[class*="border-gray-400"]:hover {
+    table td a[class*="p-1.5"][class*="border-gray"]:hover,
+    table td button[class*="p-1.5"][class*="border-gray"]:hover,
+    table td a[class*="p-1.5"][class*="border-slate"]:hover,
+    table td button[class*="p-1.5"][class*="border-slate"]:hover {
       background-color: #4b5563 !important;
       border-color: #4b5563 !important;
       color: #ffffff !important;
     }
-    a[class*="border-purple-500"]:hover, button[class*="border-purple-500"]:hover,
-    a:hover > i[class*="border-purple-500"], button:hover > i[class*="border-purple-500"],
-    i[class*="border-purple-500"]:hover {
+    table td a[class*="p-1.5"][class*="border-purple"]:hover,
+    table td button[class*="p-1.5"][class*="border-purple"]:hover,
+    table td a[class*="p-1.5"][class*="border-indigo"]:hover,
+    table td button[class*="p-1.5"][class*="border-indigo"]:hover {
       background-color: #9333ea !important;
       border-color: #9333ea !important;
       color: #ffffff !important;
     }
-    a[class*="border-blue-500"]:hover svg, button[class*="border-blue-500"]:hover svg,
-    a[class*="border-green-500"]:hover svg, button[class*="border-green-500"]:hover svg,
-    a[class*="border-yellow-500"]:hover svg, button[class*="border-yellow-500"]:hover svg,
-    a[class*="border-yellow-400"]:hover svg, button[class*="border-yellow-400"]:hover svg,
-    a[class*="border-red-500"]:hover svg, button[class*="border-red-500"]:hover svg,
-    a[class*="border-gray-400"]:hover svg, button[class*="border-gray-400"]:hover svg,
-    a[class*="border-purple-500"]:hover svg, button[class*="border-purple-500"]:hover svg {
+    table td a[class*="p-1.5"]:hover svg,
+    table td button[class*="p-1.5"]:hover svg {
       stroke: #ffffff !important;
     }
 

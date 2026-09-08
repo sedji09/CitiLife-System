@@ -397,7 +397,7 @@ $statusDescriptions = [
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Reference #</p>
-                                    <p class="text-sm font-semibold text-red-600 font-mono">
+                                    <p class="text-sm font-semibold text-red-600">
                                         <?= htmlspecialchars($caseRow['case_number']) ?>
                                     </p>
                                 </div>

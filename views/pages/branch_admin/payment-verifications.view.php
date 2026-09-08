@@ -142,11 +142,11 @@
                                         <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
                                     </td>
                                     <td class="py-3 px-3 whitespace-nowrap">
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-1.5">
                                             <?php if ($payment['payment_method'] === 'GCash'): ?>
                                                 <button type="button" title="View Receipt"
                                                     onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float) ($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float) ($payment['discount_amount'] ?? 0) ?>, <?= (float) $payment['amount'] ?>, '<?= htmlspecialchars($payment['exam_type'] ?? 'Exam') ?>')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-blue-100 border border-blue-500 text-blue-600 hover:bg-blue-200 transition">
+                                                    class="inline-flex items-center justify-center p-1.5 rounded-md bg-blue-100 border border-blue-500 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm">
                                                     <i data-lucide="image" class="w-4 h-4"></i>
                                                 </button>
                                             <?php endif; ?>
@@ -155,7 +155,7 @@
                                                 <input type="hidden" name="action" value="verify">
                                                 <button type="button" title="Verify Payment"
                                                     onclick="confirmAction(this.form, 'verify')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-100 border border-green-500 text-green-600 hover:bg-green-200 transition">
+                                                    class="inline-flex items-center justify-center p-1.5 rounded-md bg-green-100 border border-green-500 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm">
                                                     <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -164,7 +164,7 @@
                                                 <input type="hidden" name="action" value="reject">
                                                 <button type="button" title="Reject Payment"
                                                     onclick="confirmAction(this.form, 'reject')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-100 border border-red-500 text-red-600 hover:bg-red-200 transition">
+                                                    class="inline-flex items-center justify-center p-1.5 rounded-md bg-red-100 border border-red-500 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm">
                                                     <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -332,7 +332,7 @@
                     <div>
                         <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider block mb-1">Provided
                             Reference Number</span>
-                        <strong id="modal-ref-number" class="text-xl font-mono text-blue-900 tracking-tight"></strong>
+                        <strong id="modal-ref-number" class="text-xl font-bold text-blue-900"></strong>
                     </div>
                     <div class="text-xs text-blue-700 bg-blue-100/50 px-3 py-1.5 rounded-lg">
                         Please verify this matches the receipt below
@@ -354,7 +354,7 @@
                         <div class="flex items-center justify-between" id="receiptModalDiscRow">
                             <span class="text-emerald-600 text-sm font-medium">PhilHealth Discount</span>
                             <span id="receiptModalDiscAmount"
-                                class="font-semibold text-emerald-600 text-sm font-mono tracking-tight">-₱0.00</span>
+                                class="font-semibold text-emerald-600 text-sm">-₱0.00</span>
                         </div>
                     </div>
                     <div class="bg-red-50/30 px-4 py-3 border-t border-red-100 flex items-center justify-between">
@@ -430,7 +430,7 @@
             : `<div class="text-sm font-medium text-gray-900">${escapeHtml(payment.philhealth_id || 'Card Holder')}</div>`;
 
         const gcashRefHtml = (payment.payment_method === 'GCash' && payment.reference_number)
-            ? `<div class="text-xs text-gray-500 font-mono mt-1">Ref: ${escapeHtml(payment.reference_number)}</div>`
+            ? `<div class="text-xs text-gray-500 mt-1">Ref: ${escapeHtml(payment.reference_number)}</div>`
             : '';
 
         let gcashBtnHtml = '';
@@ -447,25 +447,25 @@
         }
 
         tr.innerHTML = `
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 <div class="font-bold text-gray-900">${escapeHtml(payment.request_number)}</div>
                 <div class="text-xs text-gray-500">${escapeHtml((payment.first_name || '') + ' ' + (payment.last_name || ''))}</div>
             </td>
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 <div class="text-sm font-medium text-gray-700">${escapeHtml(payment.exam_type)}</div>
             </td>
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 ${philhealthHtml}
             </td>
-            <td class="px-6 py-4">
-                <div class="font-bold text-red-600 font-mono">₱${formatCurrency(payment.amount)}</div>
-                <div class="text-xs text-gray-500 font-mono mt-1">Method: ${escapeHtml(payment.payment_method)}</div>
+            <td class="py-3 px-3">
+                <div class="font-bold text-red-600">₱${formatCurrency(payment.amount)}</div>
+                <div class="text-xs text-gray-500 mt-1">Method: ${escapeHtml(payment.payment_method)}</div>
                 ${gcashRefHtml}
             </td>
-            <td class="px-6 py-4 text-gray-500">
+            <td class="py-3 px-3 text-gray-500">
                 ${escapeHtml(payment.created_at_formatted)}
             </td>
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 <div class="flex items-center gap-2">
                     ${gcashBtnHtml}
                     <form method="POST" class="inline-block m-0">
@@ -499,7 +499,7 @@
             : `<div class="text-sm font-medium text-gray-900">${escapeHtml(payment.philhealth_id || 'Card Holder')}</div>`;
 
         const gcashRefHtml = (payment.payment_method === 'GCash' && payment.reference_number)
-            ? `<div class="text-xs text-gray-500 font-mono mt-1">Ref: ${escapeHtml(payment.reference_number)}</div>`
+            ? `<div class="text-xs text-gray-500 mt-1">Ref: ${escapeHtml(payment.reference_number)}</div>`
             : '';
 
         const statusBadge = (payment.status === 'Verified')
@@ -508,25 +508,25 @@
             + (payment.rejection_reason ? `<div class="text-xs text-red-600 mt-1.5 max-w-xs break-words" title="${escapeHtml(payment.rejection_reason)}"><span class="font-semibold">Reason:</span> ${escapeHtml(payment.rejection_reason)}</div>` : '');
 
         tr.innerHTML = `
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 <div class="font-bold text-gray-900">${escapeHtml(payment.request_number)}</div>
                 <div class="text-xs text-gray-500">${escapeHtml((payment.first_name || '') + ' ' + (payment.last_name || ''))}</div>
             </td>
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 <div class="text-sm font-medium text-gray-700">${escapeHtml(payment.exam_type)}</div>
             </td>
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 ${philhealthHtml}
             </td>
-            <td class="px-6 py-4">
-                <div class="font-bold text-gray-900 font-mono">₱${formatCurrency(payment.amount)}</div>
-                <div class="text-xs text-gray-500 font-mono mt-1">Method: ${escapeHtml(payment.payment_method)}</div>
+            <td class="py-3 px-3">
+                <div class="font-bold text-gray-900">₱${formatCurrency(payment.amount)}</div>
+                <div class="text-xs text-gray-500 mt-1">Method: ${escapeHtml(payment.payment_method)}</div>
                 ${gcashRefHtml}
             </td>
-            <td class="px-6 py-4">
+            <td class="py-3 px-3">
                 ${statusBadge}
             </td>
-            <td class="px-6 py-4 text-gray-500">
+            <td class="py-3 px-3 text-gray-500">
                 ${escapeHtml(payment.updated_at_formatted)}
             </td>
         `;

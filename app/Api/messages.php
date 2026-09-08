@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../Models/UserModel.php';
+require_once __DIR__ . '/../../config/security.php';
 global $pdo;
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -64,8 +65,11 @@ try {
             $stmt->execute([$userId, $userId, $userId, $userId]);
             $conversations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Format names
+            // Format names and decrypt latest message
             foreach ($conversations as &$conv) {
+                if (isset($conv['latest_message']) && $conv['latest_message'] !== null) {
+                    $conv['latest_message'] = decryptMessage($conv['latest_message']);
+                }
                 $sessionName = $conv['name'] ?? ($conv['full_name_report'] ?? '');
                 $info = $userModel->getDisplayInfo($conv['id'], $sessionName, $conv['email']);
                 $conv['name'] = $info['displayName'];
@@ -97,6 +101,11 @@ try {
             ");
             $stmt->execute([$userId, $contactId, $contactId, $userId]);
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($messages as &$msg) {
+                if (isset($msg['message']) && $msg['message'] !== null) {
+                    $msg['message'] = decryptMessage($msg['message']);
+                }
+            }
             echo json_encode(['success' => true, 'messages' => $messages]);
             break;
 
@@ -150,12 +159,17 @@ try {
                 exit;
             }
 
+            $encryptedMessage = !empty($message) ? encryptMessage($message) : '';
+
             $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, message, attachment) VALUES (?, ?, ?, ?)");
-            if ($stmt->execute([$userId, $contactId, $message, $attachmentPath])) {
+            if ($stmt->execute([$userId, $contactId, $encryptedMessage, $attachmentPath])) {
                 $msgId = $pdo->lastInsertId();
                 $stmt = $pdo->prepare("SELECT id, sender_id, receiver_id, message, attachment, is_read, created_at FROM messages WHERE id = ?");
                 $stmt->execute([$msgId]);
                 $msg = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($msg && isset($msg['message']) && $msg['message'] !== null) {
+                    $msg['message'] = decryptMessage($msg['message']);
+                }
                 echo json_encode(['success' => true, 'message' => $msg]);
             } else {
                 echo json_encode(['error' => 'Failed to send']);

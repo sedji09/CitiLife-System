@@ -383,7 +383,7 @@ function recalculateAssignPricing() {
     const isWithCard = document.getElementById('assign_ph_with')?.checked || false;
     const relSelect = document.getElementById('assign_philhealth_relation');
     const selectedOpt = relSelect ? relSelect.selectedOptions[0] : null;
-    // PhilHealth discount is only applied if With Card is selected AND a valid, non-disabled relation is selected
+    // PhilHealth discount is only applied if With PhilHealth Card is selected AND a valid, non-disabled relation is selected
     const isRelValid = isWithCard && relSelect && relSelect.value && (!selectedOpt || !selectedOpt.disabled);
 
     const allServices = window.allActiveServices || [];

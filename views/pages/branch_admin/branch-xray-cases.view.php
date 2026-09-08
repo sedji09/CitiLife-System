@@ -67,18 +67,18 @@
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
-                    <th class="text-left font-semibold px-4 py-3.5 whitespace-nowrap">Case No.</th>
-                    <th class="text-left font-semibold px-4 py-3.5 whitespace-nowrap">Patient ID</th>
-                    <th class="text-left font-semibold px-4 py-3.5">Patient Name</th>
-                    <th class="text-left font-semibold px-4 py-3.5">Exam Type</th>
+                    <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Case No.</th>
+                    <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient ID</th>
+                    <th class="text-left font-semibold px-3 py-3">Patient Name</th>
+                    <th class="text-left font-semibold px-3 py-3">Exam Type</th>
                     <?php if ($currentTab === 'queue'): ?>
-                        <th class="text-left font-semibold px-4 py-3.5">Priority</th>
-                        <th class="text-left font-semibold px-4 py-3.5">Status</th>
+                        <th class="text-left font-semibold px-3 py-3">Priority</th>
+                        <th class="text-left font-semibold px-3 py-3">Status</th>
                     <?php else: ?>
-                        <th class="text-left font-semibold px-4 py-3.5 whitespace-nowrap">Status</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Status</th>
                     <?php endif; ?>
-                    <th class="text-left font-semibold px-4 py-3.5">Date</th>
-                    <th class="text-left font-semibold px-4 py-3.5 text-center">Actions</th>
+                    <th class="text-left font-semibold px-3 py-3">Date</th>
+                    <th class="text-left font-semibold px-3 py-3 text-center">Actions</th>
                 </tr>
             </thead>
             <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
@@ -108,19 +108,21 @@
                         <tr class="hover:bg-white/10 transition-colors record-row cursor-pointer"
                             data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-case="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-id="<?= htmlspecialchars($row['case_number']) ?>"
+                            data-case-id="<?= htmlspecialchars($row['id']) ?>"
                             data-exam="<?= htmlspecialchars($row['exam_type']) ?>"
                             data-priority="<?= htmlspecialchars($row['priority'] ?? '') ?>"
                             data-date="<?= htmlspecialchars($row['created_at']) ?>"
                             data-is-today="<?= $isToday ? 'true' : 'false' ?>">
-                            <td class="py-3 px-4 font-medium text-gray-900 whitespace-nowrap">
+                            <td class="py-3 px-3 font-medium text-gray-900 whitespace-nowrap">
                                 <?= htmlspecialchars($row['case_number']) ?>
                             </td>
-                            <td class="py-3 px-4 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
-                            <td class="py-3 px-4">
+                            <td class="py-3 px-3 text-gray-500"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></td>
+                            <td class="py-3 px-3">
                                 <span
                                     class="font-medium text-gray-800"><?= htmlspecialchars($patFullName) ?></span>
                             </td>
-                            <td class="py-3 px-4">
+                            <td class="py-3 px-3">
                                 <?php
                                 $exams = array_filter(array_map('trim', explode(',', $row['exam_type'])));
                                 $firstExam = reset($exams);
@@ -140,22 +142,32 @@
                                 </div>
                             </td>
                             <?php if ($currentTab === 'queue'): ?>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-3">
                                     <?php
-                                    $pColor = 'blue';
-                                    if ($row['priority'] === 'STAT')
-                                        $pColor = 'red';
-                                    elseif ($row['priority'] === 'Urgent')
-                                        $pColor = 'yellow';
-                                    elseif ($row['priority'] === 'Priority')
-                                        $pColor = 'orange';
+                                    $pBorder = '1.5px solid #60a5fa';
+                                    $pBg = '#eff6ff';
+                                    $pColor = '#1d4ed8';
+                                    if ($row['priority'] === 'STAT') {
+                                        $pBorder = '1.5px solid #f87171';
+                                        $pBg = '#fef2f2';
+                                        $pColor = '#b91c1c';
+                                    } elseif ($row['priority'] === 'Urgent') {
+                                        $pBorder = '1.5px solid #facc15';
+                                        $pBg = '#fefce8';
+                                        $pColor = '#a16207';
+                                    } elseif ($row['priority'] === 'Priority') {
+                                        $pBorder = '1.5px solid #fb923c';
+                                        $pBg = '#fff7ed';
+                                        $pColor = '#c2410c';
+                                    }
                                     ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-<?= $pColor ?>-200 bg-<?= $pColor ?>-50 px-2.5 py-1 text-xs font-semibold text-<?= $pColor ?>-700 shadow-sm">
-                                        <?= htmlspecialchars($row['priority']) ?>
+                                        class="priority-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-2xs"
+                                        style="border:<?= $pBorder ?>;background-color:<?= $pBg ?>;color:<?= $pColor ?>">
+                                        <?= htmlspecialchars($row['priority'] ?: 'Routine') ?>
                                     </span>
                                 </td>
-                                <td class="py-3 px-4">
+                                <td class="py-3 px-3">
                                     <?php
                                     $displayStatus = ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') ? 'Rejected' : $row['status'];
                                     
@@ -165,35 +177,47 @@
                                         $displayStatus = 'Overdue';
                                     }
 
-                                    $sColor = 'yellow';
-                                    if ($displayStatus === 'Report Ready')
-                                        $sColor = 'indigo';
-                                    elseif ($displayStatus === 'Under Reading')
-                                        $sColor = 'blue';
-                                    elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected')
-                                        $sColor = 'red';
-                                    elseif ($displayStatus === 'Completed')
-                                        $sColor = 'green';
+                                    $sBorder = '1.5px solid #facc15';
+                                    $sBg = '#fefce8';
+                                    $sColor = '#a16207';
+                                    if ($displayStatus === 'Report Ready') {
+                                        $sBorder = '1.5px solid #818cf8';
+                                        $sBg = '#eef2ff';
+                                        $sColor = '#4338ca';
+                                    } elseif ($displayStatus === 'Under Reading') {
+                                        $sBorder = '1.5px solid #60a5fa';
+                                        $sBg = '#eff6ff';
+                                        $sColor = '#1d4ed8';
+                                    } elseif ($displayStatus === 'Overdue' || $displayStatus === 'Rejected') {
+                                        $sBorder = '1.5px solid #f87171';
+                                        $sBg = '#fef2f2';
+                                        $sColor = '#b91c1c';
+                                    } elseif ($displayStatus === 'Completed') {
+                                        $sBorder = '1.5px solid #4ade80';
+                                        $sBg = '#f0fdf4';
+                                        $sColor = '#15803d';
+                                    }
                                     ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-<?= $sColor ?>-200 bg-<?= $sColor ?>-50 px-2.5 py-1 text-xs font-semibold text-<?= $sColor ?>-700 shadow-sm">
+                                        class="status-badge inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-2xs"
+                                        style="border:<?= $sBorder ?>;background-color:<?= $sBg ?>;color:<?= $sColor ?>">
                                         <?= htmlspecialchars($displayStatus) ?>
                                     </span>
                                 </td>
                             <?php else: ?>
-                                <td class="py-3 px-4 whitespace-nowrap">
+                                <td class="py-3 px-3 whitespace-nowrap">
                                     <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
                                         <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
                                             <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
                                         </span>
                                     <?php else: ?>
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-2xs" style="border:1.5px solid #34d399;background-color:#ecfdf5;color:#047857">
                                             Released
                                         </span>
                                     <?php endif; ?>
                                 </td>
                             <?php endif; ?>
-                            <td class="py-3 px-4 text-gray-500 whitespace-nowrap">
+                            <td class="py-3 px-3 text-gray-500 whitespace-nowrap">
                                 <div class="flex flex-col gap-1 items-start">
                                     <span><?= date('M d, Y', strtotime($row['created_at'])) ?> <span class="opacity-70 ml-1"><?= date('h:i A', strtotime($row['created_at'])) ?></span></span>
                                     <?php if ($currentTab === 'queue' && !$isToday): ?>
@@ -201,37 +225,52 @@
                                     <?php endif; ?>
                                 </div>
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                 <div class="flex items-center justify-center gap-2">
+                            <td class="py-3 px-3 text-center">
+                                 <div class="flex items-center justify-center gap-1.5">
                                      <?php if ($currentTab === 'queue'): ?>
                                          <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $row['id'] ?>&from=branch-xray-cases"
-                                             class="p-1.5 rounded-lg border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                                             title="View Case Detals">
+                                             class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                             title="View Case Details">
                                              <i data-lucide="eye" class="w-4 h-4"></i>
                                          </a>
-                                         <?php if ($row['status'] === 'Report Ready'): ?>
+                                         <?php 
+                                         $isReportAvailable = in_array($row['status'], ['Report Ready', 'Completed', 'Released']) || !empty($row['date_completed']) || !empty($row['findings']);
+                                         ?>
+                                         <?php if ($isReportAvailable): ?>
                                              <a href="javascript:void(0)"
-                                                 onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this preliminary report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                                 class="p-1.5 rounded-lg border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                                                 title="Print Preliminary Report">
+                                                 onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                                 class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                 title="Print Report">
                                                  <i data-lucide="printer" class="w-4 h-4"></i>
                                              </a>
+                                             <a href="javascript:void(0)"
+                                                 onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
+                                                 class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                 title="Download PDF">
+                                                 <i data-lucide="download" class="w-4 h-4"></i>
+                                             </a>
+                                         <?php else: ?>
+                                             <button type="button" disabled
+                                                 class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
+                                                 title="Print Report (Disabled until Radiologist submits report)">
+                                                 <i data-lucide="printer" class="w-4 h-4"></i>
+                                             </button>
                                          <?php endif; ?>
                                      <?php else: ?>
                                          <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=records-history&id=<?= $row['id'] ?>&from=branch-xray-cases"
-                                             class="p-1.5 rounded-lg border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                             class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                              title="View Record Details">
                                              <i data-lucide="eye" class="w-4 h-4"></i>
                                          </a>
                                          <a href="javascript:void(0)"
                                              onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                             class="p-1.5 rounded-lg border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                              title="Print Report">
                                              <i data-lucide="printer" class="w-4 h-4"></i>
                                          </a>
                                          <a href="javascript:void(0)"
                                              onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
-                                             class="p-1.5 rounded-lg border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                             class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                              title="Download PDF">
                                              <i data-lucide="download" class="w-4 h-4"></i>
                                          </a>
@@ -481,6 +520,112 @@
 
         // Initial Render
         renderPage();
+        handleHighlight();
+
+        function handleHighlight() {
+            const params = new window.URLSearchParams(window.location.search);
+            const highlightId = params.get('highlight') || params.get('highlight_case') || params.get('case_id');
+            if (!highlightId) return;
+
+            const hlLower = highlightId.trim().toLowerCase();
+            const allRows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
+
+            // Check if any matching row exists
+            const matchingRow = allRows.find(row => 
+                (row.dataset.id || '').toLowerCase() === hlLower ||
+                (row.dataset.case || '').toLowerCase() === hlLower ||
+                (row.dataset.caseId || '').toLowerCase() === hlLower
+            );
+
+            if (!matchingRow) return;
+
+            // Reset filters to ensure highlighted case is visible
+            if (searchInput) searchInput.value = '';
+            if (filterPriority) filterPriority.value = 'All';
+            if (filterDate && filterDate.value === 'Today' && matchingRow.dataset.isToday !== 'true') {
+                filterDate.value = 'All';
+            }
+
+            // Find matching index in filtered list and update page
+            const filteredRows = allRows.filter(row => {
+                const priority = row.getAttribute('data-priority');
+                const isToday = row.getAttribute('data-is-today') === 'true';
+                if (filterPriority && filterPriority.value !== 'All' && priority !== filterPriority.value) return false;
+                if (filterDate && filterDate.value === 'Today' && !isToday) return false;
+                if (filterDate && filterDate.value === 'Backlog' && isToday) return false;
+                return true;
+            });
+
+            const targetIdx = filteredRows.findIndex(row => 
+                (row.dataset.id || '').toLowerCase() === hlLower ||
+                (row.dataset.case || '').toLowerCase() === hlLower ||
+                (row.dataset.caseId || '').toLowerCase() === hlLower
+            );
+
+            if (targetIdx !== -1) {
+                currentPage = Math.floor(targetIdx / ROWS_PER_PAGE) + 1;
+            }
+
+            renderPage();
+
+            setTimeout(() => {
+                const targetRow = allRows.find(row => 
+                    (row.dataset.id || '').toLowerCase() === hlLower ||
+                    (row.dataset.case || '').toLowerCase() === hlLower ||
+                    (row.dataset.caseId || '').toLowerCase() === hlLower
+                );
+
+                if (targetRow) {
+                    targetRow.style.display = '';
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Flash highlight animation
+                    targetRow.style.transition = 'background-color 0.4s ease';
+                    targetRow.style.backgroundColor = '#fef08a';
+                    setTimeout(() => {
+                        targetRow.style.backgroundColor = '#fde047';
+                        setTimeout(() => {
+                            targetRow.style.backgroundColor = '#fef08a';
+                            setTimeout(() => {
+                                targetRow.style.backgroundColor = '#fde047';
+                                setTimeout(() => {
+                                    targetRow.style.transition = 'background-color 1.5s ease';
+                                    targetRow.style.backgroundColor = '';
+                                }, 400);
+                            }, 400);
+                        }, 400);
+                    }, 200);
+
+                    // Info banner
+                    const existingBanner = document.getElementById('highlight-banner');
+                    if (existingBanner) existingBanner.remove();
+
+                    const banner = document.createElement('div');
+                    banner.id = 'highlight-banner';
+                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
+                    banner.style.cssText = 'margin-left:auto;padding:0.6rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
+                    const header = document.querySelector('h2');
+                    if (header && header.parentElement) {
+                        header.parentElement.insertAdjacentElement('afterend', banner);
+                    }
+                    setTimeout(() => {
+                        banner.style.transition = 'opacity 0.5s';
+                        banner.style.opacity = '0';
+                        setTimeout(() => banner.remove(), 500);
+                    }, 6000);
+
+                    // Clean URL
+                    try {
+                        const cleanUrl = new URL(window.location.href);
+                        cleanUrl.searchParams.delete('highlight');
+                        cleanUrl.searchParams.delete('highlight_case');
+                        cleanUrl.searchParams.delete('case_id');
+                        cleanUrl.searchParams.delete('is_new');
+                        window.history.replaceState({}, document.title, cleanUrl.toString());
+                    } catch (e) {}
+                }
+            }, 150);
+        }
 
         // Handle browser Back/Forward cache and delayed form restores
         window.addEventListener('pageshow', function(event) {

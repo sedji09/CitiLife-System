@@ -43,6 +43,8 @@ if ($userId > 0) {
   $_SESSION['email'] = $currentUser['email'];
   $_SESSION['name'] = $currentUser['name'];
   $_SESSION['role'] = $currentUser['role'];
+  $_SESSION['branch_id'] = $currentUser['branch_id'];
+  $branchId = $currentUser['branch_id'];
   $userEmail = $currentUser['email'];
   $role = $currentUser['role'];
 }

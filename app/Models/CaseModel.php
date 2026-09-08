@@ -326,6 +326,16 @@ class CaseModel
                         $cData['branch_id']
                     );
 
+                    // Notify Branch Admin that revised report is available for printing
+                    $notificationModel->add(
+                        "Revised Report Available",
+                        "Radiologist has revised and re-submitted the report for Case #{$cData['case_number']} ({$patientName} - {$branchLabel}). Report is available for printing.",
+                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        null,
+                        'branch_admin',
+                        $cData['branch_id']
+                    );
+
                     // Auto-dismiss the pending radiologist revision notification for this case
                     try {
                         $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title = 'Case Returned for Revision' AND link LIKE ? AND is_read = 0");
@@ -356,6 +366,16 @@ class CaseModel
                         'radtech',
                         $cData['branch_id']
                     );
+
+                    // Notify Branch Admin about findings change
+                    $notificationModel->add(
+                        "Edited Report Ready",
+                        "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). This report has been edited and is ready for printing.",
+                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        null,
+                        'branch_admin',
+                        $cData['branch_id']
+                    );
                 } else {
                     // Notify RadTech
                     $notificationModel->add(
@@ -364,6 +384,16 @@ class CaseModel
                         "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
                         null,
                         'radtech',
+                        $cData['branch_id']
+                    );
+
+                    // Notify Branch Admin
+                    $notificationModel->add(
+                        "Report Ready",
+                        "Radiology report is ready for Case {$cData['case_number']} ({$patientName} - {$branchLabel}). Report is available for viewing and printing.",
+                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        null,
+                        'branch_admin',
                         $cData['branch_id']
                     );
 
@@ -1205,11 +1235,25 @@ class CaseModel
             // Only notify generic "New X-ray Uploaded" if this is a fresh new case, not a dispute escalation
             if (!$hasDispute) {
                 $cData = $this->getCaseById($caseId);
-                if ($cData && !empty($cData['branch_id'])) {
+                if ($cData) {
+                    $branchName = $cData['branch_name'] ?? '';
+                    if (empty($branchName) && !empty($cData['branch_id'])) {
+                        $branchStmt = $this->pdo->prepare("SELECT name FROM branches WHERE id = ?");
+                        $branchStmt->execute([$cData['branch_id']]);
+                        $branchName = $branchStmt->fetchColumn() ?: '';
+                    }
+                    $notifLink = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=worklist";
+                    $params = [];
+                    if (!empty($branchName)) {
+                        $params[] = "branch=" . urlencode($branchName);
+                    }
+                    $params[] = "highlight_case=" . urlencode($cData['case_number']);
+                    $notifLink .= "&" . implode("&", $params);
+
                     $notificationModel->add(
                         "New X-ray Uploaded",
                         "X-ray image uploaded for Case {$cData['case_number']} and is ready for reading.",
-                        "/" . PROJECT_DIR . "/index.php?role=radiologist&page=patient-queue&branch_id={$cData['branch_id']}&highlight=" . urlencode($cData['case_number']),
+                        $notifLink,
                         $data['radiologist_id'] ?? null,
                         'radiologist'
                     );
@@ -1375,6 +1419,220 @@ class CaseModel
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$branchId, $startDate, $endDate]);
         return $stmt->fetch();
+    }
+
+    /**
+     * Normalize raw diagnostic impressions into standardized clinical diagnostic categories
+     * across ALL types of X-ray exams (Chest, Abdomen, Extremities, Spine, Skull, Pelvis, etc.).
+     */
+    public function normalizeDiagnosticImpression($raw, $examType = '')
+    {
+        $clean = trim($raw ?? '');
+        $clean = rtrim($clean, ".,;\t\n\r");
+        $lower = strtolower($clean);
+        $examLower = strtolower(trim($examType ?? ''));
+
+        if (empty($lower) || $lower === 'none' || $lower === '—' || $lower === '-') {
+            return null;
+        }
+
+        // 1. Respiratory / Chest Cases
+        if (str_contains($lower, 'pneumonia')) {
+            return 'Pneumonia';
+        }
+        if (str_contains($lower, 'tuberculosis') || str_contains($lower, 'ptb') || str_contains($lower, 'koch')) {
+            return 'Pulmonary Tuberculosis (PTB) Suspect';
+        }
+        if (str_contains($lower, 'cardiomegaly') || str_contains($lower, 'cardiac enlargement')) {
+            return 'Cardiomegaly';
+        }
+        if (str_contains($lower, 'bronchitis') || str_contains($lower, 'bronchovascular')) {
+            return 'Bronchitis / Prominent Bronchovascular Markings';
+        }
+        if (str_contains($lower, 'atheromatous') || str_contains($lower, 'atheroma') || str_contains($lower, 'tortuous aorta')) {
+            return 'Atheromatous Aorta';
+        }
+        if (str_contains($lower, 'pleural effusion')) {
+            return 'Pleural Effusion';
+        }
+        if (str_contains($lower, 'pneumothorax')) {
+            return 'Pneumothorax';
+        }
+        if (str_contains($lower, 'emphysema') || str_contains($lower, 'copd') || str_contains($lower, 'hyperaerat')) {
+            return 'Emphysema / Hyperaerated Lungs';
+        }
+        if (str_contains($lower, 'cardiopulmonary disease') || str_contains($lower, 'normal chest') || str_contains($lower, 'clear lung') || str_contains($lower, 'chest unremarkable')) {
+            return 'Normal Chest Study (No active cardiopulmonary disease)';
+        }
+
+        // 2. Abdominal / Pelvic / KUB Cases
+        if (str_contains($lower, 'cholelith') || str_contains($lower, 'gallstone')) {
+            return 'Cholelithiasis (Gallstones)';
+        }
+        if (str_contains($lower, 'calculus') || str_contains($lower, 'nephrolith') || str_contains($lower, 'kidney stone') || str_contains($lower, 'renal stone') || str_contains($lower, 'urolith')) {
+            return 'Renal / Urinary Calculus (Kidney Stones)';
+        }
+        if (str_contains($lower, 'bowel obstruction') || str_contains($lower, 'ileus')) {
+            return 'Bowel Obstruction / Ileus';
+        }
+        if (str_contains($lower, 'pneumoperitoneum') || str_contains($lower, 'free air')) {
+            return 'Pneumoperitoneum (Free Air)';
+        }
+        if (str_contains($lower, 'intra-abdominal') || str_contains($lower, 'normal abdomen') || str_contains($lower, 'normal bowel gas')) {
+            return 'Normal Abdominal Study (No acute intra-abdominal pathology)';
+        }
+
+        // 3. Spinal & Axial Skeletal Cases
+        if (str_contains($lower, 'scoliosis') || str_contains($lower, 'levoscoliosis') || str_contains($lower, 'dextroscoliosis')) {
+            return 'Scoliosis';
+        }
+        if (str_contains($lower, 'spondylosis') || str_contains($lower, 'degenerative spine') || str_contains($lower, 'osteophyte')) {
+            return 'Spondylosis / Degenerative Spine Disease';
+        }
+        if (str_contains($lower, 'compression fracture')) {
+            return 'Spinal Compression Fracture';
+        }
+        if (str_contains($lower, 'normal spine') || str_contains($lower, 'normal cervical') || str_contains($lower, 'normal lumbar') || str_contains($lower, 'normal thoracic spine')) {
+            return 'Normal Spine Study (No acute fracture/dislocation)';
+        }
+
+        // 4. Musculoskeletal & Extremities (Foot, Hand, Arm, Leg, Knee, Elbow, Shoulder, etc.)
+        if (str_contains($lower, 'no fracture') || str_contains($lower, 'no acute fracture') || str_contains($lower, 'no dislocation') || str_contains($lower, 'bony abnormality') || str_contains($lower, 'osseous abnormality') || str_contains($lower, 'no acute bony') || str_contains($lower, 'intact bone') || str_contains($lower, 'bones intact')) {
+            return 'Normal Musculoskeletal (No acute bony abnormality)';
+        }
+        if (str_contains($lower, 'fracture') || str_contains($lower, 'dislocation') || str_contains($lower, 'subluxation')) {
+            return 'Fracture / Dislocation';
+        }
+        if (str_contains($lower, 'osteoarthritis') || str_contains($lower, 'degenerative joint') || str_contains($lower, 'djd')) {
+            return 'Osteoarthritis / Degenerative Joint Disease';
+        }
+
+        // 5. Skull & Paranasal Sinuses (PNS, Facial Bones)
+        if (str_contains($lower, 'sinusitis') || str_contains($lower, 'mucosal thickening') || str_contains($lower, 'opacified sinus')) {
+            return 'Sinusitis / Paranasal Sinus Disease';
+        }
+        if (str_contains($lower, 'normal pns') || str_contains($lower, 'clear sinuses') || str_contains($lower, 'normal skull')) {
+            return 'Normal Skull / Sinus Study';
+        }
+
+        // 6. Generic "Normal / Unremarkable" mapped using Exam Type context
+        if (in_array($lower, ['normal', 'unremarkable', 'essentially normal', 'no acute abnormality', 'normal study', 'within normal limits'])) {
+            if (str_contains($examLower, 'chest') || str_contains($examLower, 'apico')) {
+                return 'Normal Chest Study (No active cardiopulmonary disease)';
+            }
+            if (str_contains($examLower, 'abdomen') || str_contains($examLower, 'pedia')) {
+                return 'Normal Abdominal Study (No acute intra-abdominal pathology)';
+            }
+            if (str_contains($examLower, 'spine') || str_contains($examLower, 'cervical') || str_contains($examLower, 'lumbar') || str_contains($examLower, 'thoracic')) {
+                return 'Normal Spine Study (No acute fracture/dislocation)';
+            }
+            if (str_contains($examLower, 'foot') || str_contains($examLower, 'hand') || str_contains($examLower, 'arm') || str_contains($examLower, 'leg') || str_contains($examLower, 'elbow') || str_contains($examLower, 'shoulder') || str_contains($examLower, 'knee') || str_contains($examLower, 'femur') || str_contains($examLower, 'wrist') || str_contains($examLower, 'ankle')) {
+                return 'Normal Musculoskeletal (No acute bony abnormality)';
+            }
+            if (str_contains($examLower, 'skull') || str_contains($examLower, 'pns') || str_contains($examLower, 'sinus')) {
+                return 'Normal Skull / Sinus Study';
+            }
+            return 'Normal / Unremarkable Study';
+        }
+
+        // Filter out empty, dashes, or meaningless short noise (e.g. '.', 'na', 'n/a', '-', '--')
+        if (strlen($clean) <= 2 || in_array($lower, ['n/a', 'none', 'null', 'nil'])) {
+            return null;
+        }
+
+        // Dynamic fallback: Whatever clinical diagnosis the radiologist typed, format it cleanly in Title Case
+        // so that ANY condition (even rare or unlisted ones) is automatically counted and included in the report!
+        return ucwords($lower);
+    }
+
+    /**
+     * Get aggregated diagnostic impressions/findings statistics for reports.
+     * Groups identical/normalized diagnoses across ALL X-ray exam types,
+     * counts occurrences, calculates percentages, sorts descending, and identifies the most prevalent case.
+     */
+    public function getDiagnosticStats($startDate, $endDate, $branchIds = [])
+    {
+        $sql = "SELECT c.id, c.findings, c.impression, c.exam_type
+                FROM cases c
+                WHERE DATE(c.created_at) BETWEEN ? AND ?
+                  AND ((c.findings IS NOT NULL AND c.findings != '') OR (c.impression IS NOT NULL AND c.impression != ''))";
+
+        $params = [$startDate, $endDate];
+
+        if (!empty($branchIds)) {
+            $placeholders = implode(',', array_fill(0, count($branchIds), '?'));
+            $sql .= " AND c.branch_id IN ($placeholders)";
+            foreach ($branchIds as $id) {
+                $params[] = $id;
+            }
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $counts = [];
+        $totalDiagnosed = 0;
+
+        foreach ($rows as $r) {
+            $f = trim($r['findings'] ?? '');
+            $imp = trim($r['impression'] ?? '');
+            $caseExamType = trim($r['exam_type'] ?? '');
+            $caseImpressions = []; // [ ['impression' => '...', 'exam' => '...'] ]
+
+            // Handle multi-exam JSON storage
+            if ($f && $f[0] === '{') {
+                $decoded = json_decode($f, true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $examKey => $eData) {
+                        if (!empty($eData['impression'])) {
+                            $caseImpressions[] = [
+                                'impression' => trim($eData['impression']),
+                                'exam' => $examKey
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Fallback for single exam / flat column
+            if (empty($caseImpressions) && !empty($imp)) {
+                $caseImpressions[] = [
+                    'impression' => $imp,
+                    'exam' => $caseExamType
+                ];
+            }
+
+            foreach ($caseImpressions as $item) {
+                $normalized = $this->normalizeDiagnosticImpression($item['impression'], $item['exam']);
+                if (!empty($normalized)) {
+                    $counts[$normalized] = ($counts[$normalized] ?? 0) + 1;
+                    $totalDiagnosed++;
+                }
+            }
+        }
+
+        arsort($counts);
+
+        $ranking = [];
+        $rank = 1;
+        foreach ($counts as $diagnosis => $count) {
+            $percentage = $totalDiagnosed > 0 ? round(($count / $totalDiagnosed) * 100, 1) : 0;
+            $ranking[] = [
+                'rank' => $rank++,
+                'diagnosis' => $diagnosis,
+                'count' => $count,
+                'percentage' => $percentage
+            ];
+        }
+
+        $mostPrevalent = !empty($ranking) ? $ranking[0] : null;
+
+        return [
+            'total_diagnosed' => $totalDiagnosed,
+            'most_prevalent' => $mostPrevalent,
+            'ranking' => $ranking
+        ];
     }
 
     /**

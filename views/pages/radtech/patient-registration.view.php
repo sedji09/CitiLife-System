@@ -1021,7 +1021,7 @@
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <span class="text-xs font-bold text-gray-900">${safeEscape(m.first_name)} ${safeEscape(m.middle_name ? m.middle_name + ' ' : '')}${safeEscape(m.last_name)}</span>
-                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold border border-gray-200">ID: ${safeEscape(m.patient_number || 'N/A')}</span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold border border-gray-200">ID: ${safeEscape(m.patient_number || 'N/A')}</span>
                                     </div>
                                     <div class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-gray-500">
                                         <span><strong class="text-gray-700">Birthdate:</strong> ${safeEscape(m.birthdate || 'N/A')} (${safeEscape(String(m.age || ''))} yrs)</span>

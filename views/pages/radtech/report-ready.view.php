@@ -185,48 +185,35 @@
                                 <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <!-- View button -->
                                     <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>&from=report-ready"
-                                        class="text-sm font-medium text-blue-500 hover:text-blue-700 transition"
+                                        class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                         title="View Case">
-                                        <i data-lucide="eye"
-                                            class="w-6 h-6 mr-1 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
 
                                     <?php if (empty($row['released']) || (int)$row['released'] === 0): ?>
                                      <!-- Re-edit button -->
                                      <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
-                                         class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition"
+                                         class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                          title="Allow Radiologist to Re-edit (Revert to Draft)">
-                                         <span class="w-6 h-6 mr-1 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 px-1 py-1 rounded-md border border-yellow-400 inline-flex items-center justify-center">
-                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                 <path d="M14 2H6a2 2 0 0 0-2 2v5"/>
-                                                 <polyline points="14 2 14 8 20 8"/>
-                                                 <path d="M20 8v12a2 2 0 0 1-2 2h-7"/>
-                                                 <path d="M3 15a4.5 4.5 0 0 1 7.5-2.5"/>
-                                                 <polyline points="7.5 9.5 11 12 7.5 14.5"/>
-                                                 <path d="M11 17a4.5 4.5 0 0 1-7.5 2.5"/>
-                                                 <polyline points="6.5 22.5 3 20 6.5 17.5"/>
-                                             </svg>
-                                         </span>
+                                         <i data-lucide="edit-3" class="w-4 h-4"></i>
                                      </button>
                                      <?php endif; ?>
 
                                     <!-- Print Result -->
                                     <a href="javascript:void(0)"
                                         onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                        class="text-green-500 hover:text-green-700 transition" title="Print Report">
-                                        <i data-lucide="printer"
-                                            class="w-6 h-6 mr-1 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
+                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Print Report">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>
 
                                     <!-- Release -->
                                     <button type="button" onclick="releaseToPhoto(<?= $row['id'] ?>, this, event)"
-                                        class="text-sm font-medium text-red-500 hover:text-red-700 transition"
+                                        class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                         title="Release Result">
-                                        <i data-lucide="send"
-                                            class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
+                                        <i data-lucide="send" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </td>

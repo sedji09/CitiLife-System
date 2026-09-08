@@ -1684,7 +1684,7 @@
 
           // Radiologist specific associations
           if (currentRole === 'radiologist' || currentRole === 'radtech' || currentRole === 'admin_central' || currentRole === 'branch_admin' || currentRole === 'it_admin') {
-            if (targetPage === 'worklist' && ['worklist', 'patient-queue', 'case-review'].includes(currentPage)) {
+            if (targetPage === 'worklist' && ['worklist', 'case-review'].includes(currentPage)) {
               if (currentPage === 'case-review' && currentUrl.searchParams.get('back_to') === 'patient-records-history') {
                 return false;
               }

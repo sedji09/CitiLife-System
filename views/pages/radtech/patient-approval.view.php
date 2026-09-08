@@ -199,69 +199,72 @@ foreach ($allServices as $service) {
                             <td class="py-3 px-3">
                                 <?php if ($patient['status'] === 'Rejected'): ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-red-400 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #f87171;background-color:#fef2f2;color:#b91c1c">
                                         Rejected
                                     </span>
                                 <?php elseif ($patient['status'] === 'Cancelled'): ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-gray-400 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #9ca3af;background-color:#f9fafb;color:#374151">
                                         Cancelled
                                     </span>
                                 <?php elseif ($patient['status'] === 'Pending Payment'): ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-orange-400 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #fb923c;background-color:#fff7ed;color:#c2410c">
                                         Pending Payment
                                     </span>
                                 <?php elseif ($patient['status'] === 'Payment Verifying'): ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-blue-400 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #60a5fa;background-color:#eff6ff;color:#1d4ed8">
                                         Payment Verifying
                                     </span>
                                 <?php elseif ($patient['status'] === 'Payment Verified'): ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-green-400 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #4ade80;background-color:#f0fdf4;color:#15803d">
                                         Payment Verified
                                     </span>
                                 <?php else: ?>
                                     <span
-                                        class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        style="border:1.5px solid #facc15;background-color:#fefce8;color:#a16207">
                                         Pending Approval
                                     </span>
                                 <?php endif; ?>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <button type="button"
                                         onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patFullName) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
-                                        class="text-sm font-medium text-blue-500 hover:text-blue-700 transition cursor-pointer" title="View Patient Details">
-                                        <i data-lucide="eye"
-                                            class="w-6 h-6 mr-1 bg-blue-100 text-blue-500 px-1 py-1 rounded-md border border-blue-500"></i>
+                                        class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="View Patient Details">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
                                     </button>
                                     
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
                                         <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
-                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Examination">
-                                            <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
+                                            class="p-1.5 rounded-md border border-indigo-500 bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Assign Examination">
+                                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
                                         </button>
                                     <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
                                         <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
-                                            class="text-sm font-medium text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View Assigned Examination Details (Read-Only)">
-                                            <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 px-1 py-1 rounded-md border border-gray-300"></i>
+                                            class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white hover:border-gray-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="View Assigned Examination Details (Read-Only)">
+                                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
                                         </button>
                                     <?php endif; ?>
 
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
                                         <button type="button"
                                             onclick="promptRejectRequest(<?= (int)$patient['id'] ?>, '<?= htmlspecialchars($patient['request_number'] ?? ('REQ-' . str_pad($patient['id'], 5, '0', STR_PAD_LEFT)), ENT_QUOTES) ?>', '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>')"
-                                            class="text-sm font-medium text-red-600 hover:text-red-700 transition cursor-pointer" title="Reject Request">
-                                            <i data-lucide="circle-x"
-                                                class="w-6 h-6 mr-1 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
+                                            class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Reject Request">
+                                            <i data-lucide="circle-x" class="w-4 h-4"></i>
                                         </button>
                                     <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
                                         <button disabled
-                                            class="text-sm font-medium text-gray-400 cursor-not-allowed opacity-60" title="Cannot reject request in payment status">
-                                            <i data-lucide="circle-x"
-                                                class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 px-1 py-1 rounded-md border border-gray-300"></i>
+                                            class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center" title="Cannot reject request in payment status">
+                                            <i data-lucide="circle-x" class="w-4 h-4"></i>
                                         </button>
                                     <?php endif; ?>
                                 </div>
@@ -347,7 +350,7 @@ foreach ($allServices as $service) {
                             data-label="PhilHealth ID Number"
                             oninput="formatPhilHealthInput(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
                             placeholder="XX-XXXXXXXXX-X"
-                            class="w-full text-sm font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
+                            class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                     </div>
                     <div>
                         <label for="assign_philhealth_relation" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
@@ -601,7 +604,7 @@ foreach ($allServices as $service) {
             html: `
                 <div class="text-left">
                     <p class="text-sm text-gray-600 mb-3 leading-relaxed">
-                        Are you sure you want to reject request <strong class="text-gray-900 font-mono">${escapeHtmlApproval(reqNumber)}</strong> for <strong class="text-gray-900">${escapeHtmlApproval(patientName)}</strong>? The patient will receive a notification along with your reason.
+                        Are you sure you want to reject request <strong class="text-gray-900">${escapeHtmlApproval(reqNumber)}</strong> for <strong class="text-gray-900">${escapeHtmlApproval(patientName)}</strong>? The patient will receive a notification along with your reason.
                     </p>
                     <div class="mb-3">
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Quick Select Reason:</label>

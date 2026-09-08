@@ -47,7 +47,7 @@
 
         <?php if ($success): ?>
             <script>
-                document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function () {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
@@ -102,7 +102,8 @@
         </div>
 
         <!-- Patients Table Card -->
-        <div id="patients-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
+        <div id="patients-table-card"
+            class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead class="sticky top-0 z-10">
@@ -182,14 +183,13 @@
                                                 title="View Profile">
                                                 <i data-lucide="eye" class="w-4 h-4"></i>
                                             </a>
-                                            <button type="button"
-                                                onclick='openEditModal(<?= json_encode($p) ?>)'
-                                                class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center"
+                                            <button type="button" onclick='openEditModal(<?= json_encode($p) ?>)'
+                                                class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Edit Patient">
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
                                             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>records-history?patient_number=<?= urlencode($p['patient_number']) ?>&source=records"
-                                                class="p-1.5 rounded-md border border-yellow-500 bg-yellow-100 text-yellow-600 hover:bg-yellow-500 hover:text-white hover:border-yellow-500 transition shadow-sm inline-flex items-center justify-center"
+                                                class="p-1.5 rounded-md border border-indigo-500 bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Medical History">
                                                 <i data-lucide="file-text" class="w-4 h-4"></i>
                                             </a>
@@ -203,10 +203,13 @@
             </div>
 
             <!-- Pagination Footer -->
-            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
+            <div
+                class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4">
                 <div class="text-xs text-gray-500">
-                    Showing <span id="startIndex" class="font-semibold text-gray-800"><?= min(1, count($patients)) ?></span> to <span id="endIndex" class="font-semibold text-gray-800"><?= min(8, count($patients)) ?></span> of <span
-                        id="totalRecords" class="font-semibold text-gray-800"><?= count($patients) ?></span> records
+                    Showing <span id="startIndex"
+                        class="font-semibold text-gray-800"><?= min(1, count($patients)) ?></span> to <span
+                        id="endIndex" class="font-semibold text-gray-800"><?= min(8, count($patients)) ?></span> of
+                    <span id="totalRecords" class="font-semibold text-gray-800"><?= count($patients) ?></span> records
                 </div>
                 <div class="flex items-center flex-wrap gap-1.5" id="paginationControls">
                     <!-- Dynamic page buttons will be inserted here -->
@@ -306,10 +309,10 @@
         document.getElementById('edit_patient_id').value = patient.id;
         document.getElementById('first_name').value = patient.first_name;
         document.getElementById('last_name').value = patient.last_name;
-        
+
         const birthdateInput = document.getElementById('birthdate');
         birthdateInput.value = patient.birthdate;
-        if(editDatePicker) {
+        if (editDatePicker) {
             editDatePicker.setDate(patient.birthdate);
         }
 
@@ -384,13 +387,13 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.innerHTML = label;
-            
+
             if (isActive) {
                 btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
             } else {
                 btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
             }
-            
+
             if (disabled) {
                 btn.disabled = true;
             } else {
@@ -446,11 +449,11 @@
                 // Middle: 1, ..., C-1, C, C+1, ..., T
                 container.appendChild(createButton(1, 1, false, 1 == currentPage));
                 container.appendChild(createEllipsis());
-                
+
                 container.appendChild(createButton(currentPage - 1, currentPage - 1, false, false));
                 container.appendChild(createButton(currentPage, currentPage, false, true));
                 container.appendChild(createButton(currentPage + 1, currentPage + 1, false, false));
-                
+
                 container.appendChild(createEllipsis());
                 container.appendChild(createButton(totalPages, totalPages, false, false));
             }
@@ -497,7 +500,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) window.lucide.createIcons();
         filterAndSortPatients(false);
-        
+
         const bDateInput = document.getElementById('birthdate');
         if (bDateInput) {
             editDatePicker = new Datepicker(bDateInput, {
