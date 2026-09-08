@@ -50,13 +50,22 @@
         </div>
 
         <?php if ($success): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -97,7 +106,7 @@
         </div>
 
         <!-- Users Table Card -->
-        <div id="users-table-card" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+        <div id="users-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -110,7 +119,7 @@
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody" class="divide-y divide-gray-100">
+                    <tbody id="usersTableBody" class="text-gray-800 bg-white divide-y divide-gray-100">
                         <?php if (empty($users)): ?>
                             <tr>
                                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
@@ -140,12 +149,12 @@
                                     data-name="<?= htmlspecialchars(strtolower($u['name'] ?? '')) ?>"
                                     data-email="<?= htmlspecialchars(strtolower($u['email'])) ?>"
                                     data-role="<?= htmlspecialchars(strtolower($u['role'])) ?>"
-                                    data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'universal')) ?>"
+                                    data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'all branches')) ?>"
                                     data-status="<?= htmlspecialchars($u['status']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2.5">
                                             <div
-                                                class="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
+                                                class="h-7 w-7 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
                                                  <?php $uAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($u['avatar']) : $u['avatar']; ?>
                                                  <?php if (!empty($uAvatarUrl)): ?>
                                                      <img src="<?= htmlspecialchars($uAvatarUrl) ?>" alt="Avatar"
@@ -166,17 +175,17 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-gray-600 tracking-tight capitalize">
+                                    <td class="py-3 px-3">
+                                        <span class="text-sm text-gray-600 capitalize">
                                             <?= htmlspecialchars(str_replace('_', ' ', $u['role'])) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2 text-sm text-gray-500 tracking-tight">
-                                            <?= htmlspecialchars($u['branch_name'] ?? 'Universal') ?>
+                                    <td class="py-3 px-3">
+                                        <div class="text-sm text-gray-600">
+                                            <?= htmlspecialchars($u['branch_name'] ?? 'All Branches') ?>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php
                                         $badgeClass = 'bg-gray-100 text-gray-600 ring-gray-200';
                                         $badgeLabel = $u['status'];
@@ -383,16 +392,6 @@
                 </div>
             </div>
 
-            <div>
-                <label for="edit_password" class="block text-sm font-semibold text-gray-700 mb-1.5">New Password (Leave
-                    blank to keep current)</label>
-                <div class="relative">
-                    <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="password" id="edit_password" name="password" placeholder="••••••••"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                </div>
-            </div>
-
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="edit_role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
@@ -506,7 +505,6 @@
         document.getElementById('edit_email').value = user.email;
         document.getElementById('edit_role').value = user.role;
         document.getElementById('edit_branch_id').value = user.branch_id || '';
-        document.getElementById('edit_password').value = ''; // Always clear for security
 
         toggleEditBranchSelect();
         document.getElementById('editUserModal').classList.remove('hidden');
@@ -781,5 +779,103 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Inline form validation for Add User Modal
+        document.querySelector('#addUserModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#addUserModal');
+            const email = document.getElementById('email');
+            const role = document.getElementById('role');
+            const branch = document.getElementById('branch_id');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(email, 'Please enter a valid email address.');
+                hasError = true;
+                firstError = email;
+            }
+            if (!role.value) {
+                if (window.FormValidator) window.FormValidator.showError(role, 'Please select a role.');
+                if (!hasError) firstError = role;
+                hasError = true;
+            }
+            if (['branch_admin', 'radtech'].includes(role.value) && !branch.value) {
+                if (window.FormValidator) window.FormValidator.showError(branch, 'Branch is required for this role.');
+                if (!hasError) firstError = branch;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the required fields.', 'error');
+                return false;
+            }
+        });
+
+        // Inline form validation for Edit User Modal
+        document.querySelector('#editUserModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#editUserModal');
+            const email = document.getElementById('edit_email');
+            const role = document.getElementById('edit_role');
+            const branch = document.getElementById('edit_branch_id');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(email, 'Please enter a valid email address.');
+                hasError = true;
+                firstError = email;
+            }
+            if (!role.value) {
+                if (window.FormValidator) window.FormValidator.showError(role, 'Please select a role.');
+                if (!hasError) firstError = role;
+                hasError = true;
+            }
+            if (['branch_admin', 'radtech'].includes(role.value) && !branch.value) {
+                if (window.FormValidator) window.FormValidator.showError(branch, 'Branch is required for this role.');
+                if (!hasError) firstError = branch;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the required fields.', 'error');
+                return false;
+            }
+        });
+
+        <?php if (!empty($error) && ($_POST['action'] ?? '') === 'create'): ?>
+            openAddUserModal();
+            const emailField = document.getElementById('email');
+            if (emailField) {
+                emailField.value = <?= json_encode($_POST['email'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(emailField, <?= json_encode($error) ?>);
+            }
+            const roleField = document.getElementById('role');
+            if (roleField) {
+                roleField.value = <?= json_encode($_POST['role'] ?? '') ?>;
+                toggleBranchSelect();
+            }
+            const branchField = document.getElementById('branch_id');
+            if (branchField) {
+                branchField.value = <?= json_encode($_POST['branch_id'] ?? '') ?>;
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php elseif (!empty($error) && ($_POST['action'] ?? '') === 'update'): ?>
+            const editModal = document.getElementById('editUserModal');
+            if (editModal) editModal.classList.remove('hidden');
+            const editEmailField = document.getElementById('edit_email');
+            if (editEmailField) {
+                editEmailField.value = <?= json_encode($_POST['email'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(editEmailField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php endif; ?>
     });
 </script>

@@ -346,18 +346,28 @@ function toggleAssignPhilHealth(isWithCard) {
     if (detailsBox) {
         if (isWithCard) {
             detailsBox.classList.remove('hidden');
-            if (idInput) idInput.required = true;
-            if (relSelect) relSelect.required = true;
+            if (idInput) {
+                idInput.required = true;
+                idInput.setAttribute('data-required', 'true');
+            }
+            if (relSelect) {
+                relSelect.required = true;
+                relSelect.setAttribute('data-required', 'true');
+            }
             checkAssignPhilHealthDup();
         } else {
             detailsBox.classList.add('hidden');
             if (idInput) {
                 idInput.required = false;
+                idInput.removeAttribute('data-required');
                 idInput.setCustomValidity('');
+                if (window.FormValidator) window.FormValidator.clearError(idInput);
             }
             if (relSelect) {
                 relSelect.required = false;
+                relSelect.removeAttribute('data-required');
                 relSelect.disabled = false;
+                if (window.FormValidator) window.FormValidator.clearError(relSelect);
             }
         }
     }
@@ -804,15 +814,19 @@ function validateAssignForm(e) {
 
         const cleanDigits = idInput ? idInput.value.replace(/\D/g, '') : '';
         if (cleanDigits.length !== 12) {
-            if (typeof Swal !== 'undefined') {
+            const errText = !cleanDigits ? 'PhilHealth ID Number is required.' : 'PhilHealth ID must contain 12 digits (format: XX-XXXXXXXXX-X).';
+            if (window.FormValidator && idInput) {
+                window.FormValidator.showError(idInput, errText);
+            }
+            if (typeof toast === 'function') {
+                toast(errText, 'error');
+            } else if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Incomplete PhilHealth ID',
-                    text: 'Please enter a complete 12-digit PhilHealth ID (XX-XXXXXXXXX-X).',
+                    text: errText,
                     customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-blue-600' }
                 });
-            } else {
-                alert('Please enter a complete 12-digit PhilHealth ID (XX-XXXXXXXXX-X).');
             }
             if (idInput) idInput.focus();
             return false;
@@ -834,15 +848,19 @@ function validateAssignForm(e) {
         }
 
         if (relSelect && !relSelect.value) {
-            if (typeof Swal !== 'undefined') {
+            const relErr = "Patient's Relation to ID is required.";
+            if (window.FormValidator && relSelect) {
+                window.FormValidator.showError(relSelect, relErr);
+            }
+            if (typeof toast === 'function') {
+                toast(relErr, 'error');
+            } else if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Relation Required',
                     text: 'Please select patient\'s relation to the PhilHealth ID (Principal Member or Qualified Dependent).',
                     customClass: { popup: 'rounded-3xl border-0 shadow-2xl', confirmButton: 'rounded-xl px-6 py-2.5 font-bold bg-blue-600' }
                 });
-            } else {
-                alert('Please select patient\'s relation to the PhilHealth ID.');
             }
             relSelect.focus();
             return false;
@@ -1055,45 +1073,82 @@ function formatPhilHealthInput(input) {
     }
     input.value = formatted;
     input.setCustomValidity('');
+    if (digits.length === 12 && window.FormValidator) {
+        window.FormValidator.clearError(input);
+    }
 }
 
 function saveEditModal() {
-    const name = document.getElementById('modalName').value;
-    const birthdate = document.getElementById('modalBirthdate').value;
-    const sex = document.getElementById('modalSex').value;
-    const contact = document.getElementById('modalContact').value;
-    const homeAddress = document.getElementById('modalAddress').value;
-    const philhealth = document.getElementById('modalPhilHealth').value;
-    const philhealthId = document.getElementById('modalPhilHealthId').value;
-    const philhealthRelation = document.getElementById('modalPhilHealthRelation').value;
+    const nameEl = document.getElementById('modalName');
+    const birthdateEl = document.getElementById('modalBirthdate');
+    const sexEl = document.getElementById('modalSex');
+    const contactEl = document.getElementById('modalContact');
+    const homeAddressEl = document.getElementById('modalAddress');
+    const philhealthEl = document.getElementById('modalPhilHealth');
+    const philhealthIdEl = document.getElementById('modalPhilHealthId');
+    const philhealthRelationEl = document.getElementById('modalPhilHealthRelation');
 
-    if (!name || !birthdate || !sex || !contact) {
-        toast('Please fill in all required fields', 'error');
-        return;
+    const name = nameEl ? nameEl.value.trim() : '';
+    const birthdate = birthdateEl ? birthdateEl.value.trim() : '';
+    const sex = sexEl ? sexEl.value : '';
+    const contact = contactEl ? contactEl.value.trim() : '';
+    const homeAddress = homeAddressEl ? homeAddressEl.value.trim() : '';
+    const philhealth = philhealthEl ? philhealthEl.value : '';
+    const philhealthId = philhealthIdEl ? philhealthIdEl.value.trim() : '';
+    const philhealthRelation = philhealthRelationEl ? philhealthRelationEl.value : '';
+
+    if (window.FormValidator) {
+        window.FormValidator.clearAllErrors('#editPatientModal');
     }
 
-    const idInput = document.getElementById('modalPhilHealthId');
-    if (philhealth === 'With PhilHealth Card') {
+    let firstErrorField = null;
+    let firstErrorMsg = '';
+
+    if (!name) {
+        firstErrorMsg = 'Patient name is required.';
+        if (window.FormValidator) window.FormValidator.showError(nameEl, firstErrorMsg);
+        firstErrorField = nameEl;
+    } else if (!birthdate) {
+        firstErrorMsg = 'Birthdate is required.';
+        if (window.FormValidator) window.FormValidator.showError(birthdateEl, firstErrorMsg);
+        firstErrorField = birthdateEl;
+    } else if (!sex) {
+        firstErrorMsg = 'Sex is required.';
+        if (window.FormValidator) window.FormValidator.showError(sexEl, firstErrorMsg);
+        firstErrorField = sexEl;
+    } else if (!contact) {
+        firstErrorMsg = 'Contact number is required.';
+        if (window.FormValidator) window.FormValidator.showError(contactEl, firstErrorMsg);
+        firstErrorField = contactEl;
+    } else if (!/^09\d{9}$/.test(contact)) {
+        firstErrorMsg = 'Contact number must be 11 digits starting with 09.';
+        if (window.FormValidator) window.FormValidator.showError(contactEl, firstErrorMsg);
+        firstErrorField = contactEl;
+    }
+
+    if (!firstErrorField && philhealth === 'With PhilHealth Card') {
         const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
-        if (!philhealthId.trim()) {
-            idInput.setCustomValidity('PhilHealth ID Number is required.');
-            idInput.reportValidity();
-            idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
-            return;
-        } else if (!philHealthPattern.test(philhealthId.trim())) {
-            idInput.setCustomValidity('Format must be XX-XXXXXXXXX-X (digits only).');
-            idInput.reportValidity();
-            idInput.addEventListener('input', () => idInput.setCustomValidity(''), { once: true });
-            return;
+        if (!philhealthId) {
+            firstErrorMsg = 'PhilHealth ID Number is required.';
+            if (window.FormValidator) window.FormValidator.showError(philhealthIdEl, firstErrorMsg);
+            firstErrorField = philhealthIdEl;
+        } else if (!philHealthPattern.test(philhealthId)) {
+            firstErrorMsg = 'Format must be XX-XXXXXXXXX-X (12 digits).';
+            if (window.FormValidator) window.FormValidator.showError(philhealthIdEl, firstErrorMsg);
+            firstErrorField = philhealthIdEl;
+        } else if (!philhealthRelation) {
+            firstErrorMsg = 'Relation to PhilHealth ID is required.';
+            if (window.FormValidator) window.FormValidator.showError(philhealthRelationEl, firstErrorMsg);
+            firstErrorField = philhealthRelationEl;
         }
-        
-        const relInput = document.getElementById('modalPhilHealthRelation');
-        if (!philhealthRelation) {
-            relInput.setCustomValidity('Relation is required.');
-            relInput.reportValidity();
-            relInput.addEventListener('change', () => relInput.setCustomValidity(''), { once: true });
-            return;
+    }
+
+    if (firstErrorField) {
+        if (typeof toast === 'function') {
+            toast(firstErrorMsg, 'error');
         }
+        firstErrorField.focus();
+        return;
     }
 
     // Create a form and submit it

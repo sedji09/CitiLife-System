@@ -12,7 +12,7 @@ if (file_exists(__DIR__ . '/../env.php')) {
     require_once __DIR__ . '/../env.php';
 }
 
-// Dine-define ang PROJECT_DIR dynamic constant para sa root routing compatibility
+// Define PROJECT_DIR dynamic constant for root routing compatibility
 if (!defined('PROJECT_DIR')) {
     $folderName = basename(dirname(__DIR__));
     $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
@@ -26,10 +26,10 @@ if (!defined('PROJECT_DIR')) {
     }
 }
 
-// I-load muna ang Composer Autoloader
+// Load Composer Autoloader first
 require_once basePath('vendor/autoload.php');
 
-// Custom autoloader para sa Models (para hindi na kailangan ng Composer classmap)
+// Custom autoloader for Models (avoiding Composer classmap reload)
 spl_autoload_register(function ($class_name) {
     $file = basePath('app/Models/' . $class_name . '.php');
     if (file_exists($file)) {
@@ -69,11 +69,11 @@ ob_start();
 try {
     $router->route($uri, $method);
 } catch (\Throwable $e) {
-    // I-log ang totoong error sa server para ma-check mo later kung bakit nag-error
+    // Log server error for troubleshooting
     error_log($e->getMessage());
     ob_clean();
 
-    // I-load ang 500 error view kapag may pumalyang code
+    // Load 500 error view on failure
     $router->error(500);
 }
 
@@ -81,7 +81,7 @@ $output = ob_get_clean();
 
 $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
 
-// Kung tumatakbo sa production (tulad ng Railway), ayusin ang mga hardcoded XAMPP paths para hindi maging 404 ang CSS/JS at links
+// If running in production (e.g., Railway), fix hardcoded XAMPP paths to prevent 404 on CSS/JS and links
 if (!$isLocalhost) {
     // Remove the XAMPP project folder only, KEEP the /public/ prefix because DocumentRoot is /app
     // (e.g., /Citilife-System/public/assets -> /public/assets)

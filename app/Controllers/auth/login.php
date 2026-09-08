@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             }
                         }
 
-                        // BYPASS OTP: I-set agad ang full session variables at pumunta sa dashboard
+                        // BYPASS OTP: Set full session variables immediately and proceed to dashboard
                         unset($_SESSION['staff_login_attempts']);
                         clearStaffLoginLock($pdo, $user['id']);
 

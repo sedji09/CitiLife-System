@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// Palaging ibabalik sa login page, i-logout muna para sigurado
+// Always redirect to login page, logout first for security
 $homeLink = "/" . PROJECT_DIR . "/logout";
 ?>
 <!DOCTYPE html>

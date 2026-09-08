@@ -111,7 +111,7 @@ $statusDescriptions = [
     'Rejected' => 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
     'Cancelled' => 'You have cancelled this request.',
     // Error Correction 5-Step Descriptions
-    'Issue Reported' => 'Your error report has been received and logged. The Radiologic Technologist will review your concerns shortly.',
+    'Issue Reported' => 'Your correction request has been received and logged. The Radiologic Technologist will review your concerns shortly.',
     'For RadTech Review' => 'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
     'Pending RadTech Review' => 'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
     'Correction in Progress' => 'The Radiologic Technologist is actively amending and correcting the report findings/information.',
@@ -633,7 +633,7 @@ $statusDescriptions = [
         };
 
         const STATUS_DESCS = {
-            'Issue Reported':         'Your error report has been received and logged. The Radiologic Technologist will review your concerns shortly.',
+            'Issue Reported':         'Your correction request has been received and logged. The Radiologic Technologist will review your concerns shortly.',
             'For RadTech Review':     'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
             'Pending RadTech Review': 'The Radiologic Technologist is reviewing your report details, findings, or patient information for amendments.',
             'Correction in Progress': 'The Radiologic Technologist is actively amending and correcting the report findings/information.',

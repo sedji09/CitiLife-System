@@ -50,13 +50,22 @@
         </div>
 
         <?php if ($success): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -88,8 +97,9 @@
         </div>
 
         <!-- Branches Table Card -->
+        <!-- Branches Table Card -->
         <div id="branches-table-card"
-            class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-12">
+            class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden mb-12">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse notranslate" translate="no">
                     <thead>
@@ -100,7 +110,7 @@
                             <th class="px-6 py-4 text-[13px] font-semibold text-gray-500 text-left">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="branchesTableBody" class="divide-y divide-gray-100">
+                    <tbody id="branchesTableBody" class="text-gray-800 bg-white divide-y divide-gray-100">
                         <?php if (empty($branches)): ?>
                             <tr>
                                 <td colspan="4" class="px-6 py-12 text-center text-gray-500">
@@ -125,31 +135,31 @@
                                 </td>
                             </tr>
                             <?php foreach ($branches as $b): ?>
-                                <tr class="hover:bg-gray-50/30 transition-colors group branch-row"
+                                <tr class="hover:bg-gray-50 transition-colors group branch-row"
                                     data-name="<?= htmlspecialchars(strtolower($b['name'])) ?>"
                                     data-address="<?= htmlspecialchars(strtolower($b['address'] ?? '')) ?>"
                                     data-status="<?= htmlspecialchars($b['status']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2.5">
                                             <div
-                                                class="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase">
-                                                <i data-lucide="building" class="w-4 h-4"></i>
+                                                class="h-7 w-7 rounded-lg bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase shrink-0">
+                                                <i data-lucide="building" class="w-3.5 h-3.5"></i>
                                             </div>
                                             <div class="flex flex-col">
                                                 <span
-                                                    class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($b['name']) ?></span>
-                                                <span class="text-[10px] text-gray-400 font-medium tracking-tight">
+                                                    class="font-medium text-gray-900"><?= htmlspecialchars($b['name']) ?></span>
+                                                <span class="text-[10px] text-gray-400 font-medium">
                                                     <?= htmlspecialchars($b['address'] ?? 'No Address Provided') ?>
                                                 </span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm text-gray-600 font-medium">
+                                    <td class="py-3 px-3">
+                                        <span class="text-sm text-gray-600">
                                             <?= date('M d, Y', strtotime($b['created_at'])) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php
                                         $badgeClass = $b['status'] === 'Active'
                                             ? 'bg-green-50 text-green-600 ring-green-100'
@@ -160,54 +170,54 @@
                                             <?= htmlspecialchars($b['status']) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
+                                    <td class="py-3 px-3 text-left whitespace-nowrap">
                                         <div class="flex items-center justify-start gap-1.5">
-                                            <?php if ($b['status'] === 'Active'): ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Inactive">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-200 hover:bg-orange-50 transition shadow-sm"
-                                                        title="Deactivate">
-                                                        <i data-lucide="minus-circle" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php else: ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Active">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
-                                                        title="Activate">
-                                                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
+                                             <?php if ($b['status'] === 'Active'): ?>
+                                                 <form action="" method="POST" class="inline">
+                                                     <input type="hidden" name="action" value="toggle-status">
+                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
+                                                     <input type="hidden" name="new_status" value="Inactive">
+                                                     <button type="submit"
+                                                         class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition shadow-sm"
+                                                         title="Deactivate (Set Inactive)">
+                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 </form>
+                                             <?php else: ?>
+                                                 <form action="" method="POST" class="inline">
+                                                     <input type="hidden" name="action" value="toggle-status">
+                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
+                                                     <input type="hidden" name="new_status" value="Active">
+                                                     <button type="submit"
+                                                         class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm"
+                                                         title="Activate (Set Active)">
+                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 </form>
+                                             <?php endif; ?>
 
-                                            <button type="button"
-                                                onclick="openEditModal(<?= htmlspecialchars(json_encode($b)) ?>)"
-                                                class="p-1.5 rounded-md border border-blue-100 bg-blue-50 text-blue-500 hover:bg-blue-100 transition shadow-sm"
-                                                title="Edit Branch">
-                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                            </button>
+                                             <button type="button"
+                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($b)) ?>)"
+                                                 class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm"
+                                                 title="Edit Branch">
+                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                             </button>
 
-                                            <button type="button"
-                                                onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
-                                                class="p-1.5 rounded-md border border-purple-100 bg-purple-50 text-purple-500 hover:bg-purple-100 transition shadow-sm"
-                                                title="Manage GCash QR">
-                                                <i data-lucide="qr-code" class="w-4 h-4"></i>
-                                            </button>
+                                             <button type="button"
+                                                 onclick="openUploadQRModal(<?= $b['id'] ?>, '<?= addslashes(htmlspecialchars($b['name'])) ?>', '<?= addslashes(htmlspecialchars($b['gcash_qr_path'] ?? '')) ?>')"
+                                                 class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-200 transition shadow-sm"
+                                                 title="Manage GCash QR">
+                                                 <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                             </button>
 
-                                            <button type="button"
-                                                onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
-                                                title="Delete Branch">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    </td>
+                                             <button type="button"
+                                                 onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
+                                                 class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition shadow-sm"
+                                                 title="Delete Branch">
+                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                             </button>
+                                         </div>
+                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -848,6 +858,7 @@
         if (window.lucide) window.lucide.createIcons();
         filterAndSortBranches(false);
 
+        // Auto-dismiss alerts after 3 seconds
         const alert = document.getElementById('statusAlert');
         if (alert) {
             setTimeout(() => {
@@ -856,6 +867,72 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Add Branch Modal Validation
+        document.querySelector('#addBranchModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#addBranchModal');
+            const name = document.getElementById('name');
+            const addr = document.getElementById('address');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!name || !name.value.trim()) {
+                if (window.FormValidator) window.FormValidator.showError(name, 'Branch name is required.');
+                hasError = true;
+                firstError = name;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please enter the required branch details.', 'error');
+                return false;
+            }
+        });
+
+        // Edit Branch Modal Validation
+        document.querySelector('#editBranchModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#editBranchModal');
+            const editName = document.getElementById('edit_name');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!editName || !editName.value.trim()) {
+                if (window.FormValidator) window.FormValidator.showError(editName, 'Branch name is required.');
+                hasError = true;
+                firstError = editName;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please enter the required branch details.', 'error');
+                return false;
+            }
+        });
+
+        <?php if (!empty($error) && ($_POST['action'] ?? '') === 'create'): ?>
+            openAddBranchModal();
+            const branchNameField = document.getElementById('name');
+            if (branchNameField) {
+                branchNameField.value = <?= json_encode($_POST['name'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(branchNameField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php elseif (!empty($error) && ($_POST['action'] ?? '') === 'update'): ?>
+            const editBranchModal = document.getElementById('editBranchModal');
+            if (editBranchModal) editBranchModal.classList.remove('hidden');
+            const editBranchNameField = document.getElementById('edit_name');
+            if (editBranchNameField) {
+                editBranchNameField.value = <?= json_encode($_POST['name'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(editBranchNameField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php endif; ?>
 
         // Auto-format contact numbers
         const contactInputs = document.querySelectorAll('input[name^="contact_number"]');

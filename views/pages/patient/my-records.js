@@ -965,14 +965,14 @@ window.submitDisputeForm = function (e) {
         .then(r => r.json())
         .then(data => {
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Error Report';
+            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request';
             if (window.lucide) lucide.createIcons();
 
             if (data.success) {
                 closeDisputeModal();
                 Swal.fire({
                     icon: 'success',
-                    title: 'Report Submitted!',
+                    title: 'Request Submitted!',
                     text: data.message,
                     confirmButtonColor: '#dc2626',
                     customClass: { popup: 'rounded-2xl' }
@@ -985,7 +985,7 @@ window.submitDisputeForm = function (e) {
         })
         .catch(err => {
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Error Report';
+            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request';
             console.error(err);
             Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection error.' });
         });

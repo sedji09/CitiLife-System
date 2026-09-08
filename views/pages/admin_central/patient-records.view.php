@@ -18,13 +18,22 @@
         </div>
 
         <?php if ($success): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -110,21 +119,20 @@
                                     data-name="<?= htmlspecialchars(strtolower($patFullName)) ?>"
                                     data-branch="<?= htmlspecialchars(strtolower($p['branch_name'] ?? 'general')) ?>"
                                     data-case-date="<?= htmlspecialchars($p['latest_case_date'] ?? '0000-00-00 00:00:00') ?>">
-                                    <td class="py-3 px-3 whitespace-nowrap text-gray-500">
-                                        <div class="font-medium"><?= htmlspecialchars($p['patient_number']) ?></div>
+                                    <td class="py-3 px-3 whitespace-nowrap font-medium text-gray-900">
+                                        <?= htmlspecialchars($p['patient_number']) ?>
                                     </td>
                                     <td class="py-3 px-3">
-                                        <div class="group flex flex-col items-start cursor-default">
+                                        <div class="flex flex-col items-start cursor-default">
                                             <div class="font-medium text-gray-900 leading-tight">
                                                 <?= htmlspecialchars($patFullName) ?>
                                             </div>
                                             <?php if ($p['latest_case_date']): ?>
-                                                <span class="text-[10px] text-gray-400 font-medium tracking-tight">
+                                                <span class="text-[10px] text-gray-400 font-medium">
                                                     Last case: <?= date('M d, Y', strtotime($p['latest_case_date'])) ?>
                                                 </span>
                                             <?php else: ?>
-                                                <span class="text-[10px] text-gray-400 font-medium tracking-tight">No case
-                                                    history</span>
+                                                <span class="text-[10px] text-gray-400 font-medium">No case history</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -135,26 +143,27 @@
                                         <span class="text-sm text-gray-600"><?= htmlspecialchars($p['sex']) ?></span>
                                     </td>
                                     <td class="py-3 px-3">
-                                        <div class="text-gray-600">
+                                        <div class="text-sm text-gray-600">
                                             <?= htmlspecialchars($p['branch_name'] ?? 'General') ?>
                                         </div>
                                     </td>
-                                    <td class="py-3 px-3 text-left">
-                                        <div class="flex items-center justify-start gap-2">
-                                            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-details?id=<?= $p['id'] ?>" class="opacity-80"
+                                    <td class="py-3 px-3 text-left whitespace-nowrap">
+                                        <div class="flex items-center justify-start gap-1.5">
+                                            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>patient-details?id=<?= $p['id'] ?>"
+                                                class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="View Profile">
-                                                <i data-lucide="eye"
-                                                    class="w-6 h-6 bg-blue-100 px-1 py-1 rounded-md border border-blue-500 text-blue-500"></i>
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
                                             </a>
-                                            <button type="button" class="opacity-80" title="Edit Patient"
-                                                onclick='openEditModal(<?= json_encode($p) ?>)'>
-                                                <i data-lucide="edit-3"
-                                                    class="w-6 h-6 bg-green-100 px-1 py-1 rounded-md border border-green-500 text-green-500"></i>
+                                            <button type="button"
+                                                onclick='openEditModal(<?= json_encode($p) ?>)'
+                                                class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center"
+                                                title="Edit Patient">
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
                                             <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>records-history?patient_number=<?= urlencode($p['patient_number']) ?>&source=records"
-                                                class="opacity-80" title="Medical History">
-                                                <i data-lucide="file-text"
-                                                    class="w-6 h-6 bg-yellow-100 px-1 py-1 rounded-md border border-yellow-500 text-yellow-500"></i>
+                                                class="p-1.5 rounded-md border border-yellow-500 bg-yellow-100 text-yellow-600 hover:bg-yellow-500 hover:text-white hover:border-yellow-500 transition shadow-sm inline-flex items-center justify-center"
+                                                title="Medical History">
+                                                <i data-lucide="file-text" class="w-4 h-4"></i>
                                             </a>
                                         </div>
                                     </td>

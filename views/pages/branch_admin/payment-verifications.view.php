@@ -7,10 +7,22 @@
 
 
 <?php if ($successMsg): ?>
-    <div class="mb-6 rounded-lg bg-green-50 p-4 border border-green-200 flex items-start gap-3">
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-600 shrink-0"></i>
-        <p class="text-sm text-green-800"><?= htmlspecialchars($successMsg) ?></p>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: <?= json_encode($successMsg) ?>,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                });
+            } else if (typeof toast === 'function') {
+                toast(<?= json_encode($successMsg) ?>, 'success');
+            }
+        });
+    </script>
 <?php endif; ?>
 
 <?php if ($errorMsg): ?>
@@ -76,18 +88,18 @@
         </div>
         <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
-                <table class="w-full text-left text-sm text-gray-600 relative">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold sticky top-0 z-10 shadow-sm">
+                <table class="w-full text-left text-sm relative">
+                    <thead class="bg-gray-50 text-gray-600 font-semibold sticky top-0 z-10 border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-4">Request / Patient</th>
-                            <th class="px-6 py-4">Exam Type</th>
-                            <th class="px-6 py-4">PhilHealth Number</th>
-                            <th class="px-6 py-4">Amount & Ref #</th>
-                            <th class="px-6 py-4">Date Submitted</th>
-                            <th class="px-6 py-4">Actions</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Request / Patient</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Exam Type</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">PhilHealth Number</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Amount & Ref #</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Date Submitted</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100" id="pendingTableBody">
+                    <tbody class="text-gray-800 bg-white divide-y divide-gray-100" id="pendingTableBody">
                         <?php if (empty($pendingPayments)): ?>
                             <tr data-static-empty="1">
                                 <td colspan="6" class="p-12 text-center text-gray-500">No pending payments to verify.</td>
@@ -97,17 +109,17 @@
                                 <tr class="hover:bg-gray-50 transition pending-row"
                                     data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
                                     data-date="<?= strtotime($payment['created_at']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
+                                    <td class="py-3 px-3">
+                                        <div class="font-medium text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
                                         </div>
                                         <div class="text-xs text-gray-500">
                                             <?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <div class="text-sm font-medium text-gray-700">
                                             <?= htmlspecialchars($payment['exam_type']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
                                             <div class="text-sm font-medium text-gray-900">
                                                 <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
@@ -116,25 +128,25 @@
                                             <span class="text-xs text-gray-400 italic">None</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-red-600 font-mono">
+                                    <td class="py-3 px-3">
+                                        <div class="font-semibold text-red-600">
                                             ₱<?= number_format($payment['amount'], 2) ?></div>
-                                        <div class="text-xs text-gray-500 font-mono mt-1">Method:
+                                        <div class="text-xs text-gray-500 mt-0.5">Method:
                                             <?= htmlspecialchars($payment['payment_method']) ?></div>
                                         <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
-                                            <div class="text-xs text-gray-500 font-mono mt-1">Ref:
+                                            <div class="text-xs text-gray-500 mt-0.5">Ref:
                                                 <?= htmlspecialchars($payment['reference_number']) ?></div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4 text-gray-500">
+                                    <td class="py-3 px-3 text-gray-500">
                                         <?= date('M d, Y h:i A', strtotime($payment['created_at'])) ?>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             <?php if ($payment['payment_method'] === 'GCash'): ?>
                                                 <button type="button" title="View Receipt"
                                                     onclick="viewReceipt('<?= htmlspecialchars($payment['proof_of_payment_path'] ?? '') ?>', '<?= htmlspecialchars($payment['reference_number'] ?? 'N/A') ?>', <?= (float) ($payment['original_amount'] ?? $payment['amount']) ?>, <?= (float) ($payment['discount_amount'] ?? 0) ?>, <?= (float) $payment['amount'] ?>, '<?= htmlspecialchars($payment['exam_type'] ?? 'Exam') ?>')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400 hover:text-slate-700 transition">
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-blue-100 border border-blue-500 text-blue-600 hover:bg-blue-200 transition">
                                                     <i data-lucide="image" class="w-4 h-4"></i>
                                                 </button>
                                             <?php endif; ?>
@@ -143,7 +155,7 @@
                                                 <input type="hidden" name="action" value="verify">
                                                 <button type="button" title="Verify Payment"
                                                     onclick="confirmAction(this.form, 'verify')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 hover:border-green-500 hover:text-green-700 transition">
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-100 border border-green-500 text-green-600 hover:bg-green-200 transition">
                                                     <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -152,7 +164,7 @@
                                                 <input type="hidden" name="action" value="reject">
                                                 <button type="button" title="Reject Payment"
                                                     onclick="confirmAction(this.form, 'reject')"
-                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
+                                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-100 border border-red-500 text-red-600 hover:bg-red-200 transition">
                                                     <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -201,18 +213,18 @@
 
         <div class="mt-4 rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-4">Request / Patient</th>
-                            <th class="px-6 py-4">Exam Type</th>
-                            <th class="px-6 py-4">PhilHealth Number</th>
-                            <th class="px-6 py-4">Amount & Ref #</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Date Processed</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Request / Patient</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Exam Type</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">PhilHealth Number</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Amount & Ref #</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Status</th>
+                            <th class="px-3 py-3 font-semibold text-left whitespace-nowrap">Date Processed</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100" id="historyTableBody">
+                    <tbody class="text-gray-800 bg-white divide-y divide-gray-100" id="historyTableBody">
                         <?php if (empty($paymentHistory)): ?>
                             <tr data-static-empty="1">
                                 <td colspan="6" class="p-12 text-center text-gray-500">No payment history found.</td>
@@ -222,17 +234,17 @@
                                 <tr class="hover:bg-gray-50 transition history-row"
                                     data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
                                     data-date="<?= strtotime($payment['updated_at']) ?>">
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
+                                    <td class="py-3 px-3">
+                                        <div class="font-medium text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
                                         </div>
                                         <div class="text-xs text-gray-500">
                                             <?= htmlspecialchars($payment['first_name'] . ' ' . $payment['last_name']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <div class="text-sm font-medium text-gray-700">
                                             <?= htmlspecialchars($payment['exam_type']) ?></div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if (!empty($payment['philhealth_status']) && $payment['philhealth_status'] === 'With PhilHealth Card'): ?>
                                             <div class="text-sm font-medium text-gray-900">
                                                 <?= htmlspecialchars($payment['philhealth_id'] ?: 'Card Holder') ?>
@@ -241,17 +253,17 @@
                                             <span class="text-xs text-gray-400 italic">None</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-bold text-gray-900 font-mono">
+                                    <td class="py-3 px-3">
+                                        <div class="font-semibold text-gray-900">
                                             ₱<?= number_format($payment['amount'], 2) ?></div>
-                                        <div class="text-xs text-gray-500 font-mono mt-1">Method:
+                                        <div class="text-xs text-gray-500 mt-0.5">Method:
                                             <?= htmlspecialchars($payment['payment_method']) ?></div>
                                         <?php if ($payment['payment_method'] === 'GCash' && $payment['reference_number']): ?>
-                                            <div class="text-xs text-gray-500 font-mono mt-1">Ref:
+                                            <div class="text-xs text-gray-500 mt-0.5">Ref:
                                                 <?= htmlspecialchars($payment['reference_number']) ?></div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="py-3 px-3">
                                         <?php if ($payment['status'] === 'Verified'): ?>
                                             <span
                                                 class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-400">
@@ -831,7 +843,7 @@
                             </div>
                         </div>
                         <div>
-                            <label for="swal-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
+                            <label for="swal-rejection-reason" class="block text-xs font-bold text-gray-700 tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
                             <textarea id="swal-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:border-red-500 focus:outline-none outline-none text-gray-800 transition" placeholder="State why this payment is being rejected so the patient knows what to fix..."></textarea>
                         </div>
                     </div>
@@ -857,9 +869,12 @@
                     if (textarea) textarea.focus();
                 },
                 preConfirm: () => {
-                    const reason = (document.getElementById('swal-rejection-reason')?.value || '').trim();
+                    const txtArea = document.getElementById('swal-rejection-reason');
+                    const reason = (txtArea?.value || '').trim();
                     if (!reason) {
                         Swal.showValidationMessage('Please provide a reason for rejecting this payment.');
+                        if (txtArea && window.FormValidator) window.FormValidator.showError(txtArea, 'Please provide a reason for rejection.');
+                        if (typeof toast === 'function') toast('Please provide a reason for rejecting this payment.', 'error');
                         return false;
                     }
                     return reason;

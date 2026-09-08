@@ -70,7 +70,7 @@ $allStandardExams = array_unique($allStandardExams);
 $uuid = uniqid('es_');
 ?>
 
-<div class="relative exam-ms-component" id="<?= $uuid ?>" data-input-name="<?= htmlspecialchars($examInputName) ?>">
+<div class="relative exam-ms-component" id="<?= $uuid ?>" data-input-name="<?= htmlspecialchars($examInputName) ?>" data-label="Examination Procedure">
     <!-- Hidden input for form submission -->
     <input type="hidden" name="<?= htmlspecialchars($examInputName) ?>" value="<?= htmlspecialchars($selectedCsv) ?>"
         class="exam-ms-hidden-input" <?= $isReadOnly ? 'disabled' : '' ?>>
@@ -102,6 +102,7 @@ $uuid = uniqid('es_');
                     <!-- Inline search input -->
                     <input type="text"
                         class="exam-ms-input flex-1 min-w-[60px] max-w-full outline-none border-none bg-transparent text-sm p-1 text-gray-900 placeholder-gray-400"
+                        data-label="Examination Procedure"
                         placeholder="<?= htmlspecialchars($placeholderText) ?>" data-placeholder="<?= htmlspecialchars($placeholderText) ?>" autocomplete="off">
                 </div>
             </div>
@@ -327,6 +328,10 @@ $uuid = uniqid('es_');
 
                         renderChips(container);
                         if (searchInput) searchInput.blur();
+                        if (window.FormValidator) {
+                            window.FormValidator.clearError(container);
+                            window.FormValidator.clearError(searchInput);
+                        }
 
                         // Dispatch custom event for listeners
                         container.dispatchEvent(new CustomEvent('exam-ms:change', {

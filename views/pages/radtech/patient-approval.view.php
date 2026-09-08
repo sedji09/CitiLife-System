@@ -121,7 +121,7 @@ foreach ($allServices as $service) {
         </a>
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
-            Patient Error Reports
+            Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
                 <span id="radtech-disputes-tab-badge" class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $pendingDisputeCount ?>">
                     <?= $pendingDisputeCount > 99 ? '99+' : $pendingDisputeCount ?>
@@ -185,7 +185,7 @@ foreach ($allServices as $service) {
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
                             data-date="<?= htmlspecialchars($patient['created_at']) ?>">
                             <?php $apprIndex++; ?>
-                            <td class="py-3 px-3 font-mono text-gray-600"><?= htmlspecialchars($patient['request_number']) ?>
+                            <td class="py-3 px-3 font-medium text-gray-900"><?= htmlspecialchars($patient['request_number']) ?>
                             </td>
                             <td class="py-3 px-3 font-medium truncate max-w-[200px]"
                                 title="<?= htmlspecialchars($patFullName) ?>">
@@ -231,20 +231,20 @@ foreach ($allServices as $service) {
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <button
+                                    <button type="button"
                                         onclick="openViewModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patFullName) ?>', '<?= htmlspecialchars($patient['birthdate']) ?>', '<?= htmlspecialchars($patient['sex']) ?>', '<?= htmlspecialchars($patient['contact_number']) ?>', '<?= htmlspecialchars($patient['home_address'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_status']) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '') ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '') ?>')"
-                                        class="text-sm font-medium text-gray-600 hover:text-gray-700 transition cursor-pointer" title="View Patient Details">
+                                        class="text-sm font-medium text-blue-500 hover:text-blue-700 transition cursor-pointer" title="View Patient Details">
                                         <i data-lucide="eye"
-                                            class="w-6 h-6 mr-1 bg-gray-100 px-1 py-1 rounded-md border border-gray-300"></i>
+                                            class="w-6 h-6 mr-1 bg-blue-100 text-blue-500 px-1 py-1 rounded-md border border-blue-500"></i>
                                     </button>
                                     
                                     <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
+                                        <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
                                             class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition cursor-pointer" title="Assign Examination">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-indigo-100 px-1 py-1 rounded-md border border-indigo-500"></i>
                                         </button>
                                     <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
-                                        <button onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
+                                        <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
                                             class="text-sm font-medium text-gray-500 hover:text-gray-700 transition cursor-pointer" title="View Assigned Examination Details (Read-Only)">
                                             <i data-lucide="clipboard-list" class="w-6 h-6 mr-1 bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 px-1 py-1 rounded-md border border-gray-300"></i>
                                         </button>
@@ -342,15 +342,17 @@ foreach ($allServices as $service) {
                 <!-- Conditional PhilHealth Details Box -->
                 <div id="assign_philhealth_details" class="hidden p-4 sm:p-5 bg-blue-50/50 border border-blue-200/80 rounded-2xl space-y-3.5 shadow-2xs">
                     <div>
-                        <label class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500">*</span></label>
+                        <label for="assign_philhealth_id" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500">*</span></label>
                         <input type="text" name="philhealth_id" id="assign_philhealth_id" inputmode="numeric" maxlength="14"
+                            data-label="PhilHealth ID Number"
                             oninput="formatPhilHealthInput(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
                             placeholder="XX-XXXXXXXXX-X"
                             class="w-full text-sm font-mono text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
-                        <select name="philhealth_relation" id="assign_philhealth_relation" onchange="checkAssignPhilHealthDup(); recalculateAssignPricing();"
+                        <label for="assign_philhealth_relation" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
+                        <select name="philhealth_relation" id="assign_philhealth_relation" onchange="if (this.value && window.FormValidator) window.FormValidator.clearError(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
+                            data-label="Patient's Relation to ID"
                             class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                             <option value="">-- Select relation --</option>
                             <option value="Principal Member" id="assign-opt-owner">Principal Member</option>
@@ -609,7 +611,7 @@ foreach ($allServices as $service) {
                         </div>
                     </div>
                     <div>
-                        <label for="swal-rad-rejection-reason" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
+                        <label for="swal-rad-rejection-reason" class="block text-xs font-bold text-gray-700 tracking-wider mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
                         <textarea id="swal-rad-rejection-reason" rows="3" class="w-full border border-gray-300 rounded-xl p-2.5 text-sm focus:border-red-500 focus:outline-none outline-none text-gray-800 transition" placeholder="State why this request is being rejected so the patient understands..."></textarea>
                     </div>
                 </div>

@@ -103,29 +103,26 @@ $records = $caseModel->getReleasedRecords($branchId);
                                 <div class="text-sm text-gray-500"><?= date('F d, Y', strtotime($row['created_at'])) ?></div>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <!-- View -->
                                     <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=records-history&id=<?= $row['id'] ?>"
-                                        class="text-sm font-medium text-blue-500 hover:text-blue-700 transition"
+                                        class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-200 transition shadow-sm inline-flex items-center justify-center"
                                         title="View Record">
-                                        <i data-lucide="eye"
-                                            class="w-6 h-6 bg-blue-100 px-1 py-1 rounded-md border border-blue-500"></i>
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
 
                                     <!-- Print -->
                                     <a href="javascript:void(0)"
                                         onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                        class="text-green-500 hover:text-green-700 transition" title="Print Report">
-                                        <i data-lucide="printer"
-                                            class="w-6 h-6 bg-green-100 px-1 py-1 rounded-md border border-green-500"></i>
+                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-200 transition shadow-sm inline-flex items-center justify-center" title="Print Report">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>
 
                                     <!-- Download PDF -->
                                     <a href="javascript:void(0)"
                                         onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
-                                        class="text-red-500 hover:text-red-700 transition" title="Download PDF">
-                                        <i data-lucide="download"
-                                            class="w-6 h-6 bg-red-100 px-1 py-1 rounded-md border border-red-500"></i>
+                                        class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-200 transition shadow-sm inline-flex items-center justify-center" title="Download PDF">
+                                        <i data-lucide="download" class="w-4 h-4"></i>
                                     </a>
                                 </div>
                             </td>

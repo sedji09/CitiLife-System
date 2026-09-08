@@ -359,9 +359,9 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
             if (isLocked) {
                 const mins = Math.floor(resendRemaining / 60);
                 const secs = resendRemaining % 60;
-                resendTimerText.textContent = `Too many attempts. Try ulit after ${mins}m ${secs}s`;
+                resendTimerText.textContent = `Too many attempts. Try again in ${mins}m ${secs}s`;
             } else {
-                resendTimerText.textContent = `Wait ${resendRemaining}s bago mag-resend`;
+                resendTimerText.textContent = `Please wait ${resendRemaining}s before resending`;
             }
 
             resendRemaining--;
