@@ -31,13 +31,22 @@
       if (el.classList.contains('req-new') || el.classList.contains('required')) return true;
       if (el.hasAttribute('data-required') && el.getAttribute('data-required') !== 'false') return true;
 
-      // Check if associated label contains an asterisk '*'
+      // 1. Check if associated label via for="id" contains an asterisk '*'
       if (el.id) {
         const extLabel = document.querySelector(`label[for="${el.id}"]`);
         if (extLabel && extLabel.innerText.includes('*')) return true;
       }
+
+      // 2. Check if wrapping label contains an asterisk '*'
       const parentLabel = el.closest('label');
       if (parentLabel && parentLabel.innerText.includes('*')) return true;
+
+      // 3. Check sibling label inside the parent form-group or container div
+      const container = el.closest('.form-group') || el.closest('div');
+      if (container) {
+        const siblingLabel = container.querySelector('label');
+        if (siblingLabel && siblingLabel.innerText.includes('*')) return true;
+      }
 
       return false;
     },
@@ -332,13 +341,23 @@
         if (clean) return clean;
       }
 
-      // 3. Fallback to name or id formatted nicely (e.g. contact_number -> Contact Number)
+      // 3. Check for sibling <label> inside parent container or form-group
+      const container = el.closest('.form-group') || el.closest('div');
+      if (container) {
+        const siblingLabel = container.querySelector('label');
+        if (siblingLabel && siblingLabel.innerText) {
+          const clean = siblingLabel.innerText.replace(/\(Optional\)/gi, '').replace(/[*:]/g, '').trim();
+          if (clean) return clean;
+        }
+      }
+
+      // 4. Fallback to name or id formatted nicely (e.g. contact_number -> Contact Number)
       const name = el.name || el.id;
       if (name) {
         return name.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       }
 
-      // 4. Last resort: placeholder (only if not a sample number or email)
+      // 5. Last resort: placeholder (only if not a sample number or email)
       if (el.placeholder && !el.placeholder.includes('•') && !/^\d+$/.test(el.placeholder) && !el.placeholder.includes('@')) {
         return el.placeholder;
       }

@@ -226,19 +226,19 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                        <label for="search_patient_name" class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                             <i data-lucide="user" class="w-4 h-4 text-gray-400"></i> Patient Name <span
                                 class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="search_patient_name" placeholder="e.g. Juan Dela Cruz"
+                        <input type="text" id="search_patient_name" name="search_patient_name" required placeholder="e.g. Juan Dela Cruz"
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm placeholder:text-gray-400">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                        <label for="search_request_branch" class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                             <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> Target Branch <span
                                 class="text-red-500">*</span>
                         </label>
-                        <select id="search_request_branch"
+                        <select id="search_request_branch" name="search_request_branch" required
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm">
                             <option value="" disabled selected>-- Select Branch --</option>
                             <?php foreach ($allBranches as $branch): ?>
