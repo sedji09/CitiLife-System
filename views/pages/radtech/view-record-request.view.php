@@ -9,7 +9,7 @@
 
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
-            <a href="index.php?role=radtech&page=record-request"
+            <a href="<?= url('record-request?role=radtech') ?>"
                 class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
             </a>

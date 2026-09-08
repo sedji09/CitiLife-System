@@ -174,7 +174,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="index.php?role=radtech&page=view-record-request&id=<?= $req['id'] ?>"
+                                    <a href="<?= url('view-record-request?role=radtech&id=' . $req['id']) ?>"
                                         class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm transition"
                                         title="<?= $req['status'] === 'Pending' ? 'Awaiting Approval' : 'View Request Details' ?>">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
