@@ -6,8 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 global $pdo;
 
 if (isset($_SESSION['role'])) {
-    header("Location: /" . PROJECT_DIR . "/dashboard");
-    exit;
+    redirect(url('dashboard'));
 }
 
 $error = '';

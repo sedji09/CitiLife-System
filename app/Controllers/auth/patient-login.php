@@ -180,6 +180,5 @@ if ($is_locked) $params['locked'] = $lock_message;
 if (!empty($redirectUrl)) $params['redirect'] = $redirectUrl;
 
 $qs = http_build_query($params);
-header("Location: /" . PROJECT_DIR . "/?" . $qs);
-exit;
+redirect(url('?' . $qs));
 ?>

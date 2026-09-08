@@ -91,8 +91,7 @@ if (empty($token)) {
                         // Audit log is best-effort
                     }
 
-                    header("Location: /" . PROJECT_DIR . "/dashboard");
-                    exit;
+                    redirect(url('dashboard'));
 
                 } catch (Exception $e) {
                     if ($pdo->inTransaction()) {

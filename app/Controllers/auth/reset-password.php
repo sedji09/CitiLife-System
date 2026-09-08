@@ -11,8 +11,7 @@ $validToken = false;
 $token = $_GET['token'] ?? ($_POST['token'] ?? '');
 
 if (empty($token)) {
-    header("Location: /" . PROJECT_DIR . "/forgot-password");
-    exit;
+    redirect(url('forgot-password'));
 }
 
 // Verify token
@@ -114,8 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
             );
 
             $redirectParam = $isActivation ? "account_activated=1" : "password_reset=1";
-            header("Location: /" . PROJECT_DIR . "/dashboard?" . $redirectParam);
-            exit;
+            redirect(url('dashboard?' . $redirectParam));
         }
 
         $success = "Your password has been reset successfully. You can now log in.";

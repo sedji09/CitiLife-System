@@ -14,3 +14,6 @@ return [
     'from_name' => $_SERVER['SMTP_FROM_NAME'] ?? $_ENV['SMTP_FROM_NAME'] ?? getenv('SMTP_FROM_NAME') ?: 'Citilife Diagnostic Center',
     'brevo_api_key' => $_SERVER['BREVO_API_KEY'] ?? $_ENV['BREVO_API_KEY'] ?? getenv('BREVO_API_KEY') ?: '',
 ];
+
+
+
