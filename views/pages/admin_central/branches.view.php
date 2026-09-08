@@ -50,13 +50,22 @@
         </div>
 
         <?php if ($success): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -168,8 +177,8 @@
                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Inactive">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-200 hover:bg-orange-50 transition shadow-sm"
-                                                        title="Deactivate">
+                                                        class="p-1.5 rounded-md border border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 transition shadow-sm"
+                                                        title="Deactivate (Set Inactive)">
                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
                                                     </button>
                                                 </form>
@@ -179,8 +188,8 @@
                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Active">
                                                     <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
-                                                        title="Activate">
+                                                        class="p-1.5 rounded-md border border-green-100 bg-green-50 text-green-600 hover:bg-green-100 transition shadow-sm"
+                                                        title="Activate (Set Active)">
                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                                                     </button>
                                                 </form>
@@ -202,7 +211,7 @@
 
                                             <button type="button"
                                                 onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars($b['name']) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
+                                                class="p-1.5 rounded-md border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition shadow-sm"
                                                 title="Delete Branch">
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>
@@ -848,6 +857,7 @@
         if (window.lucide) window.lucide.createIcons();
         filterAndSortBranches(false);
 
+        // Auto-dismiss alerts after 3 seconds
         const alert = document.getElementById('statusAlert');
         if (alert) {
             setTimeout(() => {
@@ -856,6 +866,72 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Add Branch Modal Validation
+        document.querySelector('#addBranchModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#addBranchModal');
+            const name = document.getElementById('name');
+            const addr = document.getElementById('address');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!name || !name.value.trim()) {
+                if (window.FormValidator) window.FormValidator.showError(name, 'Branch name is required.');
+                hasError = true;
+                firstError = name;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please enter the required branch details.', 'error');
+                return false;
+            }
+        });
+
+        // Edit Branch Modal Validation
+        document.querySelector('#editBranchModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#editBranchModal');
+            const editName = document.getElementById('edit_name');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!editName || !editName.value.trim()) {
+                if (window.FormValidator) window.FormValidator.showError(editName, 'Branch name is required.');
+                hasError = true;
+                firstError = editName;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please enter the required branch details.', 'error');
+                return false;
+            }
+        });
+
+        <?php if (!empty($error) && ($_POST['action'] ?? '') === 'create'): ?>
+            openAddBranchModal();
+            const branchNameField = document.getElementById('name');
+            if (branchNameField) {
+                branchNameField.value = <?= json_encode($_POST['name'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(branchNameField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php elseif (!empty($error) && ($_POST['action'] ?? '') === 'update'): ?>
+            const editBranchModal = document.getElementById('editBranchModal');
+            if (editBranchModal) editBranchModal.classList.remove('hidden');
+            const editBranchNameField = document.getElementById('edit_name');
+            if (editBranchNameField) {
+                editBranchNameField.value = <?= json_encode($_POST['name'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(editBranchNameField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php endif; ?>
 
         // Auto-format contact numbers
         const contactInputs = document.querySelectorAll('input[name^="contact_number"]');

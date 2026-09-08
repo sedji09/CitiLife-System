@@ -7,10 +7,22 @@
 
 
 <?php if ($successMsg): ?>
-    <div class="mb-6 rounded-lg bg-green-50 p-4 border border-green-200 flex items-start gap-3">
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-600 shrink-0"></i>
-        <p class="text-sm text-green-800"><?= htmlspecialchars($successMsg) ?></p>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: <?= json_encode($successMsg) ?>,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                });
+            } else if (typeof toast === 'function') {
+                toast(<?= json_encode($successMsg) ?>, 'success');
+            }
+        });
+    </script>
 <?php endif; ?>
 
 <?php if ($errorMsg): ?>
@@ -857,9 +869,12 @@
                     if (textarea) textarea.focus();
                 },
                 preConfirm: () => {
-                    const reason = (document.getElementById('swal-rejection-reason')?.value || '').trim();
+                    const txtArea = document.getElementById('swal-rejection-reason');
+                    const reason = (txtArea?.value || '').trim();
                     if (!reason) {
                         Swal.showValidationMessage('Please provide a reason for rejecting this payment.');
+                        if (txtArea && window.FormValidator) window.FormValidator.showError(txtArea, 'Please provide a reason for rejection.');
+                        if (typeof toast === 'function') toast('Please provide a reason for rejecting this payment.', 'error');
                         return false;
                     }
                     return reason;

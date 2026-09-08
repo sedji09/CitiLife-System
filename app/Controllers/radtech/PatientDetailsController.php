@@ -106,9 +106,9 @@ class PatientDetailsController
 
                     $patientUserId = $caseModel->getPatientUserId($id);
                     if ($patientUserId) {
-                        $notifTitle = !empty($activeDispute) ? "Error Report Resolved" : "Report Released";
+                        $notifTitle = !empty($activeDispute) ? "Correction Request Resolved" : "Report Released";
                         $notifMsg = !empty($activeDispute)
-                            ? "Your error report for Case {$caseData['case_number']} has been resolved and your updated report released."
+                            ? "Your correction request for Case {$caseData['case_number']} has been resolved and your updated report released."
                             : "Your X-ray report for Case {$caseData['case_number']} has been released. You can now view it.";
 
                         $notificationModel->add(
@@ -131,11 +131,11 @@ class PatientDetailsController
                                     $reportUrl = (function_exists('appBaseUrl') ? appBaseUrl() : ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'))) . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
 
                                     if (!empty($activeDispute)) {
-                                        $subject = "Error Report Resolved - Citilife Diagnostic Center";
+                                        $subject = "Correction Request Resolved - Citilife Diagnostic Center";
                                         $body = renderNotificationEmail(
                                             $patientName,
-                                            "Error Report Resolved - Case #{$caseData['case_number']}",
-                                            "We have successfully reviewed and resolved your error report for Case <strong>{$caseData['case_number']}</strong>. Your updated X-ray report is now released and ready for viewing in your patient portal.",
+                                            "Correction Request Resolved - Case #{$caseData['case_number']}",
+                                            "We have successfully reviewed and resolved your correction request for Case <strong>{$caseData['case_number']}</strong>. Your updated X-ray report is now released and ready for viewing in your patient portal.",
                                             [
                                                 'Case Number' => htmlspecialchars($caseData['case_number']),
                                                 'Patient' => htmlspecialchars($patientName),
@@ -143,7 +143,7 @@ class PatientDetailsController
                                             ],
                                             "View Updated Report",
                                             $reportUrl,
-                                            "You're receiving this notification because an error report for your case was resolved.",
+                                            "You're receiving this notification because a correction request for your case was resolved.",
                                             "#1f883d"
                                         );
                                     } else {

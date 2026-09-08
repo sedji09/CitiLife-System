@@ -134,7 +134,7 @@ $statusBadge = [
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">My Records & Reports</h1>
             <p class="text-xs sm:text-sm text-gray-500 mt-1">View your completed and rejected X-ray examination records,
-                and track the status of your error reports.</p>
+                and track the status of your correction requests.</p>
         </div>
     </div>
 
@@ -155,7 +155,7 @@ $statusBadge = [
             </button>
             <button type="button" id="tab-patient-disputes-btn" onclick="switchPatientTab('disputes')"
                 class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
-                Error Reports
+                Correction Requests
             </button>
         </nav>
     </div>
@@ -545,7 +545,7 @@ $statusBadge = [
             <?php endif; ?>
         </div>
 
-        <!-- ERROR REPORTS TAB -->
+        <!-- CORRECTION REQUESTS TAB -->
         <div id="tab-disputes-content" class="hidden">
 
             <?php if (empty($patientDisputes)): ?>
@@ -553,8 +553,8 @@ $statusBadge = [
                     <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                         <i data-lucide="check-circle" class="w-8 h-8 text-gray-400"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">No Error Reports</h3>
-                    <p class="text-sm text-gray-500">You have no submitted error reports or disputes.</p>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">No Correction Requests</h3>
+                    <p class="text-sm text-gray-500">You have no submitted correction requests.</p>
                 </div>
             <?php else: ?>
                 <div id="disputes-cards-container" class="space-y-4">
@@ -788,9 +788,8 @@ $statusBadge = [
                         <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h2 class="font-bold text-gray-900 text-base">Report an Error / Dispute Result</h2>
-                        <p class="text-xs text-gray-500">Notice an issue with your report or info? Report it to the
-                            clinic.</p>
+                        <h2 class="font-bold text-gray-900 text-base">Request Correction</h2>
+                        <p class="text-xs text-gray-500">Notice an issue with your report or info? Request a correction from the clinic.</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeDisputeModal()"
@@ -815,7 +814,7 @@ $statusBadge = [
                     <input type="hidden" name="action" value="submit_dispute">
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span
+                        <label class="block text-xs font-bold text-gray-700 mb-1">What needs to be corrected? <span
                                 class="text-red-500">*</span></label>
                         <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
                             class="w-full rounded-xl border border-gray-300 pl-2 pr-3.5 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white">
@@ -973,7 +972,7 @@ $statusBadge = [
                     </button>
                     <button type="submit" id="dispute-submit-btn"
                         class="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow transition flex items-center gap-1.5">
-                        <i data-lucide="send" class="w-4 h-4"></i> Submit Error Report
+                        <i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request
                     </button>
                 </div>
             </form>

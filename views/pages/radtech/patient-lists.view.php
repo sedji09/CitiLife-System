@@ -53,11 +53,6 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 <?php if ($successMsg): ?>
-    <div id="flash-success-alert"
-        class="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-3 flex items-center gap-3 shadow-sm transition-all">
-        <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500 shrink-0"></i>
-        <p class="text-sm font-bold text-green-800"><?= htmlspecialchars($successMsg) ?></p>
-    </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof Swal !== 'undefined') {
@@ -74,6 +69,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
                     }
                 });
+            } else if (typeof toast === 'function') {
+                toast(<?= json_encode($successMsg) ?>, 'success');
             }
         });
         setTimeout(() => {
@@ -83,7 +80,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 el.style.transition = 'opacity 0.5s ease';
                 setTimeout(() => el.remove(), 500);
             }
-        }, 5000);
+        });
     </script>
 <?php endif; ?>
 
@@ -108,7 +105,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
     
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
-            Patient Error Reports
+            Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
                 <span id="radtech-disputes-tab-badge" class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $pendingDisputeCount ?>">
                     <?= $pendingDisputeCount > 99 ? '99+' : $pendingDisputeCount ?>
@@ -1212,7 +1209,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <tbody class="divide-y divide-gray-100 realtime-update" id="disputes-table-body">
                 <?php if (empty($disputes)): ?>
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-gray-500">No patient error reports found.</td>
+                        <td colspan="6" class="text-center py-8 text-gray-500">No correction requests found.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($disputes as $d): ?>
@@ -1496,7 +1493,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 emptyFilterRow = document.createElement('tr');
                 emptyFilterRow.id = 'disputes-empty-filter-row';
                 emptyFilterRow.className = 'disputes-empty-filter-row';
-                emptyFilterRow.innerHTML = '<td colspan="6" class="text-center py-8 text-gray-500">No matching patient error reports found.</td>';
+                emptyFilterRow.innerHTML = '<td colspan="6" class="text-center py-8 text-gray-500">No matching correction requests found.</td>';
                 tbody.appendChild(emptyFilterRow);
             }
             emptyFilterRow.style.display = '';
@@ -2113,7 +2110,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <div id="verify-patient-statement" class="text-xs text-amber-950 font-medium whitespace-pre-line leading-relaxed pl-1"></div>
         </div>
 
-        <!-- Section 3: Side-by-Side Demographics Comparison (Shown if patient info error reported) -->
+        <!-- Section 3: Side-by-Side Demographics Comparison (Shown if patient info correction requested) -->
         <div id="verify-demographics-container" class="space-y-2.5 hidden">
             <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                 <i data-lucide="user-check" class="w-4 h-4 text-gray-600"></i>
@@ -2871,7 +2868,7 @@ function submitAmendedRelease() {
 function confirmReupload(caseId) {
     Swal.fire({
         title: 'Re-upload & Correct?',
-        text: 'You will be able to upload a new X-ray image and update examination details for this case.',
+        text: 'You can upload a new X-ray image and update the exam details for this case.',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#dc2626',
@@ -2919,7 +2916,7 @@ function submitResolution(e) {
     });
 }
 
-// Real-time polling for RadTech Patient Lists & Error Reports
+// Real-time polling for RadTech Patient Lists & Correction Requests
 let lastDisputesRawHtml = document.getElementById('disputes-table-body')?.innerHTML.trim() || '';
 let lastQueueRawHtml = document.getElementById('table-body')?.innerHTML.trim() || '';
 

@@ -44,7 +44,7 @@ try {
         $description = trim($_POST['description'] ?? '');
 
         if (!$caseId || !$category || !$description) {
-            echo json_encode(['success' => false, 'message' => 'Please complete the dispute reason and description.']);
+            echo json_encode(['success' => false, 'message' => 'Please provide the reason and details for this report.']);
             exit;
         }
 
@@ -61,7 +61,7 @@ try {
         // Check if existing pending dispute
         $activeDispute = $disputeModel->getActiveDisputeByCase($caseId);
         if ($activeDispute) {
-            echo json_encode(['success' => false, 'message' => 'There is already an active dispute report being reviewed for this case.']);
+            echo json_encode(['success' => false, 'message' => 'An active correction request already exists for this case.']);
             exit;
         }
 
@@ -75,20 +75,20 @@ try {
             INSERT INTO notifications (role, branch_id, title, message, link, created_at)
             VALUES ('radtech', ?, ?, ?, ?, NOW())
         ");
-        $notifTitle = "New Error Report (" . $case['case_number'] . ")";
-        $notifMsg = "A new patient error report requires RadTech review.";
+        $notifTitle = "New Correction Request (" . $case['case_number'] . ")";
+        $notifMsg = "A new patient correction request requires RadTech review.";
         $notifLink = "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId . "&highlight_case=" . urlencode($case['case_number']);
         $notifStmt->execute([$case['branch_id'], $notifTitle, $notifMsg, $notifLink]);
 
         $auditLog->addLog($userId, 'Dispute Submitted', 'Patient Portal', 'Case', $caseId, "Submitted result dispute (ID: {$disputeId}, Category: {$category})", $case['branch_id']);
 
-        echo json_encode(['success' => true, 'message' => 'Your error report has been submitted to the clinic. It will be reviewed shortly.']);
+        echo json_encode(['success' => true, 'message' => 'Your correction request has been submitted to the clinic. It will be reviewed shortly.']);
         exit;
 
     } elseif ($action === 'escalate_to_radiologist') {
         echo json_encode([
             'success' => false, 
-            'message' => 'Escalation to radiologist is discontinued. Error reports are resolved directly by RadTech.'
+            'message' => 'Escalation to radiologist is discontinued. Correction requests are resolved directly by RadTech.'
         ]);
         exit;
 
@@ -321,8 +321,8 @@ try {
         
         // Notify the Patient (In-App)
         if ($disputeInfo && !empty($disputeInfo['patient_user_id'])) {
-            $notifTitle = "Error Report Resolved";
-            $notifMsg = "Your error report for Case " . $disputeInfo['case_number'] . " has been successfully resolved.";
+            $notifTitle = "Correction Request Resolved";
+            $notifMsg = "Your correction request for Case " . $disputeInfo['case_number'] . " has been successfully resolved.";
             $notifLink = "index.php?role=patient&page=my-records&tab=disputes&highlight_dispute_id=" . $disputeId;
             $pdo->prepare("INSERT INTO notifications (user_id, role, title, message, link, created_at) VALUES (?, 'patient', ?, ?, ?, NOW())")
                 ->execute([$disputeInfo['patient_user_id'], $notifTitle, $notifMsg, $notifLink]);
@@ -338,11 +338,11 @@ try {
                 ? (appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $disputeInfo['case_id'])
                 : (appBaseUrl() . "/" . PROJECT_DIR . "/dashboard");
 
-            $emailSubject = "Error Report Resolved - Citilife Diagnostic Center";
+            $emailSubject = "Correction Request Resolved - Citilife Diagnostic Center";
             $emailBody = renderNotificationEmail(
                 $patientName,
-                "Error Report Resolved - Case #{$caseNum}",
-                "We have successfully reviewed and resolved your error report for Case <strong>{$caseNum}</strong>. Your updated patient records and X-ray report are now available in your Citilife patient portal.",
+                "Correction Request Resolved - Case #{$caseNum}",
+                "We have successfully reviewed and resolved your correction request for Case <strong>{$caseNum}</strong>. Your updated patient records and X-ray report are now available in your Citilife patient portal.",
                 [
                     'Case Number' => htmlspecialchars($caseNum),
                     'Patient' => htmlspecialchars($patientName),
@@ -350,7 +350,7 @@ try {
                 ],
                 "View Updated Report",
                 $reportUrl,
-                "You're receiving this notification because an error report for your case was resolved.",
+                "You're receiving this notification because a correction request for your case was resolved.",
                 "#1f883d"
             );
             sendEmail($patientEmail, $disputeInfo['first_name'], $emailSubject, $emailBody);
@@ -378,7 +378,7 @@ try {
         $amendmentNotes = trim($_POST['amendment_notes'] ?? '');
 
         if (!$caseId || !$findings || !$impression) {
-            echo json_encode(['success' => false, 'message' => 'Please provide the findings, impression, and reason for amendment.']);
+            echo json_encode(['success' => false, 'message' => 'Please complete the findings, impression, and amendment notes.']);
             exit;
         }
 
@@ -414,7 +414,7 @@ try {
 
         $auditLog->addLog($userId, 'Report Amended', 'Radiology Reporting', 'Case', $caseId, "Amended findings & impression for case {$caseId}. Notes: {$amendmentNotes}");
 
-        echo json_encode(['success' => true, 'message' => 'Amended Report saved successfully! The ticket has been routed to RadTech for final approval and release.']);
+        echo json_encode(['success' => true, 'message' => 'Amended report saved successfully. Routed to RadTech for final verification and release.']);
         exit;
     } elseif ($action === 'get_case_for_amend') {
         // RadTech opens Amend Modal -> Fetch case details, patient info, and dispute
@@ -645,7 +645,7 @@ try {
             // In-App Notification to Patient
             if (!empty($currentCase['patient_user_id'])) {
                 $notifTitle = "X-ray Report Amended & Released";
-                $notifMsg = "Your error report for Case {$currentCase['case_number']} has been resolved and the updated report is now released.";
+                $notifMsg = "Your correction request for Case {$currentCase['case_number']} has been resolved and the updated report is now released.";
                 $notifLink = "case-status?case_id={$caseId}";
                 $pdo->prepare("INSERT INTO notifications (user_id, role, title, message, link, created_at) VALUES (?, 'patient', ?, ?, ?, NOW())")
                     ->execute([$currentCase['patient_user_id'], $notifTitle, $notifMsg, $notifLink]);
@@ -663,7 +663,7 @@ try {
                 $emailBody = renderNotificationEmail(
                     $patientName,
                     "Updated Report Released - Case #{$caseNum}",
-                    "Your error report for Case <strong>{$caseNum}</strong> has been corrected and verified by our Radiologic Technologist. Your official updated X-ray report is now released and ready for viewing.",
+                    "Your correction request for Case <strong>{$caseNum}</strong> has been corrected and verified by our Radiologic Technologist. Your official updated X-ray report is now released and ready for viewing.",
                     [
                         'Case Number' => htmlspecialchars($caseNum),
                         'Patient' => htmlspecialchars($patientName),
@@ -671,7 +671,7 @@ try {
                     ],
                     "View Updated Report",
                     $reportUrl,
-                    "You're receiving this notification because an error report for your case was resolved.",
+                    "You're receiving this notification because a correction request for your case was resolved.",
                     "#1f883d"
                 );
                 sendEmail($patientEmail, $newName, $emailSubject, $emailBody);
@@ -682,7 +682,7 @@ try {
             echo json_encode([
                 'success' => true,
                 'status' => 'Resolved',
-                'message' => 'Amended Report successfully corrected and released! The patient has also been notified.'
+                'message' => 'Amended report verified and released successfully. The patient has been notified.'
             ]);
             exit;
 
@@ -704,7 +704,7 @@ try {
             echo json_encode([
                 'success' => true,
                 'status' => 'Correction Completed',
-                'message' => 'Corrections successfully saved as "Correction Completed"! It is now ready for final release.'
+                'message' => 'Corrections saved as "Correction Completed". Ready for final release.'
             ]);
             exit;
         }

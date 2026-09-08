@@ -115,11 +115,11 @@ class ServicePricingController
                 }
 
                 if ($id && $serviceModel->updateServiceStatus($id, $newStatus)) {
-                    $actionText = ($newStatus === 'active') ? 'activated' : 'deactivated';
-                    $success = "Service status successfully set to " . ucfirst($newStatus) . "!";
+                    $actionText = ($newStatus === 'active') ? 'visible' : 'hidden';
+                    $success = ($newStatus === 'active') ? "Service is now visible." : "Service is now hidden.";
                     $auditLogModel->addLog(
                         $currentUserId,
-                        "Status changed to $newStatus",
+                        "Status changed to $newStatus ($actionText)",
                         'Service Pricing',
                         'Service',
                         $id,

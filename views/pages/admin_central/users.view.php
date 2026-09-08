@@ -50,13 +50,22 @@
         </div>
 
         <?php if ($success): ?>
-            <div id="statusAlert"
-                class="rounded-xl bg-green-50 border border-green-200 p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
-                    <p class="text-sm font-medium text-green-800"><?= htmlspecialchars($success) ?></p>
-                </div>
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: <?= json_encode($success) ?>,
+                            showConfirmButton: false,
+                            timer: 2500,
+                            customClass: { popup: 'rounded-3xl border-0 shadow-2xl' }
+                        });
+                    } else if (typeof toast === 'function') {
+                        toast(<?= json_encode($success) ?>, 'success');
+                    }
+                });
+            </script>
         <?php endif; ?>
 
         <?php if ($error): ?>
@@ -138,7 +147,7 @@
                                 <tr class="hover:bg-gray-50/30 transition-colors group user-row"
                                     data-email="<?= htmlspecialchars(strtolower($u['email'])) ?>"
                                     data-role="<?= htmlspecialchars(strtolower($u['role'])) ?>"
-                                    data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'universal')) ?>"
+                                    data-branch="<?= htmlspecialchars(strtolower($u['branch_name'] ?? 'all branches')) ?>"
                                     data-status="<?= htmlspecialchars($u['status']) ?>">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
@@ -167,7 +176,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-2 text-sm text-gray-500 tracking-tight">
-                                            <?= htmlspecialchars($u['branch_name'] ?? 'Universal') ?>
+                                            <?= htmlspecialchars($u['branch_name'] ?? 'All Branches') ?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
@@ -187,30 +196,38 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-left">
-                                        <div class="flex items-center justify-start gap-1.5">
-                                            <?php if ($u['status'] === 'Active'): ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Inactive">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-200 hover:bg-orange-50 transition shadow-sm"
-                                                        title="Deactivate">
-                                                        <i data-lucide="user-minus" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php else: ?>
-                                                <form action="" method="POST" class="inline">
-                                                    <input type="hidden" name="action" value="toggle-status">
-                                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                                    <input type="hidden" name="new_status" value="Active">
-                                                    <button type="submit"
-                                                        class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-green-500 hover:border-green-200 hover:bg-green-50 transition shadow-sm"
-                                                        title="Activate">
-                                                        <i data-lucide="user-check" class="w-4 h-4"></i>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
+                                         <div class="flex items-center justify-start gap-1.5">
+                                             <?php if ($u['status'] === 'Active'): ?>
+                                                 <?php if ($u['role'] === 'admin_central'): ?>
+                                                     <button type="button" disabled
+                                                         class="p-1.5 rounded-md border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 shadow-sm"
+                                                         title="Cannot deactivate Central Admin">
+                                                         <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 <?php else: ?>
+                                                     <form action="" method="POST" class="inline">
+                                                         <input type="hidden" name="action" value="toggle-status">
+                                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                         <input type="hidden" name="new_status" value="Inactive">
+                                                         <button type="submit"
+                                                             class="p-1.5 rounded-md border border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 transition shadow-sm"
+                                                             title="Deactivate (Set Inactive)">
+                                                             <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                                                         </button>
+                                                     </form>
+                                                 <?php endif; ?>
+                                             <?php else: ?>
+                                                 <form action="" method="POST" class="inline">
+                                                     <input type="hidden" name="action" value="toggle-status">
+                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                     <input type="hidden" name="new_status" value="Active">
+                                                     <button type="submit"
+                                                         class="p-1.5 rounded-md border border-green-100 bg-green-50 text-green-600 hover:bg-green-100 transition shadow-sm"
+                                                         title="Activate (Set Active)">
+                                                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                     </button>
+                                                 </form>
+                                             <?php endif; ?>
 
                                             <button type="button"
                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($u)) ?>)"
@@ -219,12 +236,20 @@
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
 
-                                            <button type="button"
-                                                onclick="confirmDelete(<?= $u['id'] ?>, '<?= htmlspecialchars($u['email']) ?>')"
-                                                class="p-1.5 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition shadow-sm"
-                                                title="Delete Account">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
+                                            <?php if ($u['role'] === 'admin_central'): ?>
+                                                <button type="button" disabled
+                                                    class="p-1.5 rounded-md border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 shadow-sm"
+                                                    title="Cannot delete Central Admin">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button"
+                                                    onclick="confirmDelete(<?= $u['id'] ?>, '<?= htmlspecialchars($u['email']) ?>')"
+                                                    class="p-1.5 rounded-md border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition shadow-sm"
+                                                    title="Delete Account">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -345,16 +370,6 @@
                 </div>
             </div>
 
-            <div>
-                <label for="edit_password" class="block text-sm font-semibold text-gray-700 mb-1.5">New Password (Leave
-                    blank to keep current)</label>
-                <div class="relative">
-                    <i data-lucide="lock" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
-                    <input type="password" id="edit_password" name="password" placeholder="••••••••"
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
-                </div>
-            </div>
-
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="edit_role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
@@ -464,7 +479,6 @@
         document.getElementById('edit_email').value = user.email;
         document.getElementById('edit_role').value = user.role;
         document.getElementById('edit_branch_id').value = user.branch_id || '';
-        document.getElementById('edit_password').value = ''; // Always clear for security
 
         toggleEditBranchSelect();
         document.getElementById('editUserModal').classList.remove('hidden');
@@ -738,5 +752,103 @@
                 setTimeout(() => alert.remove(), 500);
             }, 3000);
         }
+
+        // Inline form validation for Add User Modal
+        document.querySelector('#addUserModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#addUserModal');
+            const email = document.getElementById('email');
+            const role = document.getElementById('role');
+            const branch = document.getElementById('branch_id');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(email, 'Please enter a valid email address.');
+                hasError = true;
+                firstError = email;
+            }
+            if (!role.value) {
+                if (window.FormValidator) window.FormValidator.showError(role, 'Please select a role.');
+                if (!hasError) firstError = role;
+                hasError = true;
+            }
+            if (['branch_admin', 'radtech'].includes(role.value) && !branch.value) {
+                if (window.FormValidator) window.FormValidator.showError(branch, 'Branch is required for this role.');
+                if (!hasError) firstError = branch;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the required fields.', 'error');
+                return false;
+            }
+        });
+
+        // Inline form validation for Edit User Modal
+        document.querySelector('#editUserModal form')?.addEventListener('submit', function (e) {
+            if (window.FormValidator) window.FormValidator.clearAllErrors('#editUserModal');
+            const email = document.getElementById('edit_email');
+            const role = document.getElementById('edit_role');
+            const branch = document.getElementById('edit_branch_id');
+
+            let hasError = false;
+            let firstError = null;
+
+            if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+                if (window.FormValidator) window.FormValidator.showError(email, 'Please enter a valid email address.');
+                hasError = true;
+                firstError = email;
+            }
+            if (!role.value) {
+                if (window.FormValidator) window.FormValidator.showError(role, 'Please select a role.');
+                if (!hasError) firstError = role;
+                hasError = true;
+            }
+            if (['branch_admin', 'radtech'].includes(role.value) && !branch.value) {
+                if (window.FormValidator) window.FormValidator.showError(branch, 'Branch is required for this role.');
+                if (!hasError) firstError = branch;
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (firstError) firstError.focus();
+                if (typeof toast === 'function') toast('Please check the required fields.', 'error');
+                return false;
+            }
+        });
+
+        <?php if (!empty($error) && ($_POST['action'] ?? '') === 'create'): ?>
+            openAddUserModal();
+            const emailField = document.getElementById('email');
+            if (emailField) {
+                emailField.value = <?= json_encode($_POST['email'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(emailField, <?= json_encode($error) ?>);
+            }
+            const roleField = document.getElementById('role');
+            if (roleField) {
+                roleField.value = <?= json_encode($_POST['role'] ?? '') ?>;
+                toggleBranchSelect();
+            }
+            const branchField = document.getElementById('branch_id');
+            if (branchField) {
+                branchField.value = <?= json_encode($_POST['branch_id'] ?? '') ?>;
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php elseif (!empty($error) && ($_POST['action'] ?? '') === 'update'): ?>
+            const editModal = document.getElementById('editUserModal');
+            if (editModal) editModal.classList.remove('hidden');
+            const editEmailField = document.getElementById('edit_email');
+            if (editEmailField) {
+                editEmailField.value = <?= json_encode($_POST['email'] ?? '') ?>;
+                if (window.FormValidator) window.FormValidator.showError(editEmailField, <?= json_encode($error) ?>);
+            }
+            if (typeof toast === 'function') toast(<?= json_encode($error) ?>, 'error');
+        <?php endif; ?>
     });
 </script>

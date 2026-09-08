@@ -121,7 +121,7 @@ foreach ($allServices as $service) {
         </a>
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
-            Patient Error Reports
+            Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
                 <span id="radtech-disputes-tab-badge" class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $pendingDisputeCount ?>">
                     <?= $pendingDisputeCount > 99 ? '99+' : $pendingDisputeCount ?>
@@ -496,7 +496,8 @@ foreach ($allServices as $service) {
             modalDatePicker = new Datepicker(modalBirthdateInput, {
                 autohide: true,
                 format: 'yyyy-mm-dd',
-                todayHighlight: true
+                todayHighlight: true,
+                maxDate: new Date()
             });
         }
     });
