@@ -29,8 +29,182 @@
   };
 </script>
 
+<!-- Universal Navigation History Tracker & Smart Back Engine -->
+<script>
+(function () {
+  const STORAGE_KEY = 'citilife_nav_history';
+  const MAX_HISTORY = 35;
 
+  function isCleanPage(urlStr) {
+    try {
+      if (!urlStr) return false;
+      const u = new URL(urlStr, window.location.origin);
+      const path = u.pathname.toLowerCase();
+      if (path.includes('login') || path.includes('logout') || path.includes('api/') ||
+          path.includes('print-report') ||
+          u.searchParams.has('ajax_polling') || u.searchParams.has('ajax')) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 
+  function trackNavHistory() {
+    try {
+      const currentHref = window.location.href;
+      if (!isCleanPage(currentHref)) return;
+
+      let stack = [];
+      try {
+        stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+        if (!Array.isArray(stack)) stack = [];
+      } catch (e) {
+        stack = [];
+      }
+
+      const currentUrl = new URL(currentHref);
+
+      if (stack.length > 0) {
+        const top = stack[stack.length - 1];
+        if (top === currentHref) return;
+
+        try {
+          const topUrl = new URL(top);
+          if (topUrl.origin === currentUrl.origin &&
+              topUrl.pathname === currentUrl.pathname &&
+              topUrl.search === currentUrl.search) {
+            stack[stack.length - 1] = currentHref;
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
+            return;
+          }
+        } catch (e) {}
+      }
+
+      stack.push(currentHref);
+      if (stack.length > MAX_HISTORY) {
+        stack.shift();
+      }
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
+    } catch (e) {}
+  }
+
+  trackNavHistory();
+
+  // Hook replaceState to sync route modifications (e.g. tabs or search)
+  try {
+    const _origReplaceState = window.history.replaceState;
+    window.history.replaceState = function () {
+      _origReplaceState.apply(this, arguments);
+      trackNavHistory();
+    };
+  } catch (e) {}
+
+  window.citilifeBack = function (fallbackUrl) {
+    try {
+      const currentHref = window.location.href;
+      const currentUrl = new URL(currentHref);
+
+      // 1. Explicit return parameters in URL (?return_url=... or ?back_url=...)
+      const explicitBack = currentUrl.searchParams.get('return_url') || currentUrl.searchParams.get('back_url');
+      if (explicitBack) {
+        try {
+          const parsed = new URL(explicitBack, window.location.origin);
+          if (parsed.origin === window.location.origin && isCleanPage(parsed.href)) {
+            window.location.href = parsed.href;
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 2. document.referrer (Direct originating page with query parameters & tabs intact)
+      if (document.referrer) {
+        try {
+          const refUrl = new URL(document.referrer);
+          const isSameOrigin = (refUrl.origin === currentUrl.origin);
+          const isDifferentPage = (refUrl.pathname !== currentUrl.pathname) || (refUrl.search !== currentUrl.search);
+          if (isSameOrigin && isDifferentPage && isCleanPage(document.referrer)) {
+            window.location.href = document.referrer;
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 3. sessionStorage history stack (Preserves prior pages across reloads)
+      try {
+        let stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(stack)) {
+          while (stack.length > 0) {
+            const prev = stack.pop();
+            if (prev && prev !== currentHref) {
+              try {
+                const prevUrl = new URL(prev);
+                const isDiff = (prevUrl.pathname !== currentUrl.pathname) || (prevUrl.search !== currentUrl.search);
+                if (prevUrl.origin === currentUrl.origin && isDiff && isCleanPage(prev)) {
+                  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
+                  window.location.href = prev;
+                  return;
+                }
+              } catch (err) {}
+            }
+          }
+        }
+      } catch (e) {}
+
+      // 4. Role-specific last table/queue URL fallback
+      try {
+        const lastTable = sessionStorage.getItem('radtech_last_table_url') || sessionStorage.getItem('Citilife_last_worklist_url');
+        if (lastTable && lastTable !== currentHref && isCleanPage(lastTable)) {
+          window.location.href = lastTable;
+          return;
+        }
+      } catch (e) {}
+
+      // 5. Browser history back
+      if (window.history.length > 1) {
+        window.history.back();
+        if (fallbackUrl) {
+          setTimeout(() => {
+            window.location.href = fallbackUrl;
+          }, 350);
+        }
+        return;
+      }
+    } catch (err) {
+      console.error('citilifeBack error:', err);
+    }
+
+    // 6. Ultimate Fallback URL
+    if (fallbackUrl) {
+      window.location.href = fallbackUrl;
+    }
+  };
+
+  // Global back button click listener (capture phase ensures reliable execution)
+  document.addEventListener('click', function (e) {
+    const backBtn = e.target.closest(
+      '[data-back-btn], #back-to-worklist-btn, #patient-details-back-btn, ' +
+      'a[title="Back"], a[title="Back to Records"], a[aria-label*="back" i], a[href="javascript:history.back()"]'
+    );
+    if (!backBtn) return;
+
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+
+    e.preventDefault();
+
+    // Call inactive ping if present on page
+    if (typeof window.sendInactivePing === 'function') {
+      try { window.sendInactivePing(); } catch (err) {}
+    } else if (typeof sendInactivePing === 'function') {
+      try { sendInactivePing(); } catch (err) {}
+    }
+
+    const fallback = backBtn.getAttribute('data-fallback') || backBtn.getAttribute('href') || '';
+    window.citilifeBack(fallback);
+  }, true);
+})();
+</script>
 
 <!-- âœ… Vue App -->
 <script>

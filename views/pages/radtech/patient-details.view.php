@@ -74,7 +74,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="<?= htmlspecialchars($backLink) ?>" id="patient-details-back-btn"
+    <a href="<?= htmlspecialchars($backLink) ?>" id="patient-details-back-btn" data-back-btn data-fallback="<?= htmlspecialchars($backLink) ?>" title="Back"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
@@ -2013,23 +2013,16 @@ $catBadgeLabel = match ($dCategory) {
             });
         }
 
-        // Smart return to originating table (Patient Error Reports, Patient Queue, Report Ready, etc.)
+        // Smart return to originating table (Patient Error Reports, Patient Queue, Report Ready, Dashboard, etc.)
         const backBtn = document.getElementById('patient-details-back-btn');
         if (backBtn) {
             backBtn.addEventListener('click', function (e) {
-                try {
-                    const lastTableUrl = sessionStorage.getItem('radtech_last_table_url');
-                    if (lastTableUrl && (
-                        lastTableUrl.includes('page=patient-lists') ||
-                        lastTableUrl.includes('page=patient-approval') ||
-                        lastTableUrl.includes('page=report-ready') ||
-                        lastTableUrl.includes('page=branch-xray-cases') ||
-                        lastTableUrl.includes('page=patient-records')
-                    )) {
-                        e.preventDefault();
-                        window.location.href = lastTableUrl;
-                    }
-                } catch (err) { }
+                e.preventDefault();
+                if (typeof window.citilifeBack === 'function') {
+                    window.citilifeBack('<?= htmlspecialchars($backLink, ENT_QUOTES) ?>');
+                } else {
+                    window.location.href = '<?= htmlspecialchars($backLink, ENT_QUOTES) ?>';
+                }
             });
         }
     });

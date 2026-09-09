@@ -42,7 +42,7 @@ if ($backId) {
 
 <!-- Header nav -->
 <div class="mb-4">
-    <a href="<?= htmlspecialchars($backUrl) ?>" title="Back"
+    <a href="<?= htmlspecialchars($backUrl) ?>" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>

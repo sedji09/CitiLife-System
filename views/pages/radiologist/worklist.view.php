@@ -579,6 +579,16 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
     // Tab Switching for Radiologist: Pending Worklist vs Pending Release
     window.switchRadTab = function (tab) {
         sessionStorage.setItem('Citilife_radWorklist_tab', tab);
+        try {
+            const cleanUrl = new URL(window.location.href);
+            if (tab === 'release') {
+                cleanUrl.searchParams.set('tab', 'release');
+            } else {
+                cleanUrl.searchParams.delete('tab');
+            }
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+            sessionStorage.setItem('Citilife_last_worklist_url', cleanUrl.toString());
+        } catch (e) {}
         const workCard = document.getElementById('worklist-table-card');
         const relCard = document.getElementById('release-table-card');
         const workBtn = document.getElementById('tab-rad-worklist-btn');
@@ -794,6 +804,10 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     sel._customSelect.sync();
                 }
             });
+
+            try {
+                sessionStorage.setItem('Citilife_last_worklist_url', window.location.href);
+            } catch (e) {}
         }
 
         // --- Pending Worklist Table Logic ---

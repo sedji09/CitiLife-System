@@ -146,7 +146,7 @@ $statusDescriptions = [
 
     <!-- Page Header -->
     <div class="flex items-center gap-4">
-        <a href="javascript:history.back()" title="Back to Records"
+        <a href="javascript:void(0)" data-back-btn data-fallback="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records" title="Back to Records"
             class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
@@ -163,7 +163,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Case Not Found</h3>
             <p class="text-sm text-gray-500 mb-5">We could not locate the details for this case.</p>
-            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records"
+            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records" data-back-btn title="Back"
                 class="inline-flex items-center gap-2 rounded-xl bg-gray-600 hover:bg-gray-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to My Records
             </a>

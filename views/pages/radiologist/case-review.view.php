@@ -20,9 +20,6 @@ $backUrl = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=" . urlencode($
 if ($backId) {
     $backUrl .= "&id=" . urlencode($backId);
 }
-if ($activeDispute && $backPage === 'worklist') {
-    $backUrl .= "&tab=disputes";
-}
 ?>
 
 
@@ -30,7 +27,7 @@ if ($activeDispute && $backPage === 'worklist') {
 <!-- Title row -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
     <div class="flex items-center gap-4">
-        <a href="<?= htmlspecialchars($backUrl) ?>" id="back-to-worklist-btn" title="Back"
+        <a href="<?= htmlspecialchars($backUrl) ?>" id="back-to-worklist-btn" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
             class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
@@ -1273,6 +1270,7 @@ if ($activeDispute && $backPage === 'worklist') {
                     }).catch(() => { });
                 } catch (e) { }
             }
+            window.sendInactivePing = sendInactivePing;
 
             // When user leaves the page or unloads
             window.addEventListener('beforeunload', sendInactivePing);
