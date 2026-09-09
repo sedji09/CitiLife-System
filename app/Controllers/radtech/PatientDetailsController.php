@@ -83,13 +83,26 @@ class PatientDetailsController
                         }
                     }
 
-                    // Check if case has an active dispute and mark as Resolved
+                    // Check if case has an active dispute and handle status transition
                     if (file_exists(__DIR__ . '/../../Models/ResultDisputeModel.php')) {
                         require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
                         $disputeMdl = new \ResultDisputeModel($pdo);
                         $activeDispute = $disputeMdl->getActiveDisputeByCase($id);
                         if ($activeDispute) {
-                            $disputeMdl->updateDisputeStatus($activeDispute['id'], 'Resolved', 'radtech', 'Amended report released by RadTech.', $_SESSION['user_id'] ?? 1);
+                            $aCat = $activeDispute['dispute_category'] ?? '';
+                            $aDesc = $activeDispute['description'] ?? '';
+                            $hasDemoPending = (in_array($aCat, ['both_error', 'both_template_error', 'demographic_error'])
+                                || stripos($aDesc, 'First Name:') !== false
+                                || stripos($aDesc, 'Last Name:') !== false
+                                || stripos($aDesc, 'Wrong Patient Info') !== false
+                                || stripos($aDesc, 'Demographics Note:') !== false)
+                                && empty($activeDispute['demographics_fixed']);
+
+                            if ($hasDemoPending) {
+                                $disputeMdl->updateDisputeStatus($activeDispute['id'], 'Correction in Progress', 'radtech', 'Amended report released by RadTech. Patient demographics pending correction.', $_SESSION['user_id'] ?? 1);
+                            } else {
+                                $disputeMdl->updateDisputeStatus($activeDispute['id'], 'Resolved', 'radtech', 'Amended report released by RadTech.', $_SESSION['user_id'] ?? 1);
+                            }
                         }
                     }
 
@@ -277,21 +290,47 @@ class PatientDetailsController
 
                 // Advance dispute status
                 if ($dId) {
-                    if ($action === 'save_and_release' || $action === 'submit') {
-                        $disputeMdl->advanceStatus($dId, 'Correction Completed');
-                        $disputeMdl->advanceStatus($dId, 'Resolved');
+                    $stmtDispCheck = $pdo->prepare("SELECT * FROM result_disputes WHERE id = ?");
+                    $stmtDispCheck->execute([$dId]);
+                    $disputeData = $stmtDispCheck->fetch(\PDO::FETCH_ASSOC);
 
-                        // Mark case as Released and amended, and reset activity status
-                        $pdo->prepare("UPDATE cases SET status = 'Released', released = 1, is_amended = 1, status_timestamp = NOW(), rad_activity_status = 'inactive', rad_last_active = '1970-01-01 00:00:00' WHERE id = ?")
+                    $cat = $disputeData['dispute_category'] ?? '';
+                    $fullDesc = $disputeData['description'] ?? '';
+                    $hasDemoChanges = in_array($cat, ['both_error', 'both_template_error', 'demographic_error'])
+                        || (stripos($fullDesc, 'First Name:') !== false)
+                        || (stripos($fullDesc, 'Last Name:') !== false)
+                        || (stripos($fullDesc, 'Wrong Patient Info') !== false)
+                        || (stripos($fullDesc, 'Demographics Note:') !== false);
+
+                    $isDemoFixed = !empty($disputeData['demographics_fixed']);
+                    $demographicsPending = $hasDemoChanges && !$isDemoFixed;
+
+                    if ($demographicsPending) {
+                        // Demographics still pending: keep dispute in progress and DO NOT release case yet
+                        $disputeMdl->advanceStatus($dId, 'Correction in Progress');
+
+                        $pdo->prepare("UPDATE cases SET is_amended = 1, status_timestamp = NOW(), rad_activity_status = 'inactive', rad_last_active = '1970-01-01 00:00:00' WHERE id = ?")
                             ->execute([$caseId]);
-                    } else {
-                        $disputeMdl->advanceStatus($dId, 'Correction Completed');
-                    }
-                }
 
-                $_SESSION['flash_success'] = ($action === 'save_and_release' || $action === 'submit')
-                    ? 'Report amendments successfully saved and marked as Resolved.'
-                    : 'Amendment saved. Dispute marked as Correction Completed.';
+                        $_SESSION['flash_success'] = 'Report amendments saved. Please proceed to Fix & Resolve the patient information to fully resolve this request.';
+                    } else {
+                        // Demographics already fixed or not required: resolve dispute and release case
+                        if ($action === 'save_and_release' || $action === 'submit') {
+                            $disputeMdl->advanceStatus($dId, 'Correction Completed');
+                            $disputeMdl->advanceStatus($dId, 'Resolved');
+
+                            $pdo->prepare("UPDATE cases SET status = 'Released', released = 1, is_amended = 1, status_timestamp = NOW(), rad_activity_status = 'inactive', rad_last_active = '1970-01-01 00:00:00' WHERE id = ?")
+                                ->execute([$caseId]);
+
+                            $_SESSION['flash_success'] = 'Report amendments successfully saved and marked as Resolved.';
+                        } else {
+                            $disputeMdl->advanceStatus($dId, 'Correction Completed');
+                            $_SESSION['flash_success'] = 'Amendment saved. Dispute marked as Correction Completed.';
+                        }
+                    }
+                } else {
+                    $_SESSION['flash_success'] = 'Report amendments successfully saved.';
+                }
 
                 $fromParam = $_GET['from'] ?? ($dId ? 'disputes' : 'queue');
                 $qs = "role=radtech&id=" . $caseId . "&from=" . urlencode($fromParam) . ($dId ? "&dispute_id=" . $dId : "") . "&saved=1";
@@ -367,6 +406,37 @@ class PatientDetailsController
                     $stmtReqUp->execute([$philhealthStatus, $philhealthIdToSave, $philhealthRelationToSave, $linkedReqId]);
                 }
 
+                // If this case has an active dispute, sync demographics_fixed
+                $stmtCheckDisp = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected') ORDER BY id DESC LIMIT 1");
+                $stmtCheckDisp->execute([$caseId]);
+                $linkedDispute = $stmtCheckDisp->fetch(\PDO::FETCH_ASSOC);
+                if ($linkedDispute) {
+                    $pdo->prepare("UPDATE result_disputes SET demographics_fixed = 1, resolution_notes = CONCAT(COALESCE(resolution_notes, ''), ' Patient demographics updated.') WHERE id = ?")
+                        ->execute([$linkedDispute['id']]);
+
+                    // If case was already amended or pure demographic error, resolve dispute and release case
+                    $stmtCaseAmended = $pdo->prepare("SELECT is_amended FROM cases WHERE id = ?");
+                    $stmtCaseAmended->execute([$caseId]);
+                    $isCaseAmended = (int)$stmtCaseAmended->fetchColumn();
+
+                    $dispCat = $linkedDispute['dispute_category'] ?? '';
+                    $dispDesc = $linkedDispute['description'] ?? '';
+                    $hasFindingsError = in_array($dispCat, ['both_error', 'both_template_error', 'findings_error', 'template_error'])
+                        || stripos($dispDesc, 'Findings Note:') !== false
+                        || stripos($dispDesc, 'Typographical Error Note:') !== false
+                        || stripos($dispDesc, 'Template Rename Request:') !== false;
+
+                    if ($isCaseAmended || !$hasFindingsError) {
+                        require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+                        $dMdl = new \ResultDisputeModel($pdo);
+                        $dMdl->advanceStatus($linkedDispute['id'], 'Correction Completed');
+                        $dMdl->advanceStatus($linkedDispute['id'], 'Resolved');
+
+                        $pdo->prepare("UPDATE cases SET status = 'Released', released = 1, is_amended = 1, status_timestamp = NOW() WHERE id = ?")
+                            ->execute([$caseId]);
+                    }
+                }
+
                 // Calculate age
                 $calculatedAge = '';
                 try {
@@ -438,9 +508,16 @@ class PatientDetailsController
 
                 if ($result['success']) {
                     $_SESSION['flash_success'] = $result['message'];
-                    $fromParam = $_GET['from'] ?? '';
-                    $qs = "role=radtech&id=" . $caseId . ($fromParam ? "&from=" . urlencode($fromParam) : "");
-                    redirect(url("patient-details?" . $qs));
+                    $fromParam = $_POST['from'] ?? $_GET['from'] ?? '';
+                    if ($fromParam === 'approval' || $fromParam === 'patient-approval') {
+                        redirect(url('patient-approval'));
+                    } elseif ($fromParam === 'disputes') {
+                        redirect(url('patient-lists?tab=disputes'));
+                    } elseif ($fromParam === 'report-ready') {
+                        redirect(url('report-ready'));
+                    } else {
+                        redirect(url('patient-lists'));
+                    }
                 } else {
                     $errorMsg = $result['message'];
                 }

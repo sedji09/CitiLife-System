@@ -218,7 +218,8 @@ $statusBadge = [
                     <?php foreach ($completedCases as $c): ?>
                         <?php
                         $caseDispute = $disputesByCaseId[$c['id']] ?? null;
-                        $isAmendedCase = (!empty($c['is_amended']) && (int) $c['is_amended'] === 1) || ($caseDispute && $caseDispute['status'] === 'Resolved');
+                        $hasActiveDispute = $caseDispute && !in_array($caseDispute['status'], ['Resolved', 'Rejected']);
+                        $isAmendedCase = !$hasActiveDispute && ((!empty($c['is_amended']) && (int) $c['is_amended'] === 1) || ($caseDispute && $caseDispute['status'] === 'Resolved'));
                         $displayStatus = $isAmendedCase ? 'Edited' : $c['status'];
                         $badge = $statusBadge[$displayStatus] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'border' => 'border-gray-200', 'label' => $displayStatus];
                         $branchName = $c['branch_name'] ?? $c['branch'] ?? '—';

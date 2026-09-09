@@ -179,7 +179,10 @@ try {
         }
 
         $cat = $disputeInfo['dispute_category'] ?? '';
-        $isBoth = ($cat === 'both_error' || $cat === 'both_template_error');
+        $fullDesc = $disputeInfo['description'] ?? '';
+        $hasDemoInDesc = (stripos($fullDesc, 'First Name:') !== false || stripos($fullDesc, 'Last Name:') !== false || stripos($fullDesc, 'Wrong Patient Info') !== false || stripos($fullDesc, 'Demographics Note:') !== false);
+        $hasFindingsInDesc = (stripos($fullDesc, 'Findings Note:') !== false || stripos($fullDesc, 'Typographical Error Note:') !== false || stripos($fullDesc, 'Template Rename Request:') !== false || stripos($fullDesc, 'Exam Details Note:') !== false);
+        $isBoth = in_array($cat, ['both_error', 'both_template_error']) || ($hasDemoInDesc && $hasFindingsInDesc);
         $radAmended = (int)($disputeInfo['radiologist_amended'] ?? 0);
 
         // Check if case was already amended in cases table
@@ -224,7 +227,7 @@ try {
         echo json_encode([
             'success' => true, 
             'message' => $msg, 
-            'both_pending_escalate' => ($isBoth && !$radAmended)
+            'both_pending_escalate' => ($isBoth && !$radAmended && !$caseAmended)
         ]);
         exit;
 

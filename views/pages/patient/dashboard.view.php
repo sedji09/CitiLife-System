@@ -117,7 +117,7 @@ if ($latestCaseDispute && !in_array($latestCaseDispute['status'], ['Rejected']))
 
 if ($isCorrectionWorkflow) {
     $steps = CaseStatusTransition::getErrorStepsList();
-    if ($activeDisputeStatus === 'Resolved' || $activeDisputeStatus === 'Correction Completed' || (!$activeDispute && (int) ($latestCase['is_amended'] ?? 0) === 1)) {
+    if ($activeDisputeStatus === 'Resolved' || $activeDisputeStatus === 'Correction Completed' || (!$latestCaseDispute && (int) ($latestCase['is_amended'] ?? 0) === 1)) {
         $currentStep = 4;
         $displayStatus = 'Edited';
     } else {
@@ -998,14 +998,14 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                 Request Correction
                             </button>
-                        <?php elseif (($isCorrectionWorkflow || in_array($latestCase['id'], $disputedCaseIds)) && !in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) && (int) ($latestCase['is_amended'] ?? 0) !== 1): ?>
+                        <?php elseif (($isCorrectionWorkflow || in_array($latestCase['id'], $disputedCaseIds)) && !in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited'])): ?>
                             <span
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
                                 <?= htmlspecialchars($sInfo['label'] ?? 'Correction Requested') ?>
                             </span>
                         <?php endif; ?>
 
-                        <?php if (!in_array($latestCase['id'], $feedbackCaseIds) && (!$isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) || (int) ($latestCase['is_amended'] ?? 0) === 1)): ?>
+                        <?php if (!in_array($latestCase['id'], $feedbackCaseIds) && (!$isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']))): ?>
                             <button type="button"
                                 onclick="openFeedbackModal(<?= $latestCase['id'] ?>, <?= htmlspecialchars(json_encode($latestCase['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($latestCase['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-yellow-400 hover:bg-yellow-500 hover:text-white text-yellow-600 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
@@ -1016,7 +1016,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         <?php
                         $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $latestCase['id']);
                         $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
-                        $reportBtnLabel = ($isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) || (int) ($latestCase['is_amended'] ?? 0) === 1) ? 'View Updated Report' : 'View Report';
+                        $reportBtnLabel = ($isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited'])) ? 'View Updated Report' : 'View Report';
                         ?>
                         <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
                             class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">

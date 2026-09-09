@@ -5,7 +5,7 @@ $disputeModel = new \ResultDisputeModel($pdo);
 $branchId = $_SESSION['branch_id'] ?? 1;
 $disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
 $pendingDisputeCount = count(array_filter($disputes, function ($d) {
-    return in_array($d['status'], ['Pending RadTech Review', 'Pending RadTech Verification']);
+    return in_array($d['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification']);
 }));
 $currentTab = $_GET['tab'] ?? 'completed';
 
@@ -1321,6 +1321,11 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                         class="inline-block text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
                                         Correction in Progress
                                     </span>
+                                    <?php if (!empty($d['is_amended']) && empty($d['demographics_fixed'])): ?>
+                                        <span class="block text-[10px] text-amber-600 font-semibold mt-0.5 whitespace-nowrap">Report Edited · Info Pending</span>
+                                    <?php elseif (!empty($d['demographics_fixed']) && empty($d['is_amended'])): ?>
+                                        <span class="block text-[10px] text-indigo-600 font-semibold mt-0.5 whitespace-nowrap">Info Fixed · Edit Pending</span>
+                                    <?php endif; ?>
                                 <?php elseif ($currStatus === 'Correction Completed' || $currStatus === 'Pending RadTech Verification'): ?>
                                     <span
                                         class="inline-block text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
@@ -1392,11 +1397,18 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                             </button>
                                         <?php else: ?>
                                             <?php if ($showDemoBtn): ?>
+                                                <?php $demoNeedsAction = !empty($d['is_amended']) && empty($d['demographics_fixed']); ?>
                                                 <!-- Action for Patient Info: Fix Demographics Modal (Green icon only with tooltip) -->
                                                 <button type="button" onclick='openFixDemographicsModal(<?= $dispJson ?>)'
-                                                    class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                                    title="Fix &amp; Resolve Patient Information">
+                                                    class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer relative"
+                                                    title="<?= $demoNeedsAction ? 'Fix Patient Information to Resolve Request' : 'Fix &amp; Resolve Patient Information' ?>">
                                                     <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+                                                    <?php if ($demoNeedsAction): ?>
+                                                        <span class="absolute -top-1 -right-1 flex h-2 w-2">
+                                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-600"></span>
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </button>
                                             <?php endif; ?>
 
@@ -1404,7 +1416,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                                 <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
                                                 <a href="<?= url('patient-details?role=radtech&id=' . (int) $d['case_id'] . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
                                                     class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                                    title="<?= htmlspecialchars($amendBtnTitle) ?>">
+                                                    title="<?= !empty($d['is_amended']) ? 'Report Already Edited (Click to re-edit if needed)' : htmlspecialchars($amendBtnTitle) ?>">
                                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                                                 </a>
                                             <?php endif; ?>

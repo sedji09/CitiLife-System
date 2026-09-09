@@ -110,6 +110,13 @@ if (!$showFindings && !$showXrayTemplateName && !$isPureDemo) {
     }
 }
 
+$dDesc = $activeDispute['description'] ?? '';
+$isDemoFixed = !empty($activeDispute['demographics_fixed']);
+$hasDemoInDesc = (stripos($dDesc, 'First Name:') !== false || stripos($dDesc, 'Last Name:') !== false || stripos($dDesc, 'Wrong Patient Info') !== false || stripos($dDesc, 'Demographics Note:') !== false);
+$hasFindingsInDesc = (stripos($dDesc, 'Findings Note:') !== false || stripos($dDesc, 'Typographical Error Note:') !== false || stripos($dDesc, 'Template Rename Request:') !== false || stripos($dDesc, 'Exam Details Note:') !== false);
+$isBothIssue = in_array($dCategory, ['both_error', 'both_template_error']) || ($hasDemoInDesc && $hasFindingsInDesc);
+$isBothPendingDemo = $isBothIssue && !$isDemoFixed;
+
 // Extract patient's requested changes from dispute description
 $dDesc = $activeDispute['description'] ?? '';
 $reqCorrectTemplate = '';
@@ -230,6 +237,7 @@ $catBadgeLabel = match ($dCategory) {
 
 <?php if (empty($activeDispute) && !($isAmendMode ?? false)): ?>
     <form method="POST" action="" enctype="multipart/form-data" id="patient-details-form">
+        <input type="hidden" name="from" value="<?= htmlspecialchars($_GET['from'] ?? '') ?>">
     <?php endif; ?>
     <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -493,6 +501,25 @@ $catBadgeLabel = match ($dCategory) {
                     <input type="hidden" name="save_amendment" value="1">
                     <input type="hidden" name="dispute_id" value="<?= (int) ($activeDispute['id'] ?? 0) ?>">
 
+                    <?php if ($isEdited && $isBothPendingDemo): ?>
+                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-amber-900">Report Amendment Saved — Patient Info Pending</p>
+                                    <p class="text-xs text-amber-700">The report has been amended. Patient demographic correction is still required to resolve this ticket.</p>
+                                </div>
+                            </div>
+                            <a href="<?= url('patient-lists?tab=disputes&highlight_dispute_id=' . (int)($activeDispute['id'] ?? 0)) ?>"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg shadow-sm transition whitespace-nowrap">
+                                <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+                                Fix Patient Info
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- 1. TEMPLATE RENAME CONTROLS (Categories 3 & 5) -->
                     <?php if ($showXrayTemplateName): ?>
                         <div class="space-y-4">
@@ -655,11 +682,19 @@ $catBadgeLabel = match ($dCategory) {
                     <?php if (!$isEdited): ?>
                         <!-- Single Action Button -->
                         <div class="flex items-center justify-end pt-3 border-t border-gray-100 mt-auto">
-                            <button type="button" onclick="submitRadtechAmendment(this, event);"
-                                class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm active:scale-95 cursor-pointer">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                                Save &amp; Resolve
-                            </button>
+                            <?php if ($isBothPendingDemo): ?>
+                                <button type="button" onclick="submitRadtechAmendment(this, event);"
+                                    class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shadow-sm active:scale-95 cursor-pointer">
+                                    <i data-lucide="save" class="w-4 h-4"></i>
+                                    Save Amendment
+                                </button>
+                            <?php else: ?>
+                                <button type="button" onclick="submitRadtechAmendment(this, event);"
+                                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm active:scale-95 cursor-pointer">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                    Save &amp; Resolve
+                                </button>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </form>
@@ -683,6 +718,7 @@ $catBadgeLabel = match ($dCategory) {
 
                 const showFindings = <?= json_encode($showFindings) ?>;
                 const showRename = <?= json_encode($showXrayTemplateName) ?>;
+                const isBothPendingDemo = <?= json_encode((bool) $isBothPendingDemo) ?>;
 
                 if (showFindings) {
                     const f = form.querySelector('textarea[name="amend_findings"]');
@@ -704,14 +740,25 @@ $catBadgeLabel = match ($dCategory) {
                     }
                 }
 
-                confirmFormAction(
-                    btn,
-                    'save_and_release',
-                    'Confirm Save & Resolve',
-                    'Would you like to save these amendments and resolve this correction request? The updated record will be marked as Resolved and released.',
-                    'amendment_action',
-                    e
-                );
+                if (isBothPendingDemo) {
+                    confirmFormAction(
+                        btn,
+                        'save_only',
+                        'Confirm Save Amendment',
+                        'Would you like to save these amendments? Please note that patient demographic information still needs to be corrected before this request is marked as Resolved.',
+                        'amendment_action',
+                        e
+                    );
+                } else {
+                    confirmFormAction(
+                        btn,
+                        'save_and_release',
+                        'Confirm Save & Resolve',
+                        'Would you like to save these amendments and resolve this correction request? The updated record will be marked as Resolved and released.',
+                        'amendment_action',
+                        e
+                    );
+                }
             }
 
             <?php if (!$isEdited): ?>
