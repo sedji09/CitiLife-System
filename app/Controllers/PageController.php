@@ -38,6 +38,9 @@ class PageController
                 $path = substr($path, strlen($projectPrefix));
             }
         }
+        if (preg_match('#^/citilife[-_]system(?:/|$)#i', $path)) {
+            $path = preg_replace('#^/citilife[-_]system#i', '', $path);
+        }
         $page = trim($path, '/');
         if ($page === '' || $page === 'index.php') {
             $page = $_GET['page'] ?? 'dashboard';

@@ -3111,7 +3111,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         if (isFixOpen || isVerOpen || isAmendOpen) return;
 
         if (isDisputesTab) {
-            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes&_t=' + Date.now())
+            fetch('<?= url("patient-lists?tab=disputes&ajax_polling=1") ?>&_t=' + Date.now())
                 .then(res => res.text())
                 .then(html => {
                     const parser = new DOMParser();
@@ -3140,7 +3140,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 })
                 .catch(() => { });
         } else {
-            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&_t=' + Date.now())
+            fetch('<?= url("patient-lists?ajax_polling=1") ?>&_t=' + Date.now())
                 .then(res => res.text())
                 .then(html => {
                     const parser = new DOMParser();
@@ -3171,7 +3171,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 })
                 .catch(() => { });
         }
-    }, 3500);
+    }, 3000);
     window.PROJECT_DIR = <?= json_encode(PROJECT_DIR) ?>;
 </script>
 <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/radtech-amend.js"></script>

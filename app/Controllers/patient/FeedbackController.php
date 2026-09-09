@@ -89,7 +89,7 @@ class FeedbackController
                             $notificationModel->add(
                                 "New Patient Feedback",
                                 "Patient $patientName submitted a {$rating}-star rating.",
-                                "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=feedback",
+                                url("feedback?role=branch_admin&highlight=" . urlencode($patientName)),
                                 null,
                                 'branch_admin',
                                 $feedbackBranchId
@@ -100,7 +100,7 @@ class FeedbackController
                         $notificationModel->add(
                             "New Patient Feedback",
                             "A new {$rating}-star rating was submitted by a patient.",
-                            "/" . PROJECT_DIR . "/index.php?role=admin_central&page=feedback",
+                            url("feedback?role=admin_central&highlight=" . urlencode($patientName)),
                             null,
                             'admin_central'
                         );
@@ -117,7 +117,8 @@ class FeedbackController
                             
                             $emailSubject = "(URGENT) Critical Patient Feedback - {$branchName}";
                             $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-                            $dashboardUrl = "http://{$host}/" . PROJECT_DIR . "/index.php?role=admin_central&page=feedbacks";
+                            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                            $dashboardUrl = "{$protocol}://{$host}" . url('feedback');
                             
                             $emailBody = renderNotificationEmail(
                                 "Administrator",

@@ -70,10 +70,13 @@
         <?php else: ?>
             <div class="divide-y divide-gray-100">
                 <?php foreach ($feedbacks as $fb): ?>
-                    <div class="p-5 sm:p-6 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-0"
+                    <div class="p-5 sm:p-6 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-0 feedback-item rounded-xl"
+                        data-record-item="true"
                         data-id="<?= $fb['id'] ?>"
                         data-case="<?= htmlspecialchars($fb['case_number'] ?? '') ?>"
-                        data-patient="<?= htmlspecialchars($fb['patient_number'] ?? '') ?>">
+                        data-patient="<?= htmlspecialchars($fb['patient_number'] ?? '') ?>"
+                        data-patient-name="<?= htmlspecialchars(trim(($fb['first_name'] ?? '') . ' ' . ($fb['last_name'] ?? ''))) ?>"
+                        data-search="<?= htmlspecialchars(strtolower(trim(($fb['first_name'] ?? '') . ' ' . ($fb['last_name'] ?? '') . ' ' . ($fb['patient_number'] ?? '') . ' ' . ($fb['case_number'] ?? '')))) ?>">
                         <div class="flex items-start gap-4">
                             <!-- Avatar -->
                             <?php $fbAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($fb['avatar']) : $fb['avatar']; ?>
@@ -154,8 +157,11 @@
                     $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) {
                         $queryData = [];
                         $queryData['p'] = $targetPage;
+                        if (!empty($_GET['highlight'])) {
+                            $queryData['highlight'] = $_GET['highlight'];
+                        }
                         $query = http_build_query($queryData);
-                        $url = '/' . PROJECT_DIR . '/feedback?' . $query;
+                        $url = url('feedback?' . $query);
 
                         if ($isActive) {
                             return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';

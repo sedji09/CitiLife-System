@@ -866,9 +866,14 @@
 
         async function pollPayments() {
             if (isPolling) return;
+            // Skip replacing table if user is currently interacting with action or receipt modal
+            const isSwalOpen = !!document.querySelector('.swal2-container');
+            const receiptModal = document.getElementById('receiptModal');
+            const isReceiptOpen = receiptModal && !receiptModal.classList.contains('hidden');
+
             isPolling = true;
             try {
-                const fetchUrl = '<?= "/" . (defined("PROJECT_DIR") ? trim(PROJECT_DIR, "/") . "/" : "") ?>index.php?role=branch_admin&page=payment-verifications&ajax=1&t=' + Date.now();
+                const fetchUrl = '<?= url("payment-verifications?ajax=1") ?>&t=' + Date.now();
                 const res = await fetch(fetchUrl, { cache: 'no-store' });
                 if (!res.ok) return;
                 const data = await res.json();
@@ -879,10 +884,12 @@
                 if (lastPendingHash === '') {
                     lastPendingHash = pendingHash;
                 } else if (pendingHash !== lastPendingHash) {
-                    lastPendingHash = pendingHash;
-                    if (pendingTable) {
-                        const newPendingRows = (data.pending || []).map(createPendingRowElement);
-                        pendingTable.setRows(newPendingRows);
+                    if (!isSwalOpen && !isReceiptOpen) {
+                        lastPendingHash = pendingHash;
+                        if (pendingTable) {
+                            const newPendingRows = (data.pending || []).map(createPendingRowElement);
+                            pendingTable.setRows(newPendingRows);
+                        }
                     }
                 }
 
@@ -891,10 +898,12 @@
                 if (lastHistoryHash === '') {
                     lastHistoryHash = historyHash;
                 } else if (historyHash !== lastHistoryHash) {
-                    lastHistoryHash = historyHash;
-                    if (historyTable) {
-                        const newHistoryRows = (data.history || []).map(createHistoryRowElement);
-                        historyTable.setRows(newHistoryRows);
+                    if (!isSwalOpen && !isReceiptOpen) {
+                        lastHistoryHash = historyHash;
+                        if (historyTable) {
+                            const newHistoryRows = (data.history || []).map(createHistoryRowElement);
+                            historyTable.setRows(newHistoryRows);
+                        }
                     }
                 }
 
@@ -926,7 +935,7 @@
             return;
         }
 
-        let base = '<?= "/" . (defined("PROJECT_DIR") ? trim(PROJECT_DIR, "/") . "/" : "") ?>';
+        let base = '<?= (defined("PROJECT_DIR") && PROJECT_DIR !== "") ? "/" . trim(PROJECT_DIR, "/") . "/" : "/" ?>';
         let cleanPath = path.startsWith('/') ? path.substring(1) : path;
         let imageSrc = base + cleanPath;
         document.getElementById('modal-receipt-img').src = imageSrc;

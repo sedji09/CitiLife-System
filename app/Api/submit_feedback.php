@@ -5,11 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json');
 
-if (!defined('PROJECT_DIR')) {
-    $parts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
-    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'Citilife-System');
-}
-
+require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Models/FeedbackModel.php';
 require_once __DIR__ . '/../Models/PatientModel.php';
@@ -93,7 +89,7 @@ try {
         $notificationModel->add(
             "New Patient Feedback",
             "Patient $patientName submitted a {$rating}-star rating.",
-            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=feedback&highlight=" . urlencode($patientName),
+            url("feedback?role=branch_admin&highlight=" . urlencode($patientName)),
             null,
             'branch_admin',
             $branchId
@@ -104,7 +100,7 @@ try {
     $notificationModel->add(
         "New Patient Feedback",
         "A new {$rating}-star rating was submitted by a patient.",
-        "/" . PROJECT_DIR . "/index.php?role=admin_central&page=feedback&highlight=" . urlencode($patientName),
+        url("feedback?role=admin_central&highlight=" . urlencode($patientName)),
         null,
         'admin_central'
     );

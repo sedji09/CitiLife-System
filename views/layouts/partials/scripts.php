@@ -1767,7 +1767,11 @@
           let finalUrl;
           try {
             const basePath = '<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' + '/' : '/';
-            finalUrl = new URL(link, window.location.origin + basePath);
+            let cleanLink = link;
+            if (!'<?= PROJECT_DIR ?>' && cleanLink && cleanLink.toLowerCase().startsWith('/citilife-system/')) {
+              cleanLink = cleanLink.replace(/^\/citilife-system\//i, '/');
+            }
+            finalUrl = new URL(cleanLink, window.location.origin + basePath);
           } catch (e) {
             finalUrl = new URL(link, window.location.origin);
           }

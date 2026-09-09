@@ -66,6 +66,11 @@ class Router
             }
         }
 
+        // Fallback: strip leading /citilife-system or /citilife_system if present regardless of PROJECT_DIR (crucial for Railway/subfolder compatibility)
+        if (preg_match('#^/citilife[-_]system(?:/|$)#i', $path)) {
+            $path = preg_replace('#^/citilife[-_]system#i', '', $path);
+        }
+
         // Standardize leading and trailing slash
         $path = '/' . trim((string)$path, '/');
 
