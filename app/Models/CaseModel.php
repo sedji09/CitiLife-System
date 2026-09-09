@@ -1591,7 +1591,7 @@ class CaseModel
      * Groups identical/normalized diagnoses across ALL X-ray exam types,
      * counts occurrences, calculates percentages, sorts descending, and identifies the most prevalent case.
      */
-    public function getDiagnosticStats($startDate, $endDate, $branchIds = [])
+    public function getDiagnosticStats($startDate, $endDate, $branchIds = [], $limit = 10)
     {
         $sql = "SELECT c.id, c.findings, c.impression, c.exam_type
                 FROM cases c
@@ -1665,6 +1665,9 @@ class CaseModel
                 'count' => $count,
                 'percentage' => $percentage
             ];
+            if ($limit !== null && count($ranking) >= $limit) {
+                break;
+            }
         }
 
         $mostPrevalent = !empty($ranking) ? $ranking[0] : null;

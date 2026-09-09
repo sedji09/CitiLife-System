@@ -85,6 +85,11 @@ if (!$case || (int) $case['patient_id'] !== (int) $patientId) {
     showSecureError('Report not found or access denied. This incident has been logged for security purposes.');
 }
 
+// Check if report is under re-edit / revision
+if (!empty($case['re_edit_reason']) || ($case['report_status'] ?? '') === 'Draft' || !in_array($case['status'], ['Completed', 'Released'])) {
+    showSecureError('This report is currently under revision and is temporarily unavailable.');
+}
+
 // 3-Month Availability Check
 $isExpired = strtotime($case['created_at']) < strtotime('-3 months');
 if ($isExpired) {

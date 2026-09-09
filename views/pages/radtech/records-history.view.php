@@ -155,7 +155,13 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
             </div>
             <div id="findings-viewer-container"
                 class="flex-1 bg-[#0a0a0a] relative overflow-hidden group flex items-center justify-center p-4">
-                <?php if (in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['findings'])): ?>
+                <?php 
+                $isCaseReverted = !empty($caseDetails['re_edit_reason']) 
+                    || ($caseDetails['report_status'] ?? '') === 'Draft' 
+                    || in_array($caseDetails['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+                $isReportAvailable = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isCaseReverted;
+                ?>
+                <?php if ($isReportAvailable): ?>
                     <?php
                     $reportUrl = url("print-report?id=" . $caseId . "&preview=true");
                     ?>
@@ -170,6 +176,14 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                             Print Report</span>
                         <span class="text-sm text-gray-500 mt-1">Open report in a popup window</span>
                     </button>
+                <?php elseif ($isCaseReverted && !empty($caseDetails['re_edit_reason'])): ?>
+                    <div class="text-center p-6">
+                        <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="rotate-ccw" class="w-6 h-6 text-amber-500"></i>
+                        </div>
+                        <p class="font-bold text-amber-400">Reverted for Re-edit</p>
+                        <p class="text-sm text-gray-400 mt-1 max-w-[280px] mx-auto">This case was returned to the radiologist for revision. The updated report will be available once resubmitted.</p>
+                    </div>
                 <?php else: ?>
                     <div class="text-center">
                         <i data-lucide="clock-3" class="w-12 h-12 mb-4 text-gray-600 mx-auto opacity-50"></i>

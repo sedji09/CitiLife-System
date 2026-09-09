@@ -165,8 +165,12 @@ if (isset($caseNotFound) && $caseNotFound) {
 
 </div>
 
-<!-- Image Archive -->
-<?php $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['date_completed']) || !empty($caseDetails['findings']); ?>
+<?php 
+$isReverted = !empty($caseDetails['re_edit_reason']) 
+    || ($caseDetails['report_status'] ?? '') === 'Draft' 
+    || in_array($caseDetails['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+$isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isReverted; 
+?>
 
 <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
 

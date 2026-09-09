@@ -193,29 +193,43 @@
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
 
-                                    <?php if (empty($row['released']) || (int) $row['released'] === 0): ?>
-                                        <!-- Re-edit button -->
-                                        <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
-                                            class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                            title="Allow Radiologist to Re-edit (Revert to Draft)">
-                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    <?php
+                                    $isRevertedRR = !empty($row['re_edit_reason']) 
+                                        || ($row['report_status'] ?? '') === 'Draft' 
+                                        || in_array($row['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+                                    $isReportReadyRR = ($row['status'] === 'Report Ready') && !$isRevertedRR;
+                                    ?>
+                                    <?php if ($isReportReadyRR): ?>
+                                        <?php if (empty($row['released']) || (int) $row['released'] === 0): ?>
+                                            <!-- Re-edit button -->
+                                            <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
+                                                class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                title="Allow Radiologist to Re-edit (Revert to Draft)">
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <!-- Print Result -->
+                                        <a href="javascript:void(0)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                            title="Print Report">
+                                            <i data-lucide="printer" class="w-4 h-4"></i>
+                                        </a>
+
+                                        <!-- Release -->
+                                        <button type="button" onclick="releaseToPhoto(<?= $row['id'] ?>, this, event)"
+                                            class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                            title="Release Result">
+                                            <i data-lucide="send" class="w-4 h-4"></i>
+                                        </button>
+                                    <?php else: ?>
+                                        <!-- Disabled Print -->
+                                        <button class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
+                                            title="Print Report (Disabled: <?= !empty($row['re_edit_reason']) ? 'Report returned to Radiologist for re-edit' : 'Available after Radiologist submits report' ?>)" disabled>
+                                            <i data-lucide="printer" class="w-4 h-4"></i>
                                         </button>
                                     <?php endif; ?>
-
-                                    <!-- Print Result -->
-                                    <a href="javascript:void(0)"
-                                        onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                        title="Print Report">
-                                        <i data-lucide="printer" class="w-4 h-4"></i>
-                                    </a>
-
-                                    <!-- Release -->
-                                    <button type="button" onclick="releaseToPhoto(<?= $row['id'] ?>, this, event)"
-                                        class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                        title="Release Result">
-                                        <i data-lucide="send" class="w-4 h-4"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>

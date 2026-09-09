@@ -120,15 +120,29 @@
                 </div>
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
-                    <a href="<?= url('print-report?id=' . $caseDetails['id'] . '&download=true') ?>"
-                        target="_blank"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
-                        <i data-lucide="download" class="w-4 h-4"></i> Download PDF
-                    </a>
-                    <a href="<?= url('print-report?id=' . $caseDetails['id']) ?>" target="_blank"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#1f2937] text-sm font-semibold rounded-lg shadow-sm border border-gray-300 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Print
-                    </a>
+                    <?php
+                    $isCaseReqReverted = !empty($caseDetails['re_edit_reason']) 
+                        || ($caseDetails['report_status'] ?? '') === 'Draft' 
+                        || in_array($caseDetails['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+                    $isCaseReqReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isCaseReqReverted;
+                    ?>
+                    <?php if ($isCaseReqReportReady): ?>
+                        <a href="<?= url('print-report?id=' . $caseDetails['id'] . '&download=true') ?>"
+                            target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download PDF
+                        </a>
+                        <a href="<?= url('print-report?id=' . $caseDetails['id']) ?>" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-[#f3f4f6] hover:bg-[#e5e7eb] text-[#1f2937] text-sm font-semibold rounded-lg shadow-sm border border-gray-300 transition">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Print
+                        </a>
+                    <?php else: ?>
+                        <button type="button" disabled
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 text-sm font-semibold rounded-lg shadow-sm border border-gray-200 cursor-not-allowed"
+                            title="Print (Disabled: <?= !empty($caseDetails['re_edit_reason']) ? 'Report returned to Radiologist for re-edit' : 'Available after Radiologist submits report' ?>)">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Print
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
 

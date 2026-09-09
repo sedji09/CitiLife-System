@@ -49,7 +49,7 @@
         </div>
         <div class="flex items-center gap-3">
             <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role']) || (!empty($filters['sort']) && $filters['sort'] !== 'desc')): ?>
-                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>audit-logs"
+                <a href="<?= isset($_GET['page']) ? '?page=' . htmlspecialchars($_GET['page']) : url('audit-logs') ?>"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     Clear Filters
@@ -247,8 +247,22 @@
                     <?php
                     $page_num = (int) ($page_num ?? 1);
                     $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) use ($filters) {
-                        $query = http_build_query(array_merge(array_filter($filters), ['p' => $targetPage]));
-                        $url = '/' . PROJECT_DIR . '/audit-logs?' . $query;
+                        $params = [];
+                        if (isset($_GET['page'])) {
+                            $params['page'] = $_GET['page'];
+                        }
+                        if (isset($_GET['role'])) {
+                            $params['role'] = $_GET['role'];
+                        }
+
+                        foreach ($filters as $k => $v) {
+                            if ($v !== '' && $v !== null) {
+                                $params[$k] = $v;
+                            }
+                        }
+                        $params['p'] = $targetPage;
+
+                        $url = '?' . http_build_query($params);
 
                         if ($isActive) {
                             return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';

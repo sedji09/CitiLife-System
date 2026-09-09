@@ -43,7 +43,7 @@ if ($patientRow && isset($patientRow['patient_number'])) {
             $rejectedCases[] = $c;
         } elseif ($isCancelled) {
             $cancelledCases[] = $c;
-        } elseif (in_array($c['status'], ['Completed', 'Released'])) {
+        } elseif (in_array($c['status'], ['Completed', 'Released']) && empty($c['re_edit_reason']) && ($c['report_status'] ?? '') !== 'Draft') {
             $completedCases[] = $c;
         }
     }

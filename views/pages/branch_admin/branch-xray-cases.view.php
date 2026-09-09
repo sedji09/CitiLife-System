@@ -234,7 +234,10 @@
                                              <i data-lucide="eye" class="w-4 h-4"></i>
                                          </a>
                                          <?php 
-                                         $isReportAvailable = in_array($row['status'], ['Report Ready', 'Completed', 'Released']) || !empty($row['date_completed']) || !empty($row['findings']);
+                                         $isReverted = !empty($row['re_edit_reason']) 
+                                             || ($row['report_status'] ?? '') === 'Draft' 
+                                             || in_array($row['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+                                         $isReportAvailable = in_array($row['status'], ['Report Ready', 'Completed', 'Released']) && !$isReverted;
                                          ?>
                                          <?php if ($isReportAvailable): ?>
                                              <a href="javascript:void(0)"
@@ -252,7 +255,7 @@
                                          <?php else: ?>
                                              <button type="button" disabled
                                                  class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
-                                                 title="Print Report (Disabled until Radiologist submits report)">
+                                                 title="Print Report (Disabled: <?= !empty($row['re_edit_reason']) ? 'Report returned to Radiologist for re-edit' : 'Available after Radiologist submits report' ?>)">
                                                  <i data-lucide="printer" class="w-4 h-4"></i>
                                              </button>
                                          <?php endif; ?>
@@ -262,18 +265,32 @@
                                              title="View Record Details">
                                              <i data-lucide="eye" class="w-4 h-4"></i>
                                          </a>
-                                         <a href="javascript:void(0)"
-                                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                             title="Print Report">
-                                             <i data-lucide="printer" class="w-4 h-4"></i>
-                                         </a>
-                                         <a href="javascript:void(0)"
-                                             onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
-                                             class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                             title="Download PDF">
-                                             <i data-lucide="download" class="w-4 h-4"></i>
-                                         </a>
+                                         <?php 
+                                         $isRevertedRec = !empty($row['re_edit_reason']) 
+                                             || ($row['report_status'] ?? '') === 'Draft' 
+                                             || in_array($row['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+                                         $isReportAvailableRec = in_array($row['status'], ['Report Ready', 'Completed', 'Released']) && !$isRevertedRec;
+                                         ?>
+                                         <?php if ($isReportAvailableRec): ?>
+                                             <a href="javascript:void(0)"
+                                                 onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                                 class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                 title="Print Report">
+                                                 <i data-lucide="printer" class="w-4 h-4"></i>
+                                             </a>
+                                             <a href="javascript:void(0)"
+                                                 onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
+                                                 class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                 title="Download PDF">
+                                                 <i data-lucide="download" class="w-4 h-4"></i>
+                                             </a>
+                                         <?php else: ?>
+                                             <button type="button" disabled
+                                                 class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
+                                                 title="Print Report (Disabled: <?= !empty($row['re_edit_reason']) ? 'Report returned to Radiologist for re-edit' : 'Available after Radiologist submits report' ?>)">
+                                                 <i data-lucide="printer" class="w-4 h-4"></i>
+                                             </button>
+                                         <?php endif; ?>
                                      <?php endif; ?>
                                  </div>
                             </td>

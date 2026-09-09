@@ -26,6 +26,18 @@ if (!$case) {
     die('<p style="font-family:sans-serif;padding:2rem;color:red;">Case not found.</p>');
 }
 
+$isReverted = !empty($case['re_edit_reason']) 
+    || ($case['report_status'] ?? '') === 'Draft' 
+    || in_array($case['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+
+if ($isReverted && $sessionRole !== 'radiologist' && !$isPreview) {
+    die('<div style="font-family:sans-serif;padding:2rem;text-align:center;color:#b91c1c;background:#fef2f2;border:1px solid #f87171;border-radius:8px;max-width:500px;margin:3rem auto;">'
+      . '<h3 style="margin-top:0;">Report Unavailable</h3>'
+      . '<p>This case has been returned to the radiologist for re-editing/revision. Printing and downloading are temporarily disabled.</p>'
+      . '<button onclick="window.close(); history.back();" style="margin-top:1rem;padding:0.5rem 1rem;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;">Go Back</button>'
+      . '</div>');
+}
+
 // 2. PDF Freeze: Serve generated PDF if it exists
 if (!empty($case['pdf_path'])) {
     $pdfAbsPath = __DIR__ . '/../../../' . $case['pdf_path'];

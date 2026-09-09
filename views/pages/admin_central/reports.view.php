@@ -400,9 +400,9 @@ $branchId = $_SESSION['branch_id'] ?? null;
                 <div>
                     <div class="flex items-center gap-2">
                         <div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>
-                        <h3 class="font-bold text-gray-900 text-base">Diagnostic Findings & Disease Prevalence Ranking</h3>
+                        <h3 class="font-bold text-gray-900 text-base">Top 10 Diagnostic Findings & Disease Prevalence Ranking</h3>
                     </div>
-                    <p class="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">Clinical impression census and top diagnosed cases for the selected period</p>
+                    <p class="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">Clinical impression census and top 10 diagnosed cases for the selected period</p>
                 </div>
                 <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-2xs">
                     <i data-lucide="stethoscope" class="w-4 h-4 text-red-600"></i>

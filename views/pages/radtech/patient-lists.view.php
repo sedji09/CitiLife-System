@@ -229,7 +229,10 @@ if ($hlTarget && empty($_GET['tab'])) {
                         }
 
                         $patFullName = formatFullName($row);
-                        $isReportReady = ($row['status'] === 'Report Ready');
+                        $isRevertedQueue = !empty($row['re_edit_reason']) 
+                            || ($row['report_status'] ?? '') === 'Draft' 
+                            || in_array($row['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+                        $isReportReady = ($row['status'] === 'Report Ready') && !$isRevertedQueue;
                         $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d'));
 
                         if (($row['status'] ?? '') === 'For Revision') {

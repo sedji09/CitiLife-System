@@ -35,6 +35,16 @@
   const STORAGE_KEY = 'citilife_nav_history';
   const MAX_HISTORY = 35;
 
+  function normalizeUrl(urlStr) {
+    try {
+      if (!urlStr) return '';
+      const u = new URL(urlStr, window.location.origin);
+      return u.origin + u.pathname + u.search;
+    } catch (e) {
+      return urlStr || '';
+    }
+  }
+
   function isCleanPage(urlStr) {
     try {
       if (!urlStr) return false;
@@ -53,7 +63,7 @@
 
   function trackNavHistory() {
     try {
-      const currentHref = window.location.href;
+      const currentHref = normalizeUrl(window.location.href);
       if (!isCleanPage(currentHref)) return;
 
       let stack = [];
@@ -64,28 +74,37 @@
         stack = [];
       }
 
-      const currentUrl = new URL(currentHref);
-
-      if (stack.length > 0) {
-        const top = stack[stack.length - 1];
-        if (top === currentHref) return;
-
-        try {
-          const topUrl = new URL(top);
-          if (topUrl.origin === currentUrl.origin &&
-              topUrl.pathname === currentUrl.pathname &&
-              topUrl.search === currentUrl.search) {
-            stack[stack.length - 1] = currentHref;
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
-            return;
-          }
-        } catch (e) {}
+      // Check if we just navigated backwards via citilifeBack
+      const isNavigatingBack = sessionStorage.getItem('citilife_nav_is_back');
+      if (isNavigatingBack) {
+        sessionStorage.removeItem('citilife_nav_is_back');
+        const existingIdx = stack.lastIndexOf(currentHref);
+        if (existingIdx !== -1) {
+          stack = stack.slice(0, existingIdx + 1);
+        } else {
+          stack.push(currentHref);
+        }
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
+        return;
       }
 
-      stack.push(currentHref);
-      if (stack.length > MAX_HISTORY) {
-        stack.shift();
+      // If currentHref is already the top of the stack (e.g. reload or parameter sync)
+      if (stack.length > 0 && stack[stack.length - 1] === currentHref) {
+        return;
       }
+
+      // If currentHref already exists earlier in the stack (e.g. user navigated back via browser button or link)
+      const existingIdx = stack.lastIndexOf(currentHref);
+      if (existingIdx !== -1) {
+        // Truncate the stack to this point, discarding all child pages that were visited after
+        stack = stack.slice(0, existingIdx + 1);
+      } else {
+        stack.push(currentHref);
+        if (stack.length > MAX_HISTORY) {
+          stack.shift();
+        }
+      }
+
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
     } catch (e) {}
   }
@@ -103,7 +122,7 @@
 
   window.citilifeBack = function (fallbackUrl) {
     try {
-      const currentHref = window.location.href;
+      const currentHref = normalizeUrl(window.location.href);
       const currentUrl = new URL(currentHref);
 
       // 1. Explicit return parameters in URL (?return_url=... or ?back_url=...)
@@ -112,50 +131,65 @@
         try {
           const parsed = new URL(explicitBack, window.location.origin);
           if (parsed.origin === window.location.origin && isCleanPage(parsed.href)) {
+            sessionStorage.setItem('citilife_nav_is_back', '1');
             window.location.href = parsed.href;
             return;
           }
         } catch (e) {}
       }
 
-      // 2. document.referrer (Direct originating page with query parameters & tabs intact)
-      if (document.referrer) {
-        try {
-          const refUrl = new URL(document.referrer);
-          const isSameOrigin = (refUrl.origin === currentUrl.origin);
-          const isDifferentPage = (refUrl.pathname !== currentUrl.pathname) || (refUrl.search !== currentUrl.search);
-          if (isSameOrigin && isDifferentPage && isCleanPage(document.referrer)) {
-            window.location.href = document.referrer;
-            return;
-          }
-        } catch (e) {}
-      }
-
-      // 3. sessionStorage history stack (Preserves prior pages across reloads)
+      // 2. Scan sessionStorage history stack going backwards for a distinct previous page
+      let targetUrl = null;
+      let targetIndex = -1;
       try {
         let stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
-        if (Array.isArray(stack)) {
-          while (stack.length > 0) {
-            const prev = stack.pop();
-            if (prev && prev !== currentHref) {
+        if (Array.isArray(stack) && stack.length > 0) {
+          for (let i = stack.length - 1; i >= 0; i--) {
+            const item = stack[i];
+            if (item && item !== currentHref) {
               try {
-                const prevUrl = new URL(prev);
-                const isDiff = (prevUrl.pathname !== currentUrl.pathname) || (prevUrl.search !== currentUrl.search);
-                if (prevUrl.origin === currentUrl.origin && isDiff && isCleanPage(prev)) {
-                  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
-                  window.location.href = prev;
-                  return;
+                const itemUrl = new URL(item);
+                const isDiff = (itemUrl.pathname !== currentUrl.pathname) || (itemUrl.search !== currentUrl.search);
+                if (itemUrl.origin === currentUrl.origin && isDiff && isCleanPage(item)) {
+                  targetUrl = item;
+                  targetIndex = i;
+                  break;
                 }
               } catch (err) {}
             }
           }
+
+          if (targetUrl && targetIndex !== -1) {
+            // Truncate the stack to the target page so subsequent backs go further up the chain
+            const newStack = stack.slice(0, targetIndex + 1);
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newStack));
+            sessionStorage.setItem('citilife_nav_is_back', '1');
+            window.location.href = targetUrl;
+            return;
+          }
         }
       } catch (e) {}
+
+      // 3. Fallback to button's explicit fallbackUrl/href if provided
+      if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#' && isCleanPage(fallbackUrl)) {
+        try {
+          const fbParsed = new URL(fallbackUrl, window.location.origin);
+          if (fbParsed.origin === window.location.origin) {
+            const isDiff = (fbParsed.pathname !== currentUrl.pathname) || (fbParsed.search !== currentUrl.search);
+            if (isDiff) {
+              sessionStorage.setItem('citilife_nav_is_back', '1');
+              window.location.href = fbParsed.href;
+              return;
+            }
+          }
+        } catch (e) {}
+      }
 
       // 4. Role-specific last table/queue URL fallback
       try {
         const lastTable = sessionStorage.getItem('radtech_last_table_url') || sessionStorage.getItem('Citilife_last_worklist_url');
         if (lastTable && lastTable !== currentHref && isCleanPage(lastTable)) {
+          sessionStorage.setItem('citilife_nav_is_back', '1');
           window.location.href = lastTable;
           return;
         }
@@ -176,7 +210,7 @@
     }
 
     // 6. Ultimate Fallback URL
-    if (fallbackUrl) {
+    if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#') {
       window.location.href = fallbackUrl;
     }
   };

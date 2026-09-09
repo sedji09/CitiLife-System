@@ -289,7 +289,8 @@ function renderDashboard(data, trends, diagStats) {
     if (diagTableBody) {
         if (diagStats?.ranking && diagStats.ranking.length > 0) {
             let diagHtml = "";
-            diagStats.ranking.forEach(item => {
+            const topRanking = diagStats.ranking.slice(0, 10);
+            topRanking.forEach(item => {
                 const isTop = item.rank === 1;
                 const rankBadge = item.rank === 1 ? 'bg-red-600 text-white font-black' : (item.rank === 2 ? 'bg-orange-500 text-white font-bold' : (item.rank === 3 ? 'bg-amber-500 text-white font-bold' : 'bg-gray-100 text-gray-600 font-semibold'));
                 diagHtml += `

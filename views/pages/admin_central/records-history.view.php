@@ -10,7 +10,10 @@
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <?php $backUrl = ($source === 'records') ? '/' . PROJECT_DIR . '/patient-records' : '/' . PROJECT_DIR . '/patient-details?id=' . $patient['id']; ?>
+                <?php 
+                $backBase = PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/';
+                $backUrl = ($source === 'records') ? $backBase . 'patient-records' : $backBase . 'patient-details?id=' . ($patient['id'] ?? ''); 
+                ?>
                 <a href="<?= htmlspecialchars($backUrl) ?>" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
                     class="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-600 transition-all shadow-sm">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>

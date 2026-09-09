@@ -403,7 +403,12 @@ $catBadgeLabel = match ($dCategory) {
 
     </div>
 
-    <?php $isReportReady = empty($activeDispute) && in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']); ?>
+    <?php 
+    $isRevertedCase = !empty($caseDetails['re_edit_reason']) 
+        || ($caseDetails['report_status'] ?? '') === 'Draft' 
+        || in_array($caseDetails['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
+    $isReportReady = empty($activeDispute) && in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isRevertedCase; 
+    ?>
 
     <?php if (!empty($activeDispute)): ?>
         <!-- 2-COLUMN DISPUTE RESOLUTION ROW -->

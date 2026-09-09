@@ -483,7 +483,7 @@ if (isset($_GET['export_pdf'])) {
             </tfoot>
         </table>
         
-        <div class="section-header">Diagnostic Findings & Disease Prevalence Ranking</div>
+        <div class="section-header">Top 10 Diagnostic Findings & Disease Prevalence Ranking</div>
         <table class="data-table">
             <thead>
                 <tr>
@@ -685,7 +685,7 @@ if (isset($_GET['export_excel'])) {
     // --- Diagnostic Prevalence Section in Excel ---
     $diagStartRow = $currentRow + 3;
     $sheet->mergeCells('A' . $diagStartRow . ':G' . $diagStartRow);
-    $sheet->setCellValue('A' . $diagStartRow, "DIAGNOSTIC FINDINGS & DISEASE PREVALENCE RANKING");
+    $sheet->setCellValue('A' . $diagStartRow, "TOP 10 DIAGNOSTIC FINDINGS & DISEASE PREVALENCE RANKING");
     $sheet->getStyle('A' . $diagStartRow)->applyFromArray([
         'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '1E3A8A']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT]
