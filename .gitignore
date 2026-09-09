@@ -1,17 +1,45 @@
-# # Dependencies
-# node_modules/
-# vendor/
-# # Database and Backups
-# # *.sql
-# # storage/backups/
-# #citilife_db.sql
-# # Configuration
-# #.env
-# #app/config/database.php
-# # IDE and OS
-# .vscode/
-# .idea/
-# .DS_Store
-# Thumbs.db
-# composer.phar
+# Environment & Secret Configurations
 env.php
+.env
+.env.local
+.env.*.local
+
+# Database Dumps & SQL Backups
+*.sql
+*.sql.gz
+storage/backups/*
+!storage/backups/.htaccess
+!storage/backups/.gitkeep
+
+# Sensitive Patient Uploads & Documents
+public/uploads/receipts/*
+!public/uploads/receipts/.gitkeep
+public/uploads/reports/*
+!public/uploads/reports/.gitkeep
+public/uploads/signatures/*
+!public/uploads/signatures/.gitkeep
+storage/cases/*
+!storage/cases/.gitkeep
+storage/secure_uploads/cases/*
+!storage/secure_uploads/cases/.gitkeep
+storage/secure_uploads/chat_attachments/*
+!storage/secure_uploads/chat_attachments/.gitkeep
+storage/secure_uploads/receipts/*
+!storage/secure_uploads/receipts/.gitkeep
+storage/secure_uploads/signatures/*
+!storage/secure_uploads/signatures/.gitkeep
+
+# Error Logs & Debug Files
+*.log
+error_log
+logs/
+storage/logs/*
+!storage/logs/.gitkeep
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+composer.phar
+.vscode/
+.idea/
