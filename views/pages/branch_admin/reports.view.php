@@ -412,8 +412,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">With
-                                Card</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-red-700 transition-colors">With PhilHealth</span>
                         </div>
                         <span id="label-philhealth-with"
                             class="text-sm font-bold text-gray-900 group-hover:text-red-700 transition-colors">0</span>
@@ -424,8 +423,7 @@ $branchName = $branchData['name'] ?? 'Your Branch';
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-3 rounded-full bg-blue-500 shadow-sm shadow-blue-200"></div>
                             <span
-                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Without
-                                Card</span>
+                                class="text-xs font-semibold text-gray-600 group-hover:text-blue-700 transition-colors">Without PhilHealth</span>
                         </div>
                         <span id="label-philhealth-without"
                             class="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors">0</span>

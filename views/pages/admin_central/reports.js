@@ -27,7 +27,7 @@ function initCharts() {
     philhealthChart = new Chart(phCtx, {
         type: 'doughnut',
         data: {
-            labels: ['With PhilHealth Card', 'Without PhilHealth Card'],
+            labels: ['With PhilHealth', 'Without PhilHealth'],
             datasets: [{
                 data: [0, 0],
                 backgroundColor: ['#EF4444', '#3b82f6'], // Red and Blue

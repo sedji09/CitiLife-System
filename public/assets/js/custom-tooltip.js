@@ -95,10 +95,13 @@
 
         // Preferred placement:
         // If data-tooltip-placement explicitly provided: use it
+        // Otherwise: if inside sidebar or has sidebar-tooltip, default to 'right'
         // Otherwise: if space on top, prefer 'top'; else 'bottom'
         let placement = el.getAttribute('data-tooltip-placement');
         if (!placement) {
-            if (targetRect.top >= tooltipRect.height + 12) {
+            if (el.closest('aside') || el.classList.contains('sidebar-tooltip') || el.closest('.sidebar-tooltip')) {
+                placement = 'right';
+            } else if (targetRect.top >= tooltipRect.height + 12) {
                 placement = 'top';
             } else {
                 placement = 'bottom';
@@ -109,7 +112,7 @@
 
         let top = 0;
         let left = 0;
-        const offset = 6;
+        const offset = 8;
 
         if (placement === 'top') {
             top = targetRect.top - tooltipRect.height - offset;
@@ -122,7 +125,13 @@
             left = targetRect.left - tooltipRect.width - offset;
         } else if (placement === 'right') {
             top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2);
-            left = targetRect.right + offset;
+            const aside = el.closest('aside');
+            if (aside) {
+                const asideRect = aside.getBoundingClientRect();
+                left = Math.max(targetRect.right + offset, asideRect.right + offset);
+            } else {
+                left = targetRect.right + offset;
+            }
         }
 
         // Keep inside viewport horizontally

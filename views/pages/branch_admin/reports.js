@@ -1,4 +1,4 @@
-﻿/**
+/**
  * reports.js - Branch Admin Reports Logic
  */
 
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     philhealthChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['With PhilHealth Card', 'Without PhilHealth Card'],
+            labels: ['With PhilHealth', 'Without PhilHealth'],
             datasets: [{
                 data: [0, 0],
                 backgroundColor: ['#EF4444', '#3B82F6'],

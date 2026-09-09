@@ -172,7 +172,8 @@
   :class="isOpen ? 'w-[275px]' : 'w-20'">
   <button
     class="text-gray-500 text-md absolute top-9 right-2 cursor-w-resize hover:text-red-700 transition sidebar-tooltip"
-    @click="toggleSidebar" :data-tooltip="isOpen ? 'Close sidebar' : 'Open sidebar'">
+    @click="toggleSidebar" :data-tooltip="isOpen ? 'Close sidebar' : 'Open sidebar'"
+    data-tooltip-placement="right">
     <!-- panel-left-close icon -->
     <svg v-if="isOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
@@ -196,7 +197,8 @@
     <a v-for="item in menuItems" :key="item.href" :href="basePath + item.href"
       class="group relative flex items-center rounded-md cursor-pointer transition"
       :class="[isOpen ? 'gap-3 px-5 py-2 justify-start' : 'w-full px-0 py-3 justify-center has-tooltip sidebar-tooltip', isActive(item.href) ? 'bg-red-50 text-red-700 font-semibold' : 'text-gray-700 hover:bg-gray-100']"
-      :data-tooltip="!isOpen ? item.label : ''">
+      :data-tooltip="!isOpen ? item.label : ''"
+      data-tooltip-placement="right">
       <span v-if="isActive(item.href)" class="absolute right-0 top-0 h-full w-1 bg-red-600"></span>
       <i :data-lucide="item.icon" class="w-5 h-5" :class="isActive(item.href) ? 'text-red-700' : 'text-gray-700'"></i>
       <span v-if="isOpen" class="text-sm truncate">{{ item.label }}</span>
@@ -209,7 +211,8 @@
         profileMenuOpen ? 'bg-gray-100 ring-1 ring-gray-200' : 'hover:bg-gray-100',
         !isOpen ? 'has-tooltip sidebar-tooltip' : ''
       ]"
-      :data-tooltip="!isOpen ? 'Profile' : ''">
+      :data-tooltip="!isOpen ? 'Profile' : ''"
+      data-tooltip-placement="right">
       <div class="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center shrink-0 overflow-hidden">
         <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover" @error="userAvatar = null"></template>
         <span v-else class="text-red-700 font-semibold text-sm" v-text="userInitials"></span>

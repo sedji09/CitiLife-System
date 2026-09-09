@@ -130,8 +130,8 @@ if (isset($_GET['export_pdf'])) {
             .report-header {
                 width: 100%;
                 border-bottom: 2px solid #2563eb;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
+                padding-bottom: 10px;
+                margin-bottom: 12px;
             }
 
             .header-table {
@@ -140,39 +140,39 @@ if (isset($_GET['export_pdf'])) {
             }
 
             .logo-cell {
-                width: 80px;
+                width: 70px;
                 vertical-align: middle;
             }
 
             .logo {
-                width: 80px;
+                width: 70px;
                 height: auto;
                 display: block;
             }
 
             .clinic-info {
                 vertical-align: middle;
-                padding-left: 15px;
+                padding-left: 12px;
             }
 
             .clinic-info h1 {
-                font-size: 45px;
+                font-size: 36px;
                 font-weight: 700;
                 color: #c0392b;
-                letter-spacing: 2px;
+                letter-spacing: 1.5px;
                 margin: 0;
                 line-height: 0.85;
                 text-transform: uppercase;
             }
 
             .clinic-info p {
-                font-size: 16px;
+                font-size: 13px;
                 font-weight: 600;
                 color: #c0392b;
                 margin: 0;
                 margin-top: 2px;
                 line-height: 1;
-                letter-spacing: 1.5px;
+                letter-spacing: 1px;
                 text-transform: uppercase;
             }
 
@@ -180,57 +180,57 @@ if (isset($_GET['export_pdf'])) {
                 vertical-align: middle;
                 text-align: right;
                 color: #64748b;
-                font-size: 12px;
+                font-size: 11px;
             }
 
             .metadata {
                 color: #64748b;
                 margin: 0;
-                line-height: 1.4;
+                line-height: 1.3;
             }
 
             .report-title {
                 text-align: center;
-                margin-bottom: 30px;
+                margin-bottom: 12px;
             }
 
             .report-title h1 {
-                font-size: 24px;
+                font-size: 18px;
                 font-weight: bold;
                 color: #1e293b;
                 margin: 0;
                 text-transform: uppercase;
-                letter-spacing: 1px;
+                letter-spacing: 0.5px;
             }
 
             .report-title h6 {
-                font-size: 10px;
+                font-size: 9px;
                 font-weight: bold;
                 color: #475569;
-                margin: 5px 0;
+                margin: 3px 0;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
 
             /* Summary Grid */
             .summary-card {
-                padding: 12px;
-                border-radius: 8px;
+                padding: 8px 10px;
+                border-radius: 6px;
                 border: 1px solid #e2e8f0;
                 background-color: #f8fafc;
             }
 
             .card-label {
-                font-size: 9px;
+                font-size: 8px;
                 font-weight: bold;
                 color: #64748b;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                margin-bottom: 6px;
+                margin-bottom: 3px;
             }
 
             .card-value {
-                font-size: 20px;
+                font-size: 16px;
                 font-weight: bold;
                 color: #1e3a8a;
             }
@@ -255,22 +255,41 @@ if (isset($_GET['export_pdf'])) {
                 border-left: 4px solid #64748b;
             }
 
-            /* Sections */
+            /* Sections & Page Breaks */
+            .report-section {
+                page-break-inside: avoid;
+                margin-bottom: 10px;
+            }
+
             .section-header {
-                font-size: 13px;
+                font-size: 11px;
                 font-weight: bold;
                 color: #1e293b;
-                margin: 25px 0 10px;
+                margin: 10px 0 5px;
                 border-bottom: 1px solid #e2e8f0;
-                padding-bottom: 4px;
+                padding-bottom: 3px;
+                page-break-after: avoid;
             }
 
             /* Table Styles */
             .data-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 20px;
-                font-size: 11px;
+                margin-bottom: 10px;
+                font-size: 10px;
+                page-break-inside: auto;
+            }
+
+            .data-table thead {
+                display: table-header-group;
+            }
+
+            .data-table tfoot {
+                display: table-footer-group;
+            }
+
+            .data-table tr {
+                page-break-inside: avoid;
             }
 
             .data-table th {
@@ -278,14 +297,14 @@ if (isset($_GET['export_pdf'])) {
                 color: #475569;
                 font-weight: bold;
                 text-align: left;
-                padding: 8px 10px;
+                padding: 5px 8px;
                 border-bottom: 2px solid #e2e8f0;
                 text-transform: uppercase;
-                font-size: 9px;
+                font-size: 8.5px;
             }
 
             .data-table td {
-                padding: 8px 10px;
+                padding: 5px 8px;
                 border-bottom: 1px solid #f1f5f9;
                 color: #334155;
             }
@@ -337,188 +356,214 @@ if (isset($_GET['export_pdf'])) {
             <h6>Range: <?= $rangeLabel ?></h6>
         </div>
 
-        <div class="section-header">Patient Case Summary</div>
-        <table style="width: 100%; border-collapse: separate; border-spacing: 5px 0;">
-            <tr>
-                <td style="width: 19%;">
-                    <div class="summary-card blue-accent">
-                        <div class="card-label">Total Patients</div>
-                        <div class="card-value"><?= number_format($grandTotal['total']) ?></div>
-                    </div>
-                </td>
-                <td style="width: 19%;">
-                    <div class="summary-card green-accent">
-                        <div class="card-label">With PhilHealth</div>
-                        <div class="card-value"><?= number_format($grandTotal['philhealth']) ?></div>
-                    </div>
-                </td>
-                <td style="width: 19%;">
-                    <div class="summary-card red-accent">
-                        <div class="card-label">STAT</div>
-                        <div class="card-value"><?= number_format($grandTotal['stat']) ?></div>
-                    </div>
-                </td>
-                <td style="width: 19%;">
-                    <div class="summary-card orange-accent">
-                        <div class="card-label">Urgent Cases</div>
-                        <div class="card-value"><?= number_format($grandTotal['urgent']) ?></div>
-                    </div>
-                </td>
-                <td style="width: 19%;">
-                    <div class="summary-card slate-accent">
-                        <div class="card-label">Routine Cases</div>
-                        <div class="card-value"><?= number_format($grandTotal['routine']) ?></div>
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <div class="report-section">
+            <div class="section-header">Patient Case Summary</div>
+            <table style="width: 100%; border-collapse: separate; border-spacing: 5px 0;">
+                <tr>
+                    <td style="width: 19%;">
+                        <div class="summary-card blue-accent">
+                            <div class="card-label">Total Patients</div>
+                            <div class="card-value"><?= number_format($grandTotal['total']) ?></div>
+                        </div>
+                    </td>
+                    <td style="width: 19%;">
+                        <div class="summary-card green-accent">
+                            <div class="card-label">With PhilHealth</div>
+                            <div class="card-value"><?= number_format($grandTotal['philhealth']) ?></div>
+                        </div>
+                    </td>
+                    <td style="width: 19%;">
+                        <div class="summary-card red-accent">
+                            <div class="card-label">STAT</div>
+                            <div class="card-value"><?= number_format($grandTotal['stat']) ?></div>
+                        </div>
+                    </td>
+                    <td style="width: 19%;">
+                        <div class="summary-card orange-accent">
+                            <div class="card-label">Urgent Cases</div>
+                            <div class="card-value"><?= number_format($grandTotal['urgent']) ?></div>
+                        </div>
+                    </td>
+                    <td style="width: 19%;">
+                        <div class="summary-card slate-accent">
+                            <div class="card-label">Routine Cases</div>
+                            <div class="card-value"><?= number_format($grandTotal['routine']) ?></div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
 
-
-        <div class="section-header">Case Priority Breakdown</div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width: 60%;">Category</th>
-                    <th class="text-right" style="width: 20%;">Total Cases</th>
-                    <th class="text-right" style="width: 20%;">Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>STAT / Critical</strong></td>
-                    <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
-                    <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['stat'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Urgent / Priority</strong></td>
-                    <td class="text-right"><?= number_format($grandTotal['urgent']) ?></td>
-                    <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['urgent'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Routine / Normal</strong></td>
-                    <td class="text-right"><?= number_format($grandTotal['routine']) ?></td>
-                    <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['routine'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
-                    </td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr style="background-color: #f1f5f9; font-weight: bold;">
-                    <td>Total Patients Registered</td>
-                    <td class="text-right"><?= number_format($grandTotal['total']) ?></td>
-                    <td class="text-right">100%</td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div class="section-header">Insurance Coverage Statistics</div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width: 60%;">PhilHealth Status</th>
-                    <th class="text-right" style="width: 20%;">Count</th>
-                    <th class="text-right" style="width: 20%;">Coverage Ratio</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>With PhilHealth</td>
-                    <td class="text-right"><?= number_format($grandTotal['philhealth']) ?></td>
-                    <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['philhealth'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Without PhilHealth</td>
-                    <td class="text-right"><?= number_format($grandTotal['without_philhealth']) ?></td>
-                    <td class="text-right">
-                        <?= $grandTotal['total'] > 0 ? number_format($grandTotal['without_philhealth'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="section-header">Branch-Level Clinical Summary</div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width: 25%;">Branch Location</th>
-                    <th class="text-right">Total</th>
-                    <th class="text-right">% Share</th>
-                    <th class="text-right">STAT</th>
-                    <th class="text-right">Urgent</th>
-                    <th class="text-right">Routine</th>
-                    <th class="text-right">PhilHealth</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($statsList as $s): ?>
+        <div class="report-section">
+            <div class="section-header">Case Priority Breakdown</div>
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td><strong><?= htmlspecialchars($s['branch_name']) ?></strong></td>
-                        <td class="text-right"><?= number_format($s['total_patients'] ?? 0) ?></td>
-                        <td class="text-right">
-                            <?= $grandTotal['total'] > 0 ? number_format(($s['total_patients'] ?? 0) / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
-                        </td>
-                        <td class="text-right"><?= number_format($s['emergency_count'] ?? 0) ?></td>
-                        <td class="text-right"><?= number_format($s['urgent_count'] ?? 0) ?></td>
-                        <td class="text-right"><?= number_format($s['routine_count'] ?? 0) ?></td>
-                        <td class="text-right"><?= number_format($s['with_philhealth'] ?? 0) ?></td>
+                        <th style="width: 60%;">Category</th>
+                        <th class="text-right" style="width: 20%;">Total Cases</th>
+                        <th class="text-right" style="width: 20%;">Percentage</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-            <tfoot>
-                <tr style="background-color: #f1f5f9; font-weight: bold;">
-                    <td>SYSTEM TOTAL</td>
-                    <td class="text-right"><?= number_format($grandTotal['total']) ?></td>
-                    <td class="text-right">100%</td>
-                    <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
-                    <td class="text-right"><?= number_format($grandTotal['urgent']) ?></td>
-                    <td class="text-right"><?= number_format($grandTotal['routine']) ?></td>
-                    <td class="text-right"><?= number_format($grandTotal['philhealth']) ?></td>
-                </tr>
-            </tfoot>
-        </table>
-        
-        <div class="section-header">Top 10 Diagnostic Findings & Disease Prevalence Ranking</div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width: 10%; text-align: center;">Rank</th>
-                    <th style="width: 56%;">Diagnostic Finding / Impression</th>
-                    <th class="text-right" style="width: 17%;">Total Cases</th>
-                    <th class="text-right" style="width: 17%;">Prevalence Rate (% Share)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (!empty($diagStats['ranking'])): ?>
-                    <?php foreach ($diagStats['ranking'] as $item): ?>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>STAT / Critical</strong></td>
+                        <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
+                        <td class="text-right">
+                            <?= $grandTotal['total'] > 0 ? number_format($grandTotal['stat'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Urgent / Priority</strong></td>
+                        <td class="text-right"><?= number_format($grandTotal['urgent']) ?></td>
+                        <td class="text-right">
+                            <?= $grandTotal['total'] > 0 ? number_format($grandTotal['urgent'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Routine / Normal</strong></td>
+                        <td class="text-right"><?= number_format($grandTotal['routine']) ?></td>
+                        <td class="text-right">
+                            <?= $grandTotal['total'] > 0 ? number_format($grandTotal['routine'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #f1f5f9; font-weight: bold;">
+                        <td>Total Patients Registered</td>
+                        <td class="text-right"><?= number_format($grandTotal['total']) ?></td>
+                        <td class="text-right">100%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="report-section">
+            <div class="section-header">Insurance Coverage Statistics</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60%;">PhilHealth Status</th>
+                        <th class="text-right" style="width: 20%;">Count</th>
+                        <th class="text-right" style="width: 20%;">Coverage Ratio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>With PhilHealth</td>
+                        <td class="text-right"><?= number_format($grandTotal['philhealth']) ?></td>
+                        <td class="text-right">
+                            <?= $grandTotal['total'] > 0 ? number_format($grandTotal['philhealth'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Without PhilHealth</td>
+                        <td class="text-right"><?= number_format($grandTotal['without_philhealth']) ?></td>
+                        <td class="text-right">
+                            <?= $grandTotal['total'] > 0 ? number_format($grandTotal['without_philhealth'] / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="report-section">
+            <div class="section-header">Branch-Level Clinical Summary</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Branch Location</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-right">% Share</th>
+                        <th class="text-right">STAT</th>
+                        <th class="text-right">Urgent</th>
+                        <th class="text-right">Routine</th>
+                        <th class="text-right">PhilHealth</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($statsList as $s): ?>
                         <tr>
-                            <td style="text-align: center; font-weight: bold; color: <?= $item['rank'] === 1 ? '#dc2626' : '#64748b' ?>;"><?= $item['rank'] ?></td>
-                            <td><?= htmlspecialchars($item['diagnosis']) ?></td>
-                            <td class="text-right"><?= number_format($item['count']) ?></td>
-                            <td class="text-right"><?= number_format($item['percentage'], 1) ?>%</td>
+                            <td><strong><?= htmlspecialchars($s['branch_name']) ?></strong></td>
+                            <td class="text-right"><?= number_format($s['total_patients'] ?? 0) ?></td>
+                            <td class="text-right">
+                                <?= $grandTotal['total'] > 0 ? number_format(($s['total_patients'] ?? 0) / $grandTotal['total'] * 100, 1) . '%' : '0.0%' ?>
+                            </td>
+                            <td class="text-right"><?= number_format($s['emergency_count'] ?? 0) ?></td>
+                            <td class="text-right"><?= number_format($s['urgent_count'] ?? 0) ?></td>
+                            <td class="text-right"><?= number_format($s['routine_count'] ?? 0) ?></td>
+                            <td class="text-right"><?= number_format($s['with_philhealth'] ?? 0) ?></td>
                         </tr>
                     <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 15px;">No diagnostic impressions recorded for this period.</td>
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #f1f5f9; font-weight: bold;">
+                        <td>SYSTEM TOTAL</td>
+                        <td class="text-right"><?= number_format($grandTotal['total']) ?></td>
+                        <td class="text-right">100%</td>
+                        <td class="text-right"><?= number_format($grandTotal['stat']) ?></td>
+                        <td class="text-right"><?= number_format($grandTotal['urgent']) ?></td>
+                        <td class="text-right"><?= number_format($grandTotal['routine']) ?></td>
+                        <td class="text-right"><?= number_format($grandTotal['philhealth']) ?></td>
                     </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="report-section" style="page-break-before: always;">
+            <div class="section-header">Top 10 Diagnostic Findings & Disease Prevalence Ranking</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 10%; text-align: center;">Rank</th>
+                        <th style="width: 56%;">Diagnostic Finding / Impression</th>
+                        <th class="text-right" style="width: 17%;">Total Cases</th>
+                        <th class="text-right" style="width: 17%;">Prevalence Rate<br>(% Share)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($diagStats['ranking'])): ?>
+                        <?php foreach ($diagStats['ranking'] as $item): ?>
+                            <?php $isTop1 = ($item['rank'] === 1); ?>
+                            <tr style="<?= $isTop1 ? 'background-color: #fef2f2;' : '' ?>">
+                                <td style="text-align: center; font-weight: bold; padding: 6px 8px;">
+                                    <?php if ($isTop1): ?>
+                                        <span style="display: inline-block; background-color: #dc2626; color: #ffffff; border-radius: 4px; padding: 1px 7px; font-size: 9.5px; font-weight: bold;">1</span>
+                                    <?php else: ?>
+                                        <span style="color: #64748b;"><?= $item['rank'] ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="padding: 6px 8px;">
+                                    <?php if ($isTop1): ?>
+                                        <strong style="color: #991b1b;"><?= htmlspecialchars($item['diagnosis']) ?></strong>
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($item['diagnosis']) ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-right" style="padding: 6px 8px; <?= $isTop1 ? 'font-weight: bold; color: #991b1b;' : '' ?>">
+                                    <?= number_format($item['count']) ?>
+                                </td>
+                                <td class="text-right" style="padding: 6px 8px; <?= $isTop1 ? 'font-weight: bold; color: #991b1b;' : '' ?>">
+                                    <?= number_format($item['percentage'], 1) ?>%
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 15px;">No diagnostic impressions recorded for this period.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+                <?php if (!empty($diagStats['ranking'])): ?>
+                <tfoot>
+                    <tr style="background-color: #f1f5f9; font-weight: bold;">
+                        <td colspan="2">TOTAL DIAGNOSED CASES</td>
+                        <td class="text-right"><?= number_format($diagStats['total_diagnosed']) ?></td>
+                        <td class="text-right">100.0%</td>
+                    </tr>
+                </tfoot>
                 <?php endif; ?>
-            </tbody>
-            <?php if (!empty($diagStats['ranking'])): ?>
-            <tfoot>
-                <tr style="background-color: #f1f5f9; font-weight: bold;">
-                    <td colspan="2">TOTAL DIAGNOSED CASES</td>
-                    <td class="text-right"><?= number_format($diagStats['total_diagnosed']) ?></td>
-                    <td class="text-right">100.0%</td>
-                </tr>
-            </tfoot>
-            <?php endif; ?>
-        </table>
+            </table>
+        </div>
 
     </body>
 

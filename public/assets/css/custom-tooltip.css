@@ -31,6 +31,20 @@
     overflow: visible;
 }
 
+/* Directional entry animations */
+.c-tooltip[data-placement="right"] {
+    transform: scale(0.96) translateX(-4px);
+}
+.c-tooltip[data-placement="left"] {
+    transform: scale(0.96) translateX(4px);
+}
+.c-tooltip[data-placement="top"] {
+    transform: scale(0.96) translateY(3px);
+}
+.c-tooltip[data-placement="bottom"] {
+    transform: scale(0.96) translateY(-3px);
+}
+
 /* Compact padding for single line without cutoff */
 .c-tooltip.c-tooltip-single {
     padding: 6px 14px;
@@ -40,7 +54,7 @@
 
 .c-tooltip.c-tooltip-visible {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1) translate(0, 0);
 }
 
 /* Content Layout */
