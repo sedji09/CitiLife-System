@@ -21,6 +21,7 @@ $globalStats = $caseModel->getGlobalPendingStats($radiologistId);
 $emergencyCases = $globalStats['emergencyCases'];
 $totalPending = $globalStats['totalPending'];
 $overdueCases = $globalStats['overdueCases'];
+$backlogCases = $globalStats['backlogCases'] ?? 0;
 $chartStatsInitial = $caseModel->getRadiologistStats($dateCondition, $radiologistId, 'all');
 $completedFiltered = $chartStatsInitial['completedCases'] ?? 0;
 $inProgress = $globalStats['inProgress'];
@@ -82,6 +83,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1' && isset($_GET['global_stats'])
         'emergencyCases' => $gs['emergencyCases'],
         'totalPending' => $gs['totalPending'],
         'overdueCases' => $gs['overdueCases'],
+        'backlogCases' => $gs['backlogCases'] ?? 0,
         'completedToday' => $gs['completedToday'],
         'inProgress' => $gs['inProgress'],
         'forRevision' => $gs['forRevision'],
@@ -331,7 +333,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
 
         <!-- Card 1: Pending STAT -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?priority=STAT"
+        <a href="<?= url('worklist?priority=STAT&status=all&date=All&branch=&tab=worklist') ?>"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 p-2 rounded-lg">
@@ -352,7 +354,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 2: Total Pending -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist"
+        <a href="<?= url('worklist?status=all&priority=all&date=All&branch=&tab=worklist') ?>"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #fed7aa;" onmouseenter="this.style.borderColor='#fb923c'"
             onmouseleave="this.style.borderColor='#fed7aa'">
@@ -375,8 +377,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             </div>
         </a>
 
-        <!-- Card 3: Overdue -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?status=overdue"
+        <!-- Card 3: Backlog -->
+        <a href="<?= url('worklist?date=Backlog&status=all&priority=all&branch=&tab=worklist') ?>"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
             <div class="flex items-center justify-between">
                 <div class="bg-red-100 p-2 rounded-lg">
@@ -386,16 +388,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <polyline points="12 6 12 12 16 14" />
                     </svg>
                 </div>
-                <span id="overdue-count" class="text-2xl font-extrabold text-red-600"><?= $overdueCases ?></span>
+                <span id="backlog-count" class="text-2xl font-extrabold text-red-600"><?= $backlogCases ?></span>
             </div>
             <div>
-                <p class="text-xs font-semibold text-gray-800">Overdue</p>
-                <p class="text-[10px] text-gray-400">Unread cases</p>
+                <p class="text-xs font-semibold text-gray-800">Backlog</p>
+                <p class="text-[10px] text-gray-400">Previous days' cases</p>
             </div>
         </a>
 
         <!-- Card 4: In Progress -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?status=Under+Reading"
+        <a href="<?= url('worklist?status=Under+Reading&date=All&priority=all&branch=&tab=worklist') ?>"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #bfdbfe;" onmouseenter="this.style.borderColor='#60a5fa'"
             onmouseleave="this.style.borderColor='#bfdbfe'">
@@ -418,7 +420,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 5: Completed Today -->
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?tab=release"
+        <a href="<?= url('worklist?tab=release&status=completed_today&date=Today&priority=all&branch=') ?>"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #bbf7d0;" onmouseenter="this.style.borderColor='#4ade80'"
             onmouseleave="this.style.borderColor='#bbf7d0'">
@@ -681,9 +683,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         hasChanged = true;
                     }
 
-                    const ocEl = document.getElementById('overdue-count');
-                    if (ocEl && ocEl.innerText !== String(data.overdueCases)) {
-                        ocEl.innerText = data.overdueCases;
+                    const ocEl = document.getElementById('backlog-count') || document.getElementById('overdue-count');
+                    const bCount = data.backlogCases !== undefined ? data.backlogCases : data.overdueCases;
+                    if (ocEl && ocEl.innerText !== String(bCount)) {
+                        ocEl.innerText = bCount;
                         hasChanged = true;
                     }
 

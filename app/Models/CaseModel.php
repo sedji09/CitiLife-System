@@ -126,6 +126,11 @@ class CaseModel
         $stmt->execute();
         $overdueCases = $stmt->fetchColumn() ?: 0;
 
+        // Backlog: Pending/Under Reading cases from previous days (DATE < CURDATE())
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Pending', 'Under Reading') AND image_status = 'Uploaded' AND DATE(COALESCE(radtech_submitted_at, created_at)) < CURDATE() $radFilter");
+        $stmt->execute();
+        $backlogCases = $stmt->fetchColumn() ?: 0;
+
         // Completed Today
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE status IN ('Report Ready', 'Completed') AND DATE(date_completed) = CURDATE() $radFilter");
         $stmt->execute();
@@ -145,6 +150,7 @@ class CaseModel
             'totalPending' => $totalPending,
             'emergencyCases' => $emergencyCases,
             'overdueCases' => $overdueCases,
+            'backlogCases' => $backlogCases,
             'completedToday' => $completedToday,
             'inProgress' => $inProgress,
             'forRevision' => $forRevision,
@@ -1073,12 +1079,21 @@ class CaseModel
     /**
      * Get pending requests for approval.
      */
-    public function getPendingCases($branchId)
+    public function getPendingCases($branchId = null)
     {
-        $sql = "SELECT r.*, r.id as request_id, p.first_name, p.middle_name, p.last_name, p.birthdate, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address 
+        $where = "WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified')";
+        $params = [];
+
+        if (!empty($branchId) && $branchId !== 'all') {
+            $where .= " AND r.branch_id = ?";
+            $params[] = (int)$branchId;
+        }
+
+        $sql = "SELECT r.*, r.id as request_id, b.name as branch_name, p.first_name, p.middle_name, p.last_name, p.birthdate, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address 
                 FROM requests r 
                 JOIN patients p ON r.patient_id = p.id 
-                WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified') AND r.branch_id = ?
+                LEFT JOIN branches b ON r.branch_id = b.id
+                {$where}
                 ORDER BY 
                   CASE 
                     WHEN r.status IN ('Pending Approval', 'Payment Verified') THEN 1 
@@ -1088,7 +1103,7 @@ class CaseModel
                   END,
                   r.created_at DESC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$branchId]);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 

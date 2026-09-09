@@ -42,9 +42,9 @@ class PatientApprovalController
                 try {
                     $pdo->beginTransaction();
                     
-                    // Verify request belongs to this branch and is Payment Verified
-                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND branch_id = ? AND status = 'Payment Verified'");
-                    $stmt->execute([$requestId, $branchId]);
+                    // Verify request exists and is Payment Verified
+                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND status = 'Payment Verified'");
+                    $stmt->execute([$requestId]);
                     $req = $stmt->fetch();
                     
                     if (!$req) {
@@ -56,12 +56,13 @@ class PatientApprovalController
                     $stmtUpdate->execute([$requestId]);
                     
                     // Generate a case number and insert into cases table
-                    $caseNumber = $caseModel->generateCaseNumber($branchId);
+                    $caseBranchId = !empty($req['branch_id']) ? (int)$req['branch_id'] : (int)$branchId;
+                    $caseNumber = $caseModel->generateCaseNumber($caseBranchId);
                     $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
                     $stmtCase->execute([
                         $caseNumber, 
                         $req['patient_id'], 
-                        $branchId, 
+                        $caseBranchId, 
                         $req['exam_type'],
                         $req['priority'], 
                         $req['philhealth_status'], 
@@ -70,7 +71,7 @@ class PatientApprovalController
                     ]);
                     $newCaseId = $pdo->lastInsertId();
                     
-                    $auditLogModel->addLog($currentUserId, "Approved Patient Request", 'Patient Approval', 'Request', $requestId, "Approved request #{$req['request_number']} and created Case #{$caseNumber}", $branchId);
+                    $auditLogModel->addLog($currentUserId, "Approved Patient Request", 'Patient Approval', 'Request', $requestId, "Approved request #{$req['request_number']} and created Case #{$caseNumber}", $caseBranchId);
                     
                     // Send notification and email to patient
                     $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
@@ -205,8 +206,8 @@ class PatientApprovalController
                 try {
                     $pdo->beginTransaction();
                     
-                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND branch_id = ? AND (status = 'Pending Approval' OR status = 'Pending')");
-                    $stmt->execute([$requestId, $branchId]);
+                    $stmt = $pdo->prepare("SELECT * FROM requests WHERE id = ? AND (status = 'Pending Approval' OR status = 'Pending')");
+                    $stmt->execute([$requestId]);
                     $req = $stmt->fetch();
                     
                     if (!$req) {
@@ -384,7 +385,8 @@ class PatientApprovalController
                     $stmtUpdate = $pdo->prepare("UPDATE requests SET exam_type = ?, philhealth_status = ?, philhealth_id = ?, philhealth_relation = ?, original_price = ?, philhealth_discount = ?, amount_due = ?, is_verified = 1, status = 'Pending Payment' WHERE id = ?");
                     $stmtUpdate->execute([$examType, $philhealthStatus, $philhealthIdToSave, $philhealthRelationToSave, $originalPrice, $philhealthDiscount, $amountDue, $requestId]);
                     
-                    $auditLogModel->addLog($currentUserId, "Assigned Exam", 'Patient Approval', 'Request', $requestId, "Assigned $examType (Original: PHP $originalPrice, PhilHealth Discount: PHP $philhealthDiscount, Due: PHP $amountDue) to request #{$req['request_number']}", $branchId);
+                    $reqBranchId = !empty($req['branch_id']) ? (int)$req['branch_id'] : (int)$branchId;
+                    $auditLogModel->addLog($currentUserId, "Assigned Exam", 'Patient Approval', 'Request', $requestId, "Assigned $examType (Original: PHP $originalPrice, PhilHealth Discount: PHP $philhealthDiscount, Due: PHP $amountDue) to request #{$req['request_number']}", $reqBranchId);
                     
                     // Send notification and email to patient
                     $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
@@ -437,15 +439,8 @@ class PatientApprovalController
         }
 
         // Fetch patients pending approval, pending payment, or payment verified
-        $stmt = $pdo->prepare("
-            SELECT r.*, p.first_name, p.last_name, p.patient_number, p.birthdate, p.sex, p.contact_number, p.home_address
-            FROM requests r
-            JOIN patients p ON r.patient_id = p.id
-            WHERE r.branch_id = ? AND r.status IN ('Pending Approval', 'Pending', 'Pending Payment', 'Payment Verifying', 'Payment Verified')
-            ORDER BY CASE WHEN r.status = 'Payment Verified' THEN 1 WHEN r.status = 'Pending Approval' THEN 2 ELSE 3 END, r.created_at ASC
-        ");
-        $stmt->execute([$branchId]);
-        $patientsToApprove = $stmt->fetchAll();
+        $selectedBranchId = $_GET['branch_id'] ?? 'all';
+        $patientsToApprove = $caseModel->getPendingCases($selectedBranchId);
 
         // Pass exam services to view
         $stmtServices = $pdo->prepare("SELECT id, exam_type AS name, price, category FROM xray_services WHERE status = 'active'");

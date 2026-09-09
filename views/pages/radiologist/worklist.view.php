@@ -25,32 +25,15 @@ if (empty($urlBranch) && !empty($_GET['branch_id'])) {
 }
 
 // 1. Fetch Pending Worklist cases ('Pending', 'Under Reading', 'For Revision')
-if ($statusParam === 'overdue') {
-    // Overdue: pending/under-reading for 3+ hours
-    $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
-    $pendingRecords = array_filter($pendingRecords, function ($r) {
-        return (time() - strtotime($r['created_at'])) >= 3 * 3600;
-    });
-    $pendingRecords = array_values($pendingRecords);
-} elseif ($statusParam === 'Under Reading') {
-    $pendingRecords = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
-} elseif ($statusParam === 'For Revision') {
-    $pendingRecords = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
-} elseif ($statusParam === 'pending') {
-    $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading'], true, $radiologistId);
-} else {
-    $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'For Revision'], true, $radiologistId);
-}
+$pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'For Revision'], true, $radiologistId);
 
-// 2. Fetch Pending Release cases ('Report Ready' awaiting release by RadTech)
+// 2. Fetch Pending Release cases ('Report Ready' awaiting release by RadTech, and completed reports)
+$releaseRecords = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
 if ($statusParam === 'completed_today') {
-    $releaseRecords = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
     $releaseRecords = array_filter($releaseRecords, function ($r) {
         return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');
     });
     $releaseRecords = array_values($releaseRecords);
-} else {
-    $releaseRecords = $caseModel->getWorklist(null, null, ['Report Ready'], true, $radiologistId);
 }
 
 // Default records pointer for backward compatibility
@@ -72,24 +55,33 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 <div class="flex items-center justify-between mb-6">
     <div class="ml-5">
         <?php
+        $dateParam = $_GET['date'] ?? $_GET['filterDate'] ?? '';
+        $priorityParam = $_GET['priority'] ?? '';
+
         $wlTitle = ($initialTab === 'release') ? 'Pending Release' : 'Worklist';
         $wlSubtitle = ($initialTab === 'release') ? 'Cases with completed readings awaiting release' : 'Manage pending cases across all branches';
         if (!empty($urlBranch)) {
             $wlTitle = ($initialTab === 'release') ? "Pending Release - {$urlBranch}" : "Worklist - {$urlBranch}";
             $wlSubtitle = ($initialTab === 'release') ? "Cases with completed readings awaiting release for {$urlBranch} branch" : "Manage pending cases for {$urlBranch} branch";
+        } elseif (strtolower($dateParam) === 'backlog') {
+            $wlTitle = 'Backlog Cases';
+            $wlSubtitle = 'Pending cases carried over from previous days';
+        } elseif (strtoupper($priorityParam) === 'STAT') {
+            $wlTitle = 'Pending STAT Cases';
+            $wlSubtitle = 'High-priority STAT cases across all branches';
         } elseif ($statusParam === 'overdue') {
             $wlTitle = 'Overdue Cases';
             $wlSubtitle = 'Cases waiting 3+ hours without a completed reading';
         } elseif ($statusParam === 'completed_today') {
             $wlTitle = 'Completed Reports — Today';
             $wlSubtitle = 'Reports submitted or completed today';
-        } elseif ($statusParam === 'Under Reading') {
+        } elseif (in_array(strtolower($statusParam), ['under reading', 'under_reading', 'in progress'])) {
             $wlTitle = 'In Progress Cases';
             $wlSubtitle = 'Cases opened by radiologist but findings not yet submitted';
-        } elseif ($statusParam === 'For Revision') {
+        } elseif (in_array(strtolower($statusParam), ['for revision', 'for_revision'])) {
             $wlTitle = 'Cases For Revision';
             $wlSubtitle = 'Cases flagged for editing or correction';
-        } elseif ($statusParam === 'pending') {
+        } elseif (strtolower($statusParam) === 'pending') {
             $wlTitle = 'Pending Cases';
             $wlSubtitle = 'Cases waiting to be read';
         }
@@ -156,12 +148,15 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         </select>
 
         <!-- Filter by Priority -->
+        <?php
+        $rawPriorityUrl = strtoupper(trim($_GET['priority'] ?? ''));
+        ?>
         <select id="filterPriority"
             class="w-28 lg:w-32 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
-            <option value="">All Priorities</option>
-            <option value="STAT">STAT</option>
-            <option value="Urgent">Urgent</option>
-            <option value="Routine">Routine</option>
+            <option value="" <?= ($rawPriorityUrl === '' || $rawPriorityUrl === 'ALL') ? 'selected' : '' ?>>All Priorities</option>
+            <option value="STAT" <?= $rawPriorityUrl === 'STAT' ? 'selected' : '' ?>>STAT</option>
+            <option value="Urgent" <?= $rawPriorityUrl === 'URGENT' ? 'selected' : '' ?>>Urgent</option>
+            <option value="Routine" <?= $rawPriorityUrl === 'ROUTINE' ? 'selected' : '' ?>>Routine</option>
         </select>
 
         <!-- Filter by Status -->
@@ -175,7 +170,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             $normalizedStatus = 'In Progress';
         } elseif (in_array($lowerStatusUrl, ['for revision', 'for_revision'])) {
             $normalizedStatus = 'For Revision';
-        } elseif ($rawStatusUrl === 'Pending') {
+        } elseif ($lowerStatusUrl === 'pending') {
             $normalizedStatus = 'Pending';
         }
         ?>
@@ -189,7 +184,21 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         </select>
 
         <!-- Filter by Date -->
-        <?php $urlDateFilter = $_GET['date'] ?? $_GET['filterDate'] ?? (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) ? 'All' : 'Today'); ?>
+        <?php 
+        $rawDateUrl = $_GET['date'] ?? $_GET['filterDate'] ?? '';
+        $lowerDateUrl = strtolower(trim($rawDateUrl));
+        if ($lowerDateUrl === 'backlog') {
+            $urlDateFilter = 'Backlog';
+        } elseif ($lowerDateUrl === 'all') {
+            $urlDateFilter = 'All';
+        } elseif ($lowerDateUrl === 'today') {
+            $urlDateFilter = 'Today';
+        } elseif (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) || isset($_GET['priority'])) {
+            $urlDateFilter = 'All';
+        } else {
+            $urlDateFilter = 'Today';
+        }
+        ?>
         <select id="filterDate"
             class="w-28 lg:w-32 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
             <option value="All" <?= $urlDateFilter === 'All' ? 'selected' : '' ?>>All Dates</option>
@@ -674,14 +683,25 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                 if (searchInput) searchInput.value = '';
             } else {
                 if (params.has('branch')) {
-                    if (filterBranch) filterBranch.value = params.get('branch');
+                    const rawB = (params.get('branch') || '').trim();
+                    if (filterBranch) filterBranch.value = (rawB.toLowerCase() === 'all') ? '' : rawB;
                 } else if (filterBranch) {
                     const savedBranch = sessionStorage.getItem('Citilife_radWorklist_branch');
                     if (savedBranch !== null) filterBranch.value = savedBranch;
                 }
 
                 if (params.has('priority')) {
-                    if (filterPriority) filterPriority.value = params.get('priority');
+                    const rawP = (params.get('priority') || '').trim();
+                    const upperP = rawP.toUpperCase();
+                    if (upperP === 'STAT') {
+                        if (filterPriority) filterPriority.value = 'STAT';
+                    } else if (upperP === 'URGENT') {
+                        if (filterPriority) filterPriority.value = 'Urgent';
+                    } else if (upperP === 'ROUTINE') {
+                        if (filterPriority) filterPriority.value = 'Routine';
+                    } else {
+                        if (filterPriority) filterPriority.value = '';
+                    }
                 } else if (filterPriority) {
                     const savedPriority = sessionStorage.getItem('Citilife_radWorklist_priority');
                     if (savedPriority !== null) filterPriority.value = savedPriority;
@@ -693,11 +713,11 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     let mappedSt = '';
                     if (lowerSt === 'overdue') {
                         mappedSt = 'Overdue';
-                    } else if (lowerSt === 'under reading' || lowerSt === 'under_reading' || lowerSt === 'in progress') {
+                    } else if (lowerSt === 'under reading' || lowerSt === 'under_reading' || lowerSt === 'in progress' || lowerSt === 'inprogress') {
                         mappedSt = 'In Progress';
                     } else if (lowerSt === 'for revision' || lowerSt === 'for_revision') {
                         mappedSt = 'For Revision';
-                    } else if (rawSt === 'Pending') {
+                    } else if (lowerSt === 'pending') {
                         mappedSt = 'Pending';
                     } else {
                         mappedSt = ''; // All Statuses
@@ -709,11 +729,20 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                 }
 
                 if (params.has('date') || params.has('filterDate')) {
-                    const dParam = params.get('date') || params.get('filterDate');
-                    if (filterDate) filterDate.value = dParam;
+                    const rawD = (params.get('date') || params.get('filterDate') || '').trim();
+                    const lowerD = rawD.toLowerCase();
+                    if (lowerD === 'backlog') {
+                        if (filterDate) filterDate.value = 'Backlog';
+                    } else if (lowerD === 'today') {
+                        if (filterDate) filterDate.value = 'Today';
+                    } else if (lowerD === 'all') {
+                        if (filterDate) filterDate.value = 'All';
+                    } else if (filterDate) {
+                        filterDate.value = rawD;
+                    }
                 } else if (filterDate) {
                     const savedDate = sessionStorage.getItem('Citilife_radWorklist_date');
-                    if (savedDate !== null && !params.has('status')) filterDate.value = savedDate;
+                    if (savedDate !== null && !params.has('status') && !params.has('priority')) filterDate.value = savedDate;
                 }
 
                 if (params.has('sort')) {
@@ -732,18 +761,30 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             }
 
             if (!hasHighlight) {
-                const savedPage = parseInt(sessionStorage.getItem('Citilife_radWorklist_page'));
-                if (savedPage && savedPage > 0) {
-                    currentPage = savedPage;
-                }
-                const savedReleasePage = parseInt(sessionStorage.getItem('Citilife_radWorklist_releasePage'));
-                if (savedReleasePage && savedReleasePage > 0) {
-                    currentReleasePage = savedReleasePage;
+                if (params.has('status') || params.has('priority') || params.has('date') || params.has('branch')) {
+                    currentPage = 1;
+                    currentReleasePage = 1;
+                } else {
+                    const savedPage = parseInt(sessionStorage.getItem('Citilife_radWorklist_page'));
+                    if (savedPage && savedPage > 0) {
+                        currentPage = savedPage;
+                    }
+                    const savedReleasePage = parseInt(sessionStorage.getItem('Citilife_radWorklist_releasePage'));
+                    if (savedReleasePage && savedReleasePage > 0) {
+                        currentReleasePage = savedReleasePage;
+                    }
                 }
 
-                const savedTab = sessionStorage.getItem('Citilife_radWorklist_tab');
-                if (savedTab && !params.has('tab') && !params.has('status')) {
-                    window.switchRadTab(savedTab);
+                // Tab restoration logic
+                if (params.get('tab') === 'release' || params.get('status') === 'completed_today') {
+                    window.switchRadTab('release');
+                } else if (params.get('tab') === 'worklist') {
+                    window.switchRadTab('worklist');
+                } else {
+                    const savedTab = sessionStorage.getItem('Citilife_radWorklist_tab');
+                    if (savedTab) {
+                        window.switchRadTab(savedTab);
+                    }
                 }
             }
 

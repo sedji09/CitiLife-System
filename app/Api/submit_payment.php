@@ -1,6 +1,9 @@
 <?php
 ob_start(); // Start output buffering to catch any warnings
-session_start();
+require_once __DIR__ . '/../../config/session.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 if (!defined('PROJECT_DIR')) {
     define('PROJECT_DIR', 'Citilife-System');
 }

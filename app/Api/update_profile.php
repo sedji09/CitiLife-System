@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 try {
     require_once __DIR__ . '/../../helpers.php';
     require_once __DIR__ . '/../../config/database.php';
+    require_once __DIR__ . '/../../config/session.php';
     global $pdo;
 
     if (session_status() === PHP_SESSION_NONE) {
@@ -62,27 +63,42 @@ try {
             }
 
             $avatarPath = null;
-            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($_FILES['avatar']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['avatar']['error'] === UPLOAD_ERR_FORM_SIZE) {
+                    echo json_encode(['success' => false, 'error' => 'The uploaded photo is too large. Please select an image under 5MB.']);
+                    exit;
+                }
+                if ($_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+                    echo json_encode(['success' => false, 'error' => 'Image upload failed with error code: ' . $_FILES['avatar']['error']]);
+                    exit;
+                }
+
                 $tmpPath = $_FILES['avatar']['tmp_name'];
                 $ext = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
                 $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
-                if (in_array($ext, $allowed)) {
-                    $uploadDir = __DIR__ . '/../../public/uploads/avatars/';
-                    if (!file_exists($uploadDir))
-                        @mkdir($uploadDir, 0777, true);
-
-                    $filename = 'avatar_' . $userId . '_' . time() . '.' . $ext;
-                    $destPath = $uploadDir . $filename;
-
-                    if (@move_uploaded_file($tmpPath, $destPath)) {
-                        $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
-                        $avatarPath = $prefix . '/public/uploads/avatars/' . $filename;
-                    }
-                } else {
-                    echo json_encode(['success' => false, 'error' => 'Invalid image format.']);
+                if (!in_array($ext, $allowed)) {
+                    echo json_encode(['success' => false, 'error' => 'Invalid image format. Allowed formats: JPG, PNG, GIF, WEBP.']);
                     exit;
                 }
+
+                $uploadDir = __DIR__ . '/../../public/uploads/avatars/';
+                if (!file_exists($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+
+                $filename = 'avatar_' . $userId . '_' . time() . '.' . $ext;
+                $destPath = $uploadDir . $filename;
+
+                if (!@move_uploaded_file($tmpPath, $destPath)) {
+                    if (!@copy($tmpPath, $destPath)) {
+                        echo json_encode(['success' => false, 'error' => 'Failed to save avatar image on server. Please check folder permissions.']);
+                        exit;
+                    }
+                }
+
+                $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
+                $avatarPath = $prefix . '/public/uploads/avatars/' . $filename;
             }
 
             try {
@@ -169,27 +185,42 @@ try {
             $isAvailable = isset($_POST['is_available']) ? (int) $_POST['is_available'] : 1;
 
             $signaturePath = null;
-            if (isset($_FILES['signature']) && $_FILES['signature']['error'] === UPLOAD_ERR_OK) {
+            if (isset($_FILES['signature']) && $_FILES['signature']['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($_FILES['signature']['error'] === UPLOAD_ERR_INI_SIZE || $_FILES['signature']['error'] === UPLOAD_ERR_FORM_SIZE) {
+                    echo json_encode(['success' => false, 'error' => 'The uploaded signature is too large. Please select an image under 5MB.']);
+                    exit;
+                }
+                if ($_FILES['signature']['error'] !== UPLOAD_ERR_OK) {
+                    echo json_encode(['success' => false, 'error' => 'Signature upload failed with error code: ' . $_FILES['signature']['error']]);
+                    exit;
+                }
+
                 $tmpPath = $_FILES['signature']['tmp_name'];
                 $ext = strtolower(pathinfo($_FILES['signature']['name'], PATHINFO_EXTENSION));
                 $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
-                if (in_array($ext, $allowed)) {
-                    $uploadDir = __DIR__ . '/../../public/uploads/signatures/';
-                    if (!file_exists($uploadDir))
-                        @mkdir($uploadDir, 0777, true);
-
-                    $filename = 'sig_' . $userId . '_' . time() . '.' . $ext;
-                    $destPath = $uploadDir . $filename;
-
-                    if (@move_uploaded_file($tmpPath, $destPath)) {
-                        $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
-                        $signaturePath = $prefix . '/public/uploads/signatures/' . $filename;
-                    }
-                } else {
-                    echo json_encode(['success' => false, 'error' => 'Invalid image format for signature.']);
+                if (!in_array($ext, $allowed)) {
+                    echo json_encode(['success' => false, 'error' => 'Invalid image format for signature. Allowed formats: JPG, PNG, GIF, WEBP.']);
                     exit;
                 }
+
+                $uploadDir = __DIR__ . '/../../public/uploads/signatures/';
+                if (!file_exists($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+
+                $filename = 'sig_' . $userId . '_' . time() . '.' . $ext;
+                $destPath = $uploadDir . $filename;
+
+                if (!@move_uploaded_file($tmpPath, $destPath)) {
+                    if (!@copy($tmpPath, $destPath)) {
+                        echo json_encode(['success' => false, 'error' => 'Failed to save signature image on server. Please check folder permissions.']);
+                        exit;
+                    }
+                }
+
+                $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
+                $signaturePath = $prefix . '/public/uploads/signatures/' . $filename;
             }
 
             try {
@@ -209,16 +240,19 @@ try {
                         'is_available' => $isAvailable === 1
                     ];
                     if ($signaturePath) {
-                        $sigUrl = function_exists('getSignatureUrl') ? getSignatureUrl($signaturePath) : $signaturePath;
+                        $sigUrl = (function_exists('getSignatureUrl') && getSignatureUrl($signaturePath)) ? getSignatureUrl($signaturePath) : $signaturePath;
                         $_SESSION['signature'] = $sigUrl;
                         $response['signature'] = htmlspecialchars($sigUrl);
                     }
                     echo json_encode($response);
+                    exit;
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Failed to update RadTech settings.']);
+                    exit;
                 }
             } catch (PDOException $e) {
                 echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+                exit;
             }
         } else {
             // Action is empty or invalid. This usually happens if the uploaded file exceeds PHP's post_max_size.

@@ -3,6 +3,7 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 try {
+    require_once __DIR__ . '/../../config/session.php';
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }

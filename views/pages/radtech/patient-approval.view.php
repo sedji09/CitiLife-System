@@ -19,9 +19,14 @@ if (isset($_GET['error']) && !empty($_GET['error']))
 // 2. Data Fetching (Backend Logic)
 require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
+require_once __DIR__ . '/../../../app/Models/BranchModel.php';
 
-$branchId = $_SESSION['branch_id'] ?? 1;
-$pendingPatients = $caseModel->getPendingCases($branchId);
+$branchModel = new \BranchModel($pdo);
+$branches = $branchModel->getAllBranches();
+
+$userBranchId = $_SESSION['branch_id'] ?? null;
+$selectedBranchId = $_GET['branch_id'] ?? 'all';
+$pendingPatients = $caseModel->getPendingCases($selectedBranchId);
 
 $disputeModel = new \ResultDisputeModel($pdo);
 $disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
@@ -111,15 +116,15 @@ foreach ($allServices as $service) {
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists"
+        <a href="<?= url('patient-lists') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Patient Queue
         </a>
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
+        <a href="<?= url('patient-approval') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700">
             Patient Requests
         </a>
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
+        <a href="<?= url('patient-lists?tab=disputes') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
@@ -132,9 +137,18 @@ foreach ($allServices as $service) {
 </div>
 
 <div class="mt-6 flex flex-col gap-4">
-    <div class="flex gap-4 items-center">
+    <div class="flex gap-4 items-center flex-wrap">
         <input type="text" id="search-input" placeholder="Search by patient name or request number..."
-            class="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring">
+            class="flex-1 min-w-[220px] rounded-lg border border-input bg-background px-4 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring">
+        <select id="filter-branch" onchange="window.location.href='<?= url('patient-approval') ?>?branch_id=' + this.value"
+            class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring font-medium text-gray-700">
+            <option value="all" <?= ($selectedBranchId === 'all') ? 'selected' : '' ?>>All Branches</option>
+            <?php foreach ($branches as $b): ?>
+                <option value="<?= $b['id'] ?>" <?= ((string)$selectedBranchId === (string)$b['id']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($b['name']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
         <select id="filter-status"
             class="w-48 rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring">
             <option value="All">All Status</option>
@@ -159,6 +173,7 @@ foreach ($allServices as $service) {
                     <th class="text-left font-medium px-3 py-3 truncate max-w-[200px]">Name</th>
                     <th class="text-left font-medium px-3 py-3">Age</th>
                     <th class="text-left font-medium px-3 py-3">Sex</th>
+                    <th class="text-left font-medium px-3 py-3 whitespace-nowrap">Branch</th>
                     <th class="text-left font-medium px-3 py-3 whitespace-nowrap">Date & Time</th>
                     <th class="text-left font-medium px-3 py-3">Status</th>
                     <th class="text-left font-medium px-3 py-3 whitespace-nowrap">Actions</th>
@@ -167,7 +182,7 @@ foreach ($allServices as $service) {
             <tbody id="table-body" class="text-gray-800 bg-white realtime-update">
                 <?php if (count($pendingPatients) === 0): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-8 text-gray-500">
+                        <td colspan="8" class="text-center py-8 text-gray-500">
                             No patient requests found.
                         </td>
                     </tr>
@@ -183,7 +198,9 @@ foreach ($allServices as $service) {
                             data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-priority="<?= htmlspecialchars($patient['priority']) ?>"
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"
-                            data-date="<?= htmlspecialchars($patient['created_at']) ?>">
+                            data-date="<?= htmlspecialchars($patient['created_at']) ?>"
+                            data-status="<?= htmlspecialchars($patient['status']) ?>"
+                            data-branch="<?= htmlspecialchars($patient['branch_id'] ?? '') ?>">
                             <?php $apprIndex++; ?>
                             <td class="py-3 px-3 font-medium text-gray-900"><?= htmlspecialchars($patient['request_number']) ?>
                             </td>
@@ -193,6 +210,11 @@ foreach ($allServices as $service) {
                             </td>
                             <td class="py-3 px-3"><?= htmlspecialchars($patient['age']) ?></td>
                             <td class="py-3 px-3"><?= htmlspecialchars($patient['sex']) ?></td>
+                            <td class="py-3 px-3 text-xs whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                    <?= htmlspecialchars($patient['branch_name'] ?? 'Branch ' . ($patient['branch_id'] ?? '1')) ?>
+                                </span>
+                            </td>
                             <td class="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">
                                 <?= date('M d, Y h:i A', strtotime($patient['created_at'])) ?>
                             </td>
@@ -493,8 +515,7 @@ foreach ($allServices as $service) {
     window.bodyPartAliases = <?= json_encode($bodyPartAliases) ?>;
 </script>
 
-<script
-    src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/patient-approval.js?v=<?= filemtime(__DIR__ . '/patient-approval.js') ?>"></script>
+<script src="<?= url('views/pages/radtech/patient-approval.js?v=' . filemtime(__DIR__ . '/patient-approval.js')) ?>"></script>
 
 <script>
     // ── Modern Custom Datepicker init ─────────────────────────────────────────────

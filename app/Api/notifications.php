@@ -1,13 +1,9 @@
 <?php
+header('Content-Type: application/json');
+require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers.php';
 global $pdo;
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['error' => 'Unauthorized']);
@@ -115,15 +111,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $notifId = $input['notification_id'] ?? null;
 
     if ($action === 'mark_read' || $action === 'mark_unread' || $action === 'delete') {
+        $whereClause = "user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR (? IS NOT NULL AND branch_id = ?) OR (? IS NULL) OR (role = 'radtech' AND title LIKE '%Patient Request%')))";
         if ($action === 'delete') {
-            $sql = "DELETE FROM notifications WHERE id = ? AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))";
-            $params = [$notifId, $userId, $role, $role, $branchId];
+            $sql = "DELETE FROM notifications WHERE id = ? AND ({$whereClause})";
+            $params = [$notifId, $userId, $role, $role, $branchId, $branchId, $branchId];
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
         } else {
             $isReadVal = ($action === 'mark_read') ? 1 : 0;
-            $sql = "UPDATE notifications SET is_read = ? WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))";
-            $params = [$isReadVal, $userId, $role, $role, $branchId];
+            $sql = "UPDATE notifications SET is_read = ? WHERE ({$whereClause})";
+            $params = [$isReadVal, $userId, $role, $role, $branchId, $branchId, $branchId];
             
             if ($notifId) {
                 $sql .= " AND id = ?";
@@ -140,13 +137,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch all notifications (read and unread)
+$notifFilter = "user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR (? IS NOT NULL AND branch_id = ?) OR (? IS NULL) OR (role = 'radtech' AND title LIKE '%Patient Request%')))";
 $stmt = $pdo->prepare("
     SELECT * FROM notifications 
-    WHERE (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))
+    WHERE ({$notifFilter})
     ORDER BY created_at DESC, id DESC 
     LIMIT 50
 ");
-$stmt->execute([$userId, $role, $role, $branchId]);
+$stmt->execute([$userId, $role, $role, $branchId, $branchId, $branchId]);
 $notifications = $stmt->fetchAll();
 
 // Auto-repair: fix any old notifications with HTML-encoded & in links
@@ -156,9 +154,9 @@ $pdo->exec("UPDATE notifications SET link = REPLACE(link, '&amp;', '&') WHERE li
 $stmtCount = $pdo->prepare("
     SELECT COUNT(*) FROM notifications 
     WHERE is_read = 0 
-      AND (user_id = ? OR (user_id IS NULL AND role = ? AND (branch_id IS NULL OR ? = 'radiologist' OR branch_id = ?)))
+      AND ({$notifFilter})
 ");
-$stmtCount->execute([$userId, $role, $role, $branchId]);
+$stmtCount->execute([$userId, $role, $role, $branchId, $branchId, $branchId]);
 $unreadCount = $stmtCount->fetchColumn();
 
 // Format timeago

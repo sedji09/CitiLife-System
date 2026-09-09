@@ -110,8 +110,34 @@
                     <div v-if="conv.unread_count > 0" class="w-3 h-3 bg-blue-500 rounded-full shrink-0"></div>
                   </div>
                 </template>
-                <div v-else class="py-8 text-center text-sm text-gray-500">
-                  No conversations found.
+                <div v-else>
+                  <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+                    <span>Staff Directory</span>
+                    <span class="text-[11px] font-normal text-gray-400">Click to chat</span>
+                  </div>
+                  <div v-if="isSearchingStaff" class="py-6 text-center text-sm text-gray-400">
+                    Loading staff members...
+                  </div>
+                  <template v-else-if="staffSearchResults && staffSearchResults.length > 0">
+                    <div v-for="staff in staffSearchResults" :key="'dir_' + staff.id" @click="startNewChat(staff)"
+                      class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
+                      <div
+                        class="h-10 w-10 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                        <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover">
+                        <span v-else>{{ staff.initials }}</span>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-sm font-semibold text-gray-900 truncate">{{ staff.name }}</div>
+                        <div class="text-xs text-gray-500 truncate">{{ staff.role ? (staff.role.charAt(0).toUpperCase() + staff.role.slice(1).replace('_', ' ')) : '' }}</div>
+                      </div>
+                      <span class="p-1.5 rounded-full text-blue-600 hover:bg-blue-100 transition shrink-0" title="Start Chat">
+                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                      </span>
+                    </div>
+                  </template>
+                  <div v-else class="py-8 text-center text-sm text-gray-500">
+                    No staff users found.
+                  </div>
                 </div>
               </template>
 

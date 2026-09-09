@@ -1,5 +1,7 @@
 RewriteEngine On
 
+# Case-insensitive rewrite for app/api requests so both app/api and app/Api work on Linux/Railway
+RewriteRule ^app/api/(.*)$ app/Api/$1 [L,NC]
 
 # Existing files
 RewriteCond %{REQUEST_FILENAME} -f [OR]

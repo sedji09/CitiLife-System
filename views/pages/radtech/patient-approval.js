@@ -1347,8 +1347,7 @@ function applyFilters() {
     rows.forEach(row => {
         const name = (row.dataset.name || '').toLowerCase();
         const id = (row.dataset.id || '').toLowerCase();
-        const statusSpan = row.querySelector('td:nth-child(6) span');
-        const status = statusSpan ? statusSpan.textContent.trim() : '';
+        const status = (row.dataset.status || '').trim();
 
         const matchSearch = name.includes(search) || id.includes(search);
         const matchStatus = filterStatus === 'All' || status === filterStatus;

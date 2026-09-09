@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../Models/UserModel.php';
 require_once __DIR__ . '/../../config/security.php';
@@ -179,7 +180,7 @@ try {
         case 'search_staff':
             $userModel = new UserModel($pdo);
             $q = trim($_GET['q'] ?? '');
-            $sql = "SELECT id, email, role, avatar, name, full_name_report FROM users WHERE role != 'patient' AND id != ?";
+            $sql = "SELECT id, email, role, avatar, name, full_name_report FROM users WHERE role != 'patient' AND (status IS NULL OR status = 'Active' OR status = '') AND id != ? ORDER BY name ASC, email ASC";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$userId]);
             $allStaff = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -191,10 +192,10 @@ try {
                 $s['name'] = $info['displayName'];
                 $s['initials'] = $info['initials'];
 
-                // Filter by display name if query exists
+                // Filter by display name or email if query exists
                 if (!empty($q)) {
-                    // Match display name (case-insensitive)
-                    if (stripos($s['name'], $q) !== false) {
+                    // Match display name or email (case-insensitive)
+                    if (stripos($s['name'], $q) !== false || stripos($s['email'], $q) !== false) {
                         $staff[] = $s;
                     }
                 } else {
@@ -202,8 +203,10 @@ try {
                 }
             }
 
-            // Limit to 10 results
-            $staff = array_slice($staff, 0, 10);
+            // Limit results only when actively searching
+            if (!empty($q)) {
+                $staff = array_slice($staff, 0, 25);
+            }
 
             echo json_encode(['success' => true, 'staff' => $staff]);
             break;

@@ -73,7 +73,7 @@ class Router
             // Normalize route uri
             $routeUri = '/' . trim((string)($route['uri'] ?? ''), '/');
 
-            if ($routeUri === $path && $route['method'] === $method) {
+            if (strcasecmp($routeUri, $path) === 0 && $route['method'] === $method) {
                 // Execute middleware first
                 foreach ($route['middleware'] as $middleware) {
                     $this->runMiddleware($middleware);

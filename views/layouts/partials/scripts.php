@@ -241,6 +241,7 @@
 
       if (this.role !== 'patient') {
         this.pollMessages();
+        this.searchStaff();
         setInterval(() => this.pollMessages(), 3000); // 3s message polling
 
         // ── Restore active chat windows from last session ──
@@ -259,7 +260,7 @@
                 attachmentPreviews: []
               });
               // Fetch messages for restored chat
-              fetch('/' + '<?= PROJECT_DIR ?>' + '/app/api/messages.php?action=fetch_chat&contact_id=' + meta.id, { credentials: 'same-origin' })
+              fetch('<?= url("app/api/messages.php") ?>?action=fetch_chat&contact_id=' + meta.id, { credentials: 'same-origin' })
                 .then(r => r.json())
                 .then(data => {
                   const chat = this.activeChats.find(c => c.id == meta.id);
@@ -356,7 +357,7 @@
         // Get all image messages from the chat
         const images = chat.messages.filter(m => m.attachment && m.attachment.match(/\.(jpeg|jpg|gif|png)$/i));
         if (images.length === 0) return;
-        this.lightboxImages = images.map(m => '/' + '<?= PROJECT_DIR ?>' + '/' + m.attachment);
+        this.lightboxImages = images.map(m => ('<?= url("") ?>' + '/' + m.attachment).replace(/\/+/g, '/'));
         this.lightboxIndex = images.findIndex(m => m.id === (clickedMsg && clickedMsg.id));
         if (this.lightboxIndex === -1) this.lightboxIndex = 0;
         this.lightboxOpen = true;
@@ -376,6 +377,7 @@
           this.profileMenuOpen = false;
           this.mobileProfileMenuOpen = false;
           this.pollMessages();
+          this.searchStaff();
         }
       },
       formatTimeAgo(dateString) {
@@ -394,13 +396,13 @@
         if (this.role === 'patient') return;
 
         // Fetch unread count
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_unread_count', { credentials: 'same-origin' })
+        fetch('<?= url("app/api/messages.php") ?>?action=fetch_unread_count', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => { if (data.success) this.unreadMessageCount = data.count; })
           .catch(err => console.error(err));
 
         // Fetch conversations (always, so badge count stays live)
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_conversations', { credentials: 'same-origin' })
+        fetch('<?= url("app/api/messages.php") ?>?action=fetch_conversations', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -441,7 +443,7 @@
         // Fetch active chats — only append NEW messages to avoid re-render stealing focus
         this.activeChats.forEach(chat => {
           const markReadParam = chat.minimized ? '0' : '1';
-          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
+          fetch('<?= url("app/api/messages.php") ?>?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               if (data.success) {
@@ -517,7 +519,7 @@
         this.isSearchingStaff = true;
         const currentQuery = this.staffSearchQuery;
         const cacheBuster = '&_t=' + new Date().getTime();
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
+        fetch('<?= url("app/api/messages.php") ?>?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (this.staffSearchQuery !== currentQuery) return;
@@ -578,7 +580,7 @@
         // Clear unread badge when user opens the chat
         if (!chat.minimized) {
           chat.unreadCount = 0;
-          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
+          fetch('<?= url("app/api/messages.php") ?>?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
@@ -600,7 +602,7 @@
         if (existing) {
           existing.minimized = false;
           existing.unreadCount = 0; // Clear badge when user opens it
-          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
+          fetch('<?= url("app/api/messages.php") ?>?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -615,7 +617,7 @@
             attachmentPreviews: []
           });
 
-          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
+          fetch('<?= url("app/api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               const chat = this.activeChats.find(c => c.id === conv.id);
@@ -697,7 +699,7 @@
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
             this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
-            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
+            fetch('<?= url("app/api/messages.php") ?>?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
@@ -808,7 +810,7 @@
             formData.append('attachment', file);
           }
 
-          return fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/messages.php', {
+          return fetch('<?= url("app/api/messages.php") ?>', {
             method: 'POST', credentials: 'same-origin',
             body: formData
           }).then(res => res.json());
@@ -856,9 +858,8 @@
         const formData = new FormData();
         formData.append('email', this.userEmail);
 
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/request_password_reset.php', {
+        fetch('<?= url("app/Api/request_password_reset.php") ?>', {
           method: 'POST', credentials: 'same-origin',
-
           body: formData
         })
           .then(res => res.json())
@@ -980,12 +981,19 @@
           formData.append('signature', this.signatureFile);
         }
 
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
+        fetch('<?= url("app/Api/update_profile.php") ?>', {
           method: 'POST', credentials: 'same-origin',
-
           body: formData
         })
-          .then(res => res.json())
+          .then(async res => {
+            const text = await res.text();
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              console.error('Server response:', text);
+              throw new Error('Server returned an invalid response. Please try again.');
+            }
+          })
           .then(data => {
             this.savingRadtechSettings = false;
             if (data.success) {
@@ -1004,19 +1012,27 @@
                 this.userSignature = data.signature;
                 window.__APP__.userSignature = data.signature;
               }
+              this.signatureFile = null;
+              this.signaturePreview = null;
               this.settingsModalOpen = false;
 
               if (window.showSuccess) {
                 showSuccess('Report settings updated!');
+              } else {
+                alert('Report settings updated!');
               }
             } else {
-              if (typeof window.toast === 'function') window.toast(data.error || 'Failed to update settings.', 'error');
+              if (typeof window.toast === 'function') {
+                window.toast(data.error || 'Failed to update settings.', 'error');
+              } else {
+                alert(data.error || 'Failed to update settings.');
+              }
             }
           })
           .catch(err => {
             console.error(err);
             this.savingRadtechSettings = false;
-            alert('A network error occurred.');
+            alert(err.message || 'A network error occurred.');
           });
       },
       handleAvatarChange(e) {
@@ -1035,12 +1051,19 @@
         formData.append('professional_title', this.editProfessionalTitle);
         formData.append('is_available', this.editIsAvailable ? 1 : 0);
 
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
+        fetch('<?= url("app/Api/update_profile.php") ?>', {
           method: 'POST', credentials: 'same-origin',
-
           body: formData
         })
-          .then(res => res.json())
+          .then(async res => {
+            const text = await res.text();
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              console.error('Server response:', text);
+              throw new Error('Server returned an invalid response.');
+            }
+          })
           .then(data => {
             if (data.success) {
               if (data.is_available !== undefined) {
@@ -1057,7 +1080,7 @@
           })
           .catch(err => {
             console.error(err);
-            alert('A network error occurred.');
+            alert(err.message || 'A network error occurred.');
             this.editIsAvailable = !this.editIsAvailable; // Revert on failure
           });
       },
@@ -1097,7 +1120,7 @@
       },
       requestEmailChange() {
         this.emailChangeState = 'sending';
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/send_email_change_otp.php', { method: 'POST', credentials: 'same-origin' })
+        fetch('<?= url("app/Api/send_email_change_otp.php") ?>', { method: 'POST', credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -1116,9 +1139,8 @@
       },
       verifyEmailChangeOtp() {
         if (!this.otpCode) return;
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/verify_email_change_otp.php', {
+        fetch('<?= url("app/Api/verify_email_change_otp.php") ?>', {
           method: 'POST', credentials: 'same-origin',
-
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ otp: this.otpCode })
         })
@@ -1169,12 +1191,19 @@
           formData.append('avatar', this.uploadFile);
         }
 
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
+        fetch('<?= url("app/Api/update_profile.php") ?>', {
           method: 'POST', credentials: 'same-origin',
-
           body: formData
         })
-          .then(res => res.json())
+          .then(async res => {
+            const text = await res.text();
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              console.error('Server response:', text);
+              throw new Error('Server returned an invalid response. Please try again.');
+            }
+          })
           .then(data => {
             this.savingProfile = false;
             if (data.success) {
@@ -1210,6 +1239,8 @@
               this.settingsModalOpen = false;
               if (window.showSuccess) {
                 showSuccess('Profile updated successfully!');
+              } else {
+                alert('Profile updated successfully!');
               }
             } else {
               alert(data.error || 'Failed to update profile.');
@@ -1218,7 +1249,7 @@
           .catch(err => {
             console.error(err);
             this.savingProfile = false;
-            alert('A network error occurred.');
+            alert(err.message || 'A network error occurred.');
           });
       },
       savePassword() {
@@ -1251,12 +1282,19 @@
           formData.append('system_name', this.userDisplayName);
         }
 
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/update_profile.php', {
+        fetch('<?= url("app/Api/update_profile.php") ?>', {
           method: 'POST', credentials: 'same-origin',
-
           body: formData
         })
-          .then(res => res.json())
+          .then(async res => {
+            const text = await res.text();
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              console.error('Server response:', text);
+              throw new Error('Server returned an invalid response.');
+            }
+          })
           .then(data => {
             this.savingPassword = false;
             if (data.success) {
@@ -1265,6 +1303,8 @@
               this.settingsModalOpen = false;
               if (window.showSuccess) {
                 showSuccess('Password updated successfully!');
+              } else {
+                alert('Password updated successfully!');
               }
             } else {
               if (typeof window.toast === 'function') window.toast(data.error || 'Failed to update password.', 'error');
@@ -1275,7 +1315,8 @@
           .catch(err => {
             console.error(err);
             this.savingPassword = false;
-            if (typeof window.toast === 'function') window.toast('A network error occurred.', 'error');
+            if (typeof window.toast === 'function') window.toast(err.message || 'A network error occurred.', 'error');
+            else alert(err.message || 'A network error occurred.');
           });
       },
       toggleSidebar() {
@@ -1915,7 +1956,7 @@
     const caseId = dot.getAttribute('data-case-id');
     if (!caseId) return;
 
-    fetch(`/${window.__APP__.projectDir || '<?= PROJECT_DIR ?>'}/app/api/case_activity.php?action=status&case_id=${caseId}&_t=` + Date.now(), { credentials: 'same-origin' })
+    fetch('<?= url("app/api/case_activity.php") ?>?action=status&case_id=' + caseId + '&_t=' + Date.now(), { credentials: 'same-origin' })
       .then(res => res.json())
       .then(data => {
         if (!data.success) return;

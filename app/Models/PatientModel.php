@@ -337,11 +337,23 @@ class PatientModel
                 $finalId = $caseResult['id'];
                 $finalNumber = $caseResult['request_number'];
 
+                // Fetch branch name for informative notification
+                $branchName = '';
+                if (!empty($branchId)) {
+                    $stmtB = $pdo->prepare("SELECT name FROM branches WHERE id = ?");
+                    $stmtB->execute([$branchId]);
+                    $branchName = $stmtB->fetchColumn() ?: '';
+                }
+                $branchSuffix = !empty($branchName) ? " ({$branchName})" : "";
+                $approvalLink = function_exists('url') 
+                    ? url('patient-approval?highlight=' . urlencode($finalNumber) . '&branch_id=' . urlencode($branchId))
+                    : "/index.php?role=radtech&page=patient-approval&highlight=" . urlencode($finalNumber);
+
                 // Notify RadTech of the new request
                 $notificationModel->add(
-                    "New Patient Request",
-                    "Request {$finalNumber} awaits approval.",
-                    "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-approval&highlight=" . urlencode($finalNumber),
+                    "New Patient Request{$branchSuffix}",
+                    "Request {$finalNumber} for " . (!empty($branchName) ? $branchName : "clinic") . " awaits approval.",
+                    $approvalLink,
                     null,
                     'radtech',
                     $branchId
