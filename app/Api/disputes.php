@@ -454,7 +454,7 @@ try {
         $stmt = $pdo->prepare("
             SELECT c.*, 
                    p.first_name, p.last_name, p.middle_name, p.patient_number, p.contact_number, p.email as patient_email, p.sex, p.birthdate,
-                   (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age,
+                   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age,
                    b.name as branch_name
             FROM cases c
             JOIN patients p ON c.patient_id = p.id

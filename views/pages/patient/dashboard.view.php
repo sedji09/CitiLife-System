@@ -131,7 +131,7 @@ if ($isCorrectionWorkflow) {
         3 => 'Payment',
         4 => 'X-ray Examination',
         5 => 'Radiologist Reading',
-        6 => 'Report Finalized',
+        6 => 'Finalizing Report',
         7 => 'Released',
     ];
 
@@ -172,7 +172,7 @@ if ($isCorrectionWorkflow) {
         } elseif ($latestCase['status'] === 'X-ray Taken') {
             $currentStep = 5;
             $displayStatus = 'X-ray Taken';
-        } elseif ($latestCase['status'] === 'Under Reading') {
+        } elseif (in_array($latestCase['status'], ['Under Reading', 'For Revision'])) {
             $currentStep = 5;
             $displayStatus = 'Under Reading';
         } elseif ($latestCase['status'] === 'Report Ready') {
@@ -229,8 +229,8 @@ $statusDescriptions = [
     'Report Ready' => 'Your X-ray report is ready. Please visit the branch to collect your results.',
     'Released' => 'Your X-ray report has been released. You can now view your report result below.',
     'Completed' => 'Your X-ray examination has been completed. You can view your report result below.',
-    'Rejected' => !empty($latestCase['rejection_reason']) 
-        ? 'Your request was rejected: "' . htmlspecialchars($latestCase['rejection_reason']) . '". Please review the details or submit a new request.' 
+    'Rejected' => !empty($latestCase['rejection_reason'])
+        ? 'Your request was rejected: "' . htmlspecialchars($latestCase['rejection_reason']) . '". Please review the details or submit a new request.'
         : 'Your request has been rejected. Please contact the clinic for more details or submit a new request.',
     'Cancelled' => 'You have cancelled this request.',
     // Error Correction Descriptions
@@ -371,24 +371,30 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
     /* Queue board dark mode */
     body.theme-dark #patient-dashboard-queue-board {
         background: #1e293b !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
         color: #f1f5f9 !important;
     }
+
     body.theme-dark #patient-dashboard-queue-board .queue-label {
         color: #94a3b8 !important;
     }
+
     body.theme-dark #patient-dashboard-queue-board .queue-num {
         color: #f8fafc !important;
     }
+
     body.theme-dark #patient-dashboard-queue-board .queue-vdivider {
         background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.15), transparent) !important;
     }
+
     body.theme-dark #patient-dashboard-queue-board .queue-hdivider {
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent) !important;
     }
+
     body.theme-dark #patient-dashboard-estimated-time .est-title {
         color: #e2e8f0 !important;
     }
+
     body.theme-dark #patient-dashboard-estimated-time .est-subtext {
         color: #94a3b8 !important;
     }
@@ -694,26 +700,32 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
             <!-- Estimated Reporting Time -->
             <?php if (!empty($estimatedTimeDisplay)): ?>
-                <div class="queue-hdivider" style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);">
+                <div class="queue-hdivider"
+                    style="height: 1px; width: 100%; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);">
                 </div>
 
                 <div class="text-center" id="patient-dashboard-estimated-time">
-                    <div class="est-title" style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 3px;">Estimated Reporting Time
+                    <div class="est-title" style="font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 3px;">
+                        Estimated Reporting Time
                     </div>
 
                     <?php if (!empty($estimatedTimeBadge)): ?>
                         <div style="margin-bottom: 5px;">
-                            <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: <?= $estimatedTimeColor ?>; background: <?= $estimatedTimeBadgeBg ?>; border: 1px solid <?= $estimatedTimeBadgeBorder ?>; padding: 2px 8px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px;">
-                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $estimatedTimeColor ?>;"></span>
+                            <span
+                                style="font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: <?= $estimatedTimeColor ?>; background: <?= $estimatedTimeBadgeBg ?>; border: 1px solid <?= $estimatedTimeBadgeBorder ?>; padding: 2px 8px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px;">
+                                <span
+                                    style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: <?= $estimatedTimeColor ?>;"></span>
                                 <?= htmlspecialchars($estimatedTimeBadge) ?>
                             </span>
                         </div>
                     <?php endif; ?>
 
-                    <div class="est-time-val" style="font-size: 16px; font-weight: 800; color: <?= $estimatedTimeColor ?>;"><?= $estimatedTimeDisplay ?></div>
-                    
+                    <div class="est-time-val" style="font-size: 16px; font-weight: 800; color: <?= $estimatedTimeColor ?>;">
+                        <?= $estimatedTimeDisplay ?></div>
+
                     <?php if (!empty($estimatedTimeSubtext)): ?>
-                        <div class="est-subtext" style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 3px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.35;">
+                        <div class="est-subtext"
+                            style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 3px; max-width: 340px; margin-left: auto; margin-right: auto; line-height: 1.35;">
                             <?= htmlspecialchars($estimatedTimeSubtext) ?>
                         </div>
                     <?php endif; ?>
@@ -826,18 +838,22 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
                 <?php if (($latestCase['status'] ?? '') === 'Pending Payment' && !empty($latestCase['rejection_reason'])): ?>
                     <!-- Payment Issue Notice -->
-                    <div class="mt-4 rounded-2xl bg-red-50/95 border border-red-200 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
-                        <div class="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
+                    <div
+                        class="mt-4 rounded-2xl bg-red-50/95 border border-red-200 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
+                        <div
+                            class="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
                             <i data-lucide="alert-triangle" class="w-5 h-5 stroke-[2.2]"></i>
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="text-sm font-bold text-red-900">Payment Submission Returned</h4>
                             <p class="text-xs sm:text-sm text-red-800 mt-1 leading-relaxed">
                                 <span class="font-semibold">Reason from Clinic:</span>
-                                <span class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason']) ?>"</span>
+                                <span
+                                    class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason']) ?>"</span>
                             </p>
                             <p class="text-xs text-red-700 mt-2">
-                                Please click the <strong>Pay Now</strong> button below to resubmit the correct Reference Number and a clear screenshot of your payment receipt.
+                                Please click the <strong>Pay Now</strong> button below to resubmit the correct Reference Number
+                                and a clear screenshot of your payment receipt.
                             </p>
                         </div>
                     </div>
@@ -948,7 +964,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                         <div class="flex items-center min-w-0 text-left py-0.5">
                             <div class="text-xs sm:text-sm text-red-800 leading-snug">
                                 <span class="font-bold text-red-900">Reason:</span>
-                                <span class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason'] ?: 'Request could not be approved at this time.') ?>"</span>
+                                <span
+                                    class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason'] ?: 'Request could not be approved at this time.') ?>"</span>
                             </div>
                         </div>
                         <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=registration"
@@ -1059,13 +1076,17 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             </div>
 
             <!-- Payment Rejection Notice if applicable -->
-            <div id="paymentRejectionAlert" class="hidden mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-left">
+            <div id="paymentRejectionAlert"
+                class="hidden mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-left">
                 <div class="flex items-start gap-2.5">
                     <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
                     <div>
-                        <h5 class="text-xs font-bold text-red-900 uppercase tracking-wider">Previous Submission Note</h5>
-                        <p id="paymentRejectionReasonText" class="text-xs text-red-800 mt-1 leading-relaxed font-medium"></p>
-                        <p class="text-xs text-red-600 mt-1">Please provide the correct Reference Number and upload a clear screenshot of your GCash receipt.</p>
+                        <h5 class="text-xs font-bold text-red-900 uppercase tracking-wider">Previous Submission Note
+                        </h5>
+                        <p id="paymentRejectionReasonText"
+                            class="text-xs text-red-800 mt-1 leading-relaxed font-medium"></p>
+                        <p class="text-xs text-red-600 mt-1">Please provide the correct Reference Number and upload a
+                            clear screenshot of your GCash receipt.</p>
                     </div>
                 </div>
             </div>
@@ -1080,8 +1101,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </div>
                 <div class="px-5 py-4 bg-red-50/50 border-t border-red-100 flex items-center justify-between">
                     <span class="text-sm font-bold text-black">Total Amount</span>
-                    <span id="paymentAmountDisplay"
-                        class="text-sm font-extrabold text-red-600">₱0.00</span>
+                    <span id="paymentAmountDisplay" class="text-sm font-extrabold text-red-600">₱0.00</span>
                 </div>
             </div>
 
@@ -1331,7 +1351,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">What type of error is this? <span
                             class="text-red-500">*</span></label>
-                    <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()" data-no-custom="true"
+                    <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
                         class="w-full rounded-xl border border-gray-300 pl-3.5 pr-8 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer shadow-sm">
                         <option value="" disabled selected>-- Select Category --</option>
                         <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)</option>
@@ -1408,10 +1428,12 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             <div class="relative">
                                 <input type="text" id="input-correct-birthdate" readonly placeholder="Select birthdate"
                                     class="w-full rounded-xl border border-gray-300 pl-9 pr-3 py-2 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer transition">
-                                <i data-lucide="calendar" class="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none"></i>
+                                <i data-lucide="calendar"
+                                    class="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none"></i>
                             </div>
                             <input type="hidden" id="input-correct-age">
-                            <div id="preview-calculated-age" class="hidden mt-1.5 text-[11px] text-gray-600 flex items-center gap-1.5 font-medium bg-gray-100/90 px-2.5 py-1 rounded-lg border border-gray-200">
+                            <div id="preview-calculated-age"
+                                class="hidden mt-1.5 text-[11px] text-gray-600 flex items-center gap-1.5 font-medium bg-gray-100/90 px-2.5 py-1 rounded-lg border border-gray-200">
                                 <span class="text-gray-500">Age:</span>
                                 <span id="val-calculated-age" class="font-bold text-red-600"></span>
                             </div>
@@ -1584,9 +1606,9 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 
                 if (disc > 0 && examData.discount > 0) {
                     breakdownContainer.innerHTML += `
-                        <div class="flex items-center justify-between text-sm mt-1 mb-2">
-                            <span class="text-emerald-600 font-medium">PhilHealth Discount</span>
-                            <span class="font-semibold text-emerald-600">-₱${examData.discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <div class="flex items-center justify-between text-xs text-emerald-600 pl-4 mt-0.5 mb-1.5">
+                            <span class="font-medium">PhilHealth Discount</span>
+                            <span class="font-semibold text-emerald-600 text-xs">-₱${examData.discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     `;
                 }
@@ -1814,7 +1836,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         const ERROR_STEPS = { 1: 'Issue Reported', 2: 'For RadTech Review', 3: 'Correction in Progress', 4: 'Correction Completed' };
 
         // Standard exam step mapping
-        const EXAM_STEPS = { 1: 'Registration', 2: 'RadTech Verification', 3: 'Payment', 4: 'X-ray Examination', 5: 'Radiologist Reading', 6: 'Report Finalized', 7: 'Released' };
+        const EXAM_STEPS = { 1: 'Registration', 2: 'RadTech Verification', 3: 'Payment', 4: 'X-ray Examination', 5: 'Radiologist Reading', 6: 'Finalizing Report', 7: 'Released' };
         const EXAM_STEP_MAP = {
             'Pending': 2, 'Pending Approval': 2, 'Pending Payment': 3, 'Payment Verifying': 3, 'Payment Verified': 4,
             'Approved': 4, 'X-ray Taken': 5, 'Under Reading': 5, 'Report Ready': 6, 'Released': 7, 'Completed': 7,
@@ -1966,25 +1988,25 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
 </script>
 
 <?php if (!empty($_GET['password_reset'])): ?>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: 'Password Reset Successful',
-                text: 'Your password has been reset successfully and you are now logged in.',
-                confirmButtonColor: '#dc2626',
-                confirmButtonText: 'Continue to Portal',
-                customClass: {
-                    popup: 'rounded-2xl'
-                }
-            });
-            try {
-                const cleanUrl = new URL(window.location.href);
-                cleanUrl.searchParams.delete('password_reset');
-                window.history.replaceState({}, document.title, cleanUrl.toString());
-            } catch (e) {}
-        }
-    });
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Password Reset Successful',
+                    text: 'Your password has been reset successfully and you are now logged in.',
+                    confirmButtonColor: '#dc2626',
+                    confirmButtonText: 'Continue to Portal',
+                    customClass: {
+                        popup: 'rounded-2xl'
+                    }
+                });
+                try {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('password_reset');
+                    window.history.replaceState({}, document.title, cleanUrl.toString());
+                } catch (e) { }
+            }
+        });
+    </script>
 <?php endif; ?>

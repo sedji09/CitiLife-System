@@ -6,6 +6,11 @@ class LandingController
 {
     public function index()
     {
+        // Forward POST requests to PageController to preserve submitted form payload
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['page'])) {
+            return (new \App\Controllers\PageController())->dispatch();
+        }
+
         // Intercept legacy query string routes from notifications (e.g. index.php?role=patient&page=xray-status&case_id=318)
         // and redirect them to the new clean URLs mapping to the router.
         if (isset($_GET['page'])) {

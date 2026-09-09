@@ -69,12 +69,20 @@
       // Find best placement for inline error container:
       let container = el;
       const msComp = el.closest('.exam-ms-component');
+      const csWrapper = el.closest('.cs-wrapper');
       if (msComp) {
         container = msComp;
         const msBox = msComp.querySelector('.exam-ms-box');
         if (msBox) {
           this.errorInputClasses.forEach(cls => msBox.classList.add(cls));
           msBox.classList.remove('border-gray-300', 'border-gray-200');
+        }
+      } else if (csWrapper) {
+        container = csWrapper;
+        const trigger = csWrapper.querySelector('.cs-trigger');
+        if (trigger) {
+          this.errorInputClasses.forEach(cls => trigger.classList.add(cls));
+          trigger.classList.remove('border-gray-300', 'border-gray-200');
         }
       } else {
         const parent = el.parentElement;
@@ -149,11 +157,18 @@
 
       // Handle exam-ms-component box
       const msComp = el.closest('.exam-ms-component');
+      const csWrapper = el.closest('.cs-wrapper');
       if (msComp) {
         const msBox = msComp.querySelector('.exam-ms-box');
         if (msBox) {
           this.errorInputClasses.forEach(cls => msBox.classList.remove(cls));
           if (!msBox.classList.contains('border-gray-300')) msBox.classList.add('border-gray-300');
+        }
+      } else if (csWrapper) {
+        const trigger = csWrapper.querySelector('.cs-trigger');
+        if (trigger) {
+          this.errorInputClasses.forEach(cls => trigger.classList.remove(cls));
+          if (!trigger.classList.contains('border-gray-300')) trigger.classList.add('border-gray-300');
         }
       }
 
@@ -161,6 +176,8 @@
       let container = el;
       if (msComp) {
         container = msComp;
+      } else if (csWrapper) {
+        container = csWrapper;
       } else {
         const parent = el.parentElement;
         if (parent && (
@@ -208,6 +225,20 @@
     validateField: function (el) {
       if (!this.isElementVisible(el)) {
         return null;
+      }
+
+      // Handle multi-select exam component search input
+      if (el.classList.contains('exam-ms-input') || el.closest('.exam-ms-component')) {
+        const msComp = el.closest('.exam-ms-component');
+        if (msComp) {
+          if (msComp.getAttribute('data-readonly') === 'true') {
+            return null;
+          }
+          const hiddenInput = msComp.querySelector('.exam-ms-hidden-input');
+          if (hiddenInput && hiddenInput.value.trim().length > 0) {
+            return null;
+          }
+        }
       }
 
       const val = (el.value || '').trim();

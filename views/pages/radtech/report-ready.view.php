@@ -22,7 +22,7 @@
 
 <?php if ($successMsg): ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
@@ -109,9 +109,9 @@
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($patients as $row): 
+                    <?php foreach ($patients as $row):
                         $patFullName = formatFullName($row);
-                    ?>
+                        ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
                             data-case-id="<?= htmlspecialchars($row['id'] ?? '') ?>"
@@ -193,19 +193,20 @@
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
 
-                                    <?php if (empty($row['released']) || (int)$row['released'] === 0): ?>
-                                     <!-- Re-edit button -->
-                                     <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
-                                         class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                         title="Allow Radiologist to Re-edit (Revert to Draft)">
-                                         <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                     </button>
-                                     <?php endif; ?>
+                                    <?php if (empty($row['released']) || (int) $row['released'] === 0): ?>
+                                        <!-- Re-edit button -->
+                                        <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
+                                            class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                            title="Allow Radiologist to Re-edit (Revert to Draft)">
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                        </button>
+                                    <?php endif; ?>
 
                                     <!-- Print Result -->
                                     <a href="javascript:void(0)"
                                         onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
-                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Print Report">
+                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                        title="Print Report">
                                         <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>
 
@@ -225,7 +226,8 @@
     </div>
 
     <!-- Pagination Footer -->
-    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="report-ready-pagination-container">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4"
+        id="report-ready-pagination-container">
         <!-- Record count -->
         <span id="report-ready-count" class="text-xs text-gray-500 font-medium"></span>
 
@@ -494,7 +496,7 @@
                     cleanUrl.searchParams.delete('highlight_case');
                     cleanUrl.searchParams.delete('case_id');
                     window.history.replaceState({}, document.title, cleanUrl.toString());
-                } catch (e) {}
+                } catch (e) { }
             }
         }, 150);
     }
@@ -523,14 +525,17 @@
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mb-4"></div>
     </div>
     <div id="release-success-icon" class="hidden mb-4">
-        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <div
+            class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
         </div>
     </div>
     <h3 id="release-title-text" class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the results...</p>
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the
+        results...</p>
 </div>
 
 <script>
@@ -547,13 +552,10 @@
                     </div>
                     <div class="text-left mb-2">
                         <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                            RadTech Notes <span class="text-red-500">*</span>:
+                            Notes <span class="text-red-500 font-bold">*</span>:
                         </label>
-                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" onfocus="if(!this.dataset.error){this.style.borderColor='#d97706';}" onblur="if(!this.dataset.error){this.style.borderColor='#d1d5db';}" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
-                        <p id="swal-reedit-error" class="hidden text-xs text-red-600 mt-2 font-medium items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-red-500 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span>Please enter notes for the radiologist.</span>
-                        </p>
+                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
+                        <p id="swal-reedit-warn" class="hidden text-xs text-red-500 mt-1">Please provide a note for the radiologist.</p>
                     </div>
                 `,
                 icon: 'question',
@@ -568,54 +570,47 @@
                     cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
                 },
                 didOpen: () => {
-                    const textarea = document.getElementById('swal-reedit-reason');
-                    const errEl = document.getElementById('swal-reedit-error');
-                    if (textarea) {
-                        textarea.focus();
-                        textarea.addEventListener('input', () => {
-                            if (textarea.value.trim().length > 0) {
-                                textarea.dataset.error = '';
-                                textarea.style.borderColor = '#d97706';
-                                textarea.style.backgroundColor = '#ffffff';
-                                if (errEl) {
-                                    errEl.classList.add('hidden');
-                                    errEl.classList.remove('flex');
-                                }
-                            }
-                        });
-                    }
+                    const ta = document.getElementById('swal-reedit-reason');
+                    const warn = document.getElementById('swal-reedit-warn');
+                    if (!ta) return;
+                    ta.focus();
+                    ta.addEventListener('focus', () => {
+                        ta.style.borderColor = '#d97706';
+                        if (warn) warn.classList.add('hidden');
+                    });
+                    ta.addEventListener('blur', () => {
+                        if (!ta.value.trim()) {
+                            ta.style.borderColor = '#ef4444';
+                            if (warn) warn.classList.remove('hidden');
+                        } else {
+                            ta.style.borderColor = '#d1d5db';
+                        }
+                    });
+                    ta.addEventListener('input', () => {
+                        if (ta.value.trim()) {
+                            ta.style.borderColor = '#d97706';
+                            if (warn) warn.classList.add('hidden');
+                        }
+                    });
                 },
                 preConfirm: () => {
-                    const textarea = document.getElementById('swal-reedit-reason');
-                    const errEl = document.getElementById('swal-reedit-error');
-                    const text = textarea ? textarea.value.trim() : '';
-                    if (!text) {
-                        if (textarea) {
-                            textarea.dataset.error = '1';
-                            textarea.style.borderColor = '#ef4444';
-                            textarea.style.backgroundColor = '#fef2f2';
-                            textarea.focus();
-                        }
-                        if (errEl) {
-                            errEl.classList.remove('hidden');
-                            errEl.classList.add('flex');
-                        }
+                    const ta = document.getElementById('swal-reedit-reason');
+                    const warn = document.getElementById('swal-reedit-warn');
+                    if (ta && !ta.value.trim()) {
+                        ta.style.borderColor = '#ef4444';
+                        if (warn) warn.classList.remove('hidden');
                         return false;
                     }
-                    return text;
+                    return ta ? ta.value.trim() : '';
                 }
             });
 
-            if (!isConfirmed || !formValues) return;
-            reason = formValues;
+            if (!isConfirmed) return;
+            reason = formValues || '';
         } else {
-            reason = prompt('Allow Radiologist to Re-edit? Please enter the reason:');
-            if (reason === null) return;
-            reason = reason.trim();
-            if (!reason) {
-                alert('A reason is required to allow re-edit.');
-                return;
-            }
+            const promptResult = prompt('Allow Radiologist to Re-edit? Add a note (optional):');
+            if (promptResult === null) return;
+            reason = promptResult.trim();
         }
 
         const originalHTML = btn ? btn.innerHTML : '';
@@ -810,5 +805,5 @@
     }
     try {
         sessionStorage.setItem('radtech_last_table_url', window.location.href);
-    } catch(e) {}
+    } catch (e) { }
 </script>

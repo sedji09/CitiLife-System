@@ -185,17 +185,55 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
         <div class="flex flex-col min-h-0">
             <?php
             $savedPaths = [];
+            $savedLabels = [];
             if (!empty($caseDetails['image_path'])) {
                 $decoded = json_decode($caseDetails['image_path'], true);
                 $rawPaths = is_array($decoded) ? $decoded : [$caseDetails['image_path']];
                 $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
                 $baseUrl = ($isLocalhost && PROJECT_DIR) ? '/' . PROJECT_DIR . '/' : '/';
-                foreach ($rawPaths as $p) {
+
+                if (!function_exists('getXrayImageLabel')) {
+                    function getXrayImageLabel($sPath, $idx = 0, $examType = '') {
+                        $baseName = pathinfo($sPath, PATHINFO_FILENAME);
+
+                        // 1. If saved with original file name: case_{caseId}_{time}_{idx}_{originalName}
+                        if (preg_match('/^case_\d+_\d+_\d+_(.+)$/', $baseName, $m)) {
+                            $name = trim($m[1]);
+                            if (!empty($name) && !preg_match('/^image[_\s]?\d+$/i', $name)) {
+                                return $name;
+                            }
+                        }
+
+                        // 2. If corresponding exam from exam_type exists (e.g. "Chest PA", "Chest AP, Chest PA")
+                        if (!empty($examType)) {
+                            $exams = array_values(array_filter(array_map('trim', explode(',', $examType))));
+                            if (isset($exams[$idx]) && $exams[$idx] !== '') {
+                                return $exams[$idx];
+                            }
+                        }
+
+                        // 3. If file has a descriptive name (not starting with case_ or random hash)
+                        if (!preg_match('/^case_\d+/i', $baseName) && strlen($baseName) > 2) {
+                            return str_replace(['_', '-'], ' ', $baseName);
+                        }
+
+                        // 4. Default fallback: exam_type if single exam, else IMG {idx + 1}
+                        if (!empty($examType) && !str_contains($examType, ',')) {
+                            return trim($examType);
+                        }
+
+                        return 'IMG ' . ($idx + 1);
+                    }
+                }
+
+                foreach ($rawPaths as $i => $p) {
                     $savedPaths[] = $baseUrl . ltrim($p, '/');
+                    $savedLabels[] = getXrayImageLabel($p, $i, $caseDetails['exam_type'] ?? '');
                 }
             }
             // encode paths for JS safely
             $jsonPaths = json_encode($savedPaths);
+            $jsonLabels = json_encode($savedLabels);
             ?>
 
             <div id="xray-viewer-container"
@@ -207,17 +245,25 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 
                         <div class="flex items-center gap-4">
                             <div
-                                class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+                                class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner shrink-0">
                                 <i data-lucide="scan-line" class="w-5 h-5"></i>
                             </div>
-                            <div class="flex flex-col">
+                            <div class="flex flex-col min-w-0">
                                 <span class="font-black text-xs uppercase tracking-widest leading-none">X-ray Viewer</span>
-                                <?php if (count($savedPaths) > 1): ?>
-                                    <span id="xray-counter"
-                                        class="text-[9px] font-bold text-white/60 tracking-tighter uppercase mt-1">
-                                        Image 1 of <?= count($savedPaths) ?>
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    <?php if (count($savedPaths) > 1): ?>
+                                        <span id="xray-counter"
+                                            class="text-[9px] font-bold text-white/75 tracking-tighter uppercase shrink-0">
+                                            1 / <?= count($savedPaths) ?>
+                                        </span>
+                                        <span class="text-white/40 text-[9px] shrink-0">•</span>
+                                    <?php endif; ?>
+                                    <span id="xray-exam-name"
+                                        class="text-[10px] font-black text-white bg-black/30 px-2 py-0.5 rounded uppercase tracking-wider truncate max-w-[200px]"
+                                        title="<?= htmlspecialchars($savedLabels[0] ?? '') ?>">
+                                        <?= htmlspecialchars($savedLabels[0] ?? ($caseDetails['exam_type'] ?? 'X-RAY')) ?>
                                     </span>
-                                <?php endif; ?>
+                                </div>
                             </div>
                         </div>
 
@@ -268,10 +314,12 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                             <div id="xray-thumb-strip"
                                 class="absolute bottom-4 left-1/2 -translate-x-1/2 h-16 bg-black/40 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 z-20 border border-white/10 shadow-2xl overflow-x-auto max-w-[90%] scrollbar-hide">
                                 <?php foreach ($savedPaths as $index => $path): ?>
+                                    <?php $lbl = $savedLabels[$index] ?? ('IMG ' . ($index + 1)); ?>
                                     <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
-                                        data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>">
+                                        data-index="<?= $index ?>" data-url="<?= htmlspecialchars($path) ?>" data-label="<?= htmlspecialchars($lbl) ?>"
+                                        title="<?= htmlspecialchars($lbl) ?> (<?= $index + 1 ?> / <?= count($savedPaths) ?>)">
                                         <img src="<?= htmlspecialchars($path) ?>" class="w-full h-full object-cover"
-                                            alt="X-ray thumbnail <?= $index + 1 ?>">
+                                            alt="<?= htmlspecialchars($lbl) ?>">
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -313,6 +361,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                         if (!img) return;
 
                         const imagePaths = <?= $jsonPaths ?>;
+                        const imageLabels = <?= $jsonLabels ?>;
                         let currentIndex = 0;
                         let scale = 1;
                         const ZOOM_STEP = 0.2;
@@ -338,6 +387,13 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 
                             // Update Counter
                             if (counter) counter.textContent = (currentIndex + 1) + ' / ' + imagePaths.length;
+
+                            // Update Exam Name
+                            const examNameEl = document.getElementById('xray-exam-name');
+                            if (examNameEl && imageLabels && imageLabels[currentIndex]) {
+                                examNameEl.textContent = imageLabels[currentIndex];
+                                examNameEl.title = imageLabels[currentIndex];
+                            }
 
                             // Update Filename
                             const filenameEl = document.getElementById('xray-filename');

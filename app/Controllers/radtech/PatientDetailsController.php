@@ -3,6 +3,7 @@
 namespace App\Controllers\radtech;
 
 use Exception;
+use DateTime;
 use CaseModel;
 use NotificationModel;
 
@@ -322,40 +323,20 @@ class PatientDetailsController
                 require_once __DIR__ . '/../../Models/PatientModel.php';
                 $patMdl = new \PatientModel($pdo);
 
-                // Enforce middle name if another patient shares the same first and last name
-                if (empty($middleName)) {
-                    $namesakes = $patMdl->findNamesakes($firstName, $lastName, $patientId);
-                    if (!empty($namesakes)) {
-                        throw new Exception("A patient named '{$firstName} {$lastName}' already exists in the system. Middle Name is required to avoid duplicate records.");
-                    }
-                }
+                // PhilHealth details are locked from Assign Exam
+                $stmtCurCase = $pdo->prepare("SELECT philhealth_status, philhealth_id, philhealth_relation FROM cases WHERE id = ?");
+                $stmtCurCase->execute([$caseId]);
+                $curCasePh = $stmtCurCase->fetch(\PDO::FETCH_ASSOC);
 
-                $hasPhilHealth = ($philhealthStatus === 'With PhilHealth Card');
-                $philhealthIdToSave = $hasPhilHealth ? $philhealthId : null;
-                $philhealthRelationToSave = $hasPhilHealth ? $philhealthRelation : null;
-
-                // Validate PhilHealth uniqueness if supplied
-                if ($hasPhilHealth && $philhealthIdToSave && $philhealthRelationToSave) {
-                    $sqlOwnerReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Cancelled' AND status != 'Rejected' AND patient_id != :pat_id";
-                    $sqlOwnerCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Principal Member' AND status != 'Rejected' AND patient_id != :pat_id";
-                    $stmtOwner = $pdo->prepare("$sqlOwnerReq UNION $sqlOwnerCase");
-                    $stmtOwner->execute([':id' => $philhealthIdToSave, ':pat_id' => $patientId]);
-                    if ($philhealthRelationToSave === 'Principal Member' && $stmtOwner->fetchColumn()) {
-                        throw new Exception("This PhilHealth ID is already registered to another Principal Member.");
-                    }
-
-                    $sqlFamilyReq = "SELECT 1 FROM requests WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Cancelled' AND status != 'Rejected' AND patient_id != :pat_id";
-                    $sqlFamilyCase = "SELECT 1 FROM cases WHERE philhealth_id = :id AND philhealth_relation = 'Qualified Dependent' AND status != 'Rejected' AND patient_id != :pat_id";
-                    $stmtFamily = $pdo->prepare("$sqlFamilyReq UNION $sqlFamilyCase");
-                    $stmtFamily->execute([':id' => $philhealthIdToSave, ':pat_id' => $patientId]);
-                    if ($philhealthRelationToSave === 'Qualified Dependent' && $stmtFamily->fetchColumn()) {
-                        throw new Exception("This PhilHealth ID is already registered to another Qualified Dependent.");
-                    }
-                }
+                $philhealthStatus = $curCasePh['philhealth_status'] ?? trim($_POST['philhealth_status'] ?? 'Without PhilHealth Card');
+                $philhealthIdToSave = ($philhealthStatus === 'With PhilHealth Card') 
+                    ? ($curCasePh['philhealth_id'] ?? (trim($_POST['philhealth_id'] ?? '') ?: null)) 
+                    : null;
+                $philhealthRelationToSave = ($philhealthStatus === 'With PhilHealth Card') 
+                    ? ($curCasePh['philhealth_relation'] ?? (trim($_POST['philhealth_relation'] ?? '') ?: null)) 
+                    : null;
 
                 // Update patient record
-                require_once __DIR__ . '/../../Models/PatientModel.php';
-                $patMdl = new \PatientModel($pdo);
                 $patMdl->updatePatient($patientId, [
                     'first_name'     => $firstName,
                     'middle_name'    => $middleName ?: null,
@@ -365,6 +346,13 @@ class PatientDetailsController
                     'contact_number' => $contact,
                     'home_address'   => $homeAddress
                 ]);
+
+                // Also update linked patient user account if exists
+                $fullName = trim($firstName . ' ' . $lastName);
+                if ($fullName !== '') {
+                    $stmtU = $pdo->prepare("UPDATE users SET name = ? WHERE patient_id = ? AND role = 'patient'");
+                    $stmtU->execute([$fullName, $patientId]);
+                }
 
                 // Update case philhealth columns
                 $stmtCaseUp = $pdo->prepare("UPDATE cases SET philhealth_status = ?, philhealth_id = ?, philhealth_relation = ? WHERE id = ?");
@@ -379,10 +367,38 @@ class PatientDetailsController
                     $stmtReqUp->execute([$philhealthStatus, $philhealthIdToSave, $philhealthRelationToSave, $linkedReqId]);
                 }
 
+                // Calculate age
+                $calculatedAge = '';
+                try {
+                    $bdateObj = new DateTime($birthdate);
+                    $todayObj = new DateTime();
+                    $calculatedAge = (string)$todayObj->diff($bdateObj)->y;
+                } catch (Exception $e) {
+                    $calculatedAge = '';
+                }
+
                 // If AJAX request
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    if (ob_get_length()) ob_clean();
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => true, 'message' => 'Patient information updated successfully.']);
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Patient information updated successfully.',
+                        'patient' => [
+                            'first_name'          => $firstName,
+                            'middle_name'         => $middleName,
+                            'last_name'           => $lastName,
+                            'full_name'           => formatFullName(['first_name' => $firstName, 'middle_name' => $middleName, 'last_name' => $lastName]),
+                            'birthdate'           => $birthdate,
+                            'age'                 => $calculatedAge,
+                            'sex'                 => $sex,
+                            'contact_number'      => $contact,
+                            'home_address'        => $homeAddress,
+                            'philhealth_status'   => $philhealthStatus,
+                            'philhealth_id'       => $philhealthIdToSave,
+                            'philhealth_relation' => $philhealthRelationToSave
+                        ]
+                    ]);
                     exit;
                 }
 

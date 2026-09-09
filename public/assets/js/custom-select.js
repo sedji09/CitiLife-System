@@ -16,10 +16,9 @@
             this.select = selectEl;
             if (!this.select || this.select._customSelect) return;
 
-            // Skip if explicitly flagged or inside modals/dialogs where absolute dropdowns get trapped by overflow-hidden/auto
+            // Skip if explicitly flagged or has no-custom-select class
             if (this.select.hasAttribute('data-no-custom') || 
-                this.select.classList.contains('no-custom-select') || 
-                this.select.closest('#dispute-modal, .modal, [role="dialog"], [id*="modal"]')) {
+                this.select.classList.contains('no-custom-select')) {
                 return;
             }
 
@@ -96,6 +95,21 @@
             // Build Options
             this.buildOptions();
 
+            // Check if inside overflow-hidden ancestor (modal/panel) - use fixed dropdown
+            this._useFixed = !!this.select.closest('[class*="overflow-hidden"], [class*="overflow-y-auto"], [class*="overflow-auto"], .modal, [role="dialog"]');
+            if (this._useFixed) {
+                // Wrap dropdown content in a scroll container
+                const scrollEl = document.createElement('div');
+                scrollEl.className = 'cs-fixed-scroll';
+                // Move existing children into scroll wrapper
+                while (this.dropdown.firstChild) scrollEl.appendChild(this.dropdown.firstChild);
+                this.dropdown.appendChild(scrollEl);
+                this._scrollEl = scrollEl;
+
+                document.body.appendChild(this.dropdown);
+                this.dropdown.classList.add('cs-fixed-dropdown');
+            }
+
             // Bind Events
             this.bindEvents();
 
@@ -107,7 +121,16 @@
         }
 
         buildOptions() {
-            this.dropdown.innerHTML = '';
+            if (this.select.disabled) {
+                this.wrapper.classList.add('cs-disabled');
+                if (this.trigger) this.trigger.disabled = true;
+            } else {
+                this.wrapper.classList.remove('cs-disabled');
+                if (this.trigger) this.trigger.disabled = false;
+            }
+
+            const target = (this._useFixed && this._scrollEl) ? this._scrollEl : this.dropdown;
+            target.innerHTML = '';
             const options = Array.from(this.select.options);
             const selectedOpt = this.select.options[this.select.selectedIndex] || options[0];
 
@@ -130,7 +153,7 @@
                     this.selectOption(opt.value, index);
                 });
 
-                this.dropdown.appendChild(item);
+                target.appendChild(item);
             });
         }
 
@@ -182,24 +205,69 @@
                 activeSelect.close();
             }
 
-            // Check if dropdown fits below, otherwise open upward
-            const rect = this.wrapper.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            if (spaceBelow < 260 && rect.top > 260) {
-                this.wrapper.classList.add('cs-dropup');
-            } else {
-                this.wrapper.classList.remove('cs-dropup');
-            }
+            if (this._useFixed) {
+                // Position dropdown using fixed coords relative to trigger
+                const rect = this.trigger.getBoundingClientRect();
+                const safeMargin = 12;
+                const maxW = window.innerWidth - safeMargin * 2;
+                const dropW = Math.min(Math.max(rect.width, 220), maxW);
+                this.dropdown.style.width = dropW + 'px';
+                this.dropdown.style.minWidth = Math.min(rect.width, maxW) + 'px';
+                this.dropdown.style.maxWidth = maxW + 'px';
 
-            // Check horizontal space: if close to right edge, open towards left
-            if (rect.right + 100 > window.innerWidth || rect.left + 220 > window.innerWidth) {
-                this.wrapper.classList.add('cs-dropdown-right');
+                // Left: start at trigger left, clamp so it doesn't go off-screen
+                let leftPos = rect.left;
+                if (leftPos + dropW > window.innerWidth - safeMargin) {
+                    leftPos = window.innerWidth - safeMargin - dropW;
+                }
+                if (leftPos < safeMargin) leftPos = safeMargin;
+                this.dropdown.style.left = leftPos + 'px';
+                this.dropdown.style.right = '';
+
+                // Calculate available vertical space with margins
+                const spaceBelow = window.innerHeight - rect.bottom - 16;
+                const spaceAbove = rect.top - 16;
+                const openUp = spaceBelow < 220 && spaceAbove > spaceBelow;
+                const maxAvailableH = openUp ? spaceAbove : spaceBelow;
+                const finalMaxH = Math.min(360, Math.max(180, maxAvailableH));
+
+                if (this._scrollEl) {
+                    this._scrollEl.style.maxHeight = finalMaxH + 'px';
+                }
+
+                if (openUp) {
+                    this.dropdown.style.top = '';
+                    this.dropdown.style.bottom = (window.innerHeight - rect.top + 5) + 'px';
+                    this.dropdown.style.transformOrigin = 'bottom center';
+                } else {
+                    this.dropdown.style.bottom = '';
+                    this.dropdown.style.top = (rect.bottom + 5) + 'px';
+                    this.dropdown.style.transformOrigin = 'top center';
+                }
             } else {
-                this.wrapper.classList.remove('cs-dropdown-right');
+                // Check if dropdown fits below, otherwise open upward
+                const rect = this.wrapper.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                if (spaceBelow < 300 && rect.top > 300) {
+                    this.wrapper.classList.add('cs-dropup');
+                } else {
+                    this.wrapper.classList.remove('cs-dropup');
+                }
+
+                // Check horizontal space: if close to right edge, open towards left
+                if (rect.right + 100 > window.innerWidth || rect.left + 220 > window.innerWidth) {
+                    this.wrapper.classList.add('cs-dropdown-right');
+                } else {
+                    this.wrapper.classList.remove('cs-dropdown-right');
+                }
             }
 
             this.wrapper.classList.add('cs-open');
             this.wrapper.style.zIndex = '9999';
+            if (this._useFixed) {
+                this.dropdown.classList.add('cs-visible');
+                document.body.classList.add('cs-noscroll');
+            }
             this.isOpen = true;
             activeSelect = this;
         }
@@ -207,6 +275,10 @@
         close() {
             this.wrapper.classList.remove('cs-open');
             this.wrapper.style.zIndex = '';
+            if (this._useFixed) {
+                this.dropdown.classList.remove('cs-visible');
+                document.body.classList.remove('cs-noscroll');
+            }
             this.isOpen = false;
             if (activeSelect === this) {
                 activeSelect = null;
@@ -236,6 +308,9 @@
 
         destroy() {
             if (this.observer) this.observer.disconnect();
+            if (this._useFixed && this.dropdown && this.dropdown.parentNode === document.body) {
+                document.body.removeChild(this.dropdown);
+            }
             if (this.wrapper && this.wrapper.parentNode) {
                 this.wrapper.parentNode.insertBefore(this.select, this.wrapper);
                 this.wrapper.remove();
@@ -263,17 +338,9 @@
     function initCustomSelects(root = document) {
         if (!root) return;
         const selects = root.querySelectorAll('select:not([data-no-custom]):not(.no-custom-select)');
-        selects.forEach(select => {
-            if (select.closest('#dispute-modal, .modal, [role="dialog"], [id*="modal"]')) {
-                if (select._customSelect && typeof select._customSelect.destroy === 'function') {
-                    select._customSelect.destroy();
-                }
-                return;
-            }
-            if (!select._customSelect && select.offsetParent !== null) {
-                new CustomSelect(select);
-            }
-        });
+        selects.forEach(select =>
+            !select._customSelect && select.offsetParent !== null && new CustomSelect(select)
+        );
     }
 
     window.CustomSelect = CustomSelect;

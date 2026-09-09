@@ -4,8 +4,8 @@ require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
 $disputeModel = new \ResultDisputeModel($pdo);
 $branchId = $_SESSION['branch_id'] ?? 1;
 $disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
-$pendingDisputeCount = count(array_filter($disputes, function($d) { 
-    return in_array($d['status'], ['Pending RadTech Review', 'Pending RadTech Verification']); 
+$pendingDisputeCount = count(array_filter($disputes, function ($d) {
+    return in_array($d['status'], ['Pending RadTech Review', 'Pending RadTech Verification']);
 }));
 $currentTab = $_GET['tab'] ?? 'completed';
 
@@ -19,25 +19,31 @@ $currentTab = $_GET['tab'] ?? 'completed';
     html.theme-dark .status-badge {
         background-color: transparent !important;
     }
+
     div:where(.swal2-container),
     .swal2-container {
         z-index: 999999 !important;
     }
+
     .custom-gray-scroll {
         scrollbar-width: thin;
         scrollbar-color: #cbd5e1 transparent;
     }
+
     .custom-gray-scroll::-webkit-scrollbar {
         width: 6px;
         height: 6px;
     }
+
     .custom-gray-scroll::-webkit-scrollbar-track {
         background: transparent;
     }
+
     .custom-gray-scroll::-webkit-scrollbar-thumb {
         background-color: #cbd5e1;
         border-radius: 9999px;
     }
+
     .custom-gray-scroll::-webkit-scrollbar-thumb:hover {
         background-color: #94a3b8;
     }
@@ -54,7 +60,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
 <?php if ($successMsg): ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
@@ -102,24 +108,28 @@ $currentTab = $_GET['tab'] ?? 'completed';
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Requests
         </a>
-    
+
         <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
-           class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
+            class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
-                <span id="radtech-disputes-tab-badge" class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $pendingDisputeCount ?>">
+                <span id="radtech-disputes-tab-badge"
+                    class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200"
+                    style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;"
+                    title="<?= $pendingDisputeCount ?>">
                     <?= $pendingDisputeCount > 99 ? '99+' : $pendingDisputeCount ?>
                 </span>
             <?php endif; ?>
         </a>
-</nav>
+    </nav>
 </div>
 
 <!-- Content -->
 <div class="mt-6 flex flex-col gap-4 <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
     <div class="flex gap-4 items-center">
         <?php $defaultSearch = $_GET['search'] ?? ''; ?>
-        <input type="text" id="search-input" placeholder="Search by patient name or case number..." value="<?= htmlspecialchars($defaultSearch) ?>"
+        <input type="text" id="search-input" placeholder="Search by patient name or case number..."
+            value="<?= htmlspecialchars($defaultSearch) ?>"
             class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
         <?php $defaultPriorityFilter = $_GET['filterPriority'] ?? 'All'; ?>
         <select id="filter-priority"
@@ -133,10 +143,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
         <select id="filter-status"
             class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option value="All" <?= $defaultStatusFilter === 'All' ? 'selected' : '' ?>>All Statuses</option>
-            <option value="For Revision" <?= $defaultStatusFilter === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
+            <option value="For Revision" <?= $defaultStatusFilter === 'For Revision' ? 'selected' : '' ?>>For Revision
+            </option>
             <option value="Pending" <?= $defaultStatusFilter === 'Pending' ? 'selected' : '' ?>>Pending</option>
-            <option value="Under Reading" <?= $defaultStatusFilter === 'Under Reading' ? 'selected' : '' ?>>Under Reading</option>
-            <option value="Report Ready" <?= $defaultStatusFilter === 'Report Ready' ? 'selected' : '' ?>>Report Ready</option>
+            <option value="Under Reading" <?= $defaultStatusFilter === 'Under Reading' ? 'selected' : '' ?>>Under Reading
+            </option>
+            <option value="Report Ready" <?= $defaultStatusFilter === 'Report Ready' ? 'selected' : '' ?>>Report Ready
+            </option>
             <option value="Completed" <?= $defaultStatusFilter === 'Completed' ? 'selected' : '' ?>>Completed</option>
             <option value="Overdue" <?= $defaultStatusFilter === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
         </select>
@@ -157,7 +170,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 
-<div class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
+<div
+    class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
     <div class="overflow-x-auto">
         <table class="w-full text-sm ">
             <thead class="sticky top-0 z-10">
@@ -191,8 +205,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         $patFullName = formatFullName($row);
                         $isReportReady = ($row['status'] === 'Report Ready');
                         $isToday = (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d'));
-                        
-                        if (($row['status'] ?? '') === 'For Revision' || (!empty($row['re_edit_reason']) && ($row['status'] ?? '') === 'Under Reading')) {
+
+                        if (($row['status'] ?? '') === 'For Revision') {
                             $displayStatus = 'For Revision';
                         } elseif ($row['approval_status'] === 'Rejected' || $row['status'] === 'Rejected') {
                             $displayStatus = 'Rejected';
@@ -206,11 +220,15 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
                         $initialDisplay = '';
                         if (!$hasHighlight) {
-                            if ($defaultDateFilter === 'Today' && !$isToday) $initialDisplay = 'display: none;';
-                            if ($defaultDateFilter === 'Backlog' && $isToday) $initialDisplay = 'display: none;';
-                            if ($defaultPriorityFilter !== 'All' && $defaultPriorityFilter !== $row['priority']) $initialDisplay = 'display: none;';
-                            if ($defaultStatusFilter !== 'All' && $defaultStatusFilter !== $displayStatus) $initialDisplay = 'display: none;';
-                            
+                            if ($defaultDateFilter === 'Today' && !$isToday)
+                                $initialDisplay = 'display: none;';
+                            if ($defaultDateFilter === 'Backlog' && $isToday)
+                                $initialDisplay = 'display: none;';
+                            if ($defaultPriorityFilter !== 'All' && $defaultPriorityFilter !== $row['priority'])
+                                $initialDisplay = 'display: none;';
+                            if ($defaultStatusFilter !== 'All' && $defaultStatusFilter !== $displayStatus)
+                                $initialDisplay = 'display: none;';
+
                             $sLower = strtolower($defaultSearch);
                             if ($sLower !== '') {
                                 $nMatch = strpos(strtolower($patFullName), $sLower) !== false;
@@ -222,10 +240,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             }
                         }
                         ?>
-                        <tr class="hover:bg-gray-50 transition-colors record-row"
-                            style="<?= $initialDisplay ?>"
-                            data-id="<?= htmlspecialchars($row['case_number']) ?>"
-                            data-case-id="<?= (int)$row['id'] ?>"
+                        <tr class="hover:bg-gray-50 transition-colors record-row" style="<?= $initialDisplay ?>"
+                            data-id="<?= htmlspecialchars($row['case_number']) ?>" data-case-id="<?= (int) $row['id'] ?>"
                             data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
                             data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-priority="<?= htmlspecialchars($row['priority']) ?>"
@@ -351,19 +367,20 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                     </a>
 
                                     <?php if ($isReportReady): ?>
-                                         <?php if (empty($row['released']) || (int)$row['released'] === 0): ?>
-                                         <!-- Re-edit — active when Report Ready and not yet released -->
-                                         <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
-                                             class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                             title="Allow Radiologist to Re-edit (Revert to Draft)">
-                                             <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                         </button>
-                                         <?php endif; ?>
+                                        <?php if (empty($row['released']) || (int) $row['released'] === 0): ?>
+                                            <!-- Re-edit — active when Report Ready and not yet released -->
+                                            <button type="button" onclick="triggerReEdit(<?= $row['id'] ?>, this, event)"
+                                                class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                title="Allow Radiologist to Re-edit (Revert to Draft)">
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                            </button>
+                                        <?php endif; ?>
 
                                         <!-- Print Result — active when Report Ready -->
                                         <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?id=' . $row['id']) ?>', 'Yes, Print', true, event)"
-                                            class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Print Report">
+                                            class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                            title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
 
@@ -375,13 +392,15 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                         </button>
                                     <?php else: ?>
                                         <!-- Print — disabled -->
-                                        <button class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
+                                        <button
+                                            class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
                                             title="Print Report (Disabled until Radiologist submits report)" disabled>
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </button>
 
                                         <!-- Release — disabled -->
-                                        <span class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
+                                        <span
+                                            class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
                                             title="Release (Disabled until Radiologist submits report)">
                                             <i data-lucide="send" class="w-4 h-4"></i>
                                         </span>
@@ -394,11 +413,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
             </tbody>
         </table>
     </div>
-    
+
     <!-- Pagination Controls for Main Table -->
-    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="main-pagination-container" style="display: flex;">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4"
+        id="main-pagination-container" style="display: flex;">
         <span id="main-record-count" class="text-xs text-gray-500 font-medium">
-            Showing <span id="main-start">0</span> to <span id="main-end">0</span> of <span id="main-total" class="font-semibold text-gray-800">0</span> records
+            Showing <span id="main-start">0</span> to <span id="main-end">0</span> of <span id="main-total"
+                class="font-semibold text-gray-800">0</span> records
         </span>
         <div class="flex items-center flex-wrap gap-1.5" id="main-pagination-controls">
         </div>
@@ -590,14 +611,14 @@ $currentTab = $_GET['tab'] ?? 'completed';
         } else if (emptyMsg) {
             emptyMsg.style.display = 'none';
         }
-        
+
         paginateMain(matchedRows, tbody);
     }
 
     // Main Pagination Logic
     let currentMainPage = 1;
     const mainItemsPerPage = 7;
-    
+
     function paginateMain(matchedRows, targetTbody = null) {
         const { tbody: defaultTbody } = getQueueInputs();
         const tbody = targetTbody || defaultTbody;
@@ -605,7 +626,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
         const totalRecords = matchedRows.length;
         let totalPages = Math.ceil(totalRecords / mainItemsPerPage);
-        
+
         if (currentMainPage > totalPages && totalPages > 0) currentMainPage = totalPages;
         if (totalPages === 0) currentMainPage = 1;
 
@@ -626,27 +647,27 @@ $currentTab = $_GET['tab'] ?? 'completed';
         const startSpan = document.getElementById('main-start');
         const endSpan = document.getElementById('main-end');
         const totalSpan = document.getElementById('main-total');
-        
+
         if (!container || !controls) return;
-        
+
         container.style.display = 'flex';
         controls.innerHTML = '';
-        
+
         startSpan.innerText = totalRecords > 0 ? startIdx + 1 : 0;
         endSpan.innerText = endIdx;
         totalSpan.innerText = totalRecords;
-        
+
         function createButton(label, page, disabled, isActive = false) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.innerHTML = label;
-            
+
             if (isActive) {
                 btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
             } else {
                 btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
             }
-            
+
             if (disabled) {
                 btn.disabled = true;
                 if (!isActive) btn.classList.add('opacity-40', 'cursor-not-allowed');
@@ -659,9 +680,9 @@ $currentTab = $_GET['tab'] ?? 'completed';
             }
             return btn;
         }
-        
+
         controls.appendChild(createButton('&lsaquo; Prev', currentMainPage - 1, currentMainPage === 1));
-        
+
         function createEllipsis() {
             const span = document.createElement('span');
             span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
@@ -676,34 +697,37 @@ $currentTab = $_GET['tab'] ?? 'completed';
         } else {
             controls.appendChild(createButton(1, 1, false, 1 === currentMainPage));
             if (currentMainPage > 3) controls.appendChild(createEllipsis());
-            
+
             let startPage = Math.max(2, currentMainPage - 1);
             let endPage = Math.min(totalPages - 1, currentMainPage + 1);
-            
+
             if (currentMainPage === 1) endPage = 3;
             if (currentMainPage === totalPages) startPage = totalPages - 2;
-            
+
             for (let i = startPage; i <= endPage; i++) {
                 controls.appendChild(createButton(i, i, false, i === currentMainPage));
             }
-            
+
             if (currentMainPage < totalPages - 2) controls.appendChild(createEllipsis());
             controls.appendChild(createButton(totalPages, totalPages, false, totalPages === currentMainPage));
         }
-        
+
         controls.appendChild(createButton('Next &rsaquo;', currentMainPage + 1, currentMainPage >= totalPages));
     }
 
     let pendingQueueHighlight = new window.URLSearchParams(window.location.search).get('highlight') ||
-                                new window.URLSearchParams(window.location.search).get('highlight_case') ||
-                                new window.URLSearchParams(window.location.search).get('case_id');
+        new window.URLSearchParams(window.location.search).get('highlight_case') ||
+        new window.URLSearchParams(window.location.search).get('case_id');
     let highlightHandled = false;
 
     function initPatientQueue() {
+        const currentTabParam = (new window.URLSearchParams(window.location.search)).get('tab');
+        if (currentTabParam === 'disputes') return false;
+
         const highlightId = pendingQueueHighlight ||
-                            new window.URLSearchParams(window.location.search).get('highlight') ||
-                            new window.URLSearchParams(window.location.search).get('highlight_case') ||
-                            new window.URLSearchParams(window.location.search).get('case_id');
+            new window.URLSearchParams(window.location.search).get('highlight') ||
+            new window.URLSearchParams(window.location.search).get('highlight_case') ||
+            new window.URLSearchParams(window.location.search).get('case_id');
 
         if (highlightId && !highlightHandled) {
             const { searchInput, filterPriority, filterStatus, filterDate, tbody } = getQueueInputs();
@@ -786,23 +810,10 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     }, 200);
                 }, 50);
 
-                // Remove existing banner if present
-                const existingBanner = document.getElementById('highlight-banner');
-                if (existingBanner) existingBanner.remove();
-
-                const banner = document.createElement('div');
-                banner.id = 'highlight-banner';
-                banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${highlightId}</strong> is highlighted below.</span></div>`;
-                banner.style.cssText = 'margin-left:auto;padding:0.75rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;';
-                const header = document.querySelector('h2');
-                if (header && header.parentElement) {
-                    header.parentElement.insertAdjacentElement('afterend', banner);
+                // Show standard top banner
+                if (typeof window.showHighlightBanner === 'function') {
+                    window.showHighlightBanner(highlightId);
                 }
-                setTimeout(() => {
-                    banner.style.transition = 'opacity 0.5s';
-                    banner.style.opacity = '0';
-                    setTimeout(() => banner.remove(), 500);
-                }, 6000);
 
                 // Clean up URL after successful match
                 pendingQueueHighlight = null;
@@ -816,7 +827,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     if (window.__APP__) {
                         window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
                     }
-                } catch (e) {}
+                } catch (e) { }
                 return;
             }
         }
@@ -858,14 +869,17 @@ $currentTab = $_GET['tab'] ?? 'completed';
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mb-4"></div>
     </div>
     <div id="release-success-icon" class="hidden mb-4">
-        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <div
+            class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
         </div>
     </div>
     <h3 id="release-title-text" class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the results...</p>
+    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the
+        results...</p>
 </div>
 
 <script>
@@ -882,13 +896,10 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     </div>
                     <div class="text-left mb-2">
                         <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                            RadTech Notes <span class="text-red-500">*</span>:
+                            Notes <span class="text-red-500 font-bold">*</span>:
                         </label>
-                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" onfocus="if(!this.dataset.error){this.style.borderColor='#d97706';}" onblur="if(!this.dataset.error){this.style.borderColor='#d1d5db';}" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
-                        <p id="swal-reedit-error" class="hidden text-xs text-red-600 mt-2 font-medium items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-red-500 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span>Please enter notes for the radiologist.</span>
-                        </p>
+                        <textarea id="swal-reedit-reason" rows="3" class="w-full text-sm border border-gray-300 rounded-xl p-3 transition resize-none font-sans" style="outline: none !important; box-shadow: none !important;" placeholder="Enter notes for the radiologist on what needs to be changed..."></textarea>
+                        <p id="swal-reedit-warn" class="hidden text-xs text-red-500 mt-1">Please provide a note for the radiologist.</p>
                     </div>
                 `,
                 icon: 'question',
@@ -903,54 +914,47 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     cancelButton: 'rounded-xl px-5 py-2.5 text-sm font-semibold'
                 },
                 didOpen: () => {
-                    const textarea = document.getElementById('swal-reedit-reason');
-                    const errEl = document.getElementById('swal-reedit-error');
-                    if (textarea) {
-                        textarea.focus();
-                        textarea.addEventListener('input', () => {
-                            if (textarea.value.trim().length > 0) {
-                                textarea.dataset.error = '';
-                                textarea.style.borderColor = '#d97706';
-                                textarea.style.backgroundColor = '#ffffff';
-                                if (errEl) {
-                                    errEl.classList.add('hidden');
-                                    errEl.classList.remove('flex');
-                                }
-                            }
-                        });
-                    }
+                    const ta = document.getElementById('swal-reedit-reason');
+                    const warn = document.getElementById('swal-reedit-warn');
+                    if (!ta) return;
+                    ta.focus();
+                    ta.addEventListener('focus', () => {
+                        ta.style.borderColor = '#d97706';
+                        if (warn) warn.classList.add('hidden');
+                    });
+                    ta.addEventListener('blur', () => {
+                        if (!ta.value.trim()) {
+                            ta.style.borderColor = '#ef4444';
+                            if (warn) warn.classList.remove('hidden');
+                        } else {
+                            ta.style.borderColor = '#d1d5db';
+                        }
+                    });
+                    ta.addEventListener('input', () => {
+                        if (ta.value.trim()) {
+                            ta.style.borderColor = '#d97706';
+                            if (warn) warn.classList.add('hidden');
+                        }
+                    });
                 },
                 preConfirm: () => {
-                    const textarea = document.getElementById('swal-reedit-reason');
-                    const errEl = document.getElementById('swal-reedit-error');
-                    const text = textarea ? textarea.value.trim() : '';
-                    if (!text) {
-                        if (textarea) {
-                            textarea.dataset.error = '1';
-                            textarea.style.borderColor = '#ef4444';
-                            textarea.style.backgroundColor = '#fef2f2';
-                            textarea.focus();
-                        }
-                        if (errEl) {
-                            errEl.classList.remove('hidden');
-                            errEl.classList.add('flex');
-                        }
+                    const ta = document.getElementById('swal-reedit-reason');
+                    const warn = document.getElementById('swal-reedit-warn');
+                    if (ta && !ta.value.trim()) {
+                        ta.style.borderColor = '#ef4444';
+                        if (warn) warn.classList.remove('hidden');
                         return false;
                     }
-                    return text;
+                    return ta ? ta.value.trim() : '';
                 }
             });
 
-            if (!isConfirmed || !formValues) return;
-            reason = formValues;
+            if (!isConfirmed) return;
+            reason = formValues || '';
         } else {
-            reason = prompt('Allow Radiologist to Re-edit? Please enter the reason:');
-            if (reason === null) return;
-            reason = reason.trim();
-            if (!reason) {
-                alert('A reason is required to allow re-edit.');
-                return;
-            }
+            const promptResult = prompt('Allow Radiologist to Re-edit? Add a note (optional):');
+            if (promptResult === null) return;
+            reason = promptResult.trim();
         }
 
         const originalHTML = btn ? btn.innerHTML : '';
@@ -1157,7 +1161,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
     <div class="flex gap-4 items-center">
         <input type="text" id="disputes-search-input" placeholder="Search by patient name or case number..."
             class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
-        
+
         <select id="disputes-filter-category"
             class="w-52 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option value="All">All Corrections</option>
@@ -1178,7 +1182,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
     </div>
 </div>
 
-<div id="disputes-table-card" class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab !== 'disputes' ? 'hidden' : '' ?>">
+<div id="disputes-table-card"
+    class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab !== 'disputes' ? 'hidden' : '' ?>">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-200 text-gray-700">
@@ -1274,9 +1279,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         ];
                         $jsonPayload = htmlspecialchars(json_encode($disputePayload), ENT_QUOTES, 'UTF-8');
                         ?>
-                        <tr class="hover:bg-gray-50 transition-colors dispute-table-row" 
-                            data-id="<?= htmlspecialchars($d['case_number']) ?>" 
-                            data-dispute-id="<?= $d['id'] ?>" 
+                        <tr class="hover:bg-gray-50 transition-colors dispute-table-row"
+                            data-id="<?= htmlspecialchars($d['case_number']) ?>" data-dispute-id="<?= $d['id'] ?>"
                             data-case="<?= htmlspecialchars($d['case_number']) ?>"
                             data-name="<?= htmlspecialchars($disputePatName) ?>"
                             data-patient-number="<?= htmlspecialchars($d['patient_number'] ?? '') ?>"
@@ -1290,12 +1294,12 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             </td>
                             <td class="py-3 px-4 max-w-[220px] align-middle">
                                 <div class="flex flex-col items-start gap-1">
-                                    <span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border <?= $catBadgeClass ?> shadow-2xs">
+                                    <span
+                                        class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border <?= $catBadgeClass ?> shadow-2xs">
                                         <?= htmlspecialchars($catLabel) ?>
                                     </span>
-                                    <button type="button" 
-                                            onclick='openDisputeDetailsModal(<?= $jsonPayload ?>)'
-                                            class="text-xs text-amber-700 hover:text-amber-900 font-semibold hover:underline cursor-pointer select-none">
+                                    <button type="button" onclick='openDisputeDetailsModal(<?= $jsonPayload ?>)'
+                                        class="text-xs text-amber-700 hover:text-amber-900 font-semibold hover:underline cursor-pointer select-none">
                                         See error
                                     </button>
                                 </div>
@@ -1303,27 +1307,33 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <?php $currStatus = $d['status']; ?>
                                 <?php if ($currStatus === 'Issue Reported' || $currStatus === 'Pending RadTech Review'): ?>
-                                    <span class="inline-block text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full">
+                                    <span
+                                        class="inline-block text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full">
                                         Issue Reported
                                     </span>
                                 <?php elseif ($currStatus === 'For RadTech Review'): ?>
-                                    <span class="inline-block text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                                    <span
+                                        class="inline-block text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
                                         For RadTech Review
                                     </span>
                                 <?php elseif ($currStatus === 'Correction in Progress'): ?>
-                                    <span class="inline-block text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
+                                    <span
+                                        class="inline-block text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
                                         Correction in Progress
                                     </span>
                                 <?php elseif ($currStatus === 'Correction Completed' || $currStatus === 'Pending RadTech Verification'): ?>
-                                    <span class="inline-block text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+                                    <span
+                                        class="inline-block text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
                                         Correction Completed
                                     </span>
                                 <?php elseif ($currStatus === 'Resolved'): ?>
-                                    <span class="inline-block text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                                    <span
+                                        class="inline-block text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
                                         Resolved
                                     </span>
                                 <?php else: ?>
-                                    <span class="inline-block text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                                    <span
+                                        class="inline-block text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
                                         <?= htmlspecialchars($currStatus) ?>
                                     </span>
                                 <?php endif; ?>
@@ -1333,40 +1343,40 @@ $currentTab = $_GET['tab'] ?? 'completed';
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <?php
-                                    $currStatus = $d['status'] ?? '';
-                                    $isResolved = ($currStatus === 'Resolved');
-                                    $isDemoFixed = !empty($d['demographics_fixed']);
-                                    $isPendingVerify = in_array($currStatus, ['Correction Completed', 'Pending RadTech Verification']);
+                                $currStatus = $d['status'] ?? '';
+                                $isResolved = ($currStatus === 'Resolved');
+                                $isDemoFixed = !empty($d['demographics_fixed']);
+                                $isPendingVerify = in_array($currStatus, ['Correction Completed', 'Pending RadTech Verification']);
 
-                                    $hasPatientInfo = ($cat === 'demographic_error' || $cat === 'both_error' || $cat === 'both_template_error' || $catLabel === 'Patient Info Error' || $catLabel === 'Typo & Info' || $catLabel === 'Info & Rename' || stripos($fullText, 'First Name:') !== false || stripos($fullText, 'Last Name:') !== false || stripos($fullText, 'Wrong Patient Info') !== false);
-                                    $hasFindingsOrTypo = ($cat === 'findings_error' || $cat === 'both_error' || $cat === 'template_error' || $cat === 'both_template_error' || $cat === 'other' || $cat === 'other_error' || $catLabel === 'Typo & Info' || $catLabel === 'Typographical Error' || $catLabel === 'Template Rename' || $catLabel === 'Info & Rename' || $catLabel === 'Other Concern' || stripos($fullText, 'Typographical Error') !== false || stripos($fullText, 'Findings') !== false || stripos($fullText, 'Template Rename') !== false || stripos($fullText, 'Other Concern') !== false);
+                                $hasPatientInfo = ($cat === 'demographic_error' || $cat === 'both_error' || $cat === 'both_template_error' || $catLabel === 'Patient Info Error' || $catLabel === 'Typo & Info' || $catLabel === 'Info & Rename' || stripos($fullText, 'First Name:') !== false || stripos($fullText, 'Last Name:') !== false || stripos($fullText, 'Wrong Patient Info') !== false);
+                                $hasFindingsOrTypo = ($cat === 'findings_error' || $cat === 'both_error' || $cat === 'template_error' || $cat === 'both_template_error' || $cat === 'other' || $cat === 'other_error' || $catLabel === 'Typo & Info' || $catLabel === 'Typographical Error' || $catLabel === 'Template Rename' || $catLabel === 'Info & Rename' || $catLabel === 'Other Concern' || stripos($fullText, 'Typographical Error') !== false || stripos($fullText, 'Findings') !== false || stripos($fullText, 'Template Rename') !== false || stripos($fullText, 'Other Concern') !== false);
 
-                                    $showDemoBtn = $hasPatientInfo && !$isDemoFixed && !$isResolved && !$isPendingVerify;
-                                    $showAmendBtn = ($hasFindingsOrTypo || !$hasPatientInfo) && !$isResolved && ($cat !== 'demographic_error') && !$isPendingVerify;
+                                $showDemoBtn = $hasPatientInfo && !$isDemoFixed && !$isResolved && !$isPendingVerify;
+                                $showAmendBtn = ($hasFindingsOrTypo || !$hasPatientInfo) && !$isResolved && ($cat !== 'demographic_error') && !$isPendingVerify;
 
-                                    $amendBtnTitle = ($cat === 'template_error') ? 'Rename X-ray Template' : (($cat === 'both_template_error') ? 'Patient Info & Rename X-ray Template' : 'Edit / Amend Findings Report');
+                                $amendBtnTitle = ($cat === 'template_error') ? 'Rename X-ray Template' : (($cat === 'both_template_error') ? 'Patient Info & Rename X-ray Template' : 'Edit / Amend Findings Report');
 
-                                    $dispPayload = [
-                                        'id' => $d['id'],
-                                        'case_id' => $d['case_id'],
-                                        'case_number' => $d['case_number'],
-                                        'patient_number' => $d['patient_number'] ?? '',
-                                        'description' => $fullText,
-                                        'first_name' => $d['first_name'] ?? '',
-                                        'last_name' => $d['last_name'] ?? '',
-                                        'middle_name' => $d['middle_name'] ?? '',
-                                        'age' => $d['age'] ?? '',
-                                        'sex' => $d['sex'] ?? '',
-                                        'user_account_name' => $d['user_account_name'] ?? '',
-                                        'category' => $d['dispute_category'] ?? '',
-                                        'status' => $d['status'],
-                                        'findings' => $d['findings'] ?? '',
-                                        'impression' => $d['impression'] ?? '',
-                                        'old_findings' => $d['old_findings'] ?? '',
-                                        'old_impression' => $d['old_impression'] ?? '',
-                                        'exam_type' => $d['exam_type'] ?? ''
-                                    ];
-                                    $dispJson = htmlspecialchars(json_encode($dispPayload), ENT_QUOTES, 'UTF-8');
+                                $dispPayload = [
+                                    'id' => $d['id'],
+                                    'case_id' => $d['case_id'],
+                                    'case_number' => $d['case_number'],
+                                    'patient_number' => $d['patient_number'] ?? '',
+                                    'description' => $fullText,
+                                    'first_name' => $d['first_name'] ?? '',
+                                    'last_name' => $d['last_name'] ?? '',
+                                    'middle_name' => $d['middle_name'] ?? '',
+                                    'age' => $d['age'] ?? '',
+                                    'sex' => $d['sex'] ?? '',
+                                    'user_account_name' => $d['user_account_name'] ?? '',
+                                    'category' => $d['dispute_category'] ?? '',
+                                    'status' => $d['status'],
+                                    'findings' => $d['findings'] ?? '',
+                                    'impression' => $d['impression'] ?? '',
+                                    'old_findings' => $d['old_findings'] ?? '',
+                                    'old_impression' => $d['old_impression'] ?? '',
+                                    'exam_type' => $d['exam_type'] ?? ''
+                                ];
+                                $dispJson = htmlspecialchars(json_encode($dispPayload), ENT_QUOTES, 'UTF-8');
                                 ?>
 
                                 <?php if ($isResolved || (!$showDemoBtn && !$showAmendBtn && !$isPendingVerify)): ?>
@@ -1376,25 +1386,25 @@ $currentTab = $_GET['tab'] ?? 'completed';
                                         <?php if ($isPendingVerify): ?>
                                             <!-- Action: Verify & Release (Blue icon only with tooltip) -->
                                             <button type="button" onclick='openVerifyReleaseModal(<?= $dispJson ?>)'
-                                                    class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                                    title="Verify &amp; Release Case">
+                                                class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                title="Verify &amp; Release Case">
                                                 <i data-lucide="check-check" class="w-4 h-4"></i>
                                             </button>
                                         <?php else: ?>
                                             <?php if ($showDemoBtn): ?>
                                                 <!-- Action for Patient Info: Fix Demographics Modal (Green icon only with tooltip) -->
                                                 <button type="button" onclick='openFixDemographicsModal(<?= $dispJson ?>)'
-                                                        class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                                        title="Fix &amp; Resolve Patient Information">
+                                                    class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                    title="Fix &amp; Resolve Patient Information">
                                                     <i data-lucide="clipboard-check" class="w-4 h-4"></i>
                                                 </button>
                                             <?php endif; ?>
 
                                             <?php if ($showAmendBtn): ?>
                                                 <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
-                                                <a href="<?= url('patient-details?role=radtech&id=' . (int)$d['case_id'] . '&from=disputes&dispute_id=' . (int)$d['id']) ?>"
-                                                   class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                                   title="<?= htmlspecialchars($amendBtnTitle) ?>">
+                                                <a href="<?= url('patient-details?role=radtech&id=' . (int) $d['case_id'] . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
+                                                    class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                                    title="<?= htmlspecialchars($amendBtnTitle) ?>">
                                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                                                 </a>
                                             <?php endif; ?>
@@ -1408,11 +1418,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
             </tbody>
         </table>
     </div>
-    
+
     <!-- Pagination Controls for Disputes -->
-    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="disputes-pagination-container" style="display: flex;">
+    <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4"
+        id="disputes-pagination-container" style="display: flex;">
         <span id="disputes-record-count" class="text-xs text-gray-500 font-medium">
-            Showing <span id="disputes-start">0</span> to <span id="disputes-end">0</span> of <span id="disputes-total" class="font-semibold text-gray-800">0</span> records
+            Showing <span id="disputes-start">0</span> to <span id="disputes-end">0</span> of <span id="disputes-total"
+                class="font-semibold text-gray-800">0</span> records
         </span>
         <div class="flex items-center flex-wrap gap-1.5" id="disputes-pagination-controls">
         </div>
@@ -1458,10 +1470,10 @@ $currentTab = $_GET['tab'] ?? 'completed';
             const patientNum = (row.dataset.patientNumber || '').toLowerCase();
             const correctionType = (row.dataset.correction || '').trim();
 
-            const matchesSearch = !searchVal || 
-                                  caseNum.includes(searchVal) || 
-                                  patientName.includes(searchVal) || 
-                                  patientNum.includes(searchVal);
+            const matchesSearch = !searchVal ||
+                caseNum.includes(searchVal) ||
+                patientName.includes(searchVal) ||
+                patientNum.includes(searchVal);
             const matchesCategory = (catVal === 'All') || (correctionType === catVal);
 
             if (matchesSearch && matchesCategory) {
@@ -1493,7 +1505,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
     function paginateDisputesFiltered(matchedRows, targetTbody = null) {
         const totalRecords = matchedRows.length;
         let totalPages = Math.ceil(totalRecords / disputesItemsPerPage);
-        
+
         if (currentDisputesPage > totalPages && totalPages > 0) currentDisputesPage = totalPages;
         if (totalPages === 0) currentDisputesPage = 1;
 
@@ -1517,33 +1529,33 @@ $currentTab = $_GET['tab'] ?? 'completed';
         const startSpan = document.getElementById('disputes-start');
         const endSpan = document.getElementById('disputes-end');
         const totalSpan = document.getElementById('disputes-total');
-        
+
         if (!container || !controls) return;
-        
+
         container.style.display = 'flex';
         controls.innerHTML = '';
-        
+
         startSpan.innerText = totalRecords > 0 ? startIdx + 1 : 0;
         endSpan.innerText = endIdx;
         totalSpan.innerText = totalRecords;
-        
+
         function createButton(label, page, disabled, isActive = false) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.innerHTML = label;
-            
+
             if (isActive) {
                 btn.className = "px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600";
             } else {
                 btn.className = "px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm";
             }
-            
+
             if (disabled) {
                 btn.disabled = true;
             } else {
                 btn.onclick = () => {
                     currentDisputesPage = page;
-                    try { sessionStorage.setItem('radtech_disputes_page', page); } catch(e) {}
+                    try { sessionStorage.setItem('radtech_disputes_page', page); } catch (e) { }
                     if (matchedRows) {
                         paginateDisputesFiltered(matchedRows);
                     } else {
@@ -1555,16 +1567,16 @@ $currentTab = $_GET['tab'] ?? 'completed';
             }
             return btn;
         }
-        
+
         function createEllipsis() {
             const span = document.createElement('span');
             span.className = "px-2 py-1 text-xs text-gray-400 font-semibold select-none";
             span.innerHTML = "...";
             return span;
         }
-        
+
         controls.appendChild(createButton('&lsaquo; Back', currentDisputesPage - 1, currentDisputesPage === 1));
-        
+
         if (totalPages <= 5) {
             for (let i = 1; i <= totalPages; i++) {
                 controls.appendChild(createButton(i, i, false, i === currentDisputesPage));
@@ -1572,21 +1584,21 @@ $currentTab = $_GET['tab'] ?? 'completed';
         } else {
             controls.appendChild(createButton(1, 1, false, 1 === currentDisputesPage));
             if (currentDisputesPage > 3) controls.appendChild(createEllipsis());
-            
+
             let startPage = Math.max(2, currentDisputesPage - 1);
             let endPage = Math.min(totalPages - 1, currentDisputesPage + 1);
-            
+
             if (currentDisputesPage === 1) endPage = 3;
             if (currentDisputesPage === totalPages) startPage = totalPages - 2;
-            
+
             for (let i = startPage; i <= endPage; i++) {
                 controls.appendChild(createButton(i, i, false, i === currentDisputesPage));
             }
-            
+
             if (currentDisputesPage < totalPages - 2) controls.appendChild(createEllipsis());
             controls.appendChild(createButton(totalPages, totalPages, false, totalPages === currentDisputesPage));
         }
-        
+
         controls.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
     }
 
@@ -1605,35 +1617,88 @@ $currentTab = $_GET['tab'] ?? 'completed';
         }
     });
 
-    function handleDisputesHighlight() {
+    let disputesHighlightHandled = false;
+
+    function handleDisputesHighlight(passedTarget = null) {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('tab') !== 'disputes') return;
+        if (params.get('tab') !== 'disputes') return false;
+        if (disputesHighlightHandled) return true;
 
-        const targetVal = params.get('dispute_id') || params.get('highlight_dispute_id') || params.get('highlight_case') || params.get('highlight');
-        if (!targetVal) return;
+        // Prioritize specific case number or explicit highlight first over generic numeric dispute ID
+        const targetVal = passedTarget ||
+            params.get('highlight_case') ||
+            params.get('highlight') ||
+            params.get('case_number') ||
+            params.get('highlight_dispute_id') ||
+            params.get('dispute_id');
 
-        const rows = document.querySelectorAll('#disputes-table-body tr.dispute-table-row');
+        if (!targetVal) return false;
+
+        // Ensure filters/sorting are active so matched rows are in expected order
+        applyDisputesFilter();
+
+        const rows = Array.from(document.querySelectorAll('#disputes-table-body tr.dispute-table-row'));
         let targetRow = null;
-        rows.forEach(r => {
-            if (
-                (r.dataset.disputeId || '').toLowerCase() === targetVal.toLowerCase() ||
-                (r.dataset.id || '').toLowerCase() === targetVal.toLowerCase() ||
-                (r.dataset.case || '').toLowerCase() === targetVal.toLowerCase() ||
-                r.innerText.toLowerCase().includes(targetVal.toLowerCase())
-            ) {
+        const norm = str => (str || '').toLowerCase().replace(/[\s\-_]/g, '');
+        const targetNorm = norm(targetVal);
+
+        // 1. Strict exact match on Case Number (e.g. GAP2026-00287)
+        for (const r of rows) {
+            const cCase = norm(r.dataset.case || r.dataset.id || '');
+            if (cCase === targetNorm) {
                 targetRow = r;
+                break;
             }
-        });
+        }
+
+        // 2. Strict exact match on Dispute ID (e.g. 68)
+        if (!targetRow) {
+            for (const r of rows) {
+                const dId = norm(r.dataset.disputeId || '');
+                if (dId === targetNorm) {
+                    targetRow = r;
+                    break;
+                }
+            }
+        }
+
+        // 3. Strict exact match on Patient Number
+        if (!targetRow) {
+            for (const r of rows) {
+                const pNum = norm(r.dataset.patientNumber || '');
+                if (pNum === targetNorm) {
+                    targetRow = r;
+                    break;
+                }
+            }
+        }
 
         if (targetRow) {
-            const rowIndex = Array.from(rows).indexOf(targetRow);
-            currentDisputesPage = Math.floor(rowIndex / disputesItemsPerPage) + 1;
-            try { sessionStorage.setItem('radtech_disputes_page', currentDisputesPage); } catch(e) {}
-            paginateDisputes();
+            disputesHighlightHandled = true;
+
+            // Clear any lingering highlights on ALL rows so only 1 row is ever highlighted
+            rows.forEach(r => {
+                r.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
+                r.style.backgroundColor = '';
+            });
+
+            // Find targetRow in the currently displayed / matched rows
+            const matchedRows = rows.filter(r => r.style.display !== 'none' || r === targetRow);
+            const rowIndex = matchedRows.indexOf(targetRow);
+            if (rowIndex !== -1) {
+                currentDisputesPage = Math.floor(rowIndex / disputesItemsPerPage) + 1;
+                try { sessionStorage.setItem('radtech_disputes_page', currentDisputesPage); } catch (e) { }
+                paginateDisputesFiltered(matchedRows);
+            }
+
+            if (typeof window.showHighlightBanner === 'function') {
+                const friendlyLabel = targetRow.dataset.case || targetRow.dataset.id || targetVal;
+                window.showHighlightBanner(targetVal, friendlyLabel);
+            }
 
             setTimeout(() => {
                 targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400');
+                targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400', 'ring-offset-1');
                 targetRow.style.backgroundColor = '#fef08a';
 
                 let flashCount = 0;
@@ -1645,7 +1710,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                         setTimeout(() => {
                             targetRow.style.transition = 'background-color 2s ease, box-shadow 2s ease';
                             targetRow.style.backgroundColor = '';
-                            targetRow.classList.remove('ring-2', 'ring-amber-400');
+                            targetRow.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
                         }, 1200);
                     }
                 }, 250);
@@ -1658,22 +1723,40 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     cleanUrl.searchParams.delete('highlight');
                     cleanUrl.searchParams.delete('is_new');
                     window.history.replaceState({}, document.title, cleanUrl.toString());
-                } catch(e) {}
+                } catch (e) { }
             }, 150);
+
+            return true;
         }
+        return false;
     }
+
+    window.handlePageHighlight = function (targetId) {
+        const isDisputes = (new window.URLSearchParams(window.location.search)).get('tab') === 'disputes';
+        if (isDisputes) {
+            return handleDisputesHighlight(targetId);
+        } else {
+            return initPatientQueue(targetId);
+        }
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
         try {
             sessionStorage.setItem('radtech_last_table_url', window.location.href);
             const isDisputesTab = (new URLSearchParams(window.location.search)).get('tab') === 'disputes';
-            if (isDisputesTab) {
+            const hasHighlight = (new URLSearchParams(window.location.search)).has('highlight') ||
+                (new URLSearchParams(window.location.search)).has('highlight_case') ||
+                (new URLSearchParams(window.location.search)).has('dispute_id');
+
+            if (isDisputesTab && !hasHighlight) {
                 const savedPage = parseInt(sessionStorage.getItem('radtech_disputes_page') || '1', 10);
                 if (savedPage > 1) {
                     currentDisputesPage = savedPage;
                 }
+            } else if (hasHighlight) {
+                currentDisputesPage = 1;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         setTimeout(() => {
             paginateDisputes();
@@ -1752,7 +1835,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
         // Subtitle with Case # and Patient Name
         const subEl = document.getElementById('ddm-subtitle');
         if (subEl) {
-            subEl.innerHTML = `Case <span class="font-bold text-gray-800">#${data.case_number}</span>` + 
+            subEl.innerHTML = `Case <span class="font-bold text-gray-800">#${data.case_number}</span>` +
                 (data.patient_name ? ` &bull; <span class="font-semibold text-gray-700">${data.patient_name}</span>` : '') +
                 (data.patient_number ? ` <span class="text-gray-400">(${data.patient_number})</span>` : '');
         }
@@ -1915,12 +1998,15 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </script>
 
 <!-- DISPUTE / CORRECTION DETAILS MODAL -->
-<div id="dispute-details-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4" onclick="if(event.target === this) closeDisputeDetailsModal()">
+<div id="dispute-details-modal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    onclick="if(event.target === this) closeDisputeDetailsModal()">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
         <!-- Header -->
         <div class="flex items-start justify-between border-b border-gray-100 pb-3">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <div
+                    class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 shadow-2xs">
                     <i data-lucide="file-warning" class="w-5 h-5"></i>
                 </div>
                 <div>
@@ -1928,13 +2014,15 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     <p id="ddm-subtitle" class="text-xs text-gray-500 mt-0.5 font-medium"></p>
                 </div>
             </div>
-            <button onclick="closeDisputeDetailsModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+            <button onclick="closeDisputeDetailsModal()"
+                class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
         <!-- Meta Summary Bar -->
-        <div id="ddm-meta-bar" class="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
+        <div id="ddm-meta-bar"
+            class="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 text-xs">
             <!-- Populated via JS: Status badge & timestamp -->
         </div>
 
@@ -1945,8 +2033,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
         <!-- Modal Footer -->
         <div class="pt-3 border-t border-gray-100 flex items-center justify-end">
-            <button type="button" onclick="closeDisputeDetailsModal()" 
-                    class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer shadow-2xs">
+            <button type="button" onclick="closeDisputeDetailsModal()"
+                class="px-5 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer shadow-2xs">
                 Close
             </button>
         </div>
@@ -1990,64 +2078,86 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <!-- Left Box: Old Record -->
-                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                <div
+                    class="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
                     <div class="pb-2 border-b border-gray-100">
-                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Old Record (Report)</span>
+                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Old Record
+                            (Report)</span>
                     </div>
 
                     <div id="row-fix-old-first-name">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">First Name:</div>
-                        <div id="fix-old-first-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="fix-old-first-name"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-fix-old-last-name">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Last Name:</div>
-                        <div id="fix-old-last-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="fix-old-last-name"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-fix-old-age" class="hidden">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Age:</div>
-                        <div id="fix-old-age" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="fix-old-age"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-fix-old-sex" class="hidden">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex:</div>
-                        <div id="fix-old-sex" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="fix-old-sex"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
                 </div>
 
                 <!-- Right Box: New / Updated Info -->
-                <div class="bg-green-50/40 border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                <div
+                    class="bg-green-50/40 border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
                     <div class="pb-2 border-b border-green-100">
-                        <span class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New / Updated Info</span>
+                        <span class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New / Updated
+                            Info</span>
                     </div>
 
                     <div id="row-fix-new-first-name">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">First Name:</div>
-                        <div id="fix-new-first-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="fix-new-first-name"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-fix-new-last-name">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Last Name:</div>
-                        <div id="fix-new-last-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="fix-new-last-name"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-fix-new-age" class="hidden">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Age:</div>
-                        <div id="fix-new-age" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="fix-new-age"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-fix-new-sex" class="hidden">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex:</div>
-                        <div id="fix-new-sex" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="fix-new-sex"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
                 </div>
             </div>
 
             <!-- Success Alert Banner -->
-            <div id="fix-demo-alert" class="hidden p-3 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 font-semibold flex items-center gap-2 shadow-2xs">
+            <div id="fix-demo-alert"
+                class="hidden p-3 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 font-semibold flex items-center gap-2 shadow-2xs">
                 <i data-lucide="check-circle" class="w-4 h-4 text-green-600 shrink-0"></i>
-                <span>Patient record successfully updated with new information. You can now confirm and resolve this ticket.</span>
+                <span>Patient record successfully updated with new information. You can now confirm and resolve this
+                    ticket.</span>
             </div>
         </div>
 
@@ -2055,13 +2165,14 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
         <!-- Footer Action Buttons -->
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200">
-            <button type="button" onclick="closeFixDemographicsModal()" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition">
+            <button type="button" onclick="closeFixDemographicsModal()"
+                class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition">
                 Cancel
             </button>
 
             <!-- Fix & Resolve Button -->
             <button type="button" id="btn-apply-fix-demo" onclick="applyFixDemographics()"
-                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95">
+                class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95">
                 <i data-lucide="check" class="w-3.5 h-3.5"></i>
                 Fix &amp; Resolve
             </button>
@@ -2092,7 +2203,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
                 Patient's Reported Issue:
             </div>
-            <div id="verify-patient-statement" class="text-xs text-amber-950 font-medium whitespace-pre-line leading-relaxed pl-1"></div>
+            <div id="verify-patient-statement"
+                class="text-xs text-amber-950 font-medium whitespace-pre-line leading-relaxed pl-1"></div>
         </div>
 
         <!-- Section 3: Side-by-Side Demographics Comparison (Shown if patient info correction requested) -->
@@ -2104,56 +2216,76 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <!-- Left Box: Old Record -->
-                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                <div
+                    class="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
                     <div class="pb-2 border-b border-gray-100">
-                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Old Record (Report)</span>
+                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Old Record
+                            (Report)</span>
                     </div>
 
                     <div id="row-ver-old-first-name">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">First Name:</div>
-                        <div id="ver-old-first-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="ver-old-first-name"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-ver-old-last-name">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Last Name:</div>
-                        <div id="ver-old-last-name" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="ver-old-last-name"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-ver-old-age" class="hidden">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Age:</div>
-                        <div id="ver-old-age" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="ver-old-age"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-ver-old-sex" class="hidden">
                         <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Sex:</div>
-                        <div id="ver-old-sex" class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">—</div>
+                        <div id="ver-old-sex"
+                            class="mt-1 text-xs font-semibold text-gray-800 bg-white p-2.5 rounded-xl border border-gray-200 shadow-2xs">
+                            —</div>
                     </div>
                 </div>
 
                 <!-- Right Box: New / Updated Info -->
-                <div class="bg-green-50/40 border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
+                <div
+                    class="bg-green-50/40 border border-green-300 rounded-xl p-4 shadow-2xs space-y-3 max-h-64 overflow-y-auto custom-gray-scroll">
                     <div class="pb-2 border-b border-green-100">
-                        <span class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New / Updated Info</span>
+                        <span class="text-[11px] font-bold text-green-700 uppercase tracking-wider">New / Updated
+                            Info</span>
                     </div>
 
                     <div id="row-ver-new-first-name">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">First Name:</div>
-                        <div id="ver-new-first-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="ver-new-first-name"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-ver-new-last-name">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Last Name:</div>
-                        <div id="ver-new-last-name" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="ver-new-last-name"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-ver-new-age" class="hidden">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Age:</div>
-                        <div id="ver-new-age" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="ver-new-age"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
 
                     <div id="row-ver-new-sex" class="hidden">
                         <div class="text-[10px] font-bold text-green-800 uppercase tracking-wide">Sex:</div>
-                        <div id="ver-new-sex" class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">—</div>
+                        <div id="ver-new-sex"
+                            class="mt-1 text-xs font-semibold text-green-950 bg-white p-2.5 rounded-xl border border-green-200 shadow-2xs">
+                            —</div>
                     </div>
                 </div>
             </div>
@@ -2170,13 +2302,17 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     <div class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
                         Old Result
                     </div>
-                    <div id="verify-old-findings" class="text-xs text-gray-800 bg-white p-4 rounded-xl border border-gray-200 shadow-2xs max-h-56 overflow-y-auto overscroll-contain leading-relaxed custom-gray-scroll"></div>
+                    <div id="verify-old-findings"
+                        class="text-xs text-gray-800 bg-white p-4 rounded-xl border border-gray-200 shadow-2xs max-h-56 overflow-y-auto overscroll-contain leading-relaxed custom-gray-scroll">
+                    </div>
                 </div>
                 <div class="space-y-1.5">
                     <div class="text-[11px] font-bold text-green-700 uppercase tracking-wider">
                         New Amended Result
                     </div>
-                    <div id="verify-new-findings" class="text-xs text-green-950 bg-green-50/50 p-4 rounded-xl border border-green-300 shadow-2xs max-h-56 overflow-y-auto overscroll-contain leading-relaxed custom-gray-scroll"></div>
+                    <div id="verify-new-findings"
+                        class="text-xs text-green-950 bg-green-50/50 p-4 rounded-xl border border-green-300 shadow-2xs max-h-56 overflow-y-auto overscroll-contain leading-relaxed custom-gray-scroll">
+                    </div>
                 </div>
             </div>
         </div>
@@ -2185,12 +2321,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
         <!-- Footer Action Buttons -->
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200">
-            <button type="button" onclick="closeVerifyReleaseModal()" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition">
+            <button type="button" onclick="closeVerifyReleaseModal()"
+                class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition">
                 Cancel
             </button>
 
             <button type="button" onclick="submitAmendedRelease()"
-                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer">
+                class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer">
                 <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
                 Confirm &amp; Release Amended Report
             </button>
@@ -2199,20 +2336,24 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 <!-- RADTECH EDIT / AMEND MODAL (Findings, DICOM Name, Template Corrections) -->
-<div id="radtech-amend-modal" class="fixed inset-0 z-50 hidden flex items-start justify-center bg-black/55 backdrop-blur-sm p-4 overflow-y-auto">
+<div id="radtech-amend-modal"
+    class="fixed inset-0 z-50 hidden flex items-start justify-center bg-black/55 backdrop-blur-sm p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl my-6 border border-gray-100 overflow-hidden">
 
         <!-- ── Modal Header ── -->
-        <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100">
+        <div
+            class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100">
             <div class="flex items-center gap-3 min-w-0">
-                <div class="shrink-0 w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-sm">
+                <div
+                    class="shrink-0 w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-sm">
                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                 </div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                         <h3 class="font-bold text-gray-900 text-sm leading-tight">Edit / Amend Report</h3>
                         <!-- Dynamic step badge injected by JS -->
-                        <span id="amend-step-badge" class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 border border-blue-200 shrink-0">
+                        <span id="amend-step-badge"
+                            class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 border border-blue-200 shrink-0">
                             <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block animate-pulse"></span>
                             <span id="amend-step-text">Correction in Progress</span>
                         </span>
@@ -2227,7 +2368,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 </div>
             </div>
             <button type="button" onclick="closeRadTechAmendModal()"
-                    class="shrink-0 ml-2 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/70 transition cursor-pointer">
+                class="shrink-0 ml-2 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/70 transition cursor-pointer">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
@@ -2238,10 +2379,13 @@ $currentTab = $_GET['tab'] ?? 'completed';
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-500 mt-0.5 shrink-0"></i>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span class="text-[10px] font-extrabold text-rose-700 uppercase tracking-wider">Patient Reported Issue</span>
-                        <span id="amend-reported-category" class="px-1.5 py-0.5 text-[9px] font-bold bg-rose-200 text-rose-800 rounded uppercase tracking-wide"></span>
+                        <span class="text-[10px] font-extrabold text-rose-700 uppercase tracking-wider">Patient Reported
+                            Issue</span>
+                        <span id="amend-reported-category"
+                            class="px-1.5 py-0.5 text-[9px] font-bold bg-rose-200 text-rose-800 rounded uppercase tracking-wide"></span>
                     </div>
-                    <p id="amend-reported-description" class="text-xs text-rose-900 leading-relaxed whitespace-pre-line"></p>
+                    <p id="amend-reported-description"
+                        class="text-xs text-rose-900 leading-relaxed whitespace-pre-line"></p>
                 </div>
             </div>
         </div>
@@ -2255,20 +2399,21 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <div>
                 <div class="flex items-center gap-1.5 mb-2.5">
                     <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-500"></i>
-                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Findings &amp; Impression</span>
+                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Findings &amp;
+                        Impression</span>
                 </div>
                 <div class="space-y-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">Findings Report</label>
                         <textarea id="amend-findings" rows="4"
-                                  class="w-full text-xs font-mono p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none leading-relaxed resize-y transition"
-                                  placeholder="Enter or amend findings…"></textarea>
+                            class="w-full text-xs font-mono p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none leading-relaxed resize-y transition"
+                            placeholder="Enter or amend findings…"></textarea>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">Impression</label>
                         <textarea id="amend-impression" rows="2"
-                                  class="w-full text-xs font-mono p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none leading-relaxed resize-y transition"
-                                  placeholder="Enter or amend impression…"></textarea>
+                            class="w-full text-xs font-mono p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none leading-relaxed resize-y transition"
+                            placeholder="Enter or amend impression…"></textarea>
                     </div>
                 </div>
             </div>
@@ -2279,24 +2424,27 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <div>
                 <div class="flex items-center gap-1.5 mb-2.5">
                     <i data-lucide="user" class="w-3.5 h-3.5 text-blue-500"></i>
-                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Patient Name &amp; DICOM</span>
+                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Patient Name &amp;
+                        DICOM</span>
                     <span class="text-[10px] text-gray-400 ml-1">Fix name typos for header and printed result</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2.5">
                     <div>
-                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">First Name <span class="text-red-500">*</span></label>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">First Name <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="amend-first-name"
-                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                            class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-600 mb-1">Middle Name</label>
                         <input type="text" id="amend-middle-name"
-                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                            class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Last Name <span class="text-red-500">*</span></label>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Last Name <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="amend-last-name"
-                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                            class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition">
                     </div>
                 </div>
             </div>
@@ -2307,19 +2455,21 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <div>
                 <div class="flex items-center gap-1.5 mb-2.5">
                     <i data-lucide="layout-template" class="w-3.5 h-3.5 text-purple-500"></i>
-                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Exam &amp; Template</span>
+                    <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Exam &amp;
+                        Template</span>
                     <span class="text-[10px] text-gray-400 ml-1">Correct exam name on printed template</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
-                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Examination Name <span class="text-red-500">*</span></label>
+                        <label class="block text-[11px] font-semibold text-gray-600 mb-1">Examination Name <span
+                                class="text-red-500">*</span></label>
                         <input type="text" id="amend-exam-type" placeholder="e.g. Chest PA"
-                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
+                            class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-600 mb-1">Report Template</label>
                         <select id="amend-template"
-                                class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
+                            class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
                             <option value="General Standard">General Standard</option>
                             <option value="Standard Chest">Standard Chest</option>
                             <option value="Extremities">Extremities</option>
@@ -2332,7 +2482,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-600 mb-1">Audit Note</label>
                         <input type="text" id="amend-notes" placeholder="e.g. Fixed name typo"
-                               class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
+                            class="w-full text-xs p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition">
                     </div>
                 </div>
             </div>
@@ -2341,7 +2491,8 @@ $currentTab = $_GET['tab'] ?? 'completed';
             <div id="amend-history-container" class="hidden">
                 <div class="flex items-center gap-1.5 mb-2">
                     <i data-lucide="history" class="w-3 h-3 text-gray-400"></i>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Previous Amendments</span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Previous
+                        Amendments</span>
                 </div>
                 <div id="amend-history-list" class="space-y-1.5 max-h-28 overflow-y-auto"></div>
             </div>
@@ -2350,17 +2501,17 @@ $currentTab = $_GET['tab'] ?? 'completed';
         <!-- ── Footer ── -->
         <div class="flex items-center justify-between gap-3 px-5 py-3.5 bg-gray-50 border-t border-gray-100">
             <button type="button" onclick="closeRadTechAmendModal()"
-                    class="text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg transition cursor-pointer">
+                class="text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg transition cursor-pointer">
                 Cancel
             </button>
             <div class="flex items-center gap-2">
                 <button type="button" onclick="submitRadTechAmendment('save_only')"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition cursor-pointer shadow-sm">
+                    class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition cursor-pointer shadow-sm">
                     <i data-lucide="save" class="w-3.5 h-3.5"></i>
                     Save Draft
                 </button>
                 <button type="button" onclick="submitRadTechAmendment('save_and_release')"
-                        class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition cursor-pointer">
+                    class="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition cursor-pointer">
                     <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
                     Save &amp; Release
                 </button>
@@ -2372,298 +2523,120 @@ $currentTab = $_GET['tab'] ?? 'completed';
 
 
 <script>
-let currentFixData = null;
-let currentVerifyData = null;
+    let currentFixData = null;
+    let currentVerifyData = null;
 
-// Helper: Ensure age is always an age number (e.g. 23), converting from birthdate if a date was stored
-function parseAgeOrBirthdateToAge(val) {
-    if (!val) return '';
-    const trimmed = String(val).trim();
-    const dateMatch = trimmed.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-    if (dateMatch) {
-        const bdate = new Date(parseInt(dateMatch[1], 10), parseInt(dateMatch[2], 10) - 1, parseInt(dateMatch[3], 10));
-        if (!isNaN(bdate.getTime())) {
-            const today = new Date();
-            let a = today.getFullYear() - bdate.getFullYear();
-            const m = today.getMonth() - bdate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < bdate.getDate())) a--;
-            return String(Math.max(0, a));
-        }
-    }
-    const numMatch = trimmed.match(/(\d+)/);
-    return numMatch ? numMatch[1] : '';
-}
-
-// ── FIX DEMOGRAPHICS MODAL LOGIC ──
-function openFixDemographicsModal(data) {
-    currentFixData = data;
-    document.getElementById('fix-demo-dispute-id').value = data.id || '';
-    document.getElementById('fix-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
-
-    // Statement: Render clean bulleted text directly below the heading
-    const descText = data.description || '';
-    const statementEl = document.getElementById('fix-patient-statement');
-    
-    let demoNote = '';
-    const clean = descText.replace(/\r\n/g, '\n').trim();
-    const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|Typographical Error Note:|Other Concern Note:|$))/i);
-    if (demoMatch && demoMatch[1].trim()) {
-        demoNote = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
-    }
-    if (!demoNote) {
-        demoNote = clean;
-    }
-    const items = demoNote.split(/\n/).map(s => {
-        let line = s.trim().replace(/^•\s*/, '');
-        // If line is Age with a date string, convert to age
-        const ageLineMatch = line.match(/^(Age|Birthdate):\s*(.+)$/i);
-        if (ageLineMatch) {
-            const parsedAge = parseAgeOrBirthdateToAge(ageLineMatch[2]);
-            if (parsedAge) {
-                return `Age: ${parsedAge} yrs old`;
+    // Helper: Ensure age is always an age number (e.g. 23), converting from birthdate if a date was stored
+    function parseAgeOrBirthdateToAge(val) {
+        if (!val) return '';
+        const trimmed = String(val).trim();
+        const dateMatch = trimmed.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+        if (dateMatch) {
+            const bdate = new Date(parseInt(dateMatch[1], 10), parseInt(dateMatch[2], 10) - 1, parseInt(dateMatch[3], 10));
+            if (!isNaN(bdate.getTime())) {
+                const today = new Date();
+                let a = today.getFullYear() - bdate.getFullYear();
+                const m = today.getMonth() - bdate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < bdate.getDate())) a--;
+                return String(Math.max(0, a));
             }
         }
-        return line;
-    }).filter(Boolean);
-
-    if (items.length > 0) {
-        statementEl.innerHTML = items.map(it => `<div>• ${it}</div>`).join('');
-    } else {
-        statementEl.innerHTML = `<span class="text-xs text-amber-800 italic">No specific fields reported</span>`;
+        const numMatch = trimmed.match(/(\d+)/);
+        return numMatch ? numMatch[1] : '';
     }
 
-    // Extract patient typed corrections from description
-    const fnMatch = clean.match(/First Name:\s*([^\n\r,•]+)/i);
-    const lnMatch = clean.match(/Last Name:\s*([^\n\r,•]+)/i);
-    const ageMatch = clean.match(/(?:Age|Birthdate):\s*([^\n\r,•]+)/i);
-    const sexMatch = clean.match(/(?:Sex|Gender):\s*([^\n\r,•]+)/i);
+    // ── FIX DEMOGRAPHICS MODAL LOGIC ──
+    function openFixDemographicsModal(data) {
+        currentFixData = data;
+        document.getElementById('fix-demo-dispute-id').value = data.id || '';
+        document.getElementById('fix-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
 
-    const typedFn = fnMatch ? fnMatch[1].trim() : '';
-    const typedLn = lnMatch ? lnMatch[1].trim() : '';
-    const typedAge = ageMatch ? parseAgeOrBirthdateToAge(ageMatch[1]) : '';
-    const typedSex = sexMatch ? sexMatch[1].trim() : '';
+        // Statement: Render clean bulleted text directly below the heading
+        const descText = data.description || '';
+        const statementEl = document.getElementById('fix-patient-statement');
 
-    // Old Record (Current in database)
-    const oldFn = data.first_name || '';
-    const oldLn = data.last_name || '';
-    const oldAge = data.age ? `${data.age} yrs old` : 'N/A';
-    const oldSex = data.sex || 'N/A';
-
-    // New / Updated Info (what patient typed into report, fallback to current if not specified)
-    const newFn = typedFn || oldFn;
-    const newLn = typedLn || oldLn;
-    const newAge = typedAge ? `${typedAge} yrs old` : oldAge;
-    const newSex = typedSex || oldSex;
-
-    // Cache resolved values on currentFixData so applyFixDemographics uses them
-    currentFixData.resolved_first_name = newFn;
-    currentFixData.resolved_last_name = newLn;
-    currentFixData.resolved_age = typedAge || (data.age ? String(data.age) : '');
-    currentFixData.resolved_sex = typedSex || data.sex || '';
-
-    function safeSetText(id, text) {
-        const el = document.getElementById(id);
-        if (el) el.innerText = text;
-    }
-
-    safeSetText('fix-old-first-name', oldFn || 'N/A');
-    safeSetText('fix-old-last-name', oldLn || 'N/A');
-    safeSetText('fix-old-age', oldAge);
-    safeSetText('fix-old-sex', oldSex);
-
-    safeSetText('fix-new-first-name', newFn || 'N/A');
-    safeSetText('fix-new-last-name', newLn || 'N/A');
-    safeSetText('fix-new-age', newAge);
-    safeSetText('fix-new-sex', newSex);
-
-    // Filter which rows to display based on what the patient reported
-    const descLower = descText.toLowerCase();
-    const hasFirstName = Boolean(typedFn) || descLower.includes('first name');
-    const hasLastName = Boolean(typedLn) || descLower.includes('last name');
-    const hasAge = Boolean(typedAge) || descLower.includes('age');
-    const hasSex = Boolean(typedSex) || descLower.includes('sex') || descLower.includes('gender');
-
-    const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
-
-    function setRowVisibility(id, visible) {
-        const el = document.getElementById(id);
-        if (el) {
-            if (visible) el.classList.remove('hidden');
-            else el.classList.add('hidden');
+        let demoNote = '';
+        const clean = descText.replace(/\r\n/g, '\n').trim();
+        const demoMatch = clean.match(/(?:Wrong Patient Info:|Demographics Note:)\s*([\s\S]*?)(?=(Findings Note:|Exam Details Note:|Typographical Error Note:|Other Concern Note:|$))/i);
+        if (demoMatch && demoMatch[1].trim()) {
+            demoNote = demoMatch[1].trim().replace(/^•\s*/gm, '').trim();
         }
-    }
-
-    setRowVisibility('row-fix-old-first-name', hasFirstName || !hasAnySpecific);
-    setRowVisibility('row-fix-new-first-name', hasFirstName || !hasAnySpecific);
-
-    setRowVisibility('row-fix-old-last-name', hasLastName || !hasAnySpecific);
-    setRowVisibility('row-fix-new-last-name', hasLastName || !hasAnySpecific);
-
-    setRowVisibility('row-fix-old-age', hasAge);
-    setRowVisibility('row-fix-new-age', hasAge);
-
-    setRowVisibility('row-fix-old-sex', hasSex);
-    setRowVisibility('row-fix-new-sex', hasSex);
-
-    // Reset button states
-    const btnApply = document.getElementById('btn-apply-fix-demo');
-    const alertEl = document.getElementById('fix-demo-alert');
-    if (alertEl) alertEl.classList.add('hidden');
-
-    if (btnApply) {
-        btnApply.disabled = false;
-        btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
-        btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
-    }
-
-    document.getElementById('fix-demographics-modal').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-}
-
-function closeFixDemographicsModal() {
-    document.getElementById('fix-demographics-modal').classList.add('hidden');
-}
-
-function applyFixDemographics() {
-    if (!currentFixData) return;
-    const disputeId = currentFixData.id;
-    const firstName = currentFixData.resolved_first_name || currentFixData.first_name || '';
-    const lastName = currentFixData.resolved_last_name || currentFixData.last_name || '';
-    const middleName = currentFixData.middle_name || '';
-    const age = currentFixData.resolved_age || '';
-    const sex = currentFixData.resolved_sex || '';
-
-    const btnApply = document.getElementById('btn-apply-fix-demo');
-    if (btnApply) {
-        btnApply.disabled = true;
-        btnApply.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Resolving...';
-    }
-    if (window.lucide) lucide.createIcons();
-
-    const fd = new FormData();
-    fd.append('dispute_id', disputeId);
-    fd.append('first_name', firstName);
-    fd.append('last_name', lastName);
-    fd.append('middle_name', middleName);
-    if (age) {
-        fd.append('age', age);
-    }
-    if (sex) {
-        fd.append('sex', sex);
-    }
-
-    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=update_patient_demographics', {
-        method: 'POST',
-        body: fd
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            closeFixDemographicsModal();
-            if (res.both_pending_escalate) {
-                Swal.fire({
-                    title: 'Demographics Corrected!',
-                    text: 'Patient demographic information has been updated. Please proceed to Edit / Amend Report for the remaining findings issue.',
-                    icon: 'info',
-                    showConfirmButton: false,
-                    timer: 1500,
-                    customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
-                }).then(() => location.reload());
-            } else {
-                Swal.fire({
-                    title: 'Resolved!',
-                    text: 'Patient demographic corrections applied and resolved.',
-                    icon: 'success',
-                    showConfirmButton: false,
-                    timer: 1500,
-                    customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
-                }).then(() => location.reload());
+        if (!demoNote) {
+            demoNote = clean;
+        }
+        const items = demoNote.split(/\n/).map(s => {
+            let line = s.trim().replace(/^•\s*/, '');
+            // If line is Age with a date string, convert to age
+            const ageLineMatch = line.match(/^(Age|Birthdate):\s*(.+)$/i);
+            if (ageLineMatch) {
+                const parsedAge = parseAgeOrBirthdateToAge(ageLineMatch[2]);
+                if (parsedAge) {
+                    return `Age: ${parsedAge} yrs old`;
+                }
             }
+            return line;
+        }).filter(Boolean);
+
+        if (items.length > 0) {
+            statementEl.innerHTML = items.map(it => `<div>• ${it}</div>`).join('');
         } else {
-            if (btnApply) {
-                btnApply.disabled = false;
-                btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
-                btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
-            }
-            Swal.fire('Error', res.message || 'Failed to update record.', 'error');
-            if (window.lucide) lucide.createIcons();
+            statementEl.innerHTML = `<span class="text-xs text-amber-800 italic">No specific fields reported</span>`;
         }
-    })
-    .catch(err => {
-        if (btnApply) {
-            btnApply.disabled = false;
-            btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
-            btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
-        }
-        Swal.fire('Error', 'Connection error occurred.', 'error');
-        if (window.lucide) lucide.createIcons();
-    });
-}
 
-// ── VERIFY & RELEASE MODAL LOGIC ──
-function openVerifyReleaseModal(data) {
-    currentVerifyData = data;
-    document.getElementById('verify-release-dispute-id').value = data.id || '';
-    document.getElementById('verify-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
+        // Extract patient typed corrections from description
+        const fnMatch = clean.match(/First Name:\s*([^\n\r,•]+)/i);
+        const lnMatch = clean.match(/Last Name:\s*([^\n\r,•]+)/i);
+        const ageMatch = clean.match(/(?:Age|Birthdate):\s*([^\n\r,•]+)/i);
+        const sexMatch = clean.match(/(?:Sex|Gender):\s*([^\n\r,•]+)/i);
 
-    // Statement
-    document.getElementById('verify-patient-statement').innerHTML = formatDisputeDescriptionHtml(data.description);
+        const typedFn = fnMatch ? fnMatch[1].trim() : '';
+        const typedLn = lnMatch ? lnMatch[1].trim() : '';
+        const typedAge = ageMatch ? parseAgeOrBirthdateToAge(ageMatch[1]) : '';
+        const typedSex = sexMatch ? sexMatch[1].trim() : '';
 
-    // Demographics comparison logic
-    const descText = data.description || '';
-    const cleanDesc = descText.replace(/\r\n/g, '\n');
-    const descLower = descText.toLowerCase();
-    const cat = data.category || '';
-
-    const fnMatch = cleanDesc.match(/First Name:\s*([^\n\r,•]+)/i);
-    const lnMatch = cleanDesc.match(/Last Name:\s*([^\n\r,•]+)/i);
-    const ageMatch = cleanDesc.match(/(?:Age|Birthdate):\s*([^\n\r,•]+)/i);
-    const sexMatch = cleanDesc.match(/(?:Sex|Gender):\s*([^\n\r,•]+)/i);
-
-    const typedFn = fnMatch ? fnMatch[1].trim() : '';
-    const typedLn = lnMatch ? lnMatch[1].trim() : '';
-    const typedAge = ageMatch ? parseAgeOrBirthdateToAge(ageMatch[1]) : '';
-    const typedSex = sexMatch ? sexMatch[1].trim() : '';
-
-    const hasFirstName = Boolean(typedFn) || descLower.includes('first name');
-    const hasLastName = Boolean(typedLn) || descLower.includes('last name');
-    const hasAge = Boolean(typedAge) || descLower.includes('age');
-    const hasSex = Boolean(typedSex) || descLower.includes('sex') || descLower.includes('gender');
-    const hasWrongInfoHeading = descLower.includes('wrong patient info');
-
-    const hasDemoChanges = (cat === 'demographic_error' || cat === 'both_error' || cat === 'both_template_error' || hasFirstName || hasLastName || hasAge || hasSex || hasWrongInfoHeading);
-
-    const demoCont = document.getElementById('verify-demographics-container');
-    if (hasDemoChanges) {
+        // Old Record (Current in database)
         const oldFn = data.first_name || '';
         const oldLn = data.last_name || '';
         const oldAge = data.age ? `${data.age} yrs old` : 'N/A';
         const oldSex = data.sex || 'N/A';
 
+        // New / Updated Info (what patient typed into report, fallback to current if not specified)
         const newFn = typedFn || oldFn;
         const newLn = typedLn || oldLn;
         const newAge = typedAge ? `${typedAge} yrs old` : oldAge;
         const newSex = typedSex || oldSex;
 
-        function safeSetVer(id, text) {
+        // Cache resolved values on currentFixData so applyFixDemographics uses them
+        currentFixData.resolved_first_name = newFn;
+        currentFixData.resolved_last_name = newLn;
+        currentFixData.resolved_age = typedAge || (data.age ? String(data.age) : '');
+        currentFixData.resolved_sex = typedSex || data.sex || '';
+
+        function safeSetText(id, text) {
             const el = document.getElementById(id);
             if (el) el.innerText = text;
         }
 
-        safeSetVer('ver-old-first-name', oldFn || 'N/A');
-        safeSetVer('ver-old-last-name', oldLn || 'N/A');
-        safeSetVer('ver-old-age', oldAge);
-        safeSetVer('ver-old-sex', oldSex);
+        safeSetText('fix-old-first-name', oldFn || 'N/A');
+        safeSetText('fix-old-last-name', oldLn || 'N/A');
+        safeSetText('fix-old-age', oldAge);
+        safeSetText('fix-old-sex', oldSex);
 
-        safeSetVer('ver-new-first-name', newFn || 'N/A');
-        safeSetVer('ver-new-last-name', newLn || 'N/A');
-        safeSetVer('ver-new-age', newAge);
-        safeSetVer('ver-new-sex', newSex);
+        safeSetText('fix-new-first-name', newFn || 'N/A');
+        safeSetText('fix-new-last-name', newLn || 'N/A');
+        safeSetText('fix-new-age', newAge);
+        safeSetText('fix-new-sex', newSex);
 
-        // Dynamic field row filtering
+        // Filter which rows to display based on what the patient reported
+        const descLower = descText.toLowerCase();
+        const hasFirstName = Boolean(typedFn) || descLower.includes('first name');
+        const hasLastName = Boolean(typedLn) || descLower.includes('last name');
+        const hasAge = Boolean(typedAge) || descLower.includes('age');
+        const hasSex = Boolean(typedSex) || descLower.includes('sex') || descLower.includes('gender');
+
         const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
 
-        function setVerRow(id, visible) {
+        function setRowVisibility(id, visible) {
             const el = document.getElementById(id);
             if (el) {
                 if (visible) el.classList.remove('hidden');
@@ -2671,315 +2644,522 @@ function openVerifyReleaseModal(data) {
             }
         }
 
-        setVerRow('row-ver-old-first-name', hasFirstName || !hasAnySpecific);
-        setVerRow('row-ver-new-first-name', hasFirstName || !hasAnySpecific);
+        setRowVisibility('row-fix-old-first-name', hasFirstName || !hasAnySpecific);
+        setRowVisibility('row-fix-new-first-name', hasFirstName || !hasAnySpecific);
 
-        setVerRow('row-ver-old-last-name', hasLastName || !hasAnySpecific);
-        setVerRow('row-ver-new-last-name', hasLastName || !hasAnySpecific);
+        setRowVisibility('row-fix-old-last-name', hasLastName || !hasAnySpecific);
+        setRowVisibility('row-fix-new-last-name', hasLastName || !hasAnySpecific);
 
-        setVerRow('row-ver-old-age', hasAge);
-        setVerRow('row-ver-new-age', hasAge);
+        setRowVisibility('row-fix-old-age', hasAge);
+        setRowVisibility('row-fix-new-age', hasAge);
 
-        setVerRow('row-ver-old-sex', hasSex);
-        setVerRow('row-ver-new-sex', hasSex);
+        setRowVisibility('row-fix-old-sex', hasSex);
+        setRowVisibility('row-fix-new-sex', hasSex);
 
-        demoCont.classList.remove('hidden');
-    } else {
-        demoCont.classList.add('hidden');
-    }
+        // Reset button states
+        const btnApply = document.getElementById('btn-apply-fix-demo');
+        const alertEl = document.getElementById('fix-demo-alert');
+        if (alertEl) alertEl.classList.add('hidden');
 
-    // Findings comparison
-    const findingsCont = document.getElementById('verify-findings-container');
-    const oldFindings = data.old_findings || '';
-    const newFindings = data.findings || '';
-    const oldImpression = data.old_impression || '';
-    const newImpression = data.impression || '';
-    const examType = data.exam_type || '';
-
-    // If only patient info/demographics or template rename was reported, do NOT show findings comparison
-    const isPureDemographicOrTemplate = (cat === 'demographic_error') || (cat === 'template_error') || (cat === 'both_template_error') ||
-        (!descLower.includes('findings') && !descLower.includes('impression') && !descLower.includes('reading') && !descLower.includes('typo') && cat !== 'both_error');
-
-    const hasFindings = !isPureDemographicOrTemplate && (cat === 'findings_error' || cat === 'exam_details_error' || cat === 'both_error' || cat === 'other' || Boolean(oldFindings));
-
-    if (hasFindings && (oldFindings || newFindings)) {
-        function parseToHtml(fJson, iJson, fallbackKey, isNew = false) {
-            let fObj = {}, iObj = {};
-            try { fObj = JSON.parse(fJson || "{}"); } catch(e) { if(fJson) fObj[fallbackKey || "RESULT"] = fJson; }
-            try { iObj = JSON.parse(iJson || "{}"); } catch(e) { if(iJson) iObj[fallbackKey || "RESULT"] = iJson; }
-            
-            let html = "";
-            let keys = Array.from(new Set([...Object.keys(fObj), ...Object.keys(iObj)]));
-            
-            keys.forEach((key, index) => {
-                html += `<div class="${index > 0 ? 'mt-3.5 pt-3.5 border-t border-gray-200' : ''}">`;
-                if (key) {
-                    const headerClass = isNew 
-                        ? 'font-bold text-xs text-green-700 uppercase mb-2.5 pb-1.5 border-b border-green-200' 
-                        : 'font-bold text-xs text-gray-700 uppercase mb-2.5 pb-1.5 border-b border-gray-200';
-                    html += `<div class="${headerClass}">${key}</div>`;
-                }
-                
-                let findingsText = "";
-                let impressionText = "";
-                
-                if (fObj[key]) {
-                    if (typeof fObj[key] === 'object' && fObj[key] !== null) {
-                        findingsText = fObj[key].findings || "";
-                        if (fObj[key].impression) impressionText = fObj[key].impression;
-                    } else {
-                        findingsText = fObj[key];
-                    }
-                }
-                
-                if (iObj[key]) {
-                    if (typeof iObj[key] === 'object' && iObj[key] !== null) {
-                        if (!impressionText) impressionText = iObj[key].impression || "";
-                    } else {
-                        if (!impressionText) impressionText = iObj[key];
-                    }
-                }
-
-                if (findingsText) html += `<div class="mb-2.5"><div class="font-bold text-gray-600 text-[10px] uppercase">FINDINGS:</div><p class="mt-0.5 text-gray-700 whitespace-pre-line">${findingsText}</p></div>`;
-                if (impressionText) html += `<div class="mb-1"><div class="font-bold text-gray-600 text-[10px] uppercase">IMPRESSION:</div><p class="mt-0.5 text-gray-700 whitespace-pre-line">${impressionText}</p></div>`;
-                
-                html += `</div>`;
-            });
-            return html || '<p class="text-xs text-gray-400 italic">No findings available.</p>';
+        if (btnApply) {
+            btnApply.disabled = false;
+            btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
+            btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
         }
 
-        document.getElementById('verify-old-findings').innerHTML = parseToHtml(oldFindings, oldImpression, examType, false);
-        document.getElementById('verify-new-findings').innerHTML = parseToHtml(newFindings, newImpression, examType, true);
-        findingsCont.classList.remove('hidden');
-    } else {
-        findingsCont.classList.add('hidden');
+        document.getElementById('fix-demographics-modal').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
     }
 
-    document.getElementById('verify-release-modal').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-}
+    function closeFixDemographicsModal() {
+        document.getElementById('fix-demographics-modal').classList.add('hidden');
+    }
 
-function closeVerifyReleaseModal() {
-    document.getElementById('verify-release-modal').classList.add('hidden');
-}
+    function applyFixDemographics() {
+        if (!currentFixData) return;
+        const disputeId = currentFixData.id;
+        const firstName = currentFixData.resolved_first_name || currentFixData.first_name || '';
+        const lastName = currentFixData.resolved_last_name || currentFixData.last_name || '';
+        const middleName = currentFixData.middle_name || '';
+        const age = currentFixData.resolved_age || '';
+        const sex = currentFixData.resolved_sex || '';
 
-function submitAmendedRelease() {
-    let disputeId = (currentVerifyData && currentVerifyData.id) 
-        ? currentVerifyData.id 
-        : document.getElementById('verify-release-dispute-id')?.value;
-
-    if (!disputeId) {
         Swal.fire({
-            title: 'Error',
-            text: 'Dispute record ID not found.',
-            icon: 'error',
-            customClass: { container: '!z-[999999]' }
-        });
-        return;
-    }
-
-    Swal.fire({
-        title: 'Release Amended Report?',
-        text: 'The amended radiological report will be finalized and officially released to the patient.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#16a34a',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, Release Report',
-        cancelButtonText: 'Cancel',
-        customClass: {
-            container: '!z-[999999]',
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-xl font-bold px-4 py-2',
-            cancelButton: 'rounded-xl font-semibold px-4 py-2'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const btn = document.querySelector('#verify-release-modal button[onclick="submitAmendedRelease()"]');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Releasing...';
+            title: 'Fix & Resolve?',
+            text: 'Are you sure you want to apply these demographic corrections and resolve this ticket?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Fix & Resolve',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                container: '!z-[999999]',
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-xl font-bold px-4 py-2',
+                cancelButton: 'rounded-xl font-semibold px-4 py-2'
             }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            const btnApply = document.getElementById('btn-apply-fix-demo');
+            if (btnApply) {
+                btnApply.disabled = true;
+                btnApply.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Resolving...';
+            }
+            if (window.lucide) lucide.createIcons();
 
             const fd = new FormData();
             fd.append('dispute_id', disputeId);
+            fd.append('first_name', firstName);
+            fd.append('last_name', lastName);
+            fd.append('middle_name', middleName);
+            if (age) {
+                fd.append('age', age);
+            }
+            if (sex) {
+                fd.append('sex', sex);
+            }
 
-            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
-                method: 'POST', body: fd
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=update_patient_demographics', {
+                method: 'POST',
+                body: fd
             })
-            .then(r => r.json())
-            .then(res => {
-                closeVerifyReleaseModal();
-                if (res.success) {
-                    Swal.fire({
-                        title: 'Released!',
-                        text: 'Amended report has been verified and released to the patient.',
-                        icon: 'success',
-                        showConfirmButton: false,
-                        timer: 1500,
-                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
-                    }).then(() => location.reload());
-                } else {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Confirm &amp; Release Amended Report';
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        closeFixDemographicsModal();
+                        if (res.both_pending_escalate) {
+                            Swal.fire({
+                                title: 'Demographics Corrected!',
+                                text: 'Patient demographic information has been updated. Please proceed to Edit / Amend Report for the remaining findings issue.',
+                                icon: 'info',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire({
+                                title: 'Resolved!',
+                                text: 'Patient demographic corrections applied and resolved.',
+                                icon: 'success',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                            }).then(() => location.reload());
+                        }
+                    } else {
+                        if (btnApply) {
+                            btnApply.disabled = false;
+                            btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
+                            btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: res.message || 'Failed to update record.',
+                            icon: 'error',
+                            customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                        });
                         if (window.lucide) lucide.createIcons();
+                    }
+                })
+                .catch(err => {
+                    if (btnApply) {
+                        btnApply.disabled = false;
+                        btnApply.className = "inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition cursor-pointer active:scale-95";
+                        btnApply.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Fix &amp; Resolve';
                     }
                     Swal.fire({
                         title: 'Error',
-                        text: res.message || 'An error occurred.',
+                        text: 'Connection error occurred.',
                         icon: 'error',
-                        customClass: { container: '!z-[999999]' }
+                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
                     });
-                }
-            })
-            .catch(err => {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Confirm &amp; Release Amended Report';
                     if (window.lucide) lucide.createIcons();
-                }
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Connection or server error occurred.',
-                    icon: 'error',
-                    customClass: { container: '!z-[999999]' }
                 });
-            });
-        }
-    });
-}
-
-function confirmReupload(caseId) {
-    Swal.fire({
-        title: 'Re-upload & Correct?',
-        text: 'You can upload a new X-ray image and update the exam details for this case.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, proceed',
-        cancelButtonText: 'Cancel',
-        customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-xl font-bold px-4 py-2',
-            cancelButton: 'rounded-xl font-semibold px-4 py-2'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=' + caseId + '&from=disputes';
-        }
-    });
-}
-
-
-function submitResolution(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    const disputeId = document.getElementById('resolve-dispute-id').value;
-    if (!disputeId) return;
-
-    const fd = new FormData();
-    fd.append('dispute_id', disputeId);
-
-    // If in demographics mode, pass the names as well
-    const firstName = document.getElementById('resolve-first-name')?.value;
-    const lastName = document.getElementById('resolve-last-name')?.value;
-    const middleName = document.getElementById('resolve-middle-name')?.value;
-    if (firstName) fd.append('first_name', firstName);
-    if (lastName) fd.append('last_name', lastName);
-    if (middleName) fd.append('middle_name', middleName);
-
-    fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
-        method: 'POST', body: fd
-    }).then(r=>r.json()).then(res=>{
-        closeResolveModal();
-        if(res.success){
-            Swal.fire('Resolved', 'The dispute ticket is now resolved and the case has been updated.', 'success').then(()=>location.reload());
-        }else{
-            Swal.fire('Error', res.message || 'An error occurred.', 'error');
-        }
-    });
-}
-
-// Real-time polling for RadTech Patient Lists & Correction Requests
-let lastDisputesRawHtml = document.getElementById('disputes-table-body')?.innerHTML.trim() || '';
-let lastQueueRawHtml = document.getElementById('table-body')?.innerHTML.trim() || '';
-
-setInterval(() => {
-    if (document.visibilityState === 'hidden') return;
-
-    const isDisputesTab = new URLSearchParams(window.location.search).get('tab') === 'disputes';
-    const fixModal = document.getElementById('fix-demographics-modal');
-    const verModal = document.getElementById('verify-release-modal');
-    const amendModal = document.getElementById('radtech-amend-modal');
-    const isFixOpen = fixModal && !fixModal.classList.contains('hidden');
-    const isVerOpen = verModal && !verModal.classList.contains('hidden');
-    const isAmendOpen = amendModal && !amendModal.classList.contains('hidden');
-
-    if (isFixOpen || isVerOpen || isAmendOpen) return;
-
-    if (isDisputesTab) {
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes&_t=' + Date.now())
-            .then(res => res.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                const newTbody = doc.getElementById('disputes-table-body');
-                const oldTbody = document.getElementById('disputes-table-body');
-                if (newTbody && oldTbody) {
-                    const newRawHtml = newTbody.innerHTML.trim();
-                    if (newRawHtml !== lastDisputesRawHtml) {
-                        lastDisputesRawHtml = newRawHtml;
-                        oldTbody.innerHTML = newRawHtml;
-                        applyDisputesFilter();
-                        if (window.lucide) lucide.createIcons();
-                    }
-                }
-
-                const newBadge = doc.getElementById('radtech-disputes-tab-badge');
-                const curBadge = document.getElementById('radtech-disputes-tab-badge');
-                if (newBadge && curBadge) {
-                    curBadge.innerHTML = newBadge.innerHTML;
-                    if (newBadge.title) curBadge.title = newBadge.title;
-                } else if (!newBadge && curBadge) {
-                    curBadge.remove();
-                }
-            })
-            .catch(() => {});
-    } else {
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&_t=' + Date.now())
-            .then(res => res.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                const newTbody = doc.getElementById('table-body');
-                const oldTbody = document.getElementById('table-body');
-                if (newTbody && oldTbody) {
-                    const newRawHtml = newTbody.innerHTML.trim();
-                    if (newRawHtml !== lastQueueRawHtml) {
-                        lastQueueRawHtml = newRawHtml;
-                        oldTbody.innerHTML = newRawHtml;
-                        if (typeof applyFilters === 'function') {
-                            applyFilters();
-                        }
-                        if (window.lucide) lucide.createIcons();
-                    }
-                }
-
-                const newBadge = doc.getElementById('radtech-disputes-tab-badge');
-                const curBadge = document.getElementById('radtech-disputes-tab-badge');
-                if (newBadge && curBadge) {
-                    curBadge.innerHTML = newBadge.innerHTML;
-                    if (newBadge.title) curBadge.title = newBadge.title;
-                } else if (!newBadge && curBadge) {
-                    curBadge.remove();
-                }
-            })
-            .catch(() => {});
+        });
     }
-}, 3500);
-window.PROJECT_DIR = <?= json_encode(PROJECT_DIR) ?>;
+
+    // ── VERIFY & RELEASE MODAL LOGIC ──
+    function openVerifyReleaseModal(data) {
+        currentVerifyData = data;
+        document.getElementById('verify-release-dispute-id').value = data.id || '';
+        document.getElementById('verify-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
+
+        // Statement
+        document.getElementById('verify-patient-statement').innerHTML = formatDisputeDescriptionHtml(data.description);
+
+        // Demographics comparison logic
+        const descText = data.description || '';
+        const cleanDesc = descText.replace(/\r\n/g, '\n');
+        const descLower = descText.toLowerCase();
+        const cat = data.category || '';
+
+        const fnMatch = cleanDesc.match(/First Name:\s*([^\n\r,•]+)/i);
+        const lnMatch = cleanDesc.match(/Last Name:\s*([^\n\r,•]+)/i);
+        const ageMatch = cleanDesc.match(/(?:Age|Birthdate):\s*([^\n\r,•]+)/i);
+        const sexMatch = cleanDesc.match(/(?:Sex|Gender):\s*([^\n\r,•]+)/i);
+
+        const typedFn = fnMatch ? fnMatch[1].trim() : '';
+        const typedLn = lnMatch ? lnMatch[1].trim() : '';
+        const typedAge = ageMatch ? parseAgeOrBirthdateToAge(ageMatch[1]) : '';
+        const typedSex = sexMatch ? sexMatch[1].trim() : '';
+
+        const hasFirstName = Boolean(typedFn) || descLower.includes('first name');
+        const hasLastName = Boolean(typedLn) || descLower.includes('last name');
+        const hasAge = Boolean(typedAge) || descLower.includes('age');
+        const hasSex = Boolean(typedSex) || descLower.includes('sex') || descLower.includes('gender');
+        const hasWrongInfoHeading = descLower.includes('wrong patient info');
+
+        const hasDemoChanges = (cat === 'demographic_error' || cat === 'both_error' || cat === 'both_template_error' || hasFirstName || hasLastName || hasAge || hasSex || hasWrongInfoHeading);
+
+        const demoCont = document.getElementById('verify-demographics-container');
+        if (hasDemoChanges) {
+            const oldFn = data.first_name || '';
+            const oldLn = data.last_name || '';
+            const oldAge = data.age ? `${data.age} yrs old` : 'N/A';
+            const oldSex = data.sex || 'N/A';
+
+            const newFn = typedFn || oldFn;
+            const newLn = typedLn || oldLn;
+            const newAge = typedAge ? `${typedAge} yrs old` : oldAge;
+            const newSex = typedSex || oldSex;
+
+            function safeSetVer(id, text) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            }
+
+            safeSetVer('ver-old-first-name', oldFn || 'N/A');
+            safeSetVer('ver-old-last-name', oldLn || 'N/A');
+            safeSetVer('ver-old-age', oldAge);
+            safeSetVer('ver-old-sex', oldSex);
+
+            safeSetVer('ver-new-first-name', newFn || 'N/A');
+            safeSetVer('ver-new-last-name', newLn || 'N/A');
+            safeSetVer('ver-new-age', newAge);
+            safeSetVer('ver-new-sex', newSex);
+
+            // Dynamic field row filtering
+            const hasAnySpecific = hasFirstName || hasLastName || hasAge || hasSex;
+
+            function setVerRow(id, visible) {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (visible) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+            }
+
+            setVerRow('row-ver-old-first-name', hasFirstName || !hasAnySpecific);
+            setVerRow('row-ver-new-first-name', hasFirstName || !hasAnySpecific);
+
+            setVerRow('row-ver-old-last-name', hasLastName || !hasAnySpecific);
+            setVerRow('row-ver-new-last-name', hasLastName || !hasAnySpecific);
+
+            setVerRow('row-ver-old-age', hasAge);
+            setVerRow('row-ver-new-age', hasAge);
+
+            setVerRow('row-ver-old-sex', hasSex);
+            setVerRow('row-ver-new-sex', hasSex);
+
+            demoCont.classList.remove('hidden');
+        } else {
+            demoCont.classList.add('hidden');
+        }
+
+        // Findings comparison
+        const findingsCont = document.getElementById('verify-findings-container');
+        const oldFindings = data.old_findings || '';
+        const newFindings = data.findings || '';
+        const oldImpression = data.old_impression || '';
+        const newImpression = data.impression || '';
+        const examType = data.exam_type || '';
+
+        // If only patient info/demographics or template rename was reported, do NOT show findings comparison
+        const isPureDemographicOrTemplate = (cat === 'demographic_error') || (cat === 'template_error') || (cat === 'both_template_error') ||
+            (!descLower.includes('findings') && !descLower.includes('impression') && !descLower.includes('reading') && !descLower.includes('typo') && cat !== 'both_error');
+
+        const hasFindings = !isPureDemographicOrTemplate && (cat === 'findings_error' || cat === 'exam_details_error' || cat === 'both_error' || cat === 'other' || Boolean(oldFindings));
+
+        if (hasFindings && (oldFindings || newFindings)) {
+            function parseToHtml(fJson, iJson, fallbackKey, isNew = false) {
+                let fObj = {}, iObj = {};
+                try { fObj = JSON.parse(fJson || "{}"); } catch (e) { if (fJson) fObj[fallbackKey || "RESULT"] = fJson; }
+                try { iObj = JSON.parse(iJson || "{}"); } catch (e) { if (iJson) iObj[fallbackKey || "RESULT"] = iJson; }
+
+                let html = "";
+                let keys = Array.from(new Set([...Object.keys(fObj), ...Object.keys(iObj)]));
+
+                keys.forEach((key, index) => {
+                    html += `<div class="${index > 0 ? 'mt-3.5 pt-3.5 border-t border-gray-200' : ''}">`;
+                    if (key) {
+                        const headerClass = isNew
+                            ? 'font-bold text-xs text-green-700 uppercase mb-2.5 pb-1.5 border-b border-green-200'
+                            : 'font-bold text-xs text-gray-700 uppercase mb-2.5 pb-1.5 border-b border-gray-200';
+                        html += `<div class="${headerClass}">${key}</div>`;
+                    }
+
+                    let findingsText = "";
+                    let impressionText = "";
+
+                    if (fObj[key]) {
+                        if (typeof fObj[key] === 'object' && fObj[key] !== null) {
+                            findingsText = fObj[key].findings || "";
+                            if (fObj[key].impression) impressionText = fObj[key].impression;
+                        } else {
+                            findingsText = fObj[key];
+                        }
+                    }
+
+                    if (iObj[key]) {
+                        if (typeof iObj[key] === 'object' && iObj[key] !== null) {
+                            if (!impressionText) impressionText = iObj[key].impression || "";
+                        } else {
+                            if (!impressionText) impressionText = iObj[key];
+                        }
+                    }
+
+                    if (findingsText) html += `<div class="mb-2.5"><div class="font-bold text-gray-600 text-[10px] uppercase">FINDINGS:</div><p class="mt-0.5 text-gray-700 whitespace-pre-line">${findingsText}</p></div>`;
+                    if (impressionText) html += `<div class="mb-1"><div class="font-bold text-gray-600 text-[10px] uppercase">IMPRESSION:</div><p class="mt-0.5 text-gray-700 whitespace-pre-line">${impressionText}</p></div>`;
+
+                    html += `</div>`;
+                });
+                return html || '<p class="text-xs text-gray-400 italic">No findings available.</p>';
+            }
+
+            document.getElementById('verify-old-findings').innerHTML = parseToHtml(oldFindings, oldImpression, examType, false);
+            document.getElementById('verify-new-findings').innerHTML = parseToHtml(newFindings, newImpression, examType, true);
+            findingsCont.classList.remove('hidden');
+        } else {
+            findingsCont.classList.add('hidden');
+        }
+
+        document.getElementById('verify-release-modal').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function closeVerifyReleaseModal() {
+        document.getElementById('verify-release-modal').classList.add('hidden');
+    }
+
+    function submitAmendedRelease() {
+        let disputeId = (currentVerifyData && currentVerifyData.id)
+            ? currentVerifyData.id
+            : document.getElementById('verify-release-dispute-id')?.value;
+
+        if (!disputeId) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Dispute record ID not found.',
+                icon: 'error',
+                customClass: { container: '!z-[999999]' }
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Release Amended Report?',
+            text: 'The amended radiological report will be finalized and officially released to the patient.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Release Report',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                container: '!z-[999999]',
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-xl font-bold px-4 py-2',
+                cancelButton: 'rounded-xl font-semibold px-4 py-2'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const btn = document.querySelector('#verify-release-modal button[onclick="submitAmendedRelease()"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Releasing...';
+                }
+
+                const fd = new FormData();
+                fd.append('dispute_id', disputeId);
+
+                fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
+                    method: 'POST', body: fd
+                })
+                    .then(r => r.json())
+                    .then(res => {
+                        closeVerifyReleaseModal();
+                        if (res.success) {
+                            Swal.fire({
+                                title: 'Released!',
+                                text: 'Amended report has been verified and released to the patient.',
+                                icon: 'success',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                            }).then(() => location.reload());
+                        } else {
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Confirm &amp; Release Amended Report';
+                                if (window.lucide) lucide.createIcons();
+                            }
+                            Swal.fire({
+                                title: 'Error',
+                                text: res.message || 'An error occurred.',
+                                icon: 'error',
+                                customClass: { container: '!z-[999999]' }
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Confirm &amp; Release Amended Report';
+                            if (window.lucide) lucide.createIcons();
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Connection or server error occurred.',
+                            icon: 'error',
+                            customClass: { container: '!z-[999999]' }
+                        });
+                    });
+            }
+        });
+    }
+
+    function confirmReupload(caseId) {
+        Swal.fire({
+            title: 'Re-upload & Correct?',
+            text: 'You can upload a new X-ray image and update the exam details for this case.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, proceed',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-xl font-bold px-4 py-2',
+                cancelButton: 'rounded-xl font-semibold px-4 py-2'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=' + caseId + '&from=disputes';
+            }
+        });
+    }
+
+
+    function submitResolution(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const disputeId = document.getElementById('resolve-dispute-id').value;
+        if (!disputeId) return;
+
+        const fd = new FormData();
+        fd.append('dispute_id', disputeId);
+
+        // If in demographics mode, pass the names as well
+        const firstName = document.getElementById('resolve-first-name')?.value;
+        const lastName = document.getElementById('resolve-last-name')?.value;
+        const middleName = document.getElementById('resolve-middle-name')?.value;
+        if (firstName) fd.append('first_name', firstName);
+        if (lastName) fd.append('last_name', lastName);
+        if (middleName) fd.append('middle_name', middleName);
+
+        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=resolve_dispute', {
+            method: 'POST', body: fd
+        }).then(r => r.json()).then(res => {
+            closeResolveModal();
+            if (res.success) {
+                Swal.fire('Resolved', 'The dispute ticket is now resolved and the case has been updated.', 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Error', res.message || 'An error occurred.', 'error');
+            }
+        });
+    }
+
+    // Real-time polling for RadTech Patient Lists & Correction Requests
+    let lastDisputesRawHtml = document.getElementById('disputes-table-body')?.innerHTML.trim() || '';
+    let lastQueueRawHtml = document.getElementById('table-body')?.innerHTML.trim() || '';
+
+    setInterval(() => {
+        if (document.visibilityState === 'hidden') return;
+
+        const isDisputesTab = new URLSearchParams(window.location.search).get('tab') === 'disputes';
+        const fixModal = document.getElementById('fix-demographics-modal');
+        const verModal = document.getElementById('verify-release-modal');
+        const amendModal = document.getElementById('radtech-amend-modal');
+        const isFixOpen = fixModal && !fixModal.classList.contains('hidden');
+        const isVerOpen = verModal && !verModal.classList.contains('hidden');
+        const isAmendOpen = amendModal && !amendModal.classList.contains('hidden');
+
+        if (isFixOpen || isVerOpen || isAmendOpen) return;
+
+        if (isDisputesTab) {
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes&_t=' + Date.now())
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    const newTbody = doc.getElementById('disputes-table-body');
+                    const oldTbody = document.getElementById('disputes-table-body');
+                    if (newTbody && oldTbody) {
+                        const newRawHtml = newTbody.innerHTML.trim();
+                        if (newRawHtml !== lastDisputesRawHtml) {
+                            lastDisputesRawHtml = newRawHtml;
+                            oldTbody.innerHTML = newRawHtml;
+                            applyDisputesFilter();
+                            if (window.lucide) lucide.createIcons();
+                        }
+                    }
+
+                    const newBadge = doc.getElementById('radtech-disputes-tab-badge');
+                    const curBadge = document.getElementById('radtech-disputes-tab-badge');
+                    if (newBadge && curBadge) {
+                        curBadge.innerHTML = newBadge.innerHTML;
+                        if (newBadge.title) curBadge.title = newBadge.title;
+                    } else if (!newBadge && curBadge) {
+                        curBadge.remove();
+                    }
+                })
+                .catch(() => { });
+        } else {
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&_t=' + Date.now())
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    const newTbody = doc.getElementById('table-body');
+                    const oldTbody = document.getElementById('table-body');
+                    if (newTbody && oldTbody) {
+                        const newRawHtml = newTbody.innerHTML.trim();
+                        if (newRawHtml !== lastQueueRawHtml) {
+                            lastQueueRawHtml = newRawHtml;
+                            oldTbody.innerHTML = newRawHtml;
+                            if (typeof applyFilters === 'function') {
+                                applyFilters();
+                            }
+                            if (window.lucide) lucide.createIcons();
+                        }
+                    }
+
+                    const newBadge = doc.getElementById('radtech-disputes-tab-badge');
+                    const curBadge = document.getElementById('radtech-disputes-tab-badge');
+                    if (newBadge && curBadge) {
+                        curBadge.innerHTML = newBadge.innerHTML;
+                        if (newBadge.title) curBadge.title = newBadge.title;
+                    } else if (!newBadge && curBadge) {
+                        curBadge.remove();
+                    }
+                })
+                .catch(() => { });
+        }
+    }, 3500);
+    window.PROJECT_DIR = <?= json_encode(PROJECT_DIR) ?>;
 </script>
 <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/radtech-amend.js"></script>

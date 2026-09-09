@@ -87,7 +87,10 @@
         <?php else: ?>
             <div class="divide-y divide-gray-100">
                 <?php foreach ($feedbacks as $fb): ?>
-                    <div class="p-5 sm:p-6 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-0">
+                    <div class="p-5 sm:p-6 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-0"
+                        data-id="<?= $fb['id'] ?>"
+                        data-case="<?= htmlspecialchars($fb['case_number'] ?? '') ?>"
+                        data-patient="<?= htmlspecialchars($fb['patient_number'] ?? '') ?>">
                         <div class="flex items-start gap-4">
                             <!-- Avatar -->
                             <?php $fbAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($fb['avatar']) : $fb['avatar']; ?>

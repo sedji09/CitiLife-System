@@ -75,6 +75,18 @@
     border-color: #f87171;
 }
 
+/* Disabled select state */
+.cs-wrapper:has(select:disabled) .cs-trigger,
+.cs-trigger:disabled,
+.cs-wrapper.cs-disabled .cs-trigger {
+    background-color: #f3f4f6 !important;
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    opacity: 0.85 !important;
+}
+
 .cs-wrapper.cs-open {
     z-index: 9999 !important;
     position: relative;
@@ -129,8 +141,8 @@
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
-    padding: 6px;
-    max-height: 260px;
+    padding: 6px 6px 12px 6px;
+    max-height: 360px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
@@ -139,6 +151,52 @@
     pointer-events: none;
     transform-origin: top center;
     transition: opacity 0.16s ease-out, transform 0.16s ease-out;
+}
+
+/* Fixed-position dropdown (inside overflow-hidden modals/panels) */
+.cs-fixed-dropdown {
+    position: fixed !important;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    min-width: 180px;
+    z-index: 100000 !important;
+    box-sizing: border-box;
+    overflow: hidden !important; /* clip inside, not body */
+    padding: 0 !important;
+    max-height: none !important;
+}
+
+/* Options inside fixed dropdown must wrap — no overflow */
+.cs-fixed-dropdown .cs-option {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+    overflow: hidden;
+}
+
+/* Inner scroll container for fixed dropdown */
+.cs-fixed-dropdown .cs-fixed-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 360px;
+    padding: 6px 6px 12px 6px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.cs-wrapper.cs-open .cs-fixed-dropdown,
+.cs-fixed-dropdown.cs-visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+/* Prevent body scroll when fixed dropdown is open */
+body.cs-noscroll {
+    overflow: hidden !important;
 }
 
 .cs-dropdown::-webkit-scrollbar {
@@ -180,12 +238,17 @@
     justify-content: space-between;
     gap: 8px;
     padding: 8px 12px;
+    margin-bottom: 2px;
     border-radius: 8px;
     font-size: 13.5px;
     font-weight: 500;
     color: #334155;
     cursor: pointer;
     transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.cs-option:last-child {
+    margin-bottom: 0;
 }
 
 .cs-option:hover {

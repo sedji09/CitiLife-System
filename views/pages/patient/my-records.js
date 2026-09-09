@@ -291,24 +291,20 @@
                     if (el && el.style.display !== 'none') {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
-                        const isNew = urlParams.get('is_new') === '1';
-                        
-                        if (isNew) {
+                        setTimeout(() => {
+                            el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300', 'ring-2', 'ring-amber-400');
+                            el.style.backgroundColor = '#fef08a';
                             setTimeout(() => {
-                                el.classList.add('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
-                                el.style.backgroundColor = '#fef08a';
+                                el.style.backgroundColor = '#fde047';
                                 setTimeout(() => {
-                                    el.style.backgroundColor = '#fde047';
+                                    el.style.backgroundColor = '#fef08a';
                                     setTimeout(() => {
-                                        el.style.backgroundColor = '#fef08a';
-                                        setTimeout(() => {
-                                            el.style.backgroundColor = '';
-                                            el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300');
-                                        }, 500);
+                                        el.style.backgroundColor = '';
+                                        el.classList.remove('scale-[1.02]', 'shadow-xl', 'z-10', 'relative', 'transition-all', 'duration-300', 'ring-2', 'ring-amber-400');
                                     }, 500);
-                                }, 400);
-                            }, 600);
-                        }
+                                }, 500);
+                            }, 400);
+                        }, 400);
                     }
 
                     const newUrl = new URL(window.location);

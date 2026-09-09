@@ -50,7 +50,7 @@
         <?php endif; ?>
 
         <div class="p-6">
-            <form action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=feedback" method="POST" class="space-y-6">
+            <form action="<?= url('feedback') ?>" method="POST" class="space-y-6">
                 <input type="hidden" name="case_id" value="<?= htmlspecialchars($caseId ?? '') ?>">
                 <!-- Star Rating -->
                 <div>

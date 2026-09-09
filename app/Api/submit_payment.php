@@ -121,7 +121,7 @@ try {
         $notifModel->add(
             "New Payment Submitted",
             "A new payment of ₱" . number_format($amount, 2) . " via $paymentMethod has been submitted for request $reqNum.",
-            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications",
+            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications&highlight=" . urlencode($reqNum),
             null,
             'branch_admin',
             $branchId

@@ -34,10 +34,6 @@ if ($statusParam === 'overdue') {
     $pendingRecords = array_values($pendingRecords);
 } elseif ($statusParam === 'Under Reading') {
     $pendingRecords = $caseModel->getWorklist(null, null, ['Under Reading'], true, $radiologistId);
-    $pendingRecords = array_filter($pendingRecords, function ($r) {
-        return empty($r['findings']);
-    });
-    $pendingRecords = array_values($pendingRecords);
 } elseif ($statusParam === 'For Revision') {
     $pendingRecords = $caseModel->getWorklist(null, null, ['For Revision'], false, $radiologistId);
 } elseif ($statusParam === 'pending') {

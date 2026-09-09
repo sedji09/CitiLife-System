@@ -49,6 +49,24 @@ class RegistrationController
         $branches = $branchModel->getActiveBranches();
         $linkedPatient = $patientModel->getPatientByUserId($userId);
         $linkedPatientId = $linkedPatient['id'] ?? null;
+        if (!$linkedPatientId && !empty($userId)) {
+            $stmtU = $pdo->prepare("SELECT patient_id, email FROM users WHERE id = ?");
+            $stmtU->execute([$userId]);
+            $uRow = $stmtU->fetch(\PDO::FETCH_ASSOC);
+            if (!empty($uRow['patient_id'])) {
+                $linkedPatientId = (int)$uRow['patient_id'];
+                $linkedPatient = $patientModel->getPatientById($linkedPatientId);
+            } elseif (!empty($uRow['email'])) {
+                $stmtPatEmail = $pdo->prepare("SELECT id FROM patients WHERE email = ? LIMIT 1");
+                $stmtPatEmail->execute([$uRow['email']]);
+                $patIdFromEmail = $stmtPatEmail->fetchColumn();
+                if ($patIdFromEmail) {
+                    $linkedPatientId = (int)$patIdFromEmail;
+                    $pdo->prepare("UPDATE users SET patient_id = ? WHERE id = ?")->execute([$linkedPatientId, $userId]);
+                    $linkedPatient = $patientModel->getPatientById($linkedPatientId);
+                }
+            }
+        }
 
         // Fetch System Closing Settings
         $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('system_status', 'closed_branches', 'closed_message')");
@@ -130,13 +148,14 @@ class RegistrationController
                         }
 
                     } elseif ($formAction === 'request_xray') {
+                        $rawExam = trim($_POST['exam_type'] ?? '');
                         $regData = [
                             'form_mode' => 'existing-patient',
                             'patient_id' => $linkedPatientId,
                             'branch_id' => (int) ($_POST['branch_id'] ?? 0),
                             'philhealth_status' => $_POST['philhealth_status'] ?? 'Without PhilHealth Card',
                             'source' => 'portal',
-                            'exam_type' => trim($_POST['exam_type'] ?? 'To be determined'),
+                            'exam_type' => !empty($rawExam) ? $rawExam : 'To be determined',
                             'priority' => 'Routine'
                         ];
 

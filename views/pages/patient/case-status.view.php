@@ -21,7 +21,7 @@ $steps = [
     3 => 'Payment',
     4 => 'X-ray Examination',
     5 => 'Radiologist Reading',
-    6 => 'Report Finalized',
+    6 => 'Finalizing Report',
     7 => 'Released',
 ];
 
@@ -240,7 +240,7 @@ $statusDescriptions = [
         } elseif ($statusVal === 'X-ray Taken') {
             $currentStep = 5;
             $displayStatus = 'X-ray Taken';
-        } elseif ($statusVal === 'Under Reading') {
+        } elseif (in_array($statusVal, ['Under Reading', 'For Revision'])) {
             $currentStep = 5;
             $displayStatus = 'Under Reading';
         } elseif ($statusVal === 'Report Ready') {

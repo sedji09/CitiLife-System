@@ -5,6 +5,7 @@ if (!isset($examInputName)) {
     $examInputName = 'exam_type';
 }
 $isReadOnly = $isReadOnly ?? false;
+$isRequired = $isRequired ?? true;
 
 // Normalize selected exams to array
 if (isset($preSelectedExams)) {
@@ -74,7 +75,7 @@ $uuid = uniqid('es_');
     <!-- Hidden input for form submission -->
     <input type="hidden" name="<?= htmlspecialchars($examInputName) ?>" value="<?= htmlspecialchars($selectedCsv) ?>"
         class="exam-ms-hidden-input" <?= $isReadOnly ? 'disabled' : '' ?>>
-    <?php if (!$isReadOnly): ?>
+    <?php if (!$isReadOnly && $isRequired): ?>
             <input type="text" class="exam-ms-required-check" style="opacity: 0; position: absolute; z-index: -1; width: 1px; height: 1px; bottom: 0; left: 50%;" value="<?= htmlspecialchars($selectedCsv) ?>" required tabindex="-1" onfocus="this.parentElement.querySelector('.exam-ms-input').focus();" oninvalid="this.setCustomValidity('Please select at least one Exam Type.')" oninput="this.setCustomValidity('')">
     <?php endif; ?>
 
@@ -162,7 +163,7 @@ $uuid = uniqid('es_');
                     selected.forEach(item => {
                         const chip = document.createElement('span');
                         chip.className = isComponentReadOnly
-                            ? 'inline-flex flex-shrink-0 items-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-2xs'
+                            ? 'inline-flex flex-shrink-0 items-center rounded-lg border border-gray-300 bg-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-2xs'
                             : 'inline-flex flex-shrink-0 items-center rounded border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 shadow-sm';
 
                         const text = document.createElement('span');
@@ -273,6 +274,9 @@ $uuid = uniqid('es_');
                         e.preventDefault();
                         e.stopPropagation();
                         const container = removeBtn.closest('.exam-ms-component');
+                        if (container && container.getAttribute('data-readonly') === 'true') {
+                            return;
+                        }
                         const val = removeBtn.getAttribute('data-value');
                         const hiddenInput = container.querySelector('.exam-ms-hidden-input');
                         const searchInput = container.querySelector('.exam-ms-input');

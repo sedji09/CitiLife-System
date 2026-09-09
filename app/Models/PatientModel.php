@@ -22,7 +22,7 @@ class PatientModel
             return [];
 
         $searchTerm = '%' . $query . '%';
-        $stmt = $this->pdo->prepare("SELECT p.id, p.patient_number, p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
+        $stmt = $this->pdo->prepare("SELECT p.id, p.patient_number, p.first_name, p.middle_name, p.last_name, u.email, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address 
                                FROM patients p
                                LEFT JOIN users u ON u.patient_id = p.id
                                WHERE p.patient_number LIKE ? OR p.first_name LIKE ? OR p.middle_name LIKE ? OR p.last_name LIKE ? OR CONCAT_WS(' ', p.first_name, p.middle_name, p.last_name) LIKE ? OR u.email LIKE ?
@@ -39,7 +39,7 @@ class PatientModel
     {
         $hasPatientId = $this->hasColumn('users', 'patient_id');
         if ($hasPatientId) {
-            $stmt = $this->pdo->prepare("SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age 
+            $stmt = $this->pdo->prepare("SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age 
                                    FROM patients p 
                                    JOIN users u ON u.patient_id = p.id 
                                    WHERE u.id = ?");
@@ -53,12 +53,12 @@ class PatientModel
     {
         $hasPatientId = $this->hasColumn('users', 'patient_id');
         if ($hasPatientId) {
-            $stmt = $this->pdo->prepare("SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, u.email, u.avatar FROM patients p LEFT JOIN users u ON u.patient_id = p.id WHERE p.id = ?");
+            $stmt = $this->pdo->prepare("SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, u.email, u.avatar FROM patients p LEFT JOIN users u ON u.patient_id = p.id WHERE p.id = ?");
             $stmt->execute([$id]);
             return $stmt->fetch();
         }
 
-        $stmt = $this->pdo->prepare("SELECT *, (YEAR(CURDATE()) - YEAR(birthdate)) AS age FROM patients WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT *, TIMESTAMPDIFF(YEAR, birthdate, CURDATE()) AS age FROM patients WHERE id = ?");
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
@@ -137,7 +137,7 @@ class PatientModel
     {
         $hasEmail = $this->hasColumn('patients', 'email');
 
-        if ($hasEmail) {
+        if ($hasEmail && array_key_exists('email', $data)) {
             $stmt = $this->pdo->prepare("UPDATE patients SET first_name = ?, middle_name = ?, last_name = ?, birthdate = ?, sex = ?, contact_number = ?, email = ?, home_address = ? WHERE id = ?");
             return $stmt->execute([
                 $data['first_name'],
@@ -216,7 +216,7 @@ class PatientModel
     {
         $stmt = $this->pdo->prepare("
             SELECT u.id AS user_id, u.email as account_email, u.created_at, p.id AS patient_id, 
-                   p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
+                   p.first_name, p.middle_name, p.last_name, u.email, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
             FROM users u
             INNER JOIN patients p ON u.patient_id = p.id
             LEFT JOIN branches b ON p.branch_id = b.id
@@ -231,7 +231,7 @@ class PatientModel
     {
         $stmt = $this->pdo->prepare("
             SELECT u.id AS user_id, u.email as account_email, u.created_at, p.id AS patient_id, 
-                   p.first_name, p.middle_name, p.last_name, u.email, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
+                   p.first_name, p.middle_name, p.last_name, u.email, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address, b.name AS branch_name
             FROM users u
             INNER JOIN patients p ON u.patient_id = p.id
             LEFT JOIN branches b ON p.branch_id = b.id
@@ -398,7 +398,7 @@ class PatientModel
     public function getAllPatientsWithBranches()
     {
         $stmt = $this->pdo->prepare("
-            SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, b.name as branch_name, 
+            SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, b.name as branch_name, 
                    (SELECT MAX(created_at) FROM cases WHERE patient_id = p.id) as latest_case_date
             FROM patients p
             LEFT JOIN branches b ON p.branch_id = b.id
@@ -420,7 +420,7 @@ class PatientModel
         }
 
         $sql = "SELECT p.id, p.patient_number, p.first_name, p.middle_name, p.last_name, p.birthdate, 
-                       (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, b.name AS branch_name
+                       TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, b.name AS branch_name
                 FROM patients p
                 LEFT JOIN branches b ON p.branch_id = b.id
                 WHERE LOWER(TRIM(p.first_name)) = LOWER(TRIM(?))

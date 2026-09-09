@@ -1660,28 +1660,84 @@
       markAsRead(id, link) {
         this.activeNotificationDropdown = null;
         if (link && link !== '#') {
-          // Check if notification is unread to append is_new flag
           const notif = this.notifications.find(n => n.id === id);
-          if (notif && notif.is_read == 0) {
-            try {
-              const basePath = '<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' + '/' : '/';
-              const url = new URL(link, window.location.origin + basePath);
-              url.searchParams.set('is_new', '1');
-              link = url.toString();
-            } catch (e) {
-              // fallback if URL parsing fails
-              link += (link.includes('?') ? '&' : '?') + 'is_new=1';
-            }
+          let targetHighlight = null;
+
+          // Smartly extract identifier from notification title or message if available
+          if (notif) {
+            const fullText = (notif.title || '') + ' ' + (notif.message || '');
+            const matchBranchCase = fullText.match(/\b([A-Za-z]{2,6}\d{4}-\d{4,6})\b/i);
+            const matchParen = fullText.match(/\(([A-Za-z0-9-]+)\)/i);
+            const matchReq = fullText.match(/\b(REQ-[A-Za-z0-9-]+)\b/i);
+            const matchCas = fullText.match(/\b(CAS-[A-Za-z0-9-]+)\b/i);
+            const matchPx = fullText.match(/\b(PX-[A-Za-z0-9-]+|PAT-[A-Za-z0-9-]+)\b/i);
+            const matchGeneric = fullText.match(/(?:case|request)\s*[:#(\s]*([A-Za-z0-9-]+)/i);
+
+            if (matchBranchCase) targetHighlight = matchBranchCase[1];
+            else if (matchParen) targetHighlight = matchParen[1];
+            else if (matchReq) targetHighlight = matchReq[1];
+            else if (matchCas) targetHighlight = matchCas[1];
+            else if (matchPx) targetHighlight = matchPx[1];
+            else if (matchGeneric) targetHighlight = matchGeneric[1];
           }
 
-          // Navigate immediately to avoid perceived delay
+          let finalUrl;
+          try {
+            const basePath = '<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' + '/' : '/';
+            finalUrl = new URL(link, window.location.origin + basePath);
+          } catch (e) {
+            finalUrl = new URL(link, window.location.origin);
+          }
+
+          // Ensure highlight param exists in URL
+          if (!finalUrl.searchParams.has('highlight') && !finalUrl.searchParams.has('highlight_case') && targetHighlight) {
+            finalUrl.searchParams.set('highlight', targetHighlight);
+          }
+          if (notif && notif.is_read == 0) {
+            finalUrl.searchParams.set('is_new', '1');
+          }
+
+          // Background mark read
           fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id }),
             keepalive: true
           });
-          window.location.href = link;
+
+          // Optimistically update client notification state
+          if (notif && notif.is_read == 0) {
+            notif.is_read = 1;
+            this.notificationCount = Math.max(0, this.notificationCount - 1);
+          }
+
+          // Check if destination is the current page
+          try {
+            const currentUrl = new URL(window.location.href);
+            const targetPageParam = finalUrl.searchParams.get('page');
+            const currentPageParam = currentUrl.searchParams.get('page');
+            const targetPath = finalUrl.pathname.replace(/\/$/, '').split('/').pop() || 'index.php';
+            const currentPath = currentUrl.pathname.replace(/\/$/, '').split('/').pop() || 'index.php';
+
+            const isSamePage = (targetPath === currentPath && (targetPageParam || '') === (currentPageParam || '')) ||
+                               (finalUrl.pathname === currentUrl.pathname && (targetPageParam || '') === (currentPageParam || ''));
+
+            if (isSamePage) {
+              this.notificationMenuOpen = false;
+              window.history.replaceState({}, document.title, finalUrl.toString());
+              if (window.__APP__) {
+                window.__APP__.currentPath = finalUrl.pathname + finalUrl.search;
+              }
+              const highlightTarget = finalUrl.searchParams.get('highlight') || finalUrl.searchParams.get('highlight_case') || targetHighlight;
+              if (typeof window.locateAndHighlight === 'function') {
+                const located = window.locateAndHighlight(highlightTarget);
+                if (located) return;
+              }
+            }
+          } catch (e) {}
+
+          // Navigate if on a different page or element not found immediately
+          window.location.href = finalUrl.toString();
         } else {
           fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
             method: 'POST', credentials: 'same-origin',
@@ -2066,3 +2122,5 @@ echo '<script src="' . url('views/pages/patient/my-records.js?v=' . time()) . '"
 <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-select.js?v=<?= time() ?>"></script>
 <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
 <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>
+<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/notification-locator.js?v=<?= time() ?>"></script>
+

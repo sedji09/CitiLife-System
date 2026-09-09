@@ -187,6 +187,46 @@ if ($activeDispute && $backPage === 'worklist') {
 
         <!-- Image Viewer -->
         <!-- Enhanced Image Viewer -->
+        <?php
+        if (!function_exists('getXrayImageLabel')) {
+            function getXrayImageLabel($sPath, $idx = 0, $examType = '') {
+                $baseName = pathinfo($sPath, PATHINFO_FILENAME);
+
+                // 1. If saved with original file name: case_{caseId}_{time}_{idx}_{originalName}
+                if (preg_match('/^case_\d+_\d+_\d+_(.+)$/', $baseName, $m)) {
+                    $name = trim($m[1]);
+                    if (!empty($name) && !preg_match('/^image[_\s]?\d+$/i', $name)) {
+                        return $name;
+                    }
+                }
+
+                // 2. If corresponding exam from exam_type exists (e.g. "Chest PA", "Chest AP, Chest PA")
+                if (!empty($examType)) {
+                    $exams = array_values(array_filter(array_map('trim', explode(',', $examType))));
+                    if (isset($exams[$idx]) && $exams[$idx] !== '') {
+                        return $exams[$idx];
+                    }
+                }
+
+                // 3. If file has a descriptive name (not starting with case_ or random hash)
+                if (!preg_match('/^case_\d+/i', $baseName) && strlen($baseName) > 2) {
+                    return str_replace(['_', '-'], ' ', $baseName);
+                }
+
+                // 4. Default fallback: exam_type if single exam, else IMG {idx + 1}
+                if (!empty($examType) && !str_contains($examType, ',')) {
+                    return trim($examType);
+                }
+
+                return 'IMG ' . ($idx + 1);
+            }
+        }
+
+        $imageLabels = [];
+        foreach ($imagePaths as $i => $p) {
+            $imageLabels[$i] = getXrayImageLabel($p, $i, $caseDetails['exam_type'] ?? '');
+        }
+        ?>
         <div id="dicom-viewer"
             class="bg-[#0a0a0a] border border-gray-200 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[480px] relative transition-all w-full">
 
@@ -196,17 +236,25 @@ if ($activeDispute && $backPage === 'worklist') {
 
                 <div class="flex items-center gap-4">
                     <div
-                        class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+                        class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner shrink-0">
                         <i data-lucide="scan-line" class="w-5 h-5"></i>
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col min-w-0">
                         <span class="font-black text-xs uppercase tracking-widest leading-none">X-ray Viewer</span>
-                        <?php if (count($imagePaths) > 1): ?>
-                            <span id="img-counter"
-                                class="text-[9px] font-bold text-white/60 tracking-tighter uppercase mt-1">
-                                Image 1 / <?= count($imagePaths) ?>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <?php if (count($imagePaths) > 1): ?>
+                                <span id="img-counter"
+                                    class="text-[9px] font-bold text-white/75 tracking-tighter uppercase shrink-0">
+                                    1 / <?= count($imagePaths) ?>
+                                </span>
+                                <span class="text-white/40 text-[9px] shrink-0">•</span>
+                            <?php endif; ?>
+                            <span id="img-exam-name"
+                                class="text-[10px] font-black text-white bg-black/30 px-2 py-0.5 rounded uppercase tracking-wider truncate max-w-[200px]"
+                                title="<?= htmlspecialchars($imageLabels[0] ?? '') ?>">
+                                <?= htmlspecialchars($imageLabels[0] ?? ($caseDetails['exam_type'] ?? 'X-RAY')) ?>
                             </span>
-                        <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -233,10 +281,11 @@ if ($activeDispute && $backPage === 'worklist') {
                         <?php
                         $imgPath = str_starts_with($path, '/') ? '/' . PROJECT_DIR . $path : '/' . PROJECT_DIR . '/' . $path;
                         $imgPath = str_replace('//', '/', $imgPath);
+                        $lbl = $imageLabels[$idx] ?? ('IMG ' . ($idx + 1));
                         ?>
                         <img src="<?= htmlspecialchars($imgPath) ?>"
                             class="dicom-img w-auto h-full max-w-full max-h-full object-contain transition-transform duration-200 select-none <?= $idx > 0 ? 'hidden' : '' ?>"
-                            alt="X-ray Image <?= $idx + 1 ?>" data-index="<?= $idx ?>">
+                            alt="<?= htmlspecialchars($lbl) ?>" data-index="<?= $idx ?>" data-label="<?= htmlspecialchars($lbl) ?>">
                     <?php endforeach; ?>
 
                     <!-- Floating Side Navigation (Fullscreen Only) -->
@@ -268,9 +317,11 @@ if ($activeDispute && $backPage === 'worklist') {
                             <?php
                             $imgPath = str_starts_with($path, '/') ? '/' . PROJECT_DIR . $path : '/' . PROJECT_DIR . '/' . $path;
                             $imgPath = str_replace('//', '/', $imgPath);
+                            $lbl = $imageLabels[$index] ?? ('IMG ' . ($index + 1));
                             ?>
                             <div class="xray-thumb-item flex-shrink-0 w-10 h-10 rounded-xl border-2 <?= $index === 0 ? 'border-red-500 bg-red-500/10' : 'border-transparent opacity-60' ?> overflow-hidden cursor-pointer transition-all hover:scale-110 hover:opacity-100"
-                                data-index="<?= $index ?>" data-url="<?= htmlspecialchars($imgPath) ?>">
+                                data-index="<?= $index ?>" data-url="<?= htmlspecialchars($imgPath) ?>" data-label="<?= htmlspecialchars($lbl) ?>"
+                                title="<?= htmlspecialchars($lbl) ?> (<?= $index + 1 ?> / <?= count($imagePaths) ?>)">
                                 <img src="<?= htmlspecialchars($imgPath) ?>" class="w-full h-full object-cover">
                             </div>
                         <?php endforeach; ?>
@@ -1013,6 +1064,7 @@ if ($activeDispute && $backPage === 'worklist') {
         const images = document.querySelectorAll('.dicom-img');
         const counter = document.getElementById('img-counter');
         const strip = document.querySelectorAll('.strip-thumb');
+        const xrayLabels = <?= json_encode(array_values($imageLabels)) ?>;
         let currentImg = 0;
         let scale = 1, tx = 0, ty = 0, isDragging = false, sx = 0, sy = 0;
 
@@ -1028,6 +1080,13 @@ if ($activeDispute && $backPage === 'worklist') {
 
             // Update counter
             if (counter) counter.textContent = `${idx + 1} / ${images.length}`;
+
+            // Update exam name
+            const examNameEl = document.getElementById('img-exam-name');
+            if (examNameEl && xrayLabels && xrayLabels[idx]) {
+                examNameEl.textContent = xrayLabels[idx];
+                examNameEl.title = xrayLabels[idx];
+            }
 
             // Update filename
             const filenameEl = document.getElementById('xray-filename');

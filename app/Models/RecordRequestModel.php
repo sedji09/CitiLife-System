@@ -166,7 +166,7 @@ class RecordRequestModel {
                 $notificationModel->add(
                     "New Record Request", 
                     $notifMsg, 
-                    "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=record-requests", 
+                    "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=record-requests&highlight=" . urlencode($data['patient_no'] ?? $data['patient_name']), 
                     null, 
                     'branch_admin', 
                     $targetBranch['id']

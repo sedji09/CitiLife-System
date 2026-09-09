@@ -60,7 +60,7 @@ class ResultDisputeModel {
             SELECT rd.*, 
                    c.case_number, c.exam_type, c.findings, c.impression, c.is_amended,
                    p.first_name, p.last_name, p.middle_name, p.patient_number, p.contact_number, p.email,
-                   p.sex, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age,
+                   p.sex, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age,
                    pu.name as user_account_name,
                    b.name as branch_name,
                    u.name as resolver_name

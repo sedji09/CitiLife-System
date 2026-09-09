@@ -403,7 +403,7 @@ class CaseModel
                         $notificationModel->add(
                             "Reading Completed",
                             "Your X-ray for Case {$cData['case_number']} has been read. It will be released shortly.",
-                            "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}",
+                            "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}&highlight=" . urlencode($cData['case_number']),
                             $patientUserId,
                             'patient'
                         );
@@ -472,9 +472,9 @@ class CaseModel
         }
 
         if ($this->hasColumn('cases', 'released')) {
-            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'For Revision', report_status = 'Draft', pdf_path = NULL, released = 0, is_amended = 1, re_edit_reason = ? WHERE id = ?");
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', report_status = 'Draft', pdf_path = NULL, released = 0, re_edit_reason = ? WHERE id = ?");
         } else {
-            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'For Revision', report_status = 'Draft', pdf_path = NULL, is_amended = 1, re_edit_reason = ? WHERE id = ?");
+            $stmt = $this->pdo->prepare("UPDATE cases SET status = 'Under Reading', report_status = 'Draft', pdf_path = NULL, re_edit_reason = ? WHERE id = ?");
         }
         return $stmt->execute([$reEditReason, $caseId]);
     }
@@ -505,7 +505,7 @@ class CaseModel
     public function getCaseById($id)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, p.middle_name, p.birthdate, p.home_address, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number,
+            SELECT c.*, p.first_name, p.last_name, p.middle_name, p.birthdate, p.home_address, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.patient_number,
                    b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, b.gcash_qr_path,
                    COALESCE(NULLIF(u.full_name_report, ''), NULLIF(u.name, ''), SUBSTRING_INDEX(u.email, '@', 1)) AS radtech_name, u.professional_title AS radtech_title, u.signature AS radtech_signature,
                    COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name, ur.professional_title AS radiologist_title, ur.signature AS radiologist_signature
@@ -932,7 +932,7 @@ class CaseModel
         if (!$userId)
             return null;
         $stmt = $this->pdo->prepare("
-            SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, b.name as branch_name 
+            SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, b.name as branch_name 
             FROM patients p 
             INNER JOIN users u ON u.patient_id = p.id 
             LEFT JOIN branches b ON p.branch_id = b.id
@@ -947,7 +947,7 @@ class CaseModel
      */
     public function getPatientByUserId($userId)
     {
-        $stmt = $this->pdo->prepare("SELECT p.*, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age FROM patients p JOIN users u ON u.patient_id = p.id WHERE u.id = ?");
+        $stmt = $this->pdo->prepare("SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age FROM patients p JOIN users u ON u.patient_id = p.id WHERE u.id = ?");
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }
@@ -994,7 +994,7 @@ class CaseModel
     public function getCaseByNumber($caseNumber)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.middle_name, p.last_name, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.patient_number as p_num, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
+            SELECT c.*, p.first_name, p.middle_name, p.last_name, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.patient_number as p_num, b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3
             FROM cases c
             JOIN patients p ON c.patient_id = p.id
             JOIN branches b ON c.branch_id = b.id
@@ -1075,7 +1075,7 @@ class CaseModel
      */
     public function getPendingCases($branchId)
     {
-        $sql = "SELECT r.*, r.id as request_id, p.first_name, p.middle_name, p.last_name, p.birthdate, (YEAR(CURDATE()) - YEAR(p.birthdate)) AS age, p.sex, p.contact_number, p.home_address 
+        $sql = "SELECT r.*, r.id as request_id, p.first_name, p.middle_name, p.last_name, p.birthdate, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address 
                 FROM requests r 
                 JOIN patients p ON r.patient_id = p.id 
                 WHERE r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified') AND r.branch_id = ?
@@ -1313,7 +1313,7 @@ class CaseModel
 
                 $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
                 if ($patientUserId) {
-                    $notificationModel->add("Request Approved", "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.", "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}", $patientUserId, 'patient');
+                    $notificationModel->add("Request Approved", "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.", "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}&highlight=" . urlencode($caseNumber), $patientUserId, 'patient');
                 }
 
                 $pdo->commit();
@@ -1328,7 +1328,7 @@ class CaseModel
 
                 $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
                 if ($patientUserId) {
-                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status", $patientUserId, 'patient');
+                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&highlight=" . urlencode($requestData['request_number']), $patientUserId, 'patient');
                 }
 
                 $pdo->commit();

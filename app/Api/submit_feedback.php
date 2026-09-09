@@ -92,7 +92,7 @@ try {
         $notificationModel->add(
             "New Patient Feedback",
             "Patient $patientName submitted a {$rating}-star rating.",
-            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=feedback",
+            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=feedback&highlight=" . urlencode($patientName),
             null,
             'branch_admin',
             $branchId
@@ -103,7 +103,7 @@ try {
     $notificationModel->add(
         "New Patient Feedback",
         "A new {$rating}-star rating was submitted by a patient.",
-        "/" . PROJECT_DIR . "/index.php?role=admin_central&page=feedback",
+        "/" . PROJECT_DIR . "/index.php?role=admin_central&page=feedback&highlight=" . urlencode($patientName),
         null,
         'admin_central'
     );

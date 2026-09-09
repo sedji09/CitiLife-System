@@ -168,6 +168,7 @@ $router->post('/app/api/send_email_change_otp.php', 'app/Api/send_email_change_o
 $router->post('/app/api/verify_email_change_otp.php', 'app/Api/verify_email_change_otp.php');
 $router->post('/config/update_patient.php', 'config/update_patient.php');
 $router->get('/app/api/check_philhealth.php', 'app/Api/check_philhealth.php');
+$router->get('/app/Api/check_philhealth.php', 'app/Api/check_philhealth.php');
 $router->get('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->post('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->get('/App/Api/disputes.php', 'app/Api/disputes.php');

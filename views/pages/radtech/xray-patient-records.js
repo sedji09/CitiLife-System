@@ -220,10 +220,90 @@
         renderPage('disputes');
     }
 
+    function handleHighlight(targetId) {
+        if (!targetId) {
+            const params = new URLSearchParams(window.location.search);
+            targetId = params.get('highlight') || params.get('highlight_case') || params.get('case_id');
+        }
+        if (!targetId) return false;
+
+        const hlLower = String(targetId).trim().toLowerCase();
+        const tbody = document.getElementById('table-body');
+        if (!tbody) return false;
+
+        const allRows = Array.from(tbody.querySelectorAll('tr.record-row'));
+        const targetRow = allRows.find(row => {
+            const id = (row.dataset.id || '').toLowerCase();
+            const pat = (row.dataset.patient || '').toLowerCase();
+            const name = (row.dataset.name || '').toLowerCase();
+            return id === hlLower || pat === hlLower || (hlLower && id.includes(hlLower)) || name.includes(hlLower);
+        });
+
+        if (!targetRow) return false;
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+
+        const filtered = getFilteredRows('completed');
+        const targetIdx = filtered.indexOf(targetRow);
+        if (targetIdx !== -1) {
+            currentPages.completed = Math.floor(targetIdx / ROWS_PER_PAGE) + 1;
+        }
+        renderPage('completed');
+
+        setTimeout(() => {
+            targetRow.style.display = '';
+            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400', 'ring-offset-1');
+            targetRow.style.transition = 'background-color 0.4s ease';
+            targetRow.style.backgroundColor = '#fef08a';
+            setTimeout(() => {
+                targetRow.style.backgroundColor = '#fde047';
+                setTimeout(() => {
+                    targetRow.style.backgroundColor = '#fef08a';
+                    setTimeout(() => {
+                        targetRow.style.backgroundColor = '#fde047';
+                        setTimeout(() => {
+                            targetRow.style.transition = 'background-color 1.5s ease';
+                            targetRow.style.backgroundColor = '';
+                            targetRow.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
+                        }, 400);
+                    }, 300);
+                }, 300);
+            }, 200);
+
+            const existingBanner = document.getElementById('highlight-banner');
+            if (existingBanner) existingBanner.remove();
+
+            const banner = document.createElement('div');
+            banner.id = 'highlight-banner';
+            banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Case <strong>${targetId}</strong> is highlighted below.</span></div>`;
+            banner.style.cssText = 'margin:1rem 0;padding:0.65rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;box-shadow:0 2px 8px rgba(245,158,11,0.08);';
+            const header = document.querySelector('h2');
+            if (header && header.parentElement) {
+                header.parentElement.insertAdjacentElement('afterend', banner);
+            }
+            setTimeout(() => {
+                banner.style.transition = 'opacity 0.5s';
+                banner.style.opacity = '0';
+                setTimeout(() => banner.remove(), 500);
+            }, 6000);
+        }, 100);
+
+        return true;
+    }
+
+    window.handlePageHighlight = handleHighlight;
+
     // Run immediately if DOM is ready, otherwise wait
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            handleHighlight();
+        });
     } else {
         init();
+        handleHighlight();
     }
 })();

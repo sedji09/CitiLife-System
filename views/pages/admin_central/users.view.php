@@ -135,7 +135,7 @@
                                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                                     <div class="flex flex-col items-center gap-3">
                                         <div
-                                             class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
+                                            class="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
                                             <i data-lucide="search-x" class="w-8 h-8 text-gray-300"></i>
                                         </div>
                                         <h3 class="text-sm font-bold text-gray-800">No matching accounts</h3>
@@ -155,20 +155,23 @@
                                         <div class="flex items-center gap-2.5">
                                             <div
                                                 class="h-7 w-7 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-[11px] uppercase overflow-hidden shrink-0">
-                                                 <?php $uAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($u['avatar']) : $u['avatar']; ?>
-                                                 <?php if (!empty($uAvatarUrl)): ?>
-                                                     <img src="<?= htmlspecialchars($uAvatarUrl) ?>" alt="Avatar"
-                                                         class="h-full w-full object-cover">
-                                                 <?php else: ?>
-                                                     <?= htmlspecialchars(strtoupper(substr(!empty($u['name']) ? $u['name'] : $u['email'], 0, 2))) ?>
-                                                 <?php endif; ?>
+                                                <?php $uAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($u['avatar']) : $u['avatar']; ?>
+                                                <?php if (!empty($uAvatarUrl)): ?>
+                                                    <img src="<?= htmlspecialchars($uAvatarUrl) ?>" alt="Avatar"
+                                                        class="h-full w-full object-cover">
+                                                <?php else: ?>
+                                                    <?= htmlspecialchars(strtoupper(substr(!empty($u['name']) ? $u['name'] : $u['email'], 0, 2))) ?>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="flex flex-col">
                                                 <?php if (!empty($u['name'])): ?>
-                                                    <span class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['name']) ?></span>
-                                                    <span class="text-xs text-gray-500 font-normal"><?= htmlspecialchars($u['email']) ?></span>
+                                                    <span
+                                                        class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['name']) ?></span>
+                                                    <span
+                                                        class="text-xs text-gray-500 font-normal"><?= htmlspecialchars($u['email']) ?></span>
                                                 <?php else: ?>
-                                                    <span class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['email']) ?></span>
+                                                    <span
+                                                        class="text-sm font-bold text-gray-800 tracking-tight"><?= htmlspecialchars($u['email']) ?></span>
                                                 <?php endif; ?>
                                                 <span class="text-[10px] text-gray-400 font-medium tracking-tight">Joined
                                                     <?= date('M d, Y', strtotime($u['created_at'])) ?></span>
@@ -206,7 +209,8 @@
                                     <td class="px-6 py-4 text-left">
                                         <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($u['status'] === 'Pending'): ?>
-                                                <form action="" method="POST" class="inline" onsubmit="return confirm('Resend account activation email to <?= htmlspecialchars($u['email']) ?>?')">
+                                                <form action="" method="POST" class="inline"
+                                                    onsubmit="return confirm('Resend account activation email to <?= htmlspecialchars($u['email']) ?>?')">
                                                     <input type="hidden" name="action" value="resend_invite">
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <button type="submit"
@@ -241,7 +245,7 @@
 
                                             <button type="button"
                                                 onclick="openEditModal(<?= htmlspecialchars(json_encode($u)) ?>)"
-                                                class="p-1.5 rounded-md border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center"
+                                                class="p-1.5 rounded-md border  border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center"
                                                 title="Edit User">
                                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                                             </button>
@@ -281,8 +285,8 @@
 <div id="addUserModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
             <h3 class="text-lg font-bold text-gray-900">Create New Staff Account</h3>
             <button type="button" onclick="closeAddUserModal()"
                 class="text-gray-400 hover:text-gray-600 transition p-1">
@@ -312,16 +316,18 @@
                 </div>
             </div>
 
-            <div class="p-3 bg-blue-50/80 border border-blue-100 rounded-xl text-xs text-blue-800 flex items-center gap-2.5">
+            <div
+                class="p-3 bg-blue-50/80 border border-blue-100 rounded-xl text-xs text-blue-800 flex items-center gap-2.5">
                 <i data-lucide="mail-check" class="w-4 h-4 text-blue-600 shrink-0"></i>
-                <span>An invitation link will be emailed to the staff member to set their password and activate their account (valid for 7 days).</span>
+                <span>An invitation link will be emailed to the staff member to set their password and activate their
+                    account (valid for 7 days).</span>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
                     <select id="role" name="role" required onchange="toggleBranchSelect()"
-                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Role</option>
                         <option value="branch_admin">Branch Admin</option>
                         <option value="radtech">RadTech</option>
@@ -333,7 +339,7 @@
                 <div id="branchSelectWrapper">
                     <label for="branch_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch</label>
                     <select id="branch_id" name="branch_id"
-                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled selected hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -361,8 +367,8 @@
 <div id="editUserModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
             <h3 class="text-lg font-bold text-gray-900">Edit Staff Account</h3>
             <button type="button" onclick="closeEditUserModal()"
                 class="text-gray-400 hover:text-gray-600 transition p-1">
@@ -395,7 +401,7 @@
                 <div>
                     <label for="edit_role" class="block text-sm font-semibold text-gray-700 mb-1.5">Role</label>
                     <select id="edit_role" name="role" required onchange="toggleEditBranchSelect()"
-                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Role</option>
                         <option value="branch_admin">Branch Admin</option>
                         <option value="radtech">RadTech</option>
@@ -407,7 +413,7 @@
                 <div id="edit_branchSelectWrapper">
                     <label for="edit_branch_id" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch</label>
                     <select id="edit_branch_id" name="branch_id"
-                        class="w-full pl-3 pr-10 py-2.5 text-ellipsis overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
+                        class="w-full pl-3 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all">
                         <option value="" disabled hidden>Select Branch</option>
                         <?php foreach ($branches as $b): ?>
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>

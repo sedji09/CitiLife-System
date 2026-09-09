@@ -573,12 +573,14 @@ $statusBadge = [
                         $bCls = $statusBadgeMap[$disp['status']] ?? 'bg-gray-50 text-gray-600 border-gray-200';
 
                         $catMap = [
-                            'demographic_error' => 'Wrong Patient Info',
-                            'exam_details_error' => 'Wrong Body Part / Exam',
-                            'findings_error' => 'Typographical Error in Report',
-                            'both_error' => 'Wrong Patient Info & Typographical Error',
-                            'other' => 'Other Concern',
-                            'other_error' => 'Other Concern'
+                            'demographic_error'   => 'Wrong Patient Info',
+                            'exam_details_error'  => 'Wrong Body Part / Exam',
+                            'findings_error'      => 'Typographical Error in Report',
+                            'template_error'      => 'Rename X-ray Template',
+                            'both_error'          => 'Wrong Patient Info & Typographical Error',
+                            'both_template_error' => 'Wrong Patient Info & Rename X-ray Template',
+                            'other'               => 'Other Concern',
+                            'other_error'         => 'Other Concern'
                         ];
                         ?>
                         <div id="dispute-card-<?= $disp['id'] ?>" data-id="<?= $disp['id'] ?>"
@@ -611,7 +613,7 @@ $statusBadge = [
                                 <div class="flex-1">
                                     <h4 class="text-sm font-bold text-gray-900 mb-1">
                                         <span class="text-gray-500 font-medium mr-2">Category:</span>
-                                        <?= htmlspecialchars($catMap[$disp['dispute_category']] ?? ucfirst($disp['dispute_category'])) ?>
+                                        <?= htmlspecialchars($catMap[$disp['dispute_category']] ?? ucwords(str_replace('_', ' ', $disp['dispute_category'] ?? 'Correction Request'))) ?>
                                     </h4>
                                     <div class="text-sm text-gray-700 mb-3">
                                         <span class="text-gray-500 font-medium mr-1 block mb-1">Details of Correction:</span>
@@ -816,7 +818,7 @@ $statusBadge = [
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">What needs to be corrected? <span
                                 class="text-red-500">*</span></label>
-                        <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()" data-no-custom="true"
+                        <select name="dispute_category" id="dispute-category" onchange="toggleDisputeFields()"
                             class="w-full rounded-xl border border-gray-300 pl-3.5 pr-8 py-2.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500 bg-white cursor-pointer shadow-sm">
                             <option value="" disabled selected>-- Select Category --</option>
                             <option value="demographic_error">1. Wrong Patient Info (Incorrect Name, Age, or Sex)

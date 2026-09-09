@@ -112,7 +112,7 @@ class PaymentVerificationsController
                                 $notifModel->add(
                                     "Request Approved",
                                     "Your payment for request {$reqData['request_number']} has been verified and approved (Case #{$caseNumber}). Please proceed to the X-ray room for examination.",
-                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=dashboard",
+                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id=" . urlencode($newCaseId) . "&highlight=" . urlencode($caseNumber),
                                     $patUser['user_id'],
                                     'patient'
                                 );
@@ -217,7 +217,7 @@ class PaymentVerificationsController
                                 $notifModel->add(
                                     "Payment Rejected",
                                     "Your payment for request {$patData['request_number']} was returned: \"{$rejectionReason}\". Please resubmit your payment details with the correct reference number and receipt screenshot.",
-                                    url('dashboard'),
+                                    url('dashboard?highlight=' . urlencode($patData['request_number'])),
                                     $patData['user_id'],
                                     'patient'
                                 );

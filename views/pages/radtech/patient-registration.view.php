@@ -32,9 +32,13 @@
     background-color: #f0fdf4 !important;
     box-shadow: 0 0 0 1px #10b981 !important;
 }
+/* Prevent closed datepicker popover from creating phantom scrollable space at bottom of page */
+.cdp-popover:not(.cdp-open) {
+    display: none !important;
+}
 </style>
 
-<div class="mx-auto max-w-3xl space-y-4 pb-6">
+<div class="mx-auto max-w-3xl space-y-3 pb-0">
     <div>
         <h1 class="text-2xl font-semibold text-gray-900">Patient Registration</h1>
         <p class="text-sm text-gray-500">Walk-in patient entry — system auto-generates case number</p>
@@ -276,7 +280,10 @@
                     <div id="philhealth-id-container" class="hidden">
                         <label for="id-number" class="block text-sm font-medium text-gray-700 mb-2">PhilHealth ID Number <span class="text-red-500">*</span></label>
                         <input id="id-number" name="id-number" type="text" inputmode="numeric" maxlength="14"
-                            oninput="formatPhilHealthInput(this); checkPhilHealthId();" placeholder="XX-XXXXXXXXX-X"
+                            oninput="formatPhilHealthInput(this); checkPhilHealthId();"
+                            onblur="checkPhilHealthId();"
+                            onchange="checkPhilHealthId();"
+                            placeholder="XX-XXXXXXXXX-X"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                         
                         <div id="philhealth-relation-container" class="mt-3">
@@ -284,8 +291,8 @@
                             <select id="philhealth_relation" name="philhealth_relation"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500">
                                 <option value="" disabled selected>Select relation</option>
-                                <option value="Principal Member" id="opt-owner">Principal Member</option>
-                                <option value="Qualified Dependent" id="opt-family">Qualified Dependent</option>
+                                <option value="Principal Member" id="opt-owner">Principal Member - Available</option>
+                                <option value="Qualified Dependent" id="opt-family">Qualified Dependent - Available</option>
                             </select>
                             <p id="philhealth-status-msg" class="text-xs text-red-600 mt-2 hidden"></p>
                         </div>
@@ -323,63 +330,124 @@
             idInput.setCustomValidity('');
             relSelect.value = '';
             relSelect.required = false;
+            const msg = document.getElementById('philhealth-status-msg');
+            if (msg) {
+                msg.classList.add('hidden');
+                msg.innerHTML = '';
+            }
+            updateRelationSelect(false, '', false, '');
         }
     }
 
     // Debounce timer for API call
     let phCheckTimer = null;
 
+    function getAppBasePath() {
+        let bp = window.__APP__?.basePath || '';
+        if (!bp) {
+            const path = window.location.pathname || '';
+            const idx = path.indexOf('/patient-registration');
+            if (idx > 0) {
+                bp = path.substring(0, idx);
+            }
+        }
+        if (!bp) return '/';
+        return bp.endsWith('/') ? bp : bp + '/';
+    }
+
+    function updateRelationSelect(ownerUsed = false, ownerDate = '', familyUsed = false, familyDate = '') {
+        const relSelect = document.getElementById('philhealth_relation');
+        if (!relSelect) return;
+
+        const curVal = relSelect.value;
+        const ownerLabel = ownerUsed 
+            ? `Principal Member - Not Available (Used on ${ownerDate})`
+            : 'Principal Member - Available';
+        const familyLabel = familyUsed 
+            ? `Qualified Dependent - Not Available (Used on ${familyDate})`
+            : 'Qualified Dependent - Available';
+
+        let targetVal = curVal;
+        if (curVal === 'Principal Member' && ownerUsed) {
+            targetVal = (!familyUsed) ? 'Qualified Dependent' : '';
+        } else if (curVal === 'Qualified Dependent' && familyUsed) {
+            targetVal = (!ownerUsed) ? 'Principal Member' : '';
+        }
+
+        // Reconstruct options HTML directly so browser platform dropdown popup re-renders with new labels and disabled states
+        relSelect.innerHTML = `
+            <option value="" disabled ${!targetVal ? 'selected' : ''}>Select relation</option>
+            <option value="Principal Member" id="opt-owner" ${ownerUsed ? 'disabled' : ''} ${targetVal === 'Principal Member' ? 'selected' : ''}>${ownerLabel}</option>
+            <option value="Qualified Dependent" id="opt-family" ${familyUsed ? 'disabled' : ''} ${targetVal === 'Qualified Dependent' ? 'selected' : ''}>${familyLabel}</option>
+        `;
+        relSelect.value = targetVal;
+    }
+
     function checkPhilHealthId() {
         clearTimeout(phCheckTimer);
         const idInput = document.getElementById('id-number');
         const msg = document.getElementById('philhealth-status-msg');
-        const optOwner = document.getElementById('opt-owner');
-        const optFamily = document.getElementById('opt-family');
-        const relSelect = document.getElementById('philhealth_relation');
-        const idValue = idInput.value;
+        const idValue = (idInput ? idInput.value : '').trim();
+        const digits = idValue.replace(/\D/g, '');
 
-        // Reset state
-        msg.classList.add('hidden');
-        msg.innerText = '';
-        optOwner.disabled = false;
-        optOwner.innerText = 'Principal Member';
-        optFamily.disabled = false;
-        optFamily.innerText = 'Qualified Dependent';
-        idInput.setCustomValidity('');
-
-        // Only check if format is correct
-        const philHealthPattern = /^\d{2}-\d{9}-\d{1}$/;
-        if (!philHealthPattern.test(idValue)) {
+        if (digits.length < 12) {
+            if (msg) {
+                msg.classList.add('hidden');
+                msg.innerHTML = '';
+                msg.className = 'text-xs mt-2 hidden';
+            }
+            updateRelationSelect(false, '', false, '');
+            if (idInput) idInput.setCustomValidity('');
             return;
         }
 
+        const bp = getAppBasePath();
+        const url = `${bp}app/Api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}&t=${Date.now()}`;
+
         phCheckTimer = setTimeout(() => {
-            fetch(window.__APP__.basePath + `/app/api/check_philhealth.php?philhealth_id=${encodeURIComponent(idValue)}&t=${new Date().getTime()}`, { cache: 'no-store' })
+            fetch(url, { cache: 'no-store' })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        if (idInput.value !== idValue) return;
+                    if (!data || !data.success) return;
+                    if (idInput.value.replace(/\D/g, '') !== digits) return;
 
-                        if (data.owner_used) {
-                            optOwner.disabled = true;
-                            optOwner.innerText = `Principal Member - Used on ${data.owner_used_date}`;
-                            if (relSelect.value === 'Principal Member') relSelect.value = '';
+                    const ownerUsed = Boolean(data.owner_used || data.owner_used_by_other);
+                    const familyUsed = Boolean(data.family_used || data.family_used_by_other);
+                    const ownerDate = data.owner_used_date || '';
+                    const familyDate = data.family_used_date || '';
+
+                    // Update dropdown options HTML
+                    updateRelationSelect(ownerUsed, ownerDate, familyUsed, familyDate);
+                    
+                    if (ownerUsed && familyUsed) {
+                        idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                        if (msg) {
+                            msg.className = 'text-xs text-red-600 mt-2 block font-medium';
+                            msg.innerHTML = `This PhilHealth ID is already fully utilized (Principal used on ${ownerDate}, Dependent used on ${familyDate}).`;
+                            msg.classList.remove('hidden');
                         }
-                        if (data.family_used) {
-                            optFamily.disabled = true;
-                            optFamily.innerText = `Qualified Dependent - Used on ${data.family_used_date}`;
-                            if (relSelect.value === 'Qualified Dependent') relSelect.value = '';
+                    } else if (ownerUsed) {
+                        if (msg) {
+                            msg.className = 'text-xs text-red-600 mt-2 block font-medium';
+                            msg.innerHTML = `Principal Member was already used on <strong>${ownerDate}</strong>${data.owner_patient_name ? ' (' + data.owner_patient_name + ')' : ''}. Only <strong>Qualified Dependent</strong> is available.`;
+                            msg.classList.remove('hidden');
                         }
-                        
-                        if (data.owner_used && data.family_used) {
-                            idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
-                            msg.innerText = "This PhilHealth ID is already fully utilized.";
+                    } else if (familyUsed) {
+                        if (msg) {
+                            msg.className = 'text-xs text-red-600 mt-2 block font-medium';
+                            msg.innerHTML = `Qualified Dependent was already used on <strong>${familyDate}</strong>${data.family_patient_name ? ' (' + data.family_patient_name + ')' : ''}. Only <strong>Principal Member</strong> is available.`;
+                            msg.classList.remove('hidden');
+                        }
+                    } else {
+                        if (msg) {
+                            msg.className = 'text-xs text-emerald-600 mt-2 block font-medium';
+                            msg.innerHTML = 'PhilHealth ID is verified and available for Principal Member or Qualified Dependent.';
                             msg.classList.remove('hidden');
                         }
                     }
                 })
                 .catch(err => console.error("Error checking PhilHealth ID:", err));
-        }, 500);
+        }, 200);
     }
 
     function formatPhilHealthInput(input) {

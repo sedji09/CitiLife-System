@@ -347,14 +347,24 @@ function toggleAssignPhilHealth(isWithCard) {
         if (isWithCard) {
             detailsBox.classList.remove('hidden');
             if (idInput) {
-                idInput.required = true;
-                idInput.setAttribute('data-required', 'true');
+                idInput.required = !window.currentAssignIsReadOnly;
+                if (!window.currentAssignIsReadOnly) {
+                    idInput.setAttribute('data-required', 'true');
+                } else {
+                    idInput.removeAttribute('data-required');
+                }
             }
             if (relSelect) {
-                relSelect.required = true;
-                relSelect.setAttribute('data-required', 'true');
+                relSelect.required = !window.currentAssignIsReadOnly;
+                if (!window.currentAssignIsReadOnly) {
+                    relSelect.setAttribute('data-required', 'true');
+                } else {
+                    relSelect.removeAttribute('data-required');
+                }
             }
-            checkAssignPhilHealthDup();
+            if (!window.currentAssignIsReadOnly) {
+                checkAssignPhilHealthDup();
+            }
         } else {
             detailsBox.classList.add('hidden');
             if (idInput) {
@@ -417,11 +427,70 @@ function recalculateAssignPricing() {
     if (hiddenPrice) hiddenPrice.value = amountDue.toFixed(2);
 }
 
+function updateAssignRelationSelect(ownerUsed = false, ownerDate = '', familyUsed = false, familyDate = '', familyBlockedForOwner = false) {
+    const relSelect = document.getElementById('assign_philhealth_relation');
+    if (!relSelect) return;
+
+    const curVal = relSelect.value;
+    const ownerLabel = ownerUsed 
+        ? `Principal Member - Not Available (Used on ${ownerDate})`
+        : 'Principal Member - Available';
+
+    let familyLabel = 'Qualified Dependent - Available';
+    let familyDisabled = familyUsed;
+    if (familyBlockedForOwner) {
+        familyLabel = 'Qualified Dependent - Not Available (Not allowed for Cardholder)';
+        familyDisabled = true;
+    } else if (familyUsed) {
+        familyLabel = `Qualified Dependent - Not Available (Used on ${familyDate})`;
+        familyDisabled = true;
+    }
+
+    let targetVal = curVal;
+    if (curVal === 'Principal Member' && ownerUsed) {
+        targetVal = (!familyDisabled) ? 'Qualified Dependent' : '';
+    } else if (curVal === 'Qualified Dependent' && familyDisabled) {
+        targetVal = (!ownerUsed) ? 'Principal Member' : '';
+    }
+
+    relSelect.innerHTML = `
+        <option value="" disabled ${!targetVal ? 'selected' : ''}>Select relation</option>
+        <option value="Principal Member" id="assign-opt-owner" ${ownerUsed ? 'disabled' : ''} ${targetVal === 'Principal Member' ? 'selected' : ''}>${ownerLabel}</option>
+        <option value="Qualified Dependent" id="assign-opt-family" ${familyDisabled ? 'disabled' : ''} ${targetVal === 'Qualified Dependent' ? 'selected' : ''}>${familyLabel}</option>
+    `;
+    relSelect.value = targetVal;
+
+    if (ownerUsed && familyDisabled) {
+        relSelect.disabled = true;
+    } else {
+        relSelect.disabled = false;
+    }
+
+    if (relSelect._customSelect && typeof relSelect._customSelect.buildOptions === 'function') {
+        relSelect._customSelect.buildOptions();
+    }
+}
+
+function resetAssignRelationSelect() {
+    const relSelect = document.getElementById('assign_philhealth_relation');
+    if (!relSelect) return;
+    const curVal = relSelect.value;
+    relSelect.innerHTML = `
+        <option value="" disabled ${!curVal ? 'selected' : ''}>Select relation</option>
+        <option value="Principal Member" id="assign-opt-owner" ${curVal === 'Principal Member' ? 'selected' : ''}>Principal Member</option>
+        <option value="Qualified Dependent" id="assign-opt-family" ${curVal === 'Qualified Dependent' ? 'selected' : ''}>Qualified Dependent</option>
+    `;
+    relSelect.value = curVal;
+    relSelect.disabled = false;
+    if (relSelect._customSelect && typeof relSelect._customSelect.buildOptions === 'function') {
+        relSelect._customSelect.buildOptions();
+    }
+}
+
 function checkAssignPhilHealthDup(immediate = false) {
+    if (window.currentAssignIsReadOnly) return;
     const idInput = document.getElementById('assign_philhealth_id');
     const msgEl = document.getElementById('assign-philhealth-msg');
-    const ownerOpt = document.getElementById('assign-opt-owner');
-    const familyOpt = document.getElementById('assign-opt-family');
     const relSelect = document.getElementById('assign_philhealth_relation');
     const reqId = window.currentAssignRequestId || 0;
     const patId = window.currentAssignPatientId || 0;
@@ -434,18 +503,10 @@ function checkAssignPhilHealthDup(immediate = false) {
         if (msgEl) {
             msgEl.classList.add('hidden');
             msgEl.innerHTML = '';
+            msgEl.className = 'mt-2 hidden';
         }
-        if (ownerOpt) {
-            ownerOpt.disabled = false;
-            ownerOpt.innerText = 'Principal Member';
-        }
-        if (familyOpt) {
-            familyOpt.disabled = false;
-            familyOpt.innerText = 'Qualified Dependent';
-        }
-        if (relSelect) {
-            relSelect.disabled = false;
-        }
+        resetAssignRelationSelect();
+        if (idInput) idInput.setCustomValidity('');
         recalculateAssignPricing();
         return;
     }
@@ -456,86 +517,39 @@ function checkAssignPhilHealthDup(immediate = false) {
         fetch(url, { cache: 'no-store' })
             .then(r => r.json())
             .then(data => {
-                if (!data.success) return;
-                if (idInput.value.trim() !== val) return;
+                if (!data || !data.success) return;
+                if (idInput.value.replace(/\D/g, '') !== cleanDigits) return;
 
-                const ownerUsed = Boolean(data.owner_used_by_other);
-                const familyUsed = Boolean(data.family_used_by_other);
+                const ownerUsed = Boolean(data.owner_used_by_other || data.owner_used);
+                const familyUsed = Boolean(data.family_used_by_other || data.family_used);
                 const familyBlockedForOwner = Boolean(data.family_blocked_for_owner);
+                const ownerDate = data.owner_used_date || '';
+                const familyDate = data.family_used_date || '';
 
-                if (ownerOpt) {
-                    ownerOpt.disabled = ownerUsed;
-                    ownerOpt.innerText = ownerUsed
-                        ? `Principal Member - Unavailable (Already used ${data.owner_used_date || ''})`
-                        : 'Principal Member (Available)';
-                }
-
-                if (familyOpt) {
-                    if (familyBlockedForOwner) {
-                        familyOpt.disabled = true;
-                        familyOpt.innerText = 'Qualified Dependent - Unavailable (Not allowed for Cardholder)';
-                    } else if (familyUsed) {
-                        familyOpt.disabled = true;
-                        familyOpt.innerText = `Qualified Dependent - Unavailable (Already used ${data.family_used_date || ''})`;
-                    } else {
-                        familyOpt.disabled = false;
-                        familyOpt.innerText = 'Qualified Dependent (Available for Family Member)';
-                    }
-                }
-
-                // If currently selected relation is disabled, reset selection back to unselected
-                if (relSelect) {
-                    const curVal = relSelect.value;
-                    if (curVal === 'Principal Member' && ownerUsed) {
-                        relSelect.selectedIndex = 0;
-                        relSelect.value = '';
-                    } else if (curVal === 'Qualified Dependent' && (familyBlockedForOwner || familyUsed)) {
-                        relSelect.selectedIndex = 0;
-                        relSelect.value = '';
-                    }
-                }
-
-                // If both options are disabled, disable the entire dropdown
-                if (ownerOpt && familyOpt && relSelect) {
-                    if (ownerOpt.disabled && familyOpt.disabled) {
-                        relSelect.selectedIndex = 0;
-                        relSelect.value = '';
-                        relSelect.disabled = true;
-                    } else {
-                        relSelect.disabled = false;
-                    }
-                }
+                updateAssignRelationSelect(ownerUsed, ownerDate, familyUsed, familyDate, familyBlockedForOwner);
 
                 if (msgEl) {
                     if (familyBlockedForOwner) {
-                        msgEl.innerHTML = `
-                            <p class="text-xs text-red-600 font-medium leading-normal">
-                                The patient (<strong>${escapeHtmlApproval(data.current_patient_name || window.currentAssignPatientName || 'this patient')}</strong>) is registered as the Principal Member of this PhilHealth card and cannot be registered as a Qualified Dependent. Please select <strong>"Without PhilHealth"</strong> above to proceed.
-                            </p>`;
+                        msgEl.className = 'text-xs text-red-600 mt-2 block font-medium';
+                        msgEl.innerHTML = `The patient (<strong>${escapeHtmlApproval(data.current_patient_name || window.currentAssignPatientName || 'this patient')}</strong>) is registered as the Principal Member of this PhilHealth card and cannot be registered as a Qualified Dependent. Please select <strong>"Without PhilHealth"</strong> above to proceed.`;
                         msgEl.classList.remove('hidden');
                     } else if (ownerUsed && familyUsed) {
-                        msgEl.innerHTML = `
-                            <p class="text-xs text-red-600 font-medium leading-normal">
-                                Both Principal Member and Qualified Dependent coverage have already been registered for this PhilHealth ID. Please select "Without PhilHealth" or provide another ID.
-                            </p>`;
+                        idInput.setCustomValidity("This PhilHealth ID is already fully utilized.");
+                        msgEl.className = 'text-xs text-red-600 mt-2 block font-medium';
+                        msgEl.innerHTML = `This PhilHealth ID is already fully utilized (Principal used on ${ownerDate}, Dependent used on ${familyDate}).`;
                         msgEl.classList.remove('hidden');
                     } else if (ownerUsed) {
-                        msgEl.innerHTML = `
-                            <div class="text-xs leading-normal space-y-0.5">
-                                <p class="text-red-600 font-medium">Principal Member is already registered to ${escapeHtmlApproval(data.owner_patient_name || 'prior patient')} (${data.owner_used_date || 'Used'}).</p>
-                                <p class="text-emerald-700 font-semibold">Qualified Dependent is available for family members.</p>
-                            </div>`;
+                        msgEl.className = 'text-xs text-red-600 mt-2 block font-medium';
+                        msgEl.innerHTML = `Principal Member was already used on <strong>${ownerDate}</strong>${data.owner_patient_name ? ' (' + escapeHtmlApproval(data.owner_patient_name) + ')' : ''}. Only <strong>Qualified Dependent</strong> is available.`;
                         msgEl.classList.remove('hidden');
                     } else if (familyUsed) {
-                        msgEl.innerHTML = `
-                            <div class="text-xs leading-normal space-y-0.5">
-                                <p class="text-red-600 font-medium">Qualified Dependent is already registered (${data.family_used_date || 'Used'}).</p>
-                                <p class="text-emerald-700 font-semibold">Principal Member is still available for the cardholder.</p>
-                            </div>`;
+                        msgEl.className = 'text-xs text-red-600 mt-2 block font-medium';
+                        msgEl.innerHTML = `Qualified Dependent was already used on <strong>${familyDate}</strong>${data.family_patient_name ? ' (' + escapeHtmlApproval(data.family_patient_name) + ')' : ''}. Only <strong>Principal Member</strong> is available.`;
                         msgEl.classList.remove('hidden');
                     } else {
-                        msgEl.classList.add('hidden');
-                        msgEl.innerHTML = '';
+                        msgEl.className = 'text-xs text-emerald-600 mt-2 block font-medium';
+                        msgEl.innerHTML = 'PhilHealth ID is verified and available for Principal Member or Qualified Dependent.';
+                        msgEl.classList.remove('hidden');
                     }
                 }
                 recalculateAssignPricing();
@@ -557,24 +571,42 @@ function closeAssignModal() {
         modal.classList.add('hidden');
         const form = document.getElementById('assignForm');
         if (form) {
+            if (window.FormValidator) {
+                window.FormValidator.clearAllErrors(form);
+            }
             const examContainer = form.querySelector('.exam-ms-component');
             if (examContainer) {
                 examContainer.removeAttribute('data-readonly');
                 const searchInput = examContainer.querySelector('.exam-ms-input');
-                if (searchInput) searchInput.style.display = '';
+                if (searchInput) {
+                    searchInput.style.display = '';
+                    searchInput.disabled = false;
+                }
             }
         }
     }
     window.currentAssignRequestId = null;
     window.currentAssignPatientId = null;
     window.currentAssignPatientName = '';
+    window.currentAssignIsReadOnly = false;
 }
 
 function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthStatus = '', philhealthId = '', philhealthRelation = '', patientId = 0, patientName = '', isReadOnly = false) {
     window.currentAssignRequestId = id;
     window.currentAssignPatientId = patientId || 0;
     window.currentAssignPatientName = patientName || '';
-    document.getElementById('assignModal').classList.remove('hidden');
+    window.currentAssignIsReadOnly = !!isReadOnly;
+
+    const modal = document.getElementById('assignModal');
+    if (modal) modal.classList.remove('hidden');
+
+    const form = document.getElementById('assignForm');
+    if (form) {
+        form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
+        if (window.FormValidator) {
+            window.FormValidator.clearAllErrors(form);
+        }
+    }
 
     const bodyPartEl = document.getElementById('assignBodyPart');
     const rawText = requestedBodyPart || 'Not specified';
@@ -582,9 +614,8 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
         bodyPartEl.innerText = rawText;
         bodyPartEl.setAttribute('data-raw', rawText);
     }
-
-    const form = document.getElementById('assignForm');
-    form.action = window.__APP__.basePath + '/patient-approval?action=assign_exam&id=' + id;
+    const bodyPartBox = document.getElementById('assignBodyPartBox');
+    const bodyPartLabel = document.getElementById('assignBodyPartLabel');
 
     const examContainer = form ? form.querySelector('.exam-ms-component') : null;
     const searchInput = examContainer ? examContainer.querySelector('.exam-ms-input') : null;
@@ -612,29 +643,18 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
     }
 
     // Reset relation dropdown options state
-    const ownerOpt = document.getElementById('assign-opt-owner');
-    const familyOpt = document.getElementById('assign-opt-family');
+    resetAssignRelationSelect();
     const msgEl = document.getElementById('assign-philhealth-msg');
-    const relSelect = document.getElementById('assign_philhealth_relation');
-    if (ownerOpt) {
-        ownerOpt.disabled = false;
-        ownerOpt.innerText = 'Principal Member';
-    }
-    if (familyOpt) {
-        familyOpt.disabled = false;
-        familyOpt.innerText = 'Qualified Dependent';
-    }
     if (msgEl) {
         msgEl.classList.add('hidden');
         msgEl.innerHTML = '';
-    }
-    if (relSelect) {
-        relSelect.disabled = false;
+        msgEl.className = 'mt-2 hidden';
     }
 
     // Set PhilHealth values
     const hasCard = (philhealthStatus === 'With PhilHealth Card');
     const idInput = document.getElementById('assign_philhealth_id');
+    const relSelect = document.getElementById('assign_philhealth_relation');
     if (idInput) idInput.value = philhealthId || '';
     if (relSelect) relSelect.value = philhealthRelation || '';
 
@@ -655,34 +675,90 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
 
     const phWithout = document.getElementById('assign_ph_without');
     const phWith = document.getElementById('assign_ph_with');
+    const withoutLabel = document.getElementById('assign_ph_without_label');
+    const withLabel = document.getElementById('assign_ph_with_label');
+    const phDetailsBox = document.getElementById('assign_philhealth_details');
+    const phIdAsterisk = document.getElementById('assign_ph_id_asterisk');
+    const phRelAsterisk = document.getElementById('assign_ph_rel_asterisk');
 
     if (isReadOnly) {
         if (modalTitle) modalTitle.innerText = 'Assigned Examination Details';
-        if (modalSubtitle) modalSubtitle.innerText = 'Assigned procedure(s) and PhilHealth coverage summary (Read-Only)';
+        if (modalSubtitle) modalSubtitle.innerText = 'Assigned procedure(s) and PhilHealth coverage (Read-Only)';
         if (modalIconBox) {
-            modalIconBox.className = 'bg-blue-100 text-blue-600 p-2.5 rounded-lg border border-blue-200';
+            modalIconBox.className = 'bg-gray-100 text-gray-600 p-2.5 rounded-lg border border-gray-200';
             modalIconBox.innerHTML = '<i data-lucide="clipboard-check" class="w-6 h-6"></i>';
         }
+
+        // Gray out patient requested body part box
+        if (bodyPartBox) {
+            bodyPartBox.className = 'mb-4 flex flex-col gap-1 p-3 bg-gray-50 rounded-xl border border-gray-200';
+        }
+        if (bodyPartLabel) {
+            bodyPartLabel.className = 'text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5';
+            bodyPartLabel.innerHTML = '<i data-lucide="user-check" class="w-4 h-4 text-gray-400"></i> Patient requested body part(s):';
+        }
+
         if (examLabel) examLabel.innerText = 'Assigned Examination Procedure(s)';
         if (requiredAsterisk) requiredAsterisk.classList.add('hidden');
-        if (submitBtn) submitBtn.style.display = 'none';
-        if (cancelBtn) {
-            cancelBtn.innerText = 'Close';
-            cancelBtn.className = 'px-5 py-2 bg-gray-600 text-white text-xs font-semibold rounded-xl hover:bg-gray-700 transition cursor-pointer shadow-sm';
-        }
         if (badge) badge.classList.add('hidden');
         if (warningBox) warningBox.classList.add('hidden');
 
-        // Disable PhilHealth radios and inputs
+        // Gray out Exam Selector Box & Chips
+        if (msBox) {
+            msBox.className = 'exam-ms-box w-full justify-between items-center bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 min-h-[42px] cursor-not-allowed opacity-90 transition-shadow';
+        }
+        if (searchInput) {
+            searchInput.style.display = 'none';
+            searchInput.disabled = true;
+        }
+
+        // Gray out PhilHealth radio buttons and labels
         if (phWithout) phWithout.disabled = true;
         if (phWith) phWith.disabled = true;
-        if (idInput) idInput.disabled = true;
-        if (relSelect) relSelect.disabled = true;
+        if (withoutLabel) {
+            withoutLabel.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed transition shadow-2xs has-[:checked]:border-gray-400 has-[:checked]:bg-gray-200/70 has-[:checked]:text-gray-800 pointer-events-none';
+        }
+        if (withLabel) {
+            withLabel.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed transition shadow-2xs has-[:checked]:border-gray-400 has-[:checked]:bg-gray-200/70 has-[:checked]:text-gray-800 pointer-events-none';
+        }
 
-        if (searchInput) searchInput.style.display = 'none';
-        if (msBox) {
-            msBox.style.cursor = 'default';
-            msBox.classList.remove('cursor-text');
+        // Gray out PhilHealth details
+        if (phDetailsBox) {
+            phDetailsBox.className = 'p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-2xl space-y-3.5 shadow-2xs' + (hasCard ? '' : ' hidden');
+        }
+        if (phIdAsterisk) phIdAsterisk.classList.add('hidden');
+        if (phRelAsterisk) phRelAsterisk.classList.add('hidden');
+        if (idInput) {
+            idInput.disabled = true;
+            idInput.readOnly = true;
+            idInput.className = 'w-full text-sm font-mono text-gray-700 bg-gray-100 border border-gray-200 rounded-xl px-3.5 py-2.5 outline-none cursor-not-allowed select-none transition shadow-2xs';
+        }
+        
+        // Hide relation dropdown and show clean read-only text input
+        const roRelInput = document.getElementById('assign_philhealth_relation_readonly');
+        if (roRelInput) {
+            roRelInput.value = philhealthRelation || 'Not specified';
+            roRelInput.classList.remove('hidden');
+        }
+        if (relSelect) {
+            relSelect.disabled = true;
+            relSelect.style.display = 'none';
+            if (relSelect._customSelect && relSelect._customSelect.wrapper) {
+                relSelect._customSelect.wrapper.style.display = 'none';
+            }
+        }
+
+        // Hide validation/duplicate message completely in read-only mode
+        if (msgEl) {
+            msgEl.className = 'mt-2 hidden';
+            msgEl.innerHTML = '';
+        }
+
+        // BUTTON ACTIONS: Close button ONLY!
+        if (submitBtn) submitBtn.style.display = 'none';
+        if (cancelBtn) {
+            cancelBtn.innerText = 'Close';
+            cancelBtn.className = 'px-6 py-2.5 bg-gray-600 text-white text-xs font-semibold rounded-xl hover:bg-gray-700 transition cursor-pointer shadow-sm';
         }
     } else {
         if (modalTitle) modalTitle.innerText = 'Assign Examination';
@@ -691,24 +767,67 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
             modalIconBox.className = 'bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200';
             modalIconBox.innerHTML = '<i data-lucide="clipboard-list" class="w-6 h-6"></i>';
         }
+
+        if (bodyPartBox) {
+            bodyPartBox.className = 'mb-4 flex flex-col gap-1 p-3 bg-red-50 rounded-xl border border-red-100';
+        }
+        if (bodyPartLabel) {
+            bodyPartLabel.className = 'text-xs font-semibold text-red-800 uppercase tracking-wide flex items-center gap-1.5';
+            bodyPartLabel.innerHTML = '<i data-lucide="user-check" class="w-4 h-4 text-red-600"></i> Patient requested body part(s):';
+        }
+
         if (examLabel) examLabel.innerText = 'Select Examination Procedure(s) ';
         if (requiredAsterisk) requiredAsterisk.classList.remove('hidden');
+
+        if (msBox) {
+            msBox.className = 'exam-ms-box w-full justify-between items-center bg-white border border-gray-300 rounded px-2 py-1.5 min-h-[42px] cursor-text focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500 transition-shadow';
+        }
+        if (searchInput) {
+            searchInput.style.display = '';
+            searchInput.disabled = false;
+        }
+
+        if (phWithout) phWithout.disabled = false;
+        if (phWith) phWith.disabled = false;
+        if (withoutLabel) {
+            withoutLabel.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30';
+        }
+        if (withLabel) {
+            withLabel.className = 'flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30';
+        }
+
+        if (phDetailsBox) {
+            phDetailsBox.className = 'p-4 sm:p-5 bg-blue-50/50 border border-blue-200/80 rounded-2xl space-y-3.5 shadow-2xs' + (hasCard ? '' : ' hidden');
+        }
+        if (phIdAsterisk) phIdAsterisk.classList.remove('hidden');
+        if (phRelAsterisk) phRelAsterisk.classList.remove('hidden');
+        if (idInput) {
+            idInput.disabled = false;
+            idInput.readOnly = false;
+            idInput.className = 'w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs';
+        }
+        
+        const roRelInput = document.getElementById('assign_philhealth_relation_readonly');
+        if (roRelInput) {
+            roRelInput.classList.add('hidden');
+        }
+        if (relSelect) {
+            relSelect.disabled = false;
+            if (relSelect._customSelect && relSelect._customSelect.wrapper) {
+                relSelect._customSelect.wrapper.style.display = '';
+                relSelect._customSelect.wrapper.classList.remove('cs-disabled');
+                if (relSelect._customSelect.trigger) relSelect._customSelect.trigger.disabled = false;
+                relSelect.style.display = 'none';
+            } else {
+                relSelect.style.display = '';
+                relSelect.className = 'w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs';
+            }
+        }
+
         if (submitBtn) submitBtn.style.display = 'block';
         if (cancelBtn) {
             cancelBtn.innerText = 'Cancel';
             cancelBtn.className = 'px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-200 transition cursor-pointer';
-        }
-
-        // Enable PhilHealth radios and inputs
-        if (phWithout) phWithout.disabled = false;
-        if (phWith) phWith.disabled = false;
-        if (idInput) idInput.disabled = false;
-        if (relSelect) relSelect.disabled = false;
-
-        if (searchInput) searchInput.style.display = '';
-        if (msBox) {
-            msBox.style.cursor = '';
-            msBox.classList.add('cursor-text');
         }
 
         // Immediately run validation check if With PhilHealth Card and ID is 12 digits
@@ -724,6 +843,11 @@ function openAssignModal(id, requestedBodyPart, assignedExam = '', philhealthSta
 
 function validateAssignForm(e) {
     e.preventDefault();
+
+    if (window.currentAssignIsReadOnly) {
+        closeAssignModal();
+        return false;
+    }
 
     const form = document.getElementById('assignForm');
     const hiddenInput = form ? form.querySelector('.exam-ms-hidden-input') : null;

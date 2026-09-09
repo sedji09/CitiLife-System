@@ -108,6 +108,8 @@
                             <?php foreach ($pendingPayments as $payment): ?>
                                 <tr class="hover:bg-gray-50 transition pending-row"
                                     data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
+                                    data-request-number="<?= htmlspecialchars($payment['request_number']) ?>"
+                                    data-id="<?= htmlspecialchars($payment['id']) ?>"
                                     data-date="<?= strtotime($payment['created_at']) ?>">
                                     <td class="py-3 px-3">
                                         <div class="font-medium text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
@@ -233,6 +235,8 @@
                             <?php foreach ($paymentHistory as $payment): ?>
                                 <tr class="hover:bg-gray-50 transition history-row"
                                     data-search="<?= htmlspecialchars(strtolower($payment['request_number'] . ' ' . $payment['first_name'] . ' ' . $payment['last_name'])) ?>"
+                                    data-request-number="<?= htmlspecialchars($payment['request_number']) ?>"
+                                    data-id="<?= htmlspecialchars($payment['id']) ?>"
                                     data-date="<?= strtotime($payment['updated_at']) ?>">
                                     <td class="py-3 px-3">
                                         <div class="font-medium text-gray-900"><?= htmlspecialchars($payment['request_number']) ?>
@@ -351,10 +355,10 @@
                             <span id="receiptModalExamType">Chest PA</span>
                             <span id="receiptModalOrigAmount" class="font-bold text-gray-900">₱0.00</span>
                         </div>
-                        <div class="flex items-center justify-between" id="receiptModalDiscRow">
-                            <span class="text-emerald-600 text-sm font-medium">PhilHealth Discount</span>
+                        <div class="flex items-center justify-between pl-4 text-xs text-emerald-600 -mt-1 mb-1" id="receiptModalDiscRow">
+                            <span class="font-medium">PhilHealth Discount</span>
                             <span id="receiptModalDiscAmount"
-                                class="font-semibold text-emerald-600 text-sm">-₱0.00</span>
+                                class="font-semibold text-emerald-600 text-xs">-₱0.00</span>
                         </div>
                     </div>
                     <div class="bg-red-50/30 px-4 py-3 border-t border-red-100 flex items-center justify-between">
@@ -423,6 +427,8 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50 transition pending-row';
         tr.dataset.search = ((payment.request_number || '') + ' ' + (payment.first_name || '') + ' ' + (payment.last_name || '')).toLowerCase();
+        tr.dataset.requestNumber = payment.request_number || '';
+        tr.dataset.id = payment.id || '';
         tr.dataset.date = payment.timestamp || 0;
 
         const philhealthHtml = (!payment.philhealth_status || payment.philhealth_status !== 'With PhilHealth Card')
@@ -492,6 +498,8 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50 transition history-row';
         tr.dataset.search = ((payment.request_number || '') + ' ' + (payment.first_name || '') + ' ' + (payment.last_name || '')).toLowerCase();
+        tr.dataset.requestNumber = payment.request_number || '';
+        tr.dataset.id = payment.id || '';
         tr.dataset.date = payment.timestamp || 0;
 
         const philhealthHtml = (!payment.philhealth_status || payment.philhealth_status !== 'With PhilHealth Card')
@@ -704,12 +712,152 @@
 
             return {
                 updateTable,
-                setRows
+                setRows,
+                getAllRows: () => allRows,
+                setPage: (p) => { currentPage = p; updateTable(); },
+                getItemsPerPage: () => itemsPerPage
             };
         }
 
         const historyTable = initTable('history', 'history-row');
         const pendingTable = initTable('pending', 'pending-row');
+
+        function handleHighlight(targetId) {
+            if (!targetId) {
+                const params = new URLSearchParams(window.location.search);
+                targetId = params.get('highlight') || params.get('highlight_case') || params.get('highlight_req');
+            }
+            if (!targetId) return false;
+
+            const hlLower = String(targetId).trim().toLowerCase();
+
+            // Check Pending rows first
+            const pendingRows = pendingTable.getAllRows();
+            let targetIdx = pendingRows.findIndex(row => {
+                const reqNum = (row.dataset.requestNumber || '').toLowerCase();
+                const id = (row.dataset.id || '').toLowerCase();
+                const search = (row.dataset.search || '').toLowerCase();
+                return reqNum === hlLower || id === hlLower || (hlLower && reqNum.includes(hlLower)) || search.includes(hlLower);
+            });
+
+            if (targetIdx !== -1) {
+                switchTab('pending');
+                const pendingSearch = document.getElementById('pendingSearchInput');
+                if (pendingSearch) pendingSearch.value = '';
+
+                const targetRow = pendingRows[targetIdx];
+                const pageNum = Math.floor(targetIdx / pendingTable.getItemsPerPage()) + 1;
+                pendingTable.setPage(pageNum);
+
+                setTimeout(() => {
+                    targetRow.style.display = '';
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400', 'ring-offset-1');
+                    targetRow.style.transition = 'background-color 0.4s ease';
+                    targetRow.style.backgroundColor = '#fef08a';
+                    setTimeout(() => {
+                        targetRow.style.backgroundColor = '#fde047';
+                        setTimeout(() => {
+                            targetRow.style.backgroundColor = '#fef08a';
+                            setTimeout(() => {
+                                targetRow.style.backgroundColor = '#fde047';
+                                setTimeout(() => {
+                                    targetRow.style.transition = 'background-color 1.5s ease';
+                                    targetRow.style.backgroundColor = '';
+                                    targetRow.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
+                                }, 400);
+                            }, 300);
+                        }, 300);
+                    }, 200);
+
+                    const existingBanner = document.getElementById('highlight-banner');
+                    if (existingBanner) existingBanner.remove();
+
+                    const banner = document.createElement('div');
+                    banner.id = 'highlight-banner';
+                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Request <strong>${targetId}</strong> is highlighted below.</span></div>`;
+                    banner.style.cssText = 'margin:1rem 0;padding:0.65rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;box-shadow:0 2px 8px rgba(245,158,11,0.08);';
+                    const header = document.querySelector('h2');
+                    if (header && header.parentElement) {
+                        header.parentElement.insertAdjacentElement('afterend', banner);
+                    }
+                    setTimeout(() => {
+                        banner.style.transition = 'opacity 0.5s';
+                        banner.style.opacity = '0';
+                        setTimeout(() => banner.remove(), 500);
+                    }, 6000);
+                }, 100);
+
+                return true;
+            }
+
+            // Check History rows
+            const historyRows = historyTable.getAllRows();
+            let histIdx = historyRows.findIndex(row => {
+                const reqNum = (row.dataset.requestNumber || '').toLowerCase();
+                const id = (row.dataset.id || '').toLowerCase();
+                const search = (row.dataset.search || '').toLowerCase();
+                return reqNum === hlLower || id === hlLower || (hlLower && reqNum.includes(hlLower)) || search.includes(hlLower);
+            });
+
+            if (histIdx !== -1) {
+                switchTab('history');
+                const historySearch = document.getElementById('historySearchInput');
+                if (historySearch) historySearch.value = '';
+
+                const targetRow = historyRows[histIdx];
+                const pageNum = Math.floor(histIdx / historyTable.getItemsPerPage()) + 1;
+                historyTable.setPage(pageNum);
+
+                setTimeout(() => {
+                    targetRow.style.display = '';
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400', 'ring-offset-1');
+                    targetRow.style.transition = 'background-color 0.4s ease';
+                    targetRow.style.backgroundColor = '#fef08a';
+                    setTimeout(() => {
+                        targetRow.style.backgroundColor = '#fde047';
+                        setTimeout(() => {
+                            targetRow.style.backgroundColor = '#fef08a';
+                            setTimeout(() => {
+                                targetRow.style.backgroundColor = '#fde047';
+                                setTimeout(() => {
+                                    targetRow.style.transition = 'background-color 1.5s ease';
+                                    targetRow.style.backgroundColor = '';
+                                    targetRow.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
+                                }, 400);
+                            }, 300);
+                        }, 300);
+                    }, 200);
+
+                    const existingBanner = document.getElementById('highlight-banner');
+                    if (existingBanner) existingBanner.remove();
+
+                    const banner = document.createElement('div');
+                    banner.id = 'highlight-banner';
+                    banner.innerHTML = `<div style="display:flex;align-items:center;gap:0.5rem;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg><span>Navigated from notification — Request <strong>${targetId}</strong> is highlighted below.</span></div>`;
+                    banner.style.cssText = 'margin:1rem 0;padding:0.65rem 1rem;border-radius:0.75rem;background:#fefce8;border:1px solid #fde047;color:#854d0e;font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;box-shadow:0 2px 8px rgba(245,158,11,0.08);';
+                    const header = document.querySelector('h2');
+                    if (header && header.parentElement) {
+                        header.parentElement.insertAdjacentElement('afterend', banner);
+                    }
+                    setTimeout(() => {
+                        banner.style.transition = 'opacity 0.5s';
+                        banner.style.opacity = '0';
+                        setTimeout(() => banner.remove(), 500);
+                    }, 6000);
+                }, 100);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        window.handlePageHighlight = handleHighlight;
+        handleHighlight();
 
         // ── Real-Time Polling (Every 3 seconds) ──
         let lastPendingHash = '';

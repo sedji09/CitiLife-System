@@ -13,27 +13,29 @@
     z-index: 999999;
     pointer-events: none;
     user-select: none;
-    padding: 7px 12px;
-    background: rgba(24, 25, 28, 0.70);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.14);
-    max-width: 260px;
-    min-width: 40px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
+    max-width: 480px;
+    width: max-content;
     box-sizing: border-box;
     opacity: 0;
     transform: scale(0.96) translateY(2px);
     transition: opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
     font-family: inherit, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #ffffff;
+    overflow: visible;
 }
 
-/* Compact padding for single line */
+/* Compact padding for single line without cutoff */
 .c-tooltip.c-tooltip-single {
-    padding: 6px 11px;
+    padding: 6px 14px;
     white-space: nowrap;
+    max-width: none;
 }
 
 .c-tooltip.c-tooltip-visible {
@@ -54,7 +56,9 @@
     line-height: 1.35;
     letter-spacing: -0.01em;
     color: #ffffff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    white-space: inherit;
+    word-break: keep-all;
 }
 
 /* Multi-line Title weight */
@@ -93,12 +97,12 @@ body.theme-dark .c-tooltip,
 html.dark .c-tooltip,
 body.dark .c-tooltip,
 .theme-dark .c-tooltip {
-    background: rgba(228, 230, 235, 0.70);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
-    color: #050505;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
 }
 
 html.theme-dark .c-tooltip .c-tooltip-title,
@@ -106,8 +110,8 @@ body.theme-dark .c-tooltip .c-tooltip-title,
 html.dark .c-tooltip .c-tooltip-title,
 body.dark .c-tooltip .c-tooltip-title,
 .theme-dark .c-tooltip .c-tooltip-title {
-    color: #050505;
-    text-shadow: none;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     font-weight: 500;
 }
 
@@ -124,7 +128,7 @@ body.theme-dark .c-tooltip .c-tooltip-desc,
 html.dark .c-tooltip .c-tooltip-desc,
 body.dark .c-tooltip .c-tooltip-desc,
 .theme-dark .c-tooltip .c-tooltip-desc {
-    color: #475569;
+    color: rgba(255, 255, 255, 0.85);
 }
 
 /* Danger in Dark Mode */

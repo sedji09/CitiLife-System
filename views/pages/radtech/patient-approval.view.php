@@ -243,12 +243,15 @@ foreach ($allServices as $service) {
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </button>
                                     
-                                    <?php if ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending'): ?>
+                                    <?php 
+                                    $isAlreadyAssigned = in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified', 'Approved', 'Completed']) || (!empty($patient['is_verified']) && (float)($patient['amount_due'] ?? 0) > 0);
+                                    ?>
+                                    <?php if (!$isAlreadyAssigned && ($patient['status'] === 'Pending Approval' || $patient['status'] === 'Pending')): ?>
                                         <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', false)"
                                             class="p-1.5 rounded-md border border-indigo-500 bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Assign Examination">
                                             <i data-lucide="clipboard-list" class="w-4 h-4"></i>
                                         </button>
-                                    <?php elseif (in_array($patient['status'], ['Pending Payment', 'Payment Verifying', 'Payment Verified'])): ?>
+                                    <?php else: ?>
                                         <button type="button" onclick="openAssignModal(<?= $patient['id'] ?>, '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['exam_type'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_status'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_id'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars($patient['philhealth_relation'] ?? '', ENT_QUOTES) ?>', <?= (int)$patient['patient_id'] ?>, '<?= htmlspecialchars($patFullName, ENT_QUOTES) ?>', true)"
                                             class="p-1.5 rounded-md border border-gray-400 bg-gray-100 text-gray-600 hover:bg-gray-600 hover:text-white hover:border-gray-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="View Assigned Examination Details (Read-Only)">
                                             <i data-lucide="clipboard-list" class="w-4 h-4"></i>
@@ -299,8 +302,8 @@ foreach ($allServices as $service) {
             </div>
         </div>
         
-        <div class="mb-4 flex flex-col gap-1 p-3 bg-red-50 rounded-xl border border-red-100">
-            <span class="text-xs font-semibold text-red-800 uppercase tracking-wide flex items-center gap-1.5">
+        <div id="assignBodyPartBox" class="mb-4 flex flex-col gap-1 p-3 bg-red-50 rounded-xl border border-red-100">
+            <span id="assignBodyPartLabel" class="text-xs font-semibold text-red-800 uppercase tracking-wide flex items-center gap-1.5">
                 <i data-lucide="user-check" class="w-4 h-4 text-red-600"></i> Patient requested body part(s):
             </span>
             <span id="assignBodyPart" class="font-bold text-gray-900 text-sm"></span>
@@ -329,14 +332,14 @@ foreach ($allServices as $service) {
 
             <!-- PhilHealth Coverage Section -->
             <div class="pt-3.5 border-t border-gray-100 space-y-3">
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">PhilHealth Coverage</label>
+                <label id="assignPhCoverageLabel" class="block text-xs font-bold text-gray-700 uppercase tracking-wider">PhilHealth Coverage</label>
                 
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30">
+                <div class="grid grid-cols-2 gap-3" id="assign_ph_radio_group">
+                    <label id="assign_ph_without_label" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30">
                         <input type="radio" name="philhealth_status" value="Without PhilHealth Card" id="assign_ph_without" onchange="toggleAssignPhilHealth(false)" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
                         <span class="text-xs font-semibold">Without PhilHealth</span>
                     </label>
-                    <label class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30">
+                    <label id="assign_ph_with_label" class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white cursor-pointer transition shadow-2xs has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/70 has-[:checked]:text-blue-950 has-[:checked]:ring-1 has-[:checked]:ring-blue-500/30">
                         <input type="radio" name="philhealth_status" value="With PhilHealth Card" id="assign_ph_with" onchange="toggleAssignPhilHealth(true)" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
                         <span class="text-xs font-semibold">With PhilHealth Card</span>
                     </label>
@@ -345,7 +348,7 @@ foreach ($allServices as $service) {
                 <!-- Conditional PhilHealth Details Box -->
                 <div id="assign_philhealth_details" class="hidden p-4 sm:p-5 bg-blue-50/50 border border-blue-200/80 rounded-2xl space-y-3.5 shadow-2xs">
                     <div>
-                        <label for="assign_philhealth_id" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500">*</span></label>
+                        <label for="assign_philhealth_id" id="assign_ph_id_label" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">PhilHealth ID Number <span class="text-red-500" id="assign_ph_id_asterisk">*</span></label>
                         <input type="text" name="philhealth_id" id="assign_philhealth_id" inputmode="numeric" maxlength="14"
                             data-label="PhilHealth ID Number"
                             oninput="formatPhilHealthInput(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
@@ -353,14 +356,16 @@ foreach ($allServices as $service) {
                             class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
                     </div>
                     <div>
-                        <label for="assign_philhealth_relation" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500">*</span></label>
+                        <label for="assign_philhealth_relation" id="assign_ph_rel_label" class="block text-xs font-bold text-blue-950 uppercase tracking-wider mb-1.5">Patient's Relation to ID <span class="text-red-500" id="assign_ph_rel_asterisk">*</span></label>
                         <select name="philhealth_relation" id="assign_philhealth_relation" onchange="if (this.value && window.FormValidator) window.FormValidator.clearError(this); checkAssignPhilHealthDup(); recalculateAssignPricing();"
                             data-label="Patient's Relation to ID"
                             class="w-full text-sm text-gray-900 bg-white border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70 rounded-xl px-3.5 py-2.5 outline-none transition shadow-2xs">
-                            <option value="">-- Select relation --</option>
+                            <option value="" disabled selected>Select relation</option>
                             <option value="Principal Member" id="assign-opt-owner">Principal Member</option>
                             <option value="Qualified Dependent" id="assign-opt-family">Qualified Dependent</option>
                         </select>
+                        <input type="text" id="assign_philhealth_relation_readonly" readonly
+                            class="hidden w-full text-sm font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-xl px-3.5 py-2.5 outline-none cursor-not-allowed select-none transition shadow-2xs">
                         <div id="assign-philhealth-msg" class="mt-2 hidden"></div>
                     </div>
                 </div>

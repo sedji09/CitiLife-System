@@ -274,8 +274,8 @@
 <!-- ADD SERVICE MODAL -->
 <div id="addServiceModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
             <h3 class="text-lg font-bold text-gray-900">Add New X-Ray Service</h3>
             <button type="button" onclick="closeAddServiceModal()"
                 class="text-gray-400 hover:text-gray-600 transition p-1">
@@ -370,8 +370,8 @@
 <!-- EDIT SERVICE MODAL -->
 <div id="editServiceModal"
     class="hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
             <h3 class="text-lg font-bold text-gray-900">Edit X-Ray Service</h3>
             <button type="button" onclick="closeEditServiceModal()"
                 class="text-gray-400 hover:text-gray-600 transition p-1">

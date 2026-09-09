@@ -21,6 +21,22 @@
             <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
             <p class="text-sm text-red-700"><?= htmlspecialchars($error) ?></p>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Request Failed',
+                        text: <?= json_encode($error) ?>,
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-2xl',
+                            confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                        }
+                    });
+                }
+            });
+        </script>
     <?php endif; ?>
 
     <?php if (!$isClinicOpen): ?>
@@ -57,15 +73,15 @@
                 </div>
             </div>
 
-            <form method="POST"
-                action="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=patient&page=registration"
+            <form id="patientRequestForm" method="POST"
+                action="<?= url('registration') ?>"
                 class="space-y-4" enctype="multipart/form-data">
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Branch <span
                             class="text-red-500">*</span></label>
-                    <select name="branch_id" required
+                    <select name="branch_id" id="branch_select" required
                         class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400">
                         <option value="" disabled selected>Select branch</option>
                         <?php foreach ($branches as $b): ?>
@@ -110,6 +126,7 @@
                     sort($availableOptions);
                     $examInputName = 'exam_type';
                     $placeholderText = 'Select body parts (e.g. Chest, Skull)...';
+                    $isRequired = false;
                     include basePath('views/components/exam-selector.php');
                     ?>
                     <p class="text-xs text-gray-500 mt-2">
@@ -132,6 +149,82 @@
             </form>
         </div>
 
-
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('patientRequestForm');
+    if (!form) return;
+
+    let isConfirmed = false;
+
+    form.addEventListener('submit', async function (e) {
+        if (isConfirmed) return; // Allow form to submit once confirmed
+
+        e.preventDefault();
+
+        const branchSelect = form.querySelector('select[name="branch_id"]');
+        if (!branchSelect || !branchSelect.value) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Branch Required',
+                    text: 'Please select your preferred clinic branch first.',
+                    confirmButtonColor: '#dc2626',
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                    }
+                });
+            } else {
+                alert('Please select your preferred clinic branch first.');
+            }
+            branchSelect?.focus();
+            return;
+        }
+
+        const selectedBranchText = branchSelect.options[branchSelect.selectedIndex]?.text?.replace(/\s+/g, ' ').trim() || '';
+        const examInput = form.querySelector('input[name="exam_type"]');
+        const selectedExams = (examInput && examInput.value.trim()) ? examInput.value.trim() : 'To be determined by Radiologic Technologist';
+
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: 'Are you sure you want to submit this X-ray examination request?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, Submit Request',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm',
+                    cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                }
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+        } else {
+            if (!confirm('Are you sure you want to submit this X-ray request?')) {
+                return;
+            }
+        }
+
+        isConfirmed = true;
+
+        const submitBtn = document.getElementById('submit_btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Submitting...';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        form.submit();
+    });
+});
+</script>
