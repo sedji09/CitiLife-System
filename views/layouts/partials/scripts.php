@@ -537,7 +537,10 @@
         if (!att) return 'Attachment';
         const parts = att.split('/');
         let name = parts[parts.length - 1];
-        name = name.replace(/^chat_[a-f0-9]+_/, '').replace(/^chat_[a-f0-9]+\./, 'file.');
+        // Strip any generated unique prefixes (chat_[hex]_, chat_[hex].[digits]_, file.[digits]_, etc.)
+        name = name.replace(/^chat_[a-zA-Z0-9]+(?:\.[0-9]+)?_/, '');
+        name = name.replace(/^(?:chat_|file\.)[0-9]+_/, '');
+        name = name.replace(/^chat_[a-zA-Z0-9]+_/, '');
         return name || 'Attachment';
       },
       getAttachmentExt(att) {

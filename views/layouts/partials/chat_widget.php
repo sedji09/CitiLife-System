@@ -115,13 +115,12 @@
                     :href="formatAttachmentUrl(msg.attachment)"
                     :download="getAttachmentFileName(msg.attachment)"
                     target="_blank"
-                    class="flex items-center gap-2.5 p-2.5 my-0.5 rounded-2xl transition-all duration-150 border shadow-xs group/file select-none"
-                    :class="msg.sender_id == userId ? 'bg-red-700/80 text-white border-red-500 hover:bg-red-700' : 'bg-gray-100 text-gray-900 border-gray-200 hover:bg-gray-200'"
-                    style="max-width: 220px; text-decoration: none;"
+                    class="flex items-center gap-2.5 p-2.5 my-0.5 rounded-2xl transition-all duration-150 border shadow-xs group/file select-none hover:brightness-95"
+                    :style="(msg.sender_id == userId ? 'background-color: #b91c1c; color: #ffffff; border-color: #b91c1c;' : 'background-color: #f0f2f5; color: #111827; border-color: #e5e7eb;') + ' max-width: 220px; text-decoration: none;'"
                     :title="'Download ' + getAttachmentFileName(msg.attachment)">
                     <!-- Document Icon -->
                     <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-                      :class="msg.sender_id == userId ? 'bg-white/20 text-white' : 'bg-white text-gray-700 border border-gray-200'">
+                      :style="msg.sender_id == userId ? 'background-color: rgba(255, 255, 255, 0.2); color: #ffffff;' : 'background-color: #ffffff; color: #374151; border: 1px solid #e5e7eb;'">
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -135,20 +134,18 @@
                     <!-- File Info -->
                     <div class="flex-1 min-w-0 flex flex-col text-left">
                       <span class="text-xs font-semibold truncate leading-tight"
-                        :class="msg.sender_id == userId ? 'text-white' : 'text-gray-900'">
+                        :style="msg.sender_id == userId ? 'color: #ffffff;' : 'color: #111827;'">
                         {{ getAttachmentFileName(msg.attachment) }}
                       </span>
-                      <span class="text-[10px] mt-0.5 uppercase tracking-wider font-semibold flex items-center gap-1"
-                        :class="msg.sender_id == userId ? 'text-red-100' : 'text-gray-500'">
-                        <span>{{ getAttachmentExt(msg.attachment) }}</span>
-                        <span>•</span>
-                        <span class="normal-case font-normal">View / Download</span>
+                      <span class="text-[10px] mt-0.5 uppercase tracking-wider font-semibold"
+                        :style="msg.sender_id == userId ? 'color: rgba(255, 255, 255, 0.85);' : 'color: #6b7280;'">
+                        {{ getAttachmentExt(msg.attachment) }}
                       </span>
                     </div>
 
                     <!-- Download Arrow -->
                     <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover/file:translate-y-0.5"
-                      :class="msg.sender_id == userId ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'">
+                      :style="msg.sender_id == userId ? 'background-color: rgba(255, 255, 255, 0.2); color: #ffffff;' : 'background-color: #e5e7eb; color: #4b5563;'">
                       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

@@ -145,8 +145,13 @@ try {
                 }
 
                 $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                $cleanBase = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', pathinfo($fileName, PATHINFO_FILENAME));
-                $newFileName = uniqid('chat_', true) . '_' . substr($cleanBase, 0, 35) . '.' . $fileExt;
+                $origBase = pathinfo($fileName, PATHINFO_FILENAME);
+                $cleanBase = preg_replace('/[^a-zA-Z0-9_\-\. ()]/', '_', $origBase);
+                $cleanBase = trim($cleanBase, '_ ');
+                if (empty($cleanBase)) {
+                    $cleanBase = 'file';
+                }
+                $newFileName = 'chat_' . bin2hex(random_bytes(8)) . '_' . substr($cleanBase, 0, 100) . '.' . $fileExt;
                 $destination = $uploadDir . $newFileName;
 
                 if (move_uploaded_file($fileTmpPath, $destination)) {

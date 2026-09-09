@@ -593,90 +593,193 @@ $catBadgeLabel = match ($dCategory) {
                             $currentImpression = trim($activeDispute['old_impression']);
                         }
 
-                        // If stored as JSON (multi-exam format), format cleanly as readable text
+                        $rawExamType = $caseDetails['exam_type'] ?? '';
+                        $splitExamList = array_values(array_filter(array_map('trim', preg_split('/[,;\/]+/', $rawExamType))));
+
+                        $isMultiExamModal = false;
+                        $examReportsModal = [];
+
+                        // 1. Try JSON decoding first
                         if (!empty($currentFindings) && ($currentFindings[0] === '{' || $currentFindings[0] === '[')) {
                             $decodedFindings = json_decode($currentFindings, true);
-                            if (is_array($decodedFindings)) {
-                                $fParts = [];
-                                $iParts = [];
+                            if (is_array($decodedFindings) && count($decodedFindings) > 0) {
                                 foreach ($decodedFindings as $eKey => $eData) {
-                                    if (is_array($eData)) {
-                                        if (!empty($eData['findings'])) {
-                                            $fParts[] = (count($decodedFindings) > 1 ? "[$eKey]\n" : '') . trim($eData['findings']);
-                                        }
-                                        if (!empty($eData['impression'])) {
-                                            $iParts[] = (count($decodedFindings) > 1 ? "[$eKey]\n" : '') . trim($eData['impression']);
-                                        }
-                                    } elseif (is_string($eData)) {
-                                        $fParts[] = trim($eData);
-                                    }
+                                    $eName = is_string($eKey) ? trim($eKey) : ('Exam ' . ($eKey + 1));
+                                    $examReportsModal[$eName] = [
+                                        'findings' => is_array($eData) ? trim($eData['findings'] ?? '') : (is_string($eData) ? trim($eData) : ''),
+                                        'impression' => is_array($eData) ? trim($eData['impression'] ?? '') : ''
+                                    ];
                                 }
-                                if (!empty($fParts)) {
-                                    $currentFindings = implode("\n\n", $fParts);
-                                }
-                                if (empty($currentImpression) && !empty($iParts)) {
-                                    $currentImpression = implode("\n\n", $iParts);
+                                if (count($examReportsModal) > 1) {
+                                    $isMultiExamModal = true;
                                 }
                             }
                         }
 
-                        // Standard template fallback if still blank
-                        if (empty($currentFindings)) {
-                            $examUpper = strtoupper(trim($caseDetails['exam_type'] ?? ''));
-                            if (strpos($examUpper, 'CHEST') !== false) {
-                                $currentFindings = "The lung fields are clear without evidence of focal consolidation, mass, or infiltrates. The cardiac silhouette is within normal limits in size and configuration. The costophrenic angles are sharp and well-defined. No pleural effusion or pneumothorax is seen. The visualized osseous structures are intact.";
-                                if (empty($currentImpression)) {
+                        // 2. If not parsed via JSON, check if findings contains bracketed exams [Exam Name]
+                        if (!$isMultiExamModal && !empty($currentFindings) && preg_match('/(?:^|\n+)\[([^\]]+)\]/', $currentFindings)) {
+                            $pattern = '/(?:^|\n+)\[([^\]]+)\]\s*\n*/';
+                            if (preg_match_all($pattern, $currentFindings, $mF, PREG_OFFSET_CAPTURE)) {
+                                $mI = [];
+                                if (!empty($currentImpression)) {
+                                    preg_match_all($pattern, $currentImpression, $mI, PREG_OFFSET_CAPTURE);
+                                }
+                                $countF = count($mF[0]);
+                                for ($i = 0; $i < $countF; $i++) {
+                                    $eName = trim($mF[1][$i][0]);
+                                    $startF = $mF[0][$i][1] + strlen($mF[0][$i][0]);
+                                    $endF = ($i + 1 < $countF) ? $mF[0][$i + 1][1] : strlen($currentFindings);
+                                    $fBody = trim(substr($currentFindings, $startF, $endF - $startF));
+
+                                    $iBody = '';
+                                    if (!empty($mI[0])) {
+                                        $countI = count($mI[0]);
+                                        for ($j = 0; $j < $countI; $j++) {
+                                            if (strcasecmp(trim($mI[1][$j][0]), $eName) === 0) {
+                                                $startI = $mI[0][$j][1] + strlen($mI[0][$j][0]);
+                                                $endI = ($j + 1 < $countI) ? $mI[0][$j + 1][1] : strlen($currentImpression);
+                                                $iBody = trim(substr($currentImpression, $startI, $endI - $startI));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    $examReportsModal[$eName] = [
+                                        'findings' => $fBody,
+                                        'impression' => $iBody
+                                    ];
+                                }
+                                if (count($examReportsModal) > 1) {
+                                    $isMultiExamModal = true;
+                                }
+                            }
+                        }
+
+                        // 3. If still not multi-exam, but exam_type has multiple comma-separated exams
+                        if (!$isMultiExamModal && count($splitExamList) > 1) {
+                            $isMultiExamModal = true;
+                            foreach ($splitExamList as $exName) {
+                                $examReportsModal[$exName] = [
+                                    'findings' => '',
+                                    'impression' => ''
+                                ];
+                            }
+                        }
+
+                        // Fallbacks for empty findings/impression
+                        if (!$isMultiExamModal) {
+                            if (empty($currentFindings)) {
+                                $examUpper = strtoupper(trim($caseDetails['exam_type'] ?? ''));
+                                if (strpos($examUpper, 'CHEST') !== false) {
+                                    $currentFindings = "The lung fields are clear without evidence of focal consolidation, mass, or infiltrates. The cardiac silhouette is within normal limits in size and configuration. The costophrenic angles are sharp and well-defined. No pleural effusion or pneumothorax is seen. The visualized osseous structures are intact.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No radiographic evidence of active cardiopulmonary disease.";
+                                    }
+                                } elseif (strpos($examUpper, 'ABDOMEN') !== false) {
+                                    $currentFindings = "There is a normal distribution of bowel gas within the abdomen. No dilated bowel loops or abnormal air-fluid levels are seen. No radiopaque foreign bodies or abnormal calcifications are identified. The soft tissue shadows are within normal limits, and the visualized bony structures appear intact.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No radiographic evidence of acute intra-abdominal pathology.";
+                                    }
+                                } elseif (strpos($examUpper, 'SKULL') !== false || strpos($examUpper, 'PARANASAL') !== false || strpos($examUpper, 'PNS') !== false) {
+                                    $currentFindings = "The cranial vault and visualized facial bones show normal configuration and bone density. No evidence of fracture or focal lytic or blastic bone lesion. Paranasal sinuses and mastoid air cells appear normally aerated.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No radiographic evidence of acute cranial or facial bone injury.";
+                                    }
+                                } else {
+                                    $currentFindings = "The visualized osseous structures demonstrate normal alignment and density. No evidence of fracture or dislocation is seen. Joint spaces are well maintained, and there is no significant soft tissue swelling or abnormal calcification.";
+                                    if (empty($currentImpression)) {
+                                        $currentImpression = "No acute bony abnormality.";
+                                    }
+                                }
+                            }
+
+                            if (empty($currentImpression)) {
+                                $examUpper = strtoupper(trim($caseDetails['exam_type'] ?? ''));
+                                if (strpos($examUpper, 'CHEST') !== false) {
                                     $currentImpression = "No radiographic evidence of active cardiopulmonary disease.";
-                                }
-                            } elseif (strpos($examUpper, 'ABDOMEN') !== false) {
-                                $currentFindings = "There is a normal distribution of bowel gas within the abdomen. No dilated bowel loops or abnormal air-fluid levels are seen. No radiopaque foreign bodies or abnormal calcifications are identified. The soft tissue shadows are within normal limits, and the visualized bony structures appear intact.";
-                                if (empty($currentImpression)) {
+                                } elseif (strpos($examUpper, 'ABDOMEN') !== false) {
                                     $currentImpression = "No radiographic evidence of acute intra-abdominal pathology.";
-                                }
-                            } elseif (strpos($examUpper, 'SKULL') !== false || strpos($examUpper, 'PARANASAL') !== false || strpos($examUpper, 'PNS') !== false) {
-                                $currentFindings = "The cranial vault and visualized facial bones show normal configuration and bone density. No evidence of fracture or focal lytic or blastic bone lesion. Paranasal sinuses and mastoid air cells appear normally aerated.";
-                                if (empty($currentImpression)) {
-                                    $currentImpression = "No radiographic evidence of acute cranial or facial bone injury.";
-                                }
-                            } else {
-                                $currentFindings = "The visualized osseous structures demonstrate normal alignment and density. No evidence of fracture or dislocation is seen. Joint spaces are well maintained, and there is no significant soft tissue swelling or abnormal calcification.";
-                                if (empty($currentImpression)) {
+                                } else {
                                     $currentImpression = "No acute bony abnormality.";
                                 }
                             }
-                        }
-
-                        if (empty($currentImpression)) {
-                            $examUpper = strtoupper(trim($caseDetails['exam_type'] ?? ''));
-                            if (strpos($examUpper, 'CHEST') !== false) {
-                                $currentImpression = "No radiographic evidence of active cardiopulmonary disease.";
-                            } elseif (strpos($examUpper, 'ABDOMEN') !== false) {
-                                $currentImpression = "No radiographic evidence of acute intra-abdominal pathology.";
-                            } else {
-                                $currentImpression = "No acute bony abnormality.";
+                        } else {
+                            foreach ($examReportsModal as $eName => &$eData) {
+                                if (empty($eData['findings'])) {
+                                    $eUpper = strtoupper($eName);
+                                    if (strpos($eUpper, 'CHEST') !== false) {
+                                        $eData['findings'] = "The lung fields are clear without evidence of focal consolidation, mass, or infiltrates. The cardiac silhouette is within normal limits in size and configuration. The costophrenic angles are sharp and well-defined. No pleural effusion or pneumothorax is seen. The visualized osseous structures are intact.";
+                                        if (empty($eData['impression'])) $eData['impression'] = "No radiographic evidence of active cardiopulmonary disease.";
+                                    } elseif (strpos($eUpper, 'ABDOMEN') !== false) {
+                                        $eData['findings'] = "There is a normal distribution of bowel gas within the abdomen. No dilated bowel loops or abnormal air-fluid levels are seen. No radiopaque foreign bodies or abnormal calcifications are identified. The soft tissue shadows are within normal limits, and the visualized bony structures appear intact.";
+                                        if (empty($eData['impression'])) $eData['impression'] = "No radiographic evidence of acute intra-abdominal pathology.";
+                                    } else {
+                                        $eData['findings'] = "The visualized osseous structures demonstrate normal alignment and density. No evidence of fracture or dislocation is seen. Joint spaces are well maintained, and there is no significant soft tissue swelling or abnormal calcification.";
+                                        if (empty($eData['impression'])) $eData['impression'] = "No acute bony abnormality.";
+                                    }
+                                }
+                                if (empty($eData['impression'])) {
+                                    $eUpper = strtoupper($eName);
+                                    if (strpos($eUpper, 'CHEST') !== false) {
+                                        $eData['impression'] = "No radiographic evidence of active cardiopulmonary disease.";
+                                    } elseif (strpos($eUpper, 'ABDOMEN') !== false) {
+                                        $eData['impression'] = "No radiographic evidence of acute intra-abdominal pathology.";
+                                    } else {
+                                        $eData['impression'] = "No acute bony abnormality.";
+                                    }
+                                }
                             }
+                            unset($eData);
                         }
                         ?>
 
-                        <!-- Findings -->
-                        <div class="flex-1 flex flex-col">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">FINDINGS</label>
+                        <?php if ($isMultiExamModal): ?>
+                            <div class="space-y-4">
+                                <div class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-xl flex items-center gap-2">
+                                    <i data-lucide="layers" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                                    <span>Multiple exams detected. You can edit findings and impressions individually per exam:</span>
+                                </div>
+                                <?php foreach ($examReportsModal as $eName => $eData): ?>
+                                    <div class="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200 space-y-3">
+                                        <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
+                                            <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                                            <span class="text-xs font-bold text-gray-800 uppercase tracking-wider"><?= htmlspecialchars($eName) ?></span>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">FINDINGS</label>
+                                            <textarea name="exam_findings[<?= htmlspecialchars($eName) ?>]" rows="4" <?= $isEdited ? 'readonly disabled' : '' ?>
+                                                class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                                placeholder="Enter findings for <?= htmlspecialchars($eName) ?>…"><?= htmlspecialchars($eData['findings'] ?? '') ?></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">IMPRESSION</label>
+                                            <textarea name="exam_impression[<?= htmlspecialchars($eName) ?>]" rows="2" <?= $isEdited ? 'readonly disabled' : '' ?>
+                                                class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                                placeholder="Enter impression for <?= htmlspecialchars($eName) ?>…"><?= htmlspecialchars($eData['impression'] ?? '') ?></textarea>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                            <textarea name="amend_findings" rows="5" <?= $isEdited ? 'readonly disabled' : '' ?>
-                                class="w-full flex-1 text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
-                                placeholder="Enter or correct findings…"><?= htmlspecialchars($currentFindings) ?></textarea>
-                        </div>
+                        <?php else: ?>
+                            <!-- Findings -->
+                            <div class="flex-1 flex flex-col">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">FINDINGS</label>
+                                </div>
+                                <textarea name="amend_findings" rows="5" <?= $isEdited ? 'readonly disabled' : '' ?>
+                                    class="w-full flex-1 text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                    placeholder="Enter or correct findings…"><?= htmlspecialchars($currentFindings) ?></textarea>
+                            </div>
 
-                        <!-- Impression -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">IMPRESSION</label>
+                            <!-- Impression -->
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">IMPRESSION</label>
+                                </div>
+                                <textarea name="amend_impression" rows="3" <?= $isEdited ? 'readonly disabled' : '' ?>
+                                    class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                    placeholder="Enter or correct impression…"><?= htmlspecialchars($currentImpression) ?></textarea>
                             </div>
-                            <textarea name="amend_impression" rows="3" <?= $isEdited ? 'readonly disabled' : '' ?>
-                                class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
-                                placeholder="Enter or correct impression…"><?= htmlspecialchars($currentImpression) ?></textarea>
-                        </div>
+                        <?php endif; ?>
                     <?php endif; ?>
 
                     <?php if (!$isEdited): ?>
@@ -721,12 +824,24 @@ $catBadgeLabel = match ($dCategory) {
                 const isBothPendingDemo = <?= json_encode((bool) $isBothPendingDemo) ?>;
 
                 if (showFindings) {
-                    const f = form.querySelector('textarea[name="amend_findings"]');
-                    if (f && !f.value.trim()) {
-                        if (window.FormValidator) window.FormValidator.showError(f, 'Please enter the report findings before saving.');
-                        if (typeof toast === 'function') toast('Please enter the report findings.', 'error');
-                        f.focus();
-                        return;
+                    const multiInputs = form.querySelectorAll('textarea[name^="exam_findings["]');
+                    if (multiInputs.length > 0) {
+                        for (let mi of multiInputs) {
+                            if (!mi.value.trim()) {
+                                if (window.FormValidator) window.FormValidator.showError(mi, 'Please enter report findings for all exams before saving.');
+                                if (typeof toast === 'function') toast('Please enter report findings for all exams.', 'error');
+                                mi.focus();
+                                return;
+                            }
+                        }
+                    } else {
+                        const f = form.querySelector('textarea[name="amend_findings"]');
+                        if (f && !f.value.trim()) {
+                            if (window.FormValidator) window.FormValidator.showError(f, 'Please enter the report findings before saving.');
+                            if (typeof toast === 'function') toast('Please enter the report findings.', 'error');
+                            f.focus();
+                            return;
+                        }
                     }
                 }
 
@@ -803,7 +918,7 @@ $catBadgeLabel = match ($dCategory) {
 
                         // Listen for typing/input on all amendment form fields
                         const amendInputs = document.querySelectorAll(
-                            '#amend_exam_type_input, input[name="amend_first_name"], input[name="amend_middle_name"], input[name="amend_last_name"], input[name="amend_age"], select[name="amend_sex"], textarea[name="amend_findings"], textarea[name="amend_impression"]'
+                            '#amend_exam_type_input, input[name="amend_first_name"], input[name="amend_middle_name"], input[name="amend_last_name"], input[name="amend_age"], select[name="amend_sex"], textarea[name="amend_findings"], textarea[name="amend_impression"], textarea[name^="exam_findings"], textarea[name^="exam_impression"]'
                         );
                         amendInputs.forEach(el => {
                             const onInput = () => {

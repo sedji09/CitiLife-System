@@ -207,9 +207,64 @@ class PatientDetailsController
                 $auditNote = trim($_POST['amend_notes'] ?? 'Typo correction by RadTech');
 
                 // Update findings/impression on the case ONLY if fields were present in the form
-                if (isset($_POST['amend_findings']) || isset($_POST['amend_impression'])) {
+                if (isset($_POST['exam_findings']) && is_array($_POST['exam_findings'])) {
+                    $examReportsArr = [];
+                    foreach ($_POST['exam_findings'] as $eKey => $fText) {
+                        $iText = $_POST['exam_impression'][$eKey] ?? '';
+                        $examReportsArr[$eKey] = [
+                            'findings' => trim($fText),
+                            'impression' => trim($iText)
+                        ];
+                    }
+                    $findingsStore = count($examReportsArr) > 1 ? json_encode($examReportsArr) : (reset($examReportsArr)['findings'] ?? '');
+                    $impressionStore = count($examReportsArr) > 1 ? null : (reset($examReportsArr)['impression'] ?? null);
+
+                    $stmtUpd = $pdo->prepare("UPDATE cases SET findings = ?, impression = ? WHERE id = ?");
+                    $stmtUpd->execute([$findingsStore ?: null, $impressionStore ?: null, $caseId]);
+                } elseif (isset($_POST['amend_findings']) || isset($_POST['amend_impression'])) {
                     $newFindings   = trim($_POST['amend_findings']   ?? '');
                     $newImpression = trim($_POST['amend_impression']  ?? '');
+
+                    // If text contains bracketed exam sections (e.g. legacy edit with [Exam]), auto-parse into clean JSON
+                    if (!empty($newFindings) && preg_match('/^\s*\[([^\]]+)\]/', $newFindings)) {
+                        $pattern = '/(?:^|\n+)\[([^\]]+)\]\s*\n*/';
+                        if (preg_match_all($pattern, $newFindings, $mF, PREG_OFFSET_CAPTURE)) {
+                            $mI = [];
+                            if (!empty($newImpression)) {
+                                preg_match_all($pattern, $newImpression, $mI, PREG_OFFSET_CAPTURE);
+                            }
+                            $examReportsArr = [];
+                            $countF = count($mF[0]);
+                            for ($i = 0; $i < $countF; $i++) {
+                                $eName = trim($mF[1][$i][0]);
+                                $startF = $mF[0][$i][1] + strlen($mF[0][$i][0]);
+                                $endF = ($i + 1 < $countF) ? $mF[0][$i + 1][1] : strlen($newFindings);
+                                $fBody = trim(substr($newFindings, $startF, $endF - $startF));
+
+                                $iBody = '';
+                                if (!empty($mI[0])) {
+                                    $countI = count($mI[0]);
+                                    for ($j = 0; $j < $countI; $j++) {
+                                        if (strcasecmp(trim($mI[1][$j][0]), $eName) === 0) {
+                                            $startI = $mI[0][$j][1] + strlen($mI[0][$j][0]);
+                                            $endI = ($j + 1 < $countI) ? $mI[0][$j + 1][1] : strlen($newImpression);
+                                            $iBody = trim(substr($newImpression, $startI, $endI - $startI));
+                                            break;
+                                        }
+                                    }
+                                }
+                                $examReportsArr[$eName] = [
+                                    'findings' => $fBody,
+                                    'impression' => $iBody
+                                ];
+                            }
+                            if (count($examReportsArr) > 1) {
+                                $newFindings = json_encode($examReportsArr);
+                                $newImpression = null;
+                            }
+                        }
+                    }
+
                     $stmtUpd = $pdo->prepare(
                         "UPDATE cases SET findings = ?, impression = ? WHERE id = ?"
                     );

@@ -155,6 +155,44 @@ if (!empty($findingsRaw) && (str_starts_with($findingsRaw, '{') || str_starts_wi
         $parsedData = $decoded;
     }
 }
+if (!$isMultiExam && !empty($findingsRaw) && preg_match('/(?:^|\n+)\[([^\]]+)\]/', $findingsRaw)) {
+    // Legacy fallback: parse bracket-delimited sections into $parsedData
+    $pattern = '/(?:^|\n+)\[([^\]]+)\]\s*\n*/';
+    if (preg_match_all($pattern, $findingsRaw, $mF, PREG_OFFSET_CAPTURE)) {
+        $mI = [];
+        $impressionRawCheck = trim($case['impression'] ?? '');
+        if (!empty($impressionRawCheck)) {
+            preg_match_all($pattern, $impressionRawCheck, $mI, PREG_OFFSET_CAPTURE);
+        }
+        $countF = count($mF[0]);
+        for ($i = 0; $i < $countF; $i++) {
+            $eName = trim($mF[1][$i][0]);
+            $startF = $mF[0][$i][1] + strlen($mF[0][$i][0]);
+            $endF = ($i + 1 < $countF) ? $mF[0][$i + 1][1] : strlen($findingsRaw);
+            $fBody = trim(substr($findingsRaw, $startF, $endF - $startF));
+
+            $iBody = '';
+            if (!empty($mI[0])) {
+                $countI = count($mI[0]);
+                for ($j = 0; $j < $countI; $j++) {
+                    if (strcasecmp(trim($mI[1][$j][0]), $eName) === 0) {
+                        $startI = $mI[0][$j][1] + strlen($mI[0][$j][0]);
+                        $endI = ($j + 1 < $countI) ? $mI[0][$j + 1][1] : strlen($impressionRawCheck);
+                        $iBody = trim(substr($impressionRawCheck, $startI, $endI - $startI));
+                        break;
+                    }
+                }
+            }
+            $parsedData[$eName] = [
+                'findings' => $fBody,
+                'impression' => $iBody
+            ];
+        }
+        if (count($parsedData) > 1) {
+            $isMultiExam = true;
+        }
+    }
+}
 if (!$isMultiExam) {
     // Clean prefix if exists (e.g. "[ABDOMEN (PEDIA)] ")
     $cleanExamType = $case['exam_type'] ?? '';
