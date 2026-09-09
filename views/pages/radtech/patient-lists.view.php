@@ -8,6 +8,23 @@ $pendingDisputeCount = count(array_filter($disputes, function ($d) {
     return in_array($d['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification']);
 }));
 $currentTab = $_GET['tab'] ?? 'completed';
+if (!empty($_GET['dispute_id']) || !empty($_GET['highlight_dispute_id'])) {
+    $currentTab = 'disputes';
+}
+$hlTarget = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_number'] ?? $_GET['case_id'] ?? '';
+if ($hlTarget && empty($_GET['tab'])) {
+    $normTarget = strtolower(str_replace([' ', '-', '_'], '', $hlTarget));
+    foreach ($disputes as $d) {
+        $cNorm = strtolower(str_replace([' ', '-', '_'], '', $d['case_number'] ?? ''));
+        $dIdNorm = (string) ($d['id'] ?? '');
+        $cIdNorm = (string) ($d['case_id'] ?? '');
+        $pNorm = strtolower(str_replace([' ', '-', '_'], '', $d['patient_number'] ?? ''));
+        if ($normTarget === $cNorm || $normTarget === $dIdNorm || $normTarget === $cIdNorm || $normTarget === $pNorm) {
+            $currentTab = 'disputes';
+            break;
+        }
+    }
+}
 
 /**
  * Patient Queue (Patient List) View
@@ -62,10 +79,19 @@ $currentTab = $_GET['tab'] ?? 'completed';
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             if (typeof Swal !== 'undefined') {
+                const sMsg = <?= json_encode($successMsg) ?>;
+                let alertTitle = 'Success!';
+                if (sMsg.toLowerCase().includes('released')) {
+                    alertTitle = 'Report Released';
+                } else if (sMsg.toLowerCase().includes('resolved') || sMsg.toLowerCase().includes('amendment')) {
+                    alertTitle = 'Dispute Resolved';
+                } else if (sMsg.toLowerCase().includes('regist')) {
+                    alertTitle = 'Registration Successful';
+                }
                 Swal.fire({
                     icon: 'success',
-                    title: 'Registration Successful',
-                    text: <?= json_encode($successMsg) ?>,
+                    title: alertTitle,
+                    text: sMsg,
                     showConfirmButton: true,
                     confirmButtonColor: '#10b981',
                     timer: 3500,
@@ -100,16 +126,16 @@ $currentTab = $_GET['tab'] ?? 'completed';
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists"
+        <a id="tab-btn-queue" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= (($_GET['page'] ?? 'patient-lists') === 'patient-lists' && $currentTab !== 'disputes') ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Queue
         </a>
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
+        <a id="tab-btn-approval" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Requests
         </a>
 
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
+        <a id="tab-btn-disputes" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
@@ -125,7 +151,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 <!-- Content -->
-<div class="mt-6 flex flex-col gap-4 <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
+<div id="queue-controls-bar" class="mt-6 flex flex-col gap-4 <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
     <div class="flex gap-4 items-center">
         <?php $defaultSearch = $_GET['search'] ?? ''; ?>
         <input type="text" id="search-input" placeholder="Search by patient name or case number..."
@@ -170,7 +196,7 @@ $currentTab = $_GET['tab'] ?? 'completed';
 </div>
 
 
-<div
+<div id="queue-table-card"
     class="rounded-xl border border-gray-300 bg-white shadow-sm mt-4 overflow-hidden <?= $currentTab === 'disputes' ? 'hidden' : '' ?>">
     <div class="overflow-x-auto">
         <table class="w-full text-sm ">
@@ -1743,12 +1769,76 @@ $currentTab = $_GET['tab'] ?? 'completed';
         return false;
     }
 
+    function switchTab(tab) {
+        const queueControls = document.getElementById('queue-controls-bar');
+        const queueCard = document.getElementById('queue-table-card');
+        const disputesControls = document.getElementById('disputes-controls-bar');
+        const disputesCard = document.getElementById('disputes-table-card');
+        const tabBtnQueue = document.getElementById('tab-btn-queue');
+        const tabBtnDisputes = document.getElementById('tab-btn-disputes');
+
+        if (tab === 'disputes') {
+            if (queueControls) queueControls.classList.add('hidden');
+            if (queueCard) queueCard.classList.add('hidden');
+            if (disputesControls) disputesControls.classList.remove('hidden');
+            if (disputesCard) disputesCard.classList.remove('hidden');
+            if (tabBtnQueue) {
+                tabBtnQueue.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
+            }
+            if (tabBtnDisputes) {
+                tabBtnDisputes.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700';
+            }
+            try {
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.set('tab', 'disputes');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
+            } catch (e) {}
+        } else {
+            if (queueControls) queueControls.classList.remove('hidden');
+            if (queueCard) queueCard.classList.remove('hidden');
+            if (disputesControls) disputesControls.classList.add('hidden');
+            if (disputesCard) disputesCard.classList.add('hidden');
+            if (tabBtnQueue) {
+                tabBtnQueue.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700';
+            }
+            if (tabBtnDisputes) {
+                tabBtnDisputes.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
+            }
+            try {
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('tab');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
+            } catch (e) {}
+        }
+    }
+    window.switchTab = switchTab;
+
     window.handlePageHighlight = function (targetId) {
         const isDisputes = (new window.URLSearchParams(window.location.search)).get('tab') === 'disputes';
+        const norm = str => (str || '').toLowerCase().replace(/[\s\-_]/g, '');
+        const tNorm = norm(targetId);
+
         if (isDisputes) {
-            return handleDisputesHighlight(targetId);
+            if (handleDisputesHighlight(targetId)) return true;
+            // Cross-tab fallback: check if target is in Patient Queue
+            const queueRows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
+            const matchQueue = queueRows.some(r => norm(r.dataset.id) === tNorm || norm(r.dataset.caseId) === tNorm || norm(r.dataset.patient) === tNorm);
+            if (matchQueue) {
+                switchTab('queue');
+                return initPatientQueue(targetId);
+            }
+            return false;
         } else {
-            return initPatientQueue(targetId);
+            // Check if target is in Patient Queue first
+            if (initPatientQueue(targetId)) return true;
+            // Cross-tab fallback: check if target is in Correction Requests
+            const disputeRows = Array.from(document.querySelectorAll('#disputes-table-body tr.dispute-table-row'));
+            const matchDispute = disputeRows.some(r => norm(r.dataset.case) === tNorm || norm(r.dataset.id) === tNorm || norm(r.dataset.disputeId) === tNorm || norm(r.dataset.patientNumber) === tNorm);
+            if (matchDispute) {
+                switchTab('disputes');
+                return handleDisputesHighlight(targetId);
+            }
+            return false;
         }
     };
 

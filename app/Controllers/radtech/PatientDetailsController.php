@@ -323,6 +323,7 @@ class PatientDetailsController
                                 ->execute([$caseId]);
 
                             $_SESSION['flash_success'] = 'Report amendments successfully saved and marked as Resolved.';
+                            redirect(url("patient-lists?tab=disputes"));
                         } else {
                             $disputeMdl->advanceStatus($dId, 'Correction Completed');
                             $_SESSION['flash_success'] = 'Amendment saved. Dispute marked as Correction Completed.';

@@ -319,7 +319,42 @@ class CaseModel
                 $branchLabel = str_replace(' Branch', '', $cData['branch_name']);
                 $patientName = trim(($cData['first_name'] ?? '') . ' ' . ($cData['last_name'] ?? '')) ?: 'Patient';
 
-                if ($wasForRevision) {
+                // Check if active dispute ticket exists for this case to route directly to disputes / correction tab
+                require_once __DIR__ . '/ResultDisputeModel.php';
+                $disputeMdl = new ResultDisputeModel($this->pdo);
+                $dispData = $disputeMdl->getActiveDisputeByCase($caseId);
+
+                if ($dispData) {
+                    $disputeMdl->updateDisputeStatusForCase($caseId, 'Pending RadTech Verification', 'radtech');
+
+                    $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $dispData['id'] . "&highlight=" . urlencode($cData['case_number']);
+
+                    // Notify RadTech that revised report has been submitted back and is located in Correction Requests
+                    $notificationModel->add(
+                        "Revised Report Submitted",
+                        "Radiologist has revised and re-submitted the report for Case #{$cData['case_number']} ({$patientName} - {$branchLabel}). Verification required in Correction Requests.",
+                        $link,
+                        null,
+                        'radtech',
+                        $cData['branch_id']
+                    );
+
+                    // Notify Branch Admin that revised report is available for printing
+                    $notificationModel->add(
+                        "Revised Report Available",
+                        "Radiologist has revised and re-submitted the report for Case #{$cData['case_number']} ({$patientName} - {$branchLabel}). Report is available for printing.",
+                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        null,
+                        'branch_admin',
+                        $cData['branch_id']
+                    );
+
+                    // Auto-dismiss the pending radiologist revision notification for this case
+                    try {
+                        $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title IN ('Case Returned for Revision', 'Correction Request', 'New Correction Request') AND link LIKE ? AND is_read = 0");
+                        $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
+                    } catch (\Exception $e) {}
+                } elseif ($wasForRevision) {
                     $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
 
                     // Notify RadTech that revised report has been submitted back
@@ -348,19 +383,10 @@ class CaseModel
                         $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
                     } catch (\Exception $e) {}
                 } elseif ($wasAlreadySubmitted) {
-                    // Check if dispute ticket exists for this case to link directly to disputes tab
-                    require_once __DIR__ . '/ResultDisputeModel.php';
-                    $disputeMdl = new ResultDisputeModel($this->pdo);
-                    $dispData = $disputeMdl->getActiveDisputeByCase($caseId);
-                    
-                    if ($dispData) {
-                        $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $dispData['id'] . "&highlight=" . urlencode($cData['case_number']);
+                    if (in_array($cData['status'], ['Released', 'Completed'])) {
+                        $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records&highlight=" . urlencode($cData['case_number']);
                     } else {
-                        if (in_array($cData['status'], ['Released', 'Completed'])) {
-                            $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records&highlight=" . urlencode($cData['case_number']);
-                        } else {
-                            $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
-                        }
+                        $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
                     }
 
                     // Notify RadTech about findings change

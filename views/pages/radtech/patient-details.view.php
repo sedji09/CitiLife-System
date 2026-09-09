@@ -2420,12 +2420,28 @@ $catBadgeLabel = match ($dCategory) {
                             titleEl.className = 'text-base font-bold text-green-600 dark:text-green-400';
                         }
                         if (statusTextEl) {
-                            statusTextEl.textContent = 'Case moved to X-ray Patient Records.';
+                            statusTextEl.textContent = 'Case moved to X-ray Patient Records. Returning to Patient Queue...';
                             statusTextEl.className = 'text-xs text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
                         }
 
                         await new Promise(r => setTimeout(r, 1200));
-                        window.location.reload();
+
+                        let returnUrl = '<?= htmlspecialchars($backLink, ENT_QUOTES) ?>';
+                        try {
+                            const lastTableUrl = sessionStorage.getItem('radtech_last_table_url');
+                            if (lastTableUrl && (
+                                lastTableUrl.includes('page=patient-lists') ||
+                                lastTableUrl.includes('/patient-lists')
+                            )) {
+                                returnUrl = lastTableUrl;
+                            }
+                        } catch (err) { }
+
+                        if (!returnUrl) {
+                            returnUrl = '<?= url("patient-lists") ?>';
+                        }
+
+                        window.location.href = returnUrl;
                     } else {
                         throw new Error(result.message || 'Server rejected the upload.');
                     }

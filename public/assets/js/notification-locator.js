@@ -195,18 +195,25 @@
             const hiddenContainer = match.parentElement ? match.parentElement.closest('.hidden, [style*="display: none"]') : null;
             if (hiddenContainer) {
                 const containerId = hiddenContainer.id;
+                let tabSwitched = false;
                 if (containerId) {
                     // Try to trigger matching tab button
                     const tabBtn = document.querySelector(`[onclick*="${containerId}"], #tab-${containerId.replace('content-', '')}, [data-tab="${containerId}"]`);
                     if (tabBtn) {
                         tabBtn.click();
+                        tabSwitched = true;
                     } else if (typeof window.switchTab === 'function') {
-                        const tabKey = containerId.replace('content-', '').replace('tab-', '');
+                        const tabKey = containerId.replace('content-', '').replace('tab-', '').replace('-table-card', '').replace('-controls-bar', '');
                         window.switchTab(tabKey);
+                        tabSwitched = true;
                     }
                 }
-                hiddenContainer.classList.remove('hidden');
-                hiddenContainer.style.display = '';
+                // Do not blindly unhide table cards or controls bars without switching tabs,
+                // which would cause multiple tables to be rendered simultaneously.
+                if (!tabSwitched && !containerId?.includes('table-card') && !containerId?.includes('controls-bar')) {
+                    hiddenContainer.classList.remove('hidden');
+                    hiddenContainer.style.display = '';
+                }
             }
 
             const friendlyLabel = match.dataset?.case || match.dataset?.requestNumber || match.dataset?.id || targetId;
