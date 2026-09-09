@@ -579,7 +579,7 @@ if (isset($_GET['export_excel'])) {
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
-    $sheet->setTitle('Centralized Statistics');
+    $sheet->setTitle('Branch Statistics');
 
     // --- Styling Presets ---
     $headerStyle = [
@@ -672,7 +672,7 @@ if (isset($_GET['export_excel'])) {
     $sheet->setCellValue('G' . $currentRow, $grand['routine']);
     $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->applyFromArray($totalRowStyle);
 
-    // --- Borders and Formatting ---
+    // --- Borders and Formatting for Sheet 1 ---
     $tableRange = 'A4:G' . $currentRow;
     $sheet->getStyle($tableRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
     $sheet->getStyle($tableRange)->getBorders()->getAllBorders()->getColor()->setRGB('CBD5E1');
@@ -682,38 +682,50 @@ if (isset($_GET['export_excel'])) {
     $sheet->getStyle('C5:G' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
     $sheet->freezePane('A5');
 
-    // --- Diagnostic Prevalence Section in Excel ---
-    $diagStartRow = $currentRow + 3;
-    $sheet->mergeCells('A' . $diagStartRow . ':G' . $diagStartRow);
-    $sheet->setCellValue('A' . $diagStartRow, "TOP 10 DIAGNOSTIC FINDINGS & DISEASE PREVALENCE RANKING");
-    $sheet->getStyle('A' . $diagStartRow)->applyFromArray([
-        'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '1E3A8A']],
-        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT]
+    // Auto-size columns B through G to fit their contents comfortably
+    foreach (range('B', 'G') as $col) {
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
+    $sheet->getColumnDimension('A')->setAutoSize(false)->setWidth(10);
+
+    // ==========================================
+    // --- SHEET 2: DISEASE PREVALENCE RANKING ---
+    // ==========================================
+    $sheet2 = $spreadsheet->createSheet();
+    $sheet2->setTitle('Disease Prevalence');
+
+    // Report Header for Sheet 2
+    $sheet2->mergeCells('A1:D1');
+    $sheet2->setCellValue('A1', "CITILIFE DIAGNOSTIC CENTER - DISEASE PREVALENCE REPORT");
+    $sheet2->getStyle('A1')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'C0392B']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
     ]);
 
-    $tableHeaderRow = $diagStartRow + 2;
+    $sheet2->mergeCells('A2:B2');
+    $sheet2->setCellValue('A2', "Consolidated Report Date Range:");
+    $sheet2->getStyle('A2')->getFont()->setBold(true);
+    $sheet2->mergeCells('C2:D2');
+    $sheet2->setCellValue('C2', date('M j, Y', strtotime($startDate)) . ' to ' . date('M j, Y', strtotime($endDate)));
 
-    $sheet->setCellValue('A' . $tableHeaderRow, "NO.");
-    $sheet->mergeCells('B' . $tableHeaderRow . ':D' . $tableHeaderRow);
-    $sheet->setCellValue('B' . $tableHeaderRow, "DIAGNOSTIC FINDING / CLINICAL IMPRESSION");
-    $sheet->setCellValue('E' . $tableHeaderRow, "TOTAL CASES");
-    $sheet->mergeCells('F' . $tableHeaderRow . ':G' . $tableHeaderRow);
-    $sheet->setCellValue('F' . $tableHeaderRow, "PREVALENCE RATE (% SHARE)");
-    $sheet->getStyle('A' . $tableHeaderRow . ':G' . $tableHeaderRow)->applyFromArray($headerStyle);
-    $sheet->getRowDimension($tableHeaderRow)->setRowHeight(24);
+    // Table Headers for Sheet 2
+    $sheet2->setCellValue('A4', "NO.");
+    $sheet2->setCellValue('B4', "DIAGNOSTIC FINDING / CLINICAL IMPRESSION");
+    $sheet2->setCellValue('C4', "TOTAL CASES");
+    $sheet2->setCellValue('D4', "PREVALENCE RATE (% SHARE)");
+    $sheet2->getStyle('A4:D4')->applyFromArray($headerStyle);
+    $sheet2->getRowDimension(4)->setRowHeight(25);
 
-    $diagCurRow = $tableHeaderRow + 1;
+    $diagCurRow = 5;
     if (!empty($diagStats['ranking'])) {
         foreach ($diagStats['ranking'] as $item) {
-            $sheet->setCellValue('A' . $diagCurRow, "No. " . $item['rank']);
-            $sheet->mergeCells('B' . $diagCurRow . ':D' . $diagCurRow);
-            $sheet->setCellValue('B' . $diagCurRow, $item['diagnosis']);
-            $sheet->setCellValue('E' . $diagCurRow, $item['count']);
-            $sheet->mergeCells('F' . $diagCurRow . ':G' . $diagCurRow);
-            $sheet->setCellValue('F' . $diagCurRow, $item['percentage'] . '%');
+            $sheet2->setCellValue('A' . $diagCurRow, "No. " . $item['rank']);
+            $sheet2->setCellValue('B' . $diagCurRow, $item['diagnosis']);
+            $sheet2->setCellValue('C' . $diagCurRow, $item['count']);
+            $sheet2->setCellValue('D' . $diagCurRow, $item['percentage'] . '%');
 
             if ($diagCurRow % 2 == 0) {
-                $sheet->getStyle('A' . $diagCurRow . ':G' . $diagCurRow)->getFill()
+                $sheet2->getStyle('A' . $diagCurRow . ':D' . $diagCurRow)->getFill()
                     ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                     ->getStartColor()->setRGB('F8FAFC');
             }
@@ -721,32 +733,32 @@ if (isset($_GET['export_excel'])) {
         }
 
         // Summary Total Row for Diagnoses
-        $sheet->setCellValue('A' . $diagCurRow, "TOTAL");
-        $sheet->mergeCells('B' . $diagCurRow . ':D' . $diagCurRow);
-        $sheet->setCellValue('B' . $diagCurRow, "Diagnosed Cases Analyzed");
-        $sheet->setCellValue('E' . $diagCurRow, $diagStats['total_diagnosed']);
-        $sheet->mergeCells('F' . $diagCurRow . ':G' . $diagCurRow);
-        $sheet->setCellValue('F' . $diagCurRow, "100%");
-        $sheet->getStyle('A' . $diagCurRow . ':G' . $diagCurRow)->applyFromArray($totalRowStyle);
+        $sheet2->setCellValue('A' . $diagCurRow, "TOTAL");
+        $sheet2->setCellValue('B' . $diagCurRow, "Diagnosed Cases Analyzed");
+        $sheet2->setCellValue('C' . $diagCurRow, $diagStats['total_diagnosed']);
+        $sheet2->setCellValue('D' . $diagCurRow, "100%");
+        $sheet2->getStyle('A' . $diagCurRow . ':D' . $diagCurRow)->applyFromArray($totalRowStyle);
     } else {
-        $sheet->mergeCells('A' . $diagCurRow . ':G' . $diagCurRow);
-        $sheet->setCellValue('A' . $diagCurRow, "No diagnostic impressions recorded for this period.");
-        $sheet->getStyle('A' . $diagCurRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet2->mergeCells('A' . $diagCurRow . ':D' . $diagCurRow);
+        $sheet2->setCellValue('A' . $diagCurRow, "No diagnostic impressions recorded for this period.");
+        $sheet2->getStyle('A' . $diagCurRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
     }
 
-    $diagRange = 'A' . $tableHeaderRow . ':G' . $diagCurRow;
-    $sheet->getStyle($diagRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-    $sheet->getStyle($diagRange)->getBorders()->getAllBorders()->getColor()->setRGB('CBD5E1');
-    $sheet->getStyle('A' . ($tableHeaderRow + 1) . ':A' . $diagCurRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-    $sheet->getStyle('E' . ($tableHeaderRow + 1) . ':G' . $diagCurRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+    $diagRange = 'A4:D' . $diagCurRow;
+    $sheet2->getStyle($diagRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+    $sheet2->getStyle($diagRange)->getBorders()->getAllBorders()->getColor()->setRGB('CBD5E1');
+    $sheet2->getStyle('A5:A' . $diagCurRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+    $sheet2->getStyle('C5:D' . $diagCurRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-    // Auto-size columns B through G to fit their contents comfortably
-    foreach (range('B', 'G') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
+    $sheet2->getColumnDimension('A')->setAutoSize(false)->setWidth(10);
+    $sheet2->getColumnDimension('B')->setAutoSize(true);
+    $sheet2->getColumnDimension('C')->setAutoSize(true);
+    $sheet2->getColumnDimension('D')->setAutoSize(true);
 
-    // Explicitly set column A (NO. column) to a compact, well-proportioned width
-    $sheet->getColumnDimension('A')->setAutoSize(false)->setWidth(10);
+    $sheet2->freezePane('A5');
+
+    // Set first sheet as active when user opens the workbook
+    $spreadsheet->setActiveSheetIndex(0);
 
     // --- Output Transmission ---
     $filename = "Central_Report_" . date('Ymd') . ".xlsx";
