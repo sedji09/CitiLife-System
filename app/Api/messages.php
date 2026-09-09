@@ -75,6 +75,7 @@ try {
                 $info = $userModel->getDisplayInfo($conv['id'], $sessionName, $conv['email']);
                 $conv['name'] = $info['displayName'];
                 $conv['initials'] = $info['initials'];
+                $conv['avatar'] = $info['avatar'];
             }
             echo json_encode(['success' => true, 'conversations' => $conversations]);
             break;
@@ -144,10 +145,12 @@ try {
                 }
 
                 $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                $newFileName = uniqid('chat_', true) . '.' . $fileExt;
+                $cleanBase = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', pathinfo($fileName, PATHINFO_FILENAME));
+                $newFileName = uniqid('chat_', true) . '_' . substr($cleanBase, 0, 35) . '.' . $fileExt;
                 $destination = $uploadDir . $newFileName;
 
                 if (move_uploaded_file($fileTmpPath, $destination)) {
+                    clearstatcache(true, $destination);
                     $attachmentPath = 'public/uploads/chat_attachments/' . $newFileName;
                 } else {
                     echo json_encode(['error' => 'Failed to upload attachment.']);
@@ -191,6 +194,7 @@ try {
                 $info = $userModel->getDisplayInfo($s['id'], $sessionName, $s['email']);
                 $s['name'] = $info['displayName'];
                 $s['initials'] = $info['initials'];
+                $s['avatar'] = $info['avatar'];
 
                 // Filter by display name or email if query exists
                 if (!empty($q)) {

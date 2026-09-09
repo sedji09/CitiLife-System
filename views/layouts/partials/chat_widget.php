@@ -16,7 +16,7 @@
           <div class="relative shrink-0">
             <div
               class="h-9 w-9 rounded-full bg-red-100 text-red-700 font-semibold text-xs flex items-center justify-center overflow-hidden">
-              <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+              <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
               <span v-else>{{ chat.initials }}</span>
             </div>
           </div>
@@ -55,7 +55,7 @@
           <div class="flex flex-col items-center gap-2 text-center px-6 pt-7 pb-4 shrink-0">
             <div
               class="h-14 w-14 rounded-full bg-red-100 text-red-700 font-bold text-lg flex items-center justify-center overflow-hidden shadow-sm border border-gray-100">
-              <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+              <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
               <span v-else>{{ chat.initials }}</span>
             </div>
             <div class="flex flex-col items-center">
@@ -82,7 +82,7 @@
                 <template v-if="msg.sender_id != userId">
                   <div v-if="msgIndex === chat.messages.length - 1 || chat.messages[msgIndex + 1].sender_id != msg.sender_id"
                     class="w-7 h-7 rounded-full bg-red-100 text-red-700 font-semibold text-[10px] flex items-center justify-center shrink-0 overflow-hidden shadow-xs border border-gray-100 mb-0.5">
-                    <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+                    <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
                     <span v-else>{{ chat.initials }}</span>
                   </div>
                   <div v-else class="w-7 shrink-0"></div>
@@ -99,20 +99,63 @@
                   </div>
 
                   <!-- Attachment Rendering -->
-                  <img v-if="msg.attachment && msg.attachment.match(/\.(jpeg|jpg|gif|png)$/i)"
-                    :src="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment"
-                    class="rounded-2xl max-w-full cursor-pointer shadow-sm border border-black/5 hover:opacity-95 transition-opacity"
-                    style="max-height: 200px; max-width: 205px; object-fit: contain;" @click="openLightbox(chat, msg)"
-                    @load="scrollToBottom(chat)">
-                  <a v-else-if="msg.attachment" :href="'/' + '<?= PROJECT_DIR ?>' + '/' + msg.attachment" target="_blank"
-                    class="flex items-center gap-2 bg-gray-100 text-gray-800 px-3 py-2 rounded-2xl text-xs hover:bg-gray-200 transition-colors border border-gray-200/80"
-                    style="max-width: 205px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
-                      <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
-                    </svg>
-                    <span class="truncate">View File</span>
+                  <!-- Image Attachment -->
+                  <div v-if="msg.attachment && isImageAttachment(msg.attachment)"
+                    class="relative group/att overflow-hidden rounded-2xl shadow-xs border border-black/10 my-0.5"
+                    style="max-width: 220px;">
+                    <img :src="formatAttachmentUrl(msg.attachment)"
+                      class="block w-full cursor-pointer hover:opacity-95 transition-all duration-200"
+                      style="max-height: 250px; object-fit: cover;"
+                      @click="openLightbox(chat, msg)"
+                      @load="scrollToBottom(chat)">
+                  </div>
+
+                  <!-- FB Messenger Style File Attachment Card -->
+                  <a v-else-if="msg.attachment"
+                    :href="formatAttachmentUrl(msg.attachment)"
+                    :download="getAttachmentFileName(msg.attachment)"
+                    target="_blank"
+                    class="flex items-center gap-2.5 p-2.5 my-0.5 rounded-2xl transition-all duration-150 border shadow-xs group/file select-none"
+                    :class="msg.sender_id == userId ? 'bg-red-700/80 text-white border-red-500 hover:bg-red-700' : 'bg-gray-100 text-gray-900 border-gray-200 hover:bg-gray-200'"
+                    style="max-width: 220px; text-decoration: none;"
+                    :title="'Download ' + getAttachmentFileName(msg.attachment)">
+                    <!-- Document Icon -->
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                      :class="msg.sender_id == userId ? 'bg-white/20 text-white' : 'bg-white text-gray-700 border border-gray-200'">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                      </svg>
+                    </div>
+
+                    <!-- File Info -->
+                    <div class="flex-1 min-w-0 flex flex-col text-left">
+                      <span class="text-xs font-semibold truncate leading-tight"
+                        :class="msg.sender_id == userId ? 'text-white' : 'text-gray-900'">
+                        {{ getAttachmentFileName(msg.attachment) }}
+                      </span>
+                      <span class="text-[10px] mt-0.5 uppercase tracking-wider font-semibold flex items-center gap-1"
+                        :class="msg.sender_id == userId ? 'text-red-100' : 'text-gray-500'">
+                        <span>{{ getAttachmentExt(msg.attachment) }}</span>
+                        <span>•</span>
+                        <span class="normal-case font-normal">View / Download</span>
+                      </span>
+                    </div>
+
+                    <!-- Download Arrow -->
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover/file:translate-y-0.5"
+                      :class="msg.sender_id == userId ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                    </div>
                   </a>
 
                   <!-- Text Message Bubble (font: 13px, limit ~22 characters/spaces per line before auto-wrap) -->
@@ -130,7 +173,7 @@
                   <div v-if="msg.sender_id == userId && msgIndex === chat.messages.length - 1"
                     class="flex items-center gap-1 mt-0.5 mr-0.5">
                     <div v-if="msg.is_read == 1" class="w-3.5 h-3.5 rounded-full overflow-hidden border border-white shadow-xs" title="Seen">
-                      <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+                      <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
                       <div v-else class="w-full h-full bg-red-100 text-red-700 text-[8px] flex items-center justify-center font-bold">{{ chat.initials }}</div>
                     </div>
                     <span v-else class="text-[11px] text-gray-400 font-medium">Sent</span>
@@ -225,7 +268,7 @@
               <span>{{ chat.messages[chat.messages.length - 1].sender_id == userId ? 'You: ' : '' }}</span>
               <span v-if="chat.messages[chat.messages.length - 1].message">{{ chat.messages[chat.messages.length - 1].message }}</span>
               <span v-else-if="chat.messages[chat.messages.length - 1].attachment" class="italic">
-                {{ chat.messages[chat.messages.length - 1].attachment.match(/\.(jpeg|jpg|gif|png)$/i) ? 'sent a photo' : 'sent a file' }}
+                {{ isImageAttachment(chat.messages[chat.messages.length - 1].attachment) ? 'sent a photo' : 'sent a file' }}
               </span>
             </div>
             <div v-else class="text-gray-400 italic mt-0.5 leading-snug" style="font-size: 13px;">No messages yet</div>
@@ -239,7 +282,7 @@
         <!-- Bubble -->
         <div @click="bringChatToFront(chat)"
           class="w-full h-full rounded-full bg-red-100 text-red-700 font-bold text-lg flex items-center justify-center transition-transform duration-150 hover:scale-105 shadow-xl border border-gray-200 cursor-pointer overflow-hidden">
-          <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover">
+          <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
           <span v-else>{{ chat.initials }}</span>
         </div>
 
@@ -274,7 +317,7 @@
           <div
             class="w-full h-full rounded-full overflow-hidden shadow-xl border border-gray-200 relative flex items-center justify-center transition-transform duration-150 hover:scale-105"
             :class="isGroupMenuOpen ? 'ring-[3px] ring-red-600 ring-offset-2' : ''">
-            <img v-if="bubbleChats[5].avatar" :src="bubbleChats[5].avatar" class="w-full h-full object-cover">
+            <img v-if="bubbleChats[5].avatar" :src="bubbleChats[5].avatar" class="w-full h-full object-cover" @error="bubbleChats[5].avatar = null">
             <div v-else class="w-full h-full bg-gray-700 text-white font-bold text-lg flex items-center justify-center">
               {{
               bubbleChats[5].initials }}</div>

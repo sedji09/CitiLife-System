@@ -275,7 +275,7 @@
             <div
               style="width:72px;height:72px;border-radius:50%;background-color: var(--modal-bg-alt, #e5e7eb);color: var(--modal-text, #1f2937);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;overflow:hidden;border:1px solid var(--modal-border-dark, #d1d5db);">
               <template v-if="uploadPreview || userAvatar">
-                <img :src="uploadPreview || userAvatar" style="width:100%;height:100%;object-fit:cover;">
+                <img :src="uploadPreview || userAvatar" style="width:100%;height:100%;object-fit:cover;" @error="uploadPreview = null; userAvatar = null">
               </template>
               <template v-else>{{ userInitials }}</template>
             </div>

@@ -1,6 +1,5 @@
 <?php
 ob_start(); // Start output buffering to catch any warnings
-require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/session.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -9,6 +8,7 @@ if (!defined('PROJECT_DIR')) {
     define('PROJECT_DIR', '');
 }
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../../app/Models/AuditLogModel.php';
 
 header('Content-Type: application/json; charset=UTF-8');

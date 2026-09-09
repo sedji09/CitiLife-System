@@ -128,7 +128,7 @@
     <button @click="mobileProfileMenuOpen = !mobileProfileMenuOpen"
       class="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-gray-100 transition">
       <div class="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center shrink-0 overflow-hidden">
-        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover"></template>
+        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover" @error="userAvatar = null"></template>
         <span v-else class="text-red-700 font-bold text-sm" v-text="userInitials"></span>
       </div>
       <div class="flex-1 text-left leading-tight min-w-0">
@@ -211,7 +211,7 @@
       ]"
       :data-tooltip="!isOpen ? 'Profile' : ''">
       <div class="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center shrink-0 overflow-hidden">
-        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover"></template>
+        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover" @error="userAvatar = null"></template>
         <span v-else class="text-red-700 font-semibold text-sm" v-text="userInitials"></span>
       </div>
       <div v-if="isOpen" class="flex-1 text-left leading-tight min-w-0">

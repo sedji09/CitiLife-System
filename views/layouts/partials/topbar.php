@@ -86,7 +86,7 @@
                     <div class="relative">
                       <div
                         class="h-12 w-12 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm flex items-center justify-center overflow-hidden shrink-0">
-                        <img v-if="conv.avatar" :src="conv.avatar" class="w-full h-full object-cover">
+                        <img v-if="conv.avatar" :src="conv.avatar" class="w-full h-full object-cover" @error="conv.avatar = null">
                         <span v-else>{{ conv.initials }}</span>
                       </div>
                     </div>
@@ -123,7 +123,7 @@
                       class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
                       <div
                         class="h-10 w-10 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
-                        <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover">
+                        <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover" @error="staff.avatar = null">
                         <span v-else>{{ staff.initials }}</span>
                       </div>
                       <div class="flex-1 min-w-0">
@@ -173,7 +173,7 @@
                     class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
                     <div
                       class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
-                      <img v-if="conv.avatar" :src="conv.avatar" class="w-full h-full object-cover">
+                      <img v-if="conv.avatar" :src="conv.avatar" class="w-full h-full object-cover" @error="conv.avatar = null">
                       <span v-else>{{ conv.initials }}</span>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -192,7 +192,7 @@
                     class="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer transition relative group mx-2 rounded-lg">
                     <div
                       class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center overflow-hidden shrink-0">
-                      <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover">
+                      <img v-if="staff.avatar" :src="staff.avatar" class="w-full h-full object-cover" @error="staff.avatar = null">
                       <span v-else>{{ staff.initials }}</span>
                     </div>
                     <div class="flex-1 min-w-0">

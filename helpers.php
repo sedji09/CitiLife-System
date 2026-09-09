@@ -7,8 +7,13 @@ if (!defined('PROJECT_DIR')) {
     $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 
-    if ((!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
-        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)) {
+    // Ignore container/server roots that happen to be named 'app', 'html', 'public', etc.
+    $ignoredFolderNames = ['app', 'html', 'public', 'www', 'var', 'srv'];
+
+    if (!in_array(strtolower($folderName), $ignoredFolderNames) && (
+        (!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
+        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)
+    )) {
         define('PROJECT_DIR', $folderName);
     } else {
         define('PROJECT_DIR', '');

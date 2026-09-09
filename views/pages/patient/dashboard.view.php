@@ -1705,14 +1705,12 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 body: formData
             })
                 .then(async response => {
-                    const contentType = response.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) {
-                        const data = await response.json();
-                        return data;
-                    } else {
-                        const text = await response.text();
-                        console.error('Non-JSON response:', text);
-                        throw new Error('Server returned an unexpected response.');
+                    const text = await response.text();
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Server non-JSON response:', text);
+                        throw new Error('Server returned an unexpected response. Please try again.');
                     }
                 })
                 .then(data => {

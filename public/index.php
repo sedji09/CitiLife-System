@@ -18,9 +18,13 @@ if (!defined('PROJECT_DIR')) {
     $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 
+    $ignoredFolderNames = ['app', 'html', 'public', 'www', 'var', 'srv'];
+
     if (
-        (!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
-        (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)
+        !in_array(strtolower($folderName), $ignoredFolderNames) && (
+            (!empty($scriptName) && stripos($scriptName, '/' . $folderName) === 0) ||
+            (!empty($requestUri) && stripos($requestUri, '/' . $folderName) === 0)
+        )
     ) {
         define('PROJECT_DIR', $folderName);
     } else {

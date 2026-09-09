@@ -96,9 +96,9 @@ try {
                         exit;
                     }
                 }
+                clearstatcache(true, $destPath);
 
-                $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
-                $avatarPath = $prefix . '/public/uploads/avatars/' . $filename;
+                $avatarPath = '/public/uploads/avatars/' . $filename;
             }
 
             try {
@@ -160,9 +160,9 @@ try {
                     'initials' => htmlspecialchars($initials)
                 ];
                 if ($avatarPath) {
-                    $avatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($avatarPath) : $avatarPath;
+                    $avatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($filename) : (function_exists('url') ? url('public/uploads/avatars/' . $filename) : '/public/uploads/avatars/' . $filename);
                     $_SESSION['avatar'] = $avatarUrl;
-                    $response['avatar'] = htmlspecialchars($avatarUrl);
+                    $response['avatar'] = $avatarUrl;
                 }
                 if ($role === 'patient') {
                     $response['first_name'] = htmlspecialchars($firstName);
@@ -219,8 +219,7 @@ try {
                     }
                 }
 
-                $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . trim(PROJECT_DIR, '/') : '';
-                $signaturePath = $prefix . '/public/uploads/signatures/' . $filename;
+                $signaturePath = '/public/uploads/signatures/' . $filename;
             }
 
             try {
@@ -240,7 +239,7 @@ try {
                         'is_available' => $isAvailable === 1
                     ];
                     if ($signaturePath) {
-                        $sigUrl = (function_exists('getSignatureUrl') && getSignatureUrl($signaturePath)) ? getSignatureUrl($signaturePath) : $signaturePath;
+                        $sigUrl = function_exists('getSignatureUrl') ? getSignatureUrl($filename) : (function_exists('url') ? url('public/uploads/signatures/' . $filename) : '/public/uploads/signatures/' . $filename);
                         $_SESSION['signature'] = $sigUrl;
                         $response['signature'] = htmlspecialchars($sigUrl);
                     }

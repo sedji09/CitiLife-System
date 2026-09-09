@@ -59,7 +59,7 @@
       :data-tooltip="!isOpen ? 'Profile' : ''">
       <!-- Avatar -->
       <div class="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
-        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover"></template>
+        <template v-if="userAvatar"><img :src="userAvatar" class="w-full h-full object-cover" @error="userAvatar = null"></template>
         <span v-else class="text-blue-700 font-semibold text-sm" v-text="userInitials"></span>
       </div>
 

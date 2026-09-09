@@ -350,14 +350,33 @@
     methods: {
       isImageAttachment(filename) {
         if (!filename) return false;
-        return /\.(jpeg|jpg|gif|png)$/i.test(filename);
+        return /\.(jpeg|jpg|gif|png|webp|svg|bmp)$/i.test(filename);
+      },
+      formatAttachmentUrl(att) {
+        if (!att) return '';
+        if (att.startsWith('http://') || att.startsWith('https://')) return att;
+        const base = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+        const clean = att.replace(/^\/+/, '').replace(/^app\//, '');
+        return (base ? base + '/' : '/') + clean;
+      },
+      getAttachmentFileName(att) {
+        if (!att) return 'Attachment';
+        const parts = att.split('/');
+        let name = parts[parts.length - 1];
+        name = name.replace(/^chat_[a-f0-9]+_/, '').replace(/^chat_[a-f0-9]+\./, 'file.');
+        return name || 'Attachment';
+      },
+      getAttachmentExt(att) {
+        if (!att) return 'FILE';
+        const parts = att.split('.');
+        return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
       },
       openLightbox(chat, clickedMsg) {
         if (!chat || !chat.messages || !Array.isArray(chat.messages)) return;
         // Get all image messages from the chat
-        const images = chat.messages.filter(m => m.attachment && m.attachment.match(/\.(jpeg|jpg|gif|png)$/i));
+        const images = chat.messages.filter(m => m.attachment && this.isImageAttachment(m.attachment));
         if (images.length === 0) return;
-        this.lightboxImages = images.map(m => ('<?= url("") ?>' + '/' + m.attachment).replace(/\/+/g, '/'));
+        this.lightboxImages = images.map(m => this.formatAttachmentUrl(m.attachment));
         this.lightboxIndex = images.findIndex(m => m.id === (clickedMsg && clickedMsg.id));
         if (this.lightboxIndex === -1) this.lightboxIndex = 0;
         this.lightboxOpen = true;
@@ -407,6 +426,20 @@
           .then(data => {
             if (data.success) {
               this.conversations = data.conversations;
+
+              // Sync open active chat windows in real-time (avatar, name, role, initials)
+              if (this.activeChats && this.activeChats.length > 0 && Array.isArray(data.conversations)) {
+                data.conversations.forEach(conv => {
+                  const active = this.activeChats.find(c => String(c.id) === String(conv.id));
+                  if (active) {
+                    if (conv.avatar !== undefined) active.avatar = conv.avatar;
+                    if (conv.name) active.name = conv.name;
+                    if (conv.initials) active.initials = conv.initials;
+                    if (conv.role) active.role = conv.role;
+                  }
+                });
+                this.saveActiveChats();
+              }
 
               let maxId = this.lastReceivedMessageId;
               let playSound = false;
@@ -602,6 +635,10 @@
         if (existing) {
           existing.minimized = false;
           existing.unreadCount = 0; // Clear badge when user opens it
+          if (conv.avatar !== undefined) existing.avatar = conv.avatar;
+          if (conv.name) existing.name = conv.name;
+          if (conv.initials) existing.initials = conv.initials;
+          if (conv.role) existing.role = conv.role;
           fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
           this.bringChatToFront(existing);
         } else {
@@ -1213,8 +1250,13 @@
               window.__APP__.userEmail = data.email;
               this.userInitials = data.initials;
               if (data.avatar) {
-                this.userAvatar = data.avatar;
-                window.__APP__.userAvatar = data.avatar;
+                let cleanAvatar = data.avatar;
+                if (cleanAvatar.startsWith('/app/public/')) {
+                  cleanAvatar = cleanAvatar.replace('/app/public/', '/public/');
+                }
+                const cacheBuster = cleanAvatar.includes('?') ? '&t=' + Date.now() : '?t=' + Date.now();
+                this.userAvatar = cleanAvatar + cacheBuster;
+                window.__APP__.userAvatar = this.userAvatar;
               }
               this.uploadFile = null;
               this.uploadPreview = null;
