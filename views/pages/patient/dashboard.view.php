@@ -1106,7 +1106,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             </div>
 
             <form id="paymentForm" method="POST"
-                action="<?php echo rtrim('/' . PROJECT_DIR, '/'); ?>/app/api/submit_payment.php"
+                action="<?= url('app/Api/submit_payment.php') ?>"
                 enctype="multipart/form-data">
                 <input type="hidden" name="case_id" id="paymentCaseId" value="">
                 <input type="hidden" name="amount" id="paymentAmount" value="">
@@ -1541,7 +1541,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     }
                 });
 
-                fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/cancel_case.php', {
+                fetch('<?= url('app/Api/cancel_case.php') ?>', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ case_id: caseId })
@@ -1704,9 +1704,16 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 method: 'POST',
                 body: formData
             })
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
+                .then(async response => {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        const data = await response.json();
+                        return data;
+                    } else {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        throw new Error('Server returned an unexpected response.');
+                    }
                 })
                 .then(data => {
                     if (data.success) {
@@ -1728,7 +1735,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    Swal.fire('Error', 'Failed to connect to the server. Please try again.', 'error');
+                    Swal.fire('Error', error.message || 'Failed to connect to the server. Please try again.', 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnText;
                 });
@@ -1744,7 +1751,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             const caseId = dot.getAttribute('data-case-id');
             if (!caseId) return;
 
-            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=status&case_id=${caseId}`)
+            fetch(`<?= url('app/Api/case_activity.php') ?>?action=status&case_id=${caseId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

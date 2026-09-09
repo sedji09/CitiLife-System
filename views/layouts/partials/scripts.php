@@ -260,7 +260,7 @@
                 attachmentPreviews: []
               });
               // Fetch messages for restored chat
-              fetch('<?= url("app/api/messages.php") ?>?action=fetch_chat&contact_id=' + meta.id, { credentials: 'same-origin' })
+              fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + meta.id, { credentials: 'same-origin' })
                 .then(r => r.json())
                 .then(data => {
                   const chat = this.activeChats.find(c => c.id == meta.id);
@@ -396,13 +396,13 @@
         if (this.role === 'patient') return;
 
         // Fetch unread count
-        fetch('<?= url("app/api/messages.php") ?>?action=fetch_unread_count', { credentials: 'same-origin' })
+        fetch('<?= url("app/Api/messages.php") ?>?action=fetch_unread_count', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => { if (data.success) this.unreadMessageCount = data.count; })
           .catch(err => console.error(err));
 
         // Fetch conversations (always, so badge count stays live)
-        fetch('<?= url("app/api/messages.php") ?>?action=fetch_conversations', { credentials: 'same-origin' })
+        fetch('<?= url("app/Api/messages.php") ?>?action=fetch_conversations', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
@@ -443,7 +443,7 @@
         // Fetch active chats — only append NEW messages to avoid re-render stealing focus
         this.activeChats.forEach(chat => {
           const markReadParam = chat.minimized ? '0' : '1';
-          fetch('<?= url("app/api/messages.php") ?>?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
+          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               if (data.success) {
@@ -519,7 +519,7 @@
         this.isSearchingStaff = true;
         const currentQuery = this.staffSearchQuery;
         const cacheBuster = '&_t=' + new Date().getTime();
-        fetch('<?= url("app/api/messages.php") ?>?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
+        fetch('<?= url("app/Api/messages.php") ?>?action=search_staff&q=' + encodeURIComponent(currentQuery) + cacheBuster, { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (this.staffSearchQuery !== currentQuery) return;
@@ -580,7 +580,7 @@
         // Clear unread badge when user opens the chat
         if (!chat.minimized) {
           chat.unreadCount = 0;
-          fetch('<?= url("app/api/messages.php") ?>?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
+          fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
@@ -602,7 +602,7 @@
         if (existing) {
           existing.minimized = false;
           existing.unreadCount = 0; // Clear badge when user opens it
-          fetch('<?= url("app/api/messages.php") ?>?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
+          fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -617,7 +617,7 @@
             attachmentPreviews: []
           });
 
-          fetch('<?= url("app/api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
+          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               const chat = this.activeChats.find(c => c.id === conv.id);
@@ -699,7 +699,7 @@
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
             this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
-            fetch('<?= url("app/api/messages.php") ?>?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
+            fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
@@ -810,7 +810,7 @@
             formData.append('attachment', file);
           }
 
-          return fetch('<?= url("app/api/messages.php") ?>', {
+          return fetch('<?= url("app/Api/messages.php") ?>', {
             method: 'POST', credentials: 'same-origin',
             body: formData
           }).then(res => res.json());
@@ -1352,7 +1352,7 @@
         this.globalNotificationOptionsOpen = !this.globalNotificationOptionsOpen;
       },
       fetchNotifications(isInitial = false) {
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', { credentials: 'same-origin' })
+        fetch('<?= url('app/Api/notifications.php') ?>', { credentials: 'same-origin' })
           .then(res => res.json())
           .then(data => {
             if (!data.error) {
@@ -1573,7 +1573,7 @@
         if (Array.isArray(this.notifications)) {
           this.notifications.forEach(n => { n.is_read = 1; });
         }
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+        fetch('<?= url('app/Api/notifications.php') ?>', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_read' })
@@ -1608,7 +1608,7 @@
       },
       markAsUnread(id) {
         this.activeNotificationDropdown = null;
-        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+        fetch('<?= url('app/Api/notifications.php') ?>', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_unread', notification_id: id })
@@ -1627,7 +1627,7 @@
           if (this.undoTimeout) {
             clearTimeout(this.undoTimeout);
             if (this.pendingDeleteId) {
-              fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+              fetch('<?= url('app/Api/notifications.php') ?>', {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId }),
@@ -1659,7 +1659,7 @@
             this.showUndoToast = false;
             clearInterval(this.undoInterval);
             if (this.pendingDeleteId === id) {
-              fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+              fetch('<?= url('app/Api/notifications.php') ?>', {
                 method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', notification_id: id })
@@ -1688,7 +1688,7 @@
           clearTimeout(this.undoTimeout);
           clearInterval(this.undoInterval);
           if (this.pendingDeleteId) {
-            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+            fetch('<?= url('app/Api/notifications.php') ?>', {
               method: 'POST', credentials: 'same-origin',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'delete', notification_id: this.pendingDeleteId })
@@ -1739,7 +1739,7 @@
           }
 
           // Background mark read
-          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+          fetch('<?= url('app/Api/notifications.php') ?>', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id }),
@@ -1780,7 +1780,7 @@
           // Navigate if on a different page or element not found immediately
           window.location.href = finalUrl.toString();
         } else {
-          fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/notifications.php', {
+          fetch('<?= url('app/Api/notifications.php') ?>', {
             method: 'POST', credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'mark_read', notification_id: id })
@@ -1956,7 +1956,7 @@
     const caseId = dot.getAttribute('data-case-id');
     if (!caseId) return;
 
-    fetch('<?= url("app/api/case_activity.php") ?>?action=status&case_id=' + caseId + '&_t=' + Date.now(), { credentials: 'same-origin' })
+    fetch('<?= url("app/Api/case_activity.php") ?>?action=status&case_id=' + caseId + '&_t=' + Date.now(), { credentials: 'same-origin' })
       .then(res => res.json())
       .then(data => {
         if (!data.success) return;

@@ -476,7 +476,7 @@ window.submitFeedbackForm = function () {
 
     const formData = new FormData(feedbackForm);
 
-    fetch(window.__APP__.basePath + '/app/api/submit_feedback.php', {
+    fetch(window.__APP__.basePath + '/app/Api/submit_feedback.php', {
         method: 'POST',
         body: formData
     })
@@ -954,7 +954,7 @@ window.submitDisputeForm = function (e) {
     btn.disabled = true;
     btn.innerHTML = 'Submitting...';
 
-    fetch(window.__APP__.basePath + '/app/api/disputes.php', {
+    fetch(window.__APP__.basePath + '/app/Api/disputes.php', {
         method: 'POST',
         body: formData
     })

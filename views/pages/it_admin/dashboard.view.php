@@ -461,7 +461,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
     }, 1000);
     setInterval(async () => {
         try {
-            const res = await fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/active_users_count.php');
+            const res = await fetch('<?= url('app/Api/active_users_count.php') ?>');
             if (res.ok) {
                 const data = await res.json();
                 const activeEl = document.getElementById('realtime-active-users');

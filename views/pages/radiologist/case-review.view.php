@@ -1244,7 +1244,7 @@ if ($activeDispute && $backPage === 'worklist') {
             const fd = new window.FormData();
             fd.append('status', radStatus);
 
-            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, {
+            fetch(`<?= url('app/Api/case_activity.php') ?>?action=ping&case_id=<?= $caseId ?>`, {
                 method: 'POST',
                 body: fd
             }).catch(err => console.error(err));
@@ -1264,11 +1264,11 @@ if ($activeDispute && $backPage === 'worklist') {
                 const fd = new window.FormData();
                 fd.append('status', 'inactive');
                 try {
-                    navigator.sendBeacon(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, fd);
+                    navigator.sendBeacon(`<?= url('app/Api/case_activity.php') ?>?action=ping&case_id=<?= $caseId ?>`, fd);
                 } catch (e) { }
                 // Fallback keepalive
                 try {
-                    fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/api/case_activity.php?action=ping&case_id=<?= $caseId ?>`, {
+                    fetch(`<?= url('app/Api/case_activity.php') ?>?action=ping&case_id=<?= $caseId ?>`, {
                         method: 'POST', body: fd, keepalive: true
                     }).catch(() => { });
                 } catch (e) { }

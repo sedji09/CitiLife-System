@@ -1,14 +1,17 @@
 <?php
 ob_start(); // Start output buffering to catch any warnings
+require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/session.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 if (!defined('PROJECT_DIR')) {
-    define('PROJECT_DIR', 'Citilife-System');
+    define('PROJECT_DIR', '');
 }
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../app/Models/AuditLogModel.php';
+
+header('Content-Type: application/json; charset=UTF-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -19,9 +22,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $patientId = $_SESSION['patient_id'] ?? 0;
 $userId = $_SESSION['user_id'] ?? 0;
+
+if (!$patientId && $userId) {
+    $stmtU = $pdo->prepare("SELECT patient_id FROM users WHERE id = ?");
+    $stmtU->execute([$userId]);
+    $patientId = $stmtU->fetchColumn() ?: 0;
+    if ($patientId) {
+        $_SESSION['patient_id'] = $patientId;
+    }
+}
+
 if (!$patientId) {
     $errors = ob_get_clean();
-    echo json_encode(['success' => false, 'message' => 'Unauthorized.', 'debug' => $errors]);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized. Please log in again.', 'debug' => $errors]);
     exit;
 }
 
@@ -76,7 +89,7 @@ if ($paymentMethod === 'GCash') {
 
     $uploadDir = __DIR__ . '/../../public/uploads/receipts/';
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        @mkdir($uploadDir, 0777, true);
     }
     
     $fileExt = strtolower(pathinfo($_FILES['payment_proof']['name'], PATHINFO_EXTENSION));
@@ -121,10 +134,11 @@ try {
     $reqNum = $stmtReq->fetchColumn();
 
     if ($reqNum) {
+        $basePrefix = defined('PROJECT_DIR') && PROJECT_DIR !== '' ? '/' . PROJECT_DIR : '';
         $notifModel->add(
             "New Payment Submitted",
             "A new payment of ₱" . number_format($amount, 2) . " via $paymentMethod has been submitted for request $reqNum.",
-            "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=payment-verifications&highlight=" . urlencode($reqNum),
+            $basePrefix . "/index.php?role=branch_admin&page=payment-verifications&highlight=" . urlencode($reqNum),
             null,
             'branch_admin',
             $branchId
