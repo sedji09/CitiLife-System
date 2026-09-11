@@ -1,4 +1,7 @@
 <?php
+$lastBackupTimestamp = $lastBackupTimestamp ?? null;
+$backupDirWritable = $backupDirWritable ?? false;
+$serverStatus = $serverStatus ?? 'Running';
 $statusTextClass = match ($systemStatusTone ?? 'emerald') {
     'rose' => 'noc-text-rose',
     'amber' => 'noc-text-amber',
