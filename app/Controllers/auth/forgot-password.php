@@ -80,8 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Failed to send the reset email. Please try again later.";
             }
         } else {
-            // For security, show generic success message
-            $success = "If that email exists in our system, a reset link has been sent.";
+            $error = "This email is not registered in our system. Please check your email and try again.";
         }
     }
 }
@@ -160,7 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <input type="email" name="email" id="email" required 
                         class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-sm"
-                        placeholder="<?= $isStaffPortal ? 'staff@example.com' : 'name@example.com' ?>">
+                        placeholder="<?= $isStaffPortal ? 'staff@example.com' : 'name@example.com' ?>"
+                        value="<?= htmlspecialchars($email ?? '') ?>">
                 </div>
             </div>
 
