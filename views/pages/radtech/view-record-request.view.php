@@ -122,9 +122,9 @@
                 <div class="flex gap-2">
                     <?php
                     $isCaseReqReverted = !empty($caseDetails['re_edit_reason']) 
-                        || ($caseDetails['report_status'] ?? '') === 'Draft' 
+                        || (!in_array($caseDetails['status'], ['Completed', 'Released']) && ($caseDetails['report_status'] ?? '') === 'Draft') 
                         || in_array($caseDetails['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
-                    $isCaseReqReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isCaseReqReverted;
+                    $isCaseReqReportReady = (in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) || !empty($caseDetails['findings'])) && !$isCaseReqReverted;
                     ?>
                     <?php if ($isCaseReqReportReady): ?>
                         <a href="<?= url('print-report?id=' . $caseDetails['id'] . '&download=true') ?>"

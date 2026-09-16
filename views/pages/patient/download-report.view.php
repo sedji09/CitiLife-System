@@ -10,6 +10,20 @@ $caseModel = new \CaseModel($pdo);
 $userModel = new \UserModel($pdo);
 $branchModel = new \BranchModel($pdo);
 
+$allActiveBranches = $branchModel->getActiveBranches();
+$branchNamesList = [];
+if (!empty($allActiveBranches)) {
+    foreach ($allActiveBranches as $bRow) {
+        $bName = mb_strtoupper(trim($bRow['name'] ?? ''), 'UTF-8');
+        if (!empty($bName)) {
+            $branchNamesList[] = htmlspecialchars($bName, ENT_QUOTES, 'UTF-8');
+        }
+    }
+}
+$branchesBannerHtml = !empty($branchNamesList) 
+    ? implode(' &bull; ', $branchNamesList) 
+    : 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON';
+
 $userId = $_SESSION['user_id'] ?? null;
 if (isset($_GET['ref'])) {
     $decoded = base64_decode($_GET['ref']);
@@ -941,8 +955,7 @@ if (!$isMultiExam) {
         </div>
 
         <div class="branches">
-            GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN
-            &bull; BONGABON
+            <?= $branchesBannerHtml ?? 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON' ?>
         </div>
         <!-- Footer -->
         <div class="report-footer">

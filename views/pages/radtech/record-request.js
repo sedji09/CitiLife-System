@@ -205,6 +205,34 @@ function initRequestModal() {
     const searchName = document.getElementById('search_patient_name');
     const searchBranch = document.getElementById('search_request_branch');
 
+    searchName?.addEventListener('input', () => {
+        if (searchName.value.trim().length > 0) {
+            if (window.FormValidator) {
+                window.FormValidator.clearError(searchName);
+            } else {
+                searchName.classList.remove('border-red-500', 'focus:ring-red-500/20', 'bg-red-50/20');
+                searchName.classList.add('border-gray-300');
+            }
+        }
+    });
+
+    searchBranch?.addEventListener('change', () => {
+        if (searchBranch.value) {
+            if (window.FormValidator) {
+                window.FormValidator.clearError(searchBranch);
+            }
+            const wrapper = searchBranch.closest('.cs-wrapper');
+            if (wrapper) {
+                const trigger = wrapper.querySelector('.cs-trigger');
+                if (trigger) {
+                    trigger.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20', 'bg-red-50/20');
+                    if (!trigger.classList.contains('border-gray-300')) trigger.classList.add('border-gray-300');
+                }
+                wrapper.parentElement?.querySelectorAll('.citilife-inline-error').forEach(e => e.remove());
+            }
+        }
+    });
+
     btnSearch?.addEventListener('click', async () => {
         const pName = searchName.value.trim();
         const branch = searchBranch.value;
@@ -295,6 +323,10 @@ function initRequestModal() {
         document.getElementById('display_selected_caseno').textContent = record.case_number;
         document.getElementById('display_selected_exam').textContent = record.exam_type;
         document.getElementById('display_selected_date').textContent = formatDate(record.created_at);
+
+        if (window.FormValidator) {
+            window.FormValidator.clearAllErrors('#step-2-details');
+        }
     }
 
     function formatDate(dateStr) {
@@ -303,9 +335,92 @@ function initRequestModal() {
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
+    const btnFinalSubmit = document.getElementById('btn-final-submit');
+    const reasonInput = document.getElementById('request_reason');
+
+    reasonInput?.addEventListener('input', () => {
+        if (reasonInput.value.trim().length > 0) {
+            if (window.FormValidator) {
+                window.FormValidator.clearError(reasonInput);
+            } else {
+                reasonInput.classList.remove('border-red-500', 'focus:ring-red-500/20', 'bg-red-50/20');
+                if (!reasonInput.classList.contains('border-gray-300')) {
+                    reasonInput.classList.add('border-gray-300');
+                }
+                const err = reasonInput.parentElement?.querySelector('.citilife-inline-error');
+                if (err) err.remove();
+            }
+        }
+    });
+
+    btnFinalSubmit?.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // 1. Validate step 2 fields (especially Reason for Request)
+        if (window.FormValidator) {
+            const isValid = window.FormValidator.validate('#step-2-details');
+            if (!isValid) return;
+        } else {
+            const reasonVal = (reasonInput?.value || '').trim();
+            if (!reasonVal) {
+                if (reasonInput) {
+                    reasonInput.focus();
+                    reasonInput.classList.add('border-red-500', 'focus:ring-red-500/20', 'bg-red-50/20');
+                    reasonInput.classList.remove('border-gray-300');
+                    let errEl = reasonInput.parentElement?.querySelector('.citilife-inline-error');
+                    if (!errEl) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'citilife-inline-error text-xs text-red-600 font-semibold flex items-center gap-1.5 mt-1.5 animate-in fade-in slide-in-from-top-1';
+                        errEl.setAttribute('role', 'alert');
+                        errEl.innerHTML = `
+                            <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12" stroke-width="2" stroke-linecap="round"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2.5" stroke-linecap="round"></line>
+                            </svg>
+                            <span class="error-text">Reason for Request is required.</span>
+                        `;
+                        reasonInput.parentElement?.appendChild(errEl);
+                    }
+                }
+                if (typeof window.toast === 'function') {
+                    window.toast('Reason for Request is required.', 'error');
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Reason for Request is required.',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+                return;
+            }
+        }
+
+        // 2. Only show confirmation dialog if validation passes
+        confirmAction(
+            'Submit Request',
+            'Would you like to confirm submitting this record request?',
+            () => {
+                const form = document.getElementById('recordRequestForm');
+                if (form) {
+                    form.submit();
+                }
+            },
+            'Yes, Submit',
+            false,
+            e
+        );
+    });
+
     btnBack?.addEventListener('click', () => {
         step2.classList.add('hidden');
         step1.classList.remove('hidden');
+        if (window.FormValidator) {
+            window.FormValidator.clearAllErrors('#step-2-details');
+        }
     });
 }
 
@@ -325,6 +440,9 @@ window.resetRequestModal = function () {
     document.getElementById('step-1-search')?.classList.remove('hidden');
     document.getElementById('search-results-container')?.classList.add('hidden');
     document.getElementById('search-results-list').innerHTML = '';
+    if (window.FormValidator) {
+        window.FormValidator.clearAllErrors('#recordRequestForm');
+    }
 };
 
 // Initialize

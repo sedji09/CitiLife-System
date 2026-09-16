@@ -170,6 +170,9 @@
           this.errorInputClasses.forEach(cls => trigger.classList.remove(cls));
           if (!trigger.classList.contains('border-gray-300')) trigger.classList.add('border-gray-300');
         }
+        if (csWrapper.parentElement) {
+          csWrapper.parentElement.querySelectorAll('.citilife-inline-error').forEach(err => err.remove());
+        }
       }
 
       // Find existing error container
@@ -192,10 +195,9 @@
       const nextEl = container.nextElementSibling;
       if (nextEl && nextEl.classList.contains('citilife-inline-error')) {
         nextEl.remove();
-      } else if (container.parentElement) {
-        // Fallback search inside container parent
-        const inlineError = container.parentElement.querySelector('.citilife-inline-error');
-        if (inlineError) inlineError.remove();
+      }
+      if (container.parentElement) {
+        container.parentElement.querySelectorAll('.citilife-inline-error').forEach(err => err.remove());
       }
     },
 
@@ -510,6 +512,9 @@
     const el = e.target;
     if (!el || !['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) return;
     if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button' || el.disabled || el.readOnly) return;
+
+    // Skip custom-select hidden native select on blur/focusout (it should only validate on change or submit)
+    if (el.classList.contains('cs-native-hidden') && e.type !== 'change') return;
 
     // Skip special UI elements like calendar popups
     if (el.closest('.datepicker')) return;

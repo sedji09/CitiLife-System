@@ -172,6 +172,19 @@
 
             this.sync();
             this.close();
+
+            // Clear any error state immediately when a valid option is selected
+            if (value && window.FormValidator) {
+                window.FormValidator.clearError(this.select);
+            }
+            if (value && this.wrapper) {
+                const trigger = this.wrapper.querySelector('.cs-trigger');
+                if (trigger) {
+                    trigger.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20', 'bg-red-50/20');
+                    if (!trigger.classList.contains('border-gray-300')) trigger.classList.add('border-gray-300');
+                }
+                this.wrapper.parentElement?.querySelectorAll('.citilife-inline-error').forEach(err => err.remove());
+            }
         }
 
         sync() {

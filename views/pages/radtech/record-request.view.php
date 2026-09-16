@@ -17,7 +17,7 @@
 
     <?php if ($successMsg): ?>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',
@@ -45,7 +45,7 @@
                 <h2 class="text-xl font-semibold text-gray-900">Record Request</h2>
                 <p class="text-sm text-gray-500 mt-1">Manage external record requests and monitoring</p>
             </div>
-            <button onclick="document.getElementById('requestModal').classList.remove('hidden')"
+            <button onclick="resetRequestModal(); document.getElementById('requestModal').classList.remove('hidden')"
                 class="inline-flex items-center rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm">
                 <i data-lucide="send" class="w-4 h-4 mr-2"></i> New Record Request
             </button>
@@ -102,15 +102,31 @@
             <table class="w-full text-sm border-separate border-spacing-0">
                 <thead class="sticky top-0 z-10">
                     <tr class="bg-gray-50 text-gray-600 border-b border-gray-200">
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Case No.</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Patient Name
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Case No.</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Patient Name
                         </th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Exam Type</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Exam Date</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">From Branch</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Date Requested</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Status</th>
-                        <th class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">Action</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Exam Type</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Exam Date</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            From Branch</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Date Requested</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Status</th>
+                        <th
+                            class="text-left font-semibold px-6 py-4 border-b border-gray-200 bg-gray-50 whitespace-nowrap">
+                            Action</th>
                     </tr>
                 </thead>
                 <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
@@ -125,8 +141,10 @@
                                 data-name="<?= htmlspecialchars($req['patient_name']) ?>"
                                 data-branch="<?= htmlspecialchars($req['request_branch']) ?>"
                                 data-date="<?= htmlspecialchars($req['created_at']) ?>">
-                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_no']) ?></td>
-                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_name']) ?></td>
+                                <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_no']) ?>
+                                </td>
+                                <td class="px-6 py-4 font-medium whitespace-nowrap">
+                                    <?= htmlspecialchars($req['patient_name']) ?></td>
                                 <td class="px-6 py-4">
                                     <?php
                                     $exams = array_filter(array_map('trim', explode(',', $req['exam_type'])));
@@ -189,7 +207,8 @@
         </div>
 
         <!-- Pagination Controls -->
-        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4" id="record-request-pagination-container">
+        <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4 gap-4"
+            id="record-request-pagination-container">
             <!-- Record count -->
             <span id="record-request-count" class="text-xs text-gray-500 font-medium"></span>
 
@@ -227,15 +246,18 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                     <div>
-                        <label for="search_patient_name" class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                        <label for="search_patient_name"
+                            class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                             <i data-lucide="user" class="w-4 h-4 text-gray-400"></i> Patient Name <span
                                 class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="search_patient_name" name="search_patient_name" required placeholder="e.g. Juan Dela Cruz"
+                        <input type="text" id="search_patient_name" name="search_patient_name" required
+                            placeholder="e.g. Juan Dela Cruz"
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm placeholder:text-gray-400">
                     </div>
                     <div>
-                        <label for="search_request_branch" class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                        <label for="search_request_branch"
+                            class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                             <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> Target Branch <span
                                 class="text-red-500">*</span>
                         </label>
@@ -308,9 +330,11 @@
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Reason for Request <span
-                            class="text-gray-400 font-normal text-xs">(Required)</span></label>
-                    <textarea name="reason" rows="3" required
+                    <label for="request_reason"
+                        class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>Reason for Request <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="request_reason" name="reason" rows="3" required data-label="Reason for Request"
                         placeholder="Type the reason why these records are being requested..."
                         class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 outline-none transition resize-none shadow-sm"></textarea>
                 </div>
@@ -324,7 +348,6 @@
                     <!-- Hidden real submit button -->
                     <button type="submit" id="realSubmitBtn" class="hidden"></button>
                     <button type="button" id="btn-final-submit"
-                        onclick="confirmAction('Submit Request', 'Would you like to confirm submitting this record request?', () => document.getElementById('realSubmitBtn').click(), 'Yes, Submit', false, event)"
                         class="px-6 py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm flex items-center gap-2">
                         <i data-lucide="send" class="w-4 h-4"></i> Submit Request
                     </button>
@@ -335,4 +358,5 @@
 </div>
 
 
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/record-request.js?v=<?= time() ?>"></script>
+<script
+    src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/record-request.js?v=<?= time() ?>"></script>

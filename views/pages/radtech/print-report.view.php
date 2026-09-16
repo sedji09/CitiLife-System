@@ -10,6 +10,20 @@ $caseModel = new \CaseModel($pdo);
 $userModel = new \UserModel($pdo);
 $branchModel = new \BranchModel($pdo);
 
+$allActiveBranches = $branchModel->getActiveBranches();
+$branchNamesList = [];
+if (!empty($allActiveBranches)) {
+    foreach ($allActiveBranches as $bRow) {
+        $bName = mb_strtoupper(trim($bRow['name'] ?? ''), 'UTF-8');
+        if (!empty($bName)) {
+            $branchNamesList[] = htmlspecialchars($bName, ENT_QUOTES, 'UTF-8');
+        }
+    }
+}
+$branchesBannerHtml = !empty($branchNamesList) 
+    ? implode(' &bull; ', $branchNamesList) 
+    : 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON';
+
 $id = (int) ($_GET['id'] ?? 0);
 $isPreview = filter_var($_GET['preview'] ?? false, FILTER_VALIDATE_BOOLEAN);
 $isDownload = filter_var($_GET['download'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -27,7 +41,7 @@ if (!$case) {
 }
 
 $isReverted = !empty($case['re_edit_reason']) 
-    || ($case['report_status'] ?? '') === 'Draft' 
+    || (!in_array($case['status'], ['Completed', 'Released']) && ($case['report_status'] ?? '') === 'Draft') 
     || in_array($case['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
 
 if ($isReverted && $sessionRole !== 'radiologist' && !$isPreview) {
@@ -562,10 +576,10 @@ if (!$isMultiExam) {
             font-weight: bold;
             color: #7b7b7bff;
             background: linear-gradient(90deg, rgba(255, 180, 150, 0.6) 0%, rgba(255, 220, 200, 0.5) 50%, rgba(255, 180, 150, 0.6) 100%);
-            padding: 5px 0;
+            padding: 5px 8px;
             letter-spacing: 0.5px;
-            word-spacing: 8px;
-            white-space: nowrap;
+            word-spacing: 6px;
+            line-height: 1.4;
             margin-top: 14px;
         }
 
@@ -836,6 +850,7 @@ if (!$isMultiExam) {
     // ── Helper: render the footer group (signature + branches + footer) ──
     function renderFooterGroup($radtechFullNameWithTitle, $radtechSignature, $radFullNameWithTitle, $radSignature, $branch, $caseNum)
     {
+        global $branchesBannerHtml;
         ?>
         <!-- Spacer to push footer to bottom -->
         <div style="flex-grow: 1;"></div>
@@ -878,8 +893,7 @@ if (!$isMultiExam) {
                 </div>
             </div>
             <div class="branches">
-                GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN
-                &bull; BONGABON
+                <?= $branchesBannerHtml ?? 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON' ?>
             </div>
             <div class="report-footer">
                 <span>Citilife Diagnostic — <?= $branch ?> Branch</span>
