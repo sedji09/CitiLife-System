@@ -36,7 +36,6 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
     <div class="flex items-center justify-between">
         <div>
             <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2 noc-text-main">
-                <i data-lucide="terminal" class="w-6 h-6 noc-text-indigo"></i>
                 IT Command Center
             </h2>
             <p class="text-sm mt-1 font-mono noc-text-muted">System administration · security · monitoring</p>
