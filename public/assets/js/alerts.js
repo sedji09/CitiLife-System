@@ -85,18 +85,22 @@ const alerts = {
     if (event) event.preventDefault();
     const result = await alerts.confirm(title, message);
     if (result.isConfirmed) {
-      const form = btn.form;
+      const form = btn.form || btn.closest('form');
       if (!form) return;
-      const actionInput = document.createElement('input');
-      actionInput.type = 'hidden';
-      actionInput.name = inputName;
+      
+      let actionInput = form.querySelector(`input[name="${inputName}"]`);
+      if (!actionInput) {
+        actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = inputName;
+        form.appendChild(actionInput);
+      }
       actionInput.value = actionValue;
-      form.appendChild(actionInput);
 
-      // Use requestSubmit() if available to trigger validation/listeners
-      if (typeof form.requestSubmit === 'function') {
-        form.requestSubmit();
-      } else {
+      // Submit form reliably using prototype call to prevent collisions with input named "action" or "submit"
+      try {
+        HTMLFormElement.prototype.submit.call(form);
+      } catch (err) {
         form.submit();
       }
     }

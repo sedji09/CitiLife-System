@@ -124,9 +124,9 @@
                                 <td class="py-3 px-3 text-center">
                                      <form method="POST" action="" class="flex items-center justify-center gap-1.5">
                                          <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
-                                         <button type="button" name="action" value="Approve"
+                                         <button type="button"
                                              class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                             onclick="confirmFormAction(this, 'Approve', 'Confirm Approval', 'Would you like to confirm approving this record request? This will allow the requesting branch to view this patient\'s records.', 'action', event)"
+                                             onclick="promptApproveRecordRequest(<?= (int)$req['id'] ?>)"
                                              title="Approve Request">
                                              <i data-lucide="check" class="w-4 h-4"></i>
                                          </button>
@@ -426,6 +426,66 @@
         window.handlePageHighlight = handleHighlight;
         handleHighlight();
     });
+
+    // ── Approve Record Request Modal with SweetAlert2 ──────────────────────────────
+    window.promptApproveRecordRequest = function(requestId) {
+        const title = 'Confirm Approval';
+        const message = 'Would you like to confirm approving this record request? This will allow the requesting branch to view this patient\'s records.';
+
+        if (typeof alerts !== 'undefined' && alerts.confirm) {
+            alerts.confirm(title, message, 'Yes, Proceed').then((result) => {
+                if (result.isConfirmed) {
+                    submitApproveRecordRequest(requestId);
+                }
+            });
+        } else if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, Proceed',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-3xl border-0 shadow-2xl',
+                    confirmButton: 'rounded-xl px-8 py-3 font-bold',
+                    cancelButton: 'rounded-xl px-8 py-3 font-bold'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitApproveRecordRequest(requestId);
+                }
+            });
+        } else {
+            if (confirm(message)) {
+                submitApproveRecordRequest(requestId);
+            }
+        }
+    };
+
+    function submitApproveRecordRequest(requestId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'request_id';
+        idInput.value = requestId;
+        form.appendChild(idInput);
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'Approve';
+        form.appendChild(actionInput);
+
+        document.body.appendChild(form);
+        HTMLFormElement.prototype.submit.call(form);
+    }
 
     // ── Deny Record Request Modal with SweetAlert2 ─────────────────────────────────
     function escapeHtmlRecord(text) {
