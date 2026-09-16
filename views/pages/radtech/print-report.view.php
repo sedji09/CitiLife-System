@@ -24,6 +24,8 @@ $branchesBannerHtml = !empty($branchNamesList)
     ? implode(' &bull; ', $branchNamesList) 
     : 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON';
 
+$GLOBALS['branchesBannerHtml'] = $branchesBannerHtml;
+
 $id = (int) ($_GET['id'] ?? 0);
 $isPreview = filter_var($_GET['preview'] ?? false, FILTER_VALIDATE_BOOLEAN);
 $isDownload = filter_var($_GET['download'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -851,6 +853,17 @@ if (!$isMultiExam) {
     function renderFooterGroup($radtechFullNameWithTitle, $radtechSignature, $radFullNameWithTitle, $radSignature, $branch, $caseNum)
     {
         global $branchesBannerHtml;
+        $bannerHtml = $GLOBALS['branchesBannerHtml'] ?? $branchesBannerHtml ?? 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON';
+
+        $resolveSig = function($sig) {
+            if (empty($sig)) return '';
+            $clean = preg_replace('#^/?CitiLife-System/#i', '', $sig);
+            $clean = ltrim($clean, '/');
+            $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? ('/' . PROJECT_DIR . '/') : '/';
+            return $prefix . $clean;
+        };
+        $radtechSigSrc = $resolveSig($radtechSignature);
+        $radSigSrc = $resolveSig($radSignature);
         ?>
         <!-- Spacer to push footer to bottom -->
         <div style="flex-grow: 1;"></div>
@@ -865,7 +878,7 @@ if (!$isMultiExam) {
                     <?php if (!empty($radtechSignature)): ?>
                         <div class="sig-image"
                             style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
-                            <img src="<?= $radtechSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
+                            <img src="<?= htmlspecialchars($radtechSigSrc) ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
                         </div>
                     <?php else: ?>
                         <div style="height:30px;"></div>
@@ -880,7 +893,7 @@ if (!$isMultiExam) {
                     <?php if (!empty($radSignature)): ?>
                         <div class="sig-image"
                             style="height:50px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:-10px;">
-                            <img src="<?= $radSignature ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
+                            <img src="<?= htmlspecialchars($radSigSrc) ?>" style="max-height:60px; max-width:180px; object-fit:contain;">
                         </div>
                     <?php else: ?>
                         <div style="height:30px;"></div>
@@ -893,7 +906,7 @@ if (!$isMultiExam) {
                 </div>
             </div>
             <div class="branches">
-                <?= $branchesBannerHtml ?? 'GAPAN &bull; PE&Ntilde;ARANDA &bull; GENERAL TINIO &bull; STO DOMINGO &bull; SAN ANTONIO &bull; PANTABANGAN &bull; BONGABON' ?>
+                <?= $bannerHtml ?>
             </div>
             <div class="report-footer">
                 <span>Citilife Diagnostic — <?= $branch ?> Branch</span>

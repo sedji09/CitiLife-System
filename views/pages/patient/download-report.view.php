@@ -120,6 +120,17 @@ $radtechName = $case['radtech_name'] ?? '';
 $radtechTitle = $case['radtech_title'] ?? '';
 $radtechSignature = $case['radtech_signature'] ?? '';
 
+// Clean signature paths across environments
+$resolveSig = function($sig) {
+    if (empty($sig)) return '';
+    $clean = preg_replace('#^/?CitiLife-System/#i', '', $sig);
+    $clean = ltrim($clean, '/');
+    $prefix = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? ('/' . PROJECT_DIR . '/') : '/';
+    return $prefix . $clean;
+};
+$radSignature = $resolveSig($radSignature);
+$radtechSignature = $resolveSig($radtechSignature);
+
 // Final fallback if still empty
 if (empty($radtechName))
     $radtechName = 'Radiologic Technologist';
