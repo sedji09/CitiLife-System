@@ -97,6 +97,12 @@ const alerts = {
       }
       actionInput.value = actionValue;
 
+      // Dispatch 'submit' event so listeners (e.g. file syncing, validation) run before submit
+      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+      if (!form.dispatchEvent(submitEvent)) {
+        return;
+      }
+
       // Submit form reliably using prototype call to prevent collisions with input named "action" or "submit"
       try {
         HTMLFormElement.prototype.submit.call(form);

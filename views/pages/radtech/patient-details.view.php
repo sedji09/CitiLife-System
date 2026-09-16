@@ -1187,9 +1187,8 @@ $catBadgeLabel = match ($dCategory) {
             role="alert">
             <i data-lucide="info" class="w-5 h-5 text-orange-500 mt-0.5 shrink-0"></i>
             <div>
-                <strong class="font-medium text-sm">Selection Required</strong>
-                <span class="block sm:inline text-sm mt-0.5 opacity-90">Please select a radiologist from the dropdown
-                    before submitting the case.</span>
+                <strong class="font-semibold text-sm mr-1.5">Selection Required:</strong>
+                <span class="text-sm opacity-90">Please select a radiologist from the dropdown before submitting the case.</span>
             </div>
         </div>
 
@@ -1268,7 +1267,7 @@ $catBadgeLabel = match ($dCategory) {
                     </script>
                 </div>
                 <button type="button"
-                    onclick="if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case?', 'submit_radiologist', event)"
+                    onclick="if(window.syncPatientXrayFiles) window.syncPatientXrayFiles(); if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case?', 'submit_radiologist', event)"
                     class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm h-full">
                     <i data-lucide="send" class="w-4 h-4"></i>
                     Submit to Radiologist
@@ -1926,11 +1925,13 @@ $catBadgeLabel = match ($dCategory) {
                 fileQueue.forEach(function (f) { dt.items.add(f); });
                 input.files = dt.files;
             }
+            window.syncPatientXrayFiles = syncInputFiles;
 
             function removeFile(idx) {
                 fileQueue.splice(idx, 1);
                 if (errSize) errSize.style.display = 'none';
                 if (errLimit) errLimit.style.display = 'none';
+                syncInputFiles();
                 renderPreviews();
             }
 
@@ -2019,14 +2020,22 @@ $catBadgeLabel = match ($dCategory) {
                 });
             }
 
-            input.addEventListener('change', function () { if (input.files.length) addFiles(input.files); input.value = ''; });
+            input.addEventListener('change', function () { 
+                if (input.files.length) {
+                    addFiles(input.files);
+                }
+                syncInputFiles();
+            });
 
             dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('bg-red-50'); });
             dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('bg-red-50'); });
             dropZone.addEventListener('drop', function (e) {
                 e.preventDefault();
                 dropZone.classList.remove('bg-red-50');
-                if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+                if (e.dataTransfer && e.dataTransfer.files.length) {
+                    addFiles(e.dataTransfer.files);
+                    syncInputFiles();
+                }
             });
 
             // Listen for exam changes
