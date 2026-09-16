@@ -27,6 +27,23 @@ class PatientDetailsController
         $caseId    = (int)($_GET['id'] ?? 0);
         $fromParam = $_GET['from'] ?? '';
         $disputeId = (int)($_GET['dispute_id'] ?? 0);
+
+        if ($caseId > 0) {
+            $_SESSION['active_radtech_case_id'] = $caseId;
+            if (!empty($fromParam)) {
+                $_SESSION['active_radtech_case_from'] = $fromParam;
+            }
+            if ($disputeId > 0) {
+                $_SESSION['active_radtech_dispute_id'] = $disputeId;
+            } elseif (!isset($_GET['dispute_id'])) {
+                unset($_SESSION['active_radtech_dispute_id']);
+            }
+        } else {
+            $caseId    = (int)($_SESSION['active_radtech_case_id'] ?? 0);
+            $fromParam = $fromParam ?: ($_SESSION['active_radtech_case_from'] ?? '');
+            $disputeId = $disputeId ?: (int)($_SESSION['active_radtech_dispute_id'] ?? 0);
+        }
+
         $errorMsg  = '';
         $successMsg = '';
         $branchId  = $_SESSION['branch_id'] ?? 1;
@@ -378,7 +395,7 @@ class PatientDetailsController
                                 ->execute([$caseId]);
 
                             $_SESSION['flash_success'] = 'Report amendments successfully saved and marked as Resolved.';
-                            redirect(url("patient-lists?tab=disputes"));
+                            redirect(url("correction-requests"));
                         } else {
                             $disputeMdl->advanceStatus($dId, 'Correction Completed');
                             $_SESSION['flash_success'] = 'Amendment saved. Dispute marked as Correction Completed.';
@@ -568,7 +585,7 @@ class PatientDetailsController
                     if ($fromParam === 'approval' || $fromParam === 'patient-approval') {
                         redirect(url('patient-approval'));
                     } elseif ($fromParam === 'disputes') {
-                        redirect(url('patient-lists?tab=disputes'));
+                        redirect(url('correction-requests'));
                     } elseif ($fromParam === 'report-ready') {
                         redirect(url('report-ready'));
                     } else {

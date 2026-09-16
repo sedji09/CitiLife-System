@@ -15,7 +15,26 @@ class RecordsHistoryController
 
         $patientNumber = $_GET['patient_number'] ?? '';
         $patientId = $_GET['id'] ?? null;
-        $source = $_GET['source'] ?? 'profile';
+        $source = $_GET['source'] ?? ($_SESSION['active_admin_records_source'] ?? 'profile');
+
+        if (!empty($_GET['source'])) {
+            $_SESSION['active_admin_records_source'] = $_GET['source'];
+        }
+
+        if ($patientNumber !== '') {
+            $_SESSION['active_admin_patient_number'] = $patientNumber;
+        } elseif ($patientId) {
+            $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
+            $stmt->execute([$patientId]);
+            $patient = $stmt->fetch();
+            if ($patient) {
+                $patientNumber = $patient['patient_number'];
+                $_SESSION['active_admin_patient_number'] = $patientNumber;
+            }
+        } else {
+            $patientNumber = $_SESSION['active_admin_patient_number'] ?? '';
+        }
+
         $patient = null;
         $history = [];
 
@@ -26,19 +45,10 @@ class RecordsHistoryController
         $totalItems = 0;
         $totalPages = 1;
 
-        if ($patientNumber) {
-            // Get patient details by patient_number
+        if ($patientNumber && !$patient) {
             $stmt = $pdo->prepare("SELECT * FROM patients WHERE patient_number = ?");
             $stmt->execute([$patientNumber]);
             $patient = $stmt->fetch();
-        } elseif ($patientId) {
-            // Get patient details by id
-            $stmt = $pdo->prepare("SELECT * FROM patients WHERE id = ?");
-            $stmt->execute([$patientId]);
-            $patient = $stmt->fetch();
-            if ($patient) {
-                $patientNumber = $patient['patient_number'];
-            }
         }
 
         if ($patient && $patientNumber) {

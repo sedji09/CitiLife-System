@@ -109,6 +109,8 @@ class PageController
             'service-pricing',
             'services-pricing',
             'payment-verifications',
+            'correction-requests',
+            'correction-request',
         ];
 
         // Fallback for page parameter
@@ -143,8 +145,15 @@ class PageController
             guardPermission($role, $pagePermMap[$page]);
         }
 
+        // Handle aliases for clean routes
+        $actualPage = $page;
+        if ($page === 'correction-requests' || $page === 'correction-request') {
+            $actualPage = 'patient-lists';
+            $_GET['tab'] = 'disputes';
+        }
+
         // 3. Resolve and run controller (Class-based OOP if exists, fallback to procedural)
-        $controllerName = str_replace('-', '', ucwords($page, '-')) . 'Controller.php';
+        $controllerName = str_replace('-', '', ucwords($actualPage, '-')) . 'Controller.php';
 
         $pageOwnerMap = [
             'branches' => 'admin_central',
@@ -177,18 +186,18 @@ class PageController
         if (file_exists($roleSpecificControllerFile)) {
             $resolvedRole = $role;
         } else {
-            $resolvedRole = $pageOwnerMap[$page] ?? $role;
+            $resolvedRole = $pageOwnerMap[$actualPage] ?? $pageOwnerMap[$page] ?? $role;
         }
 
 
         $controllerFile = basePath("app/Controllers/{$resolvedRole}/{$controllerName}");
-        $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($page, '-')) . 'Controller';
+        $className = "App\\Controllers\\{$resolvedRole}\\" . str_replace('-', '', ucwords($actualPage, '-')) . 'Controller';
 
         // Read file to check if it's class-based to avoid triggering class loader on legacy procedural files
         $isClassBased = false;
         if (file_exists($controllerFile)) {
             $content = file_get_contents($controllerFile);
-            if (strpos($content, 'class ' . str_replace('-', '', ucwords($page, '-')) . 'Controller') !== false) {
+            if (strpos($content, 'class ' . str_replace('-', '', ucwords($actualPage, '-')) . 'Controller') !== false) {
                 $isClassBased = true;
             }
         }
@@ -211,10 +220,10 @@ class PageController
         }
 
         // 4. Render View
-        if ($page === 'print-report') {
+        if ($actualPage === 'print-report') {
             $contentView = "pages/radtech/print-report";
         } else {
-            $contentView = "pages/{$resolvedRole}/{$page}";
+            $contentView = "pages/{$resolvedRole}/{$actualPage}";
         }
 
         // Intercept specific AJAX requests before loading the layout

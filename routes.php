@@ -96,7 +96,9 @@ $dashboardPages = [
     'feedback',
     'service-pricing',
     'services-pricing',
-    'payment-verifications'
+    'payment-verifications',
+    'correction-requests',
+    'correction-request'
 ];
 
 foreach ($dashboardPages as $page) {

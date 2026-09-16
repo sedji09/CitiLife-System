@@ -14,6 +14,12 @@ class PatientDetailsController
         $patientModel = new \PatientModel($pdo);
 
         $patientId = (int)($_GET['id'] ?? 0);
+        if ($patientId > 0) {
+            $_SESSION['active_admin_patient_id'] = $patientId;
+        } else {
+            $patientId = (int)($_SESSION['active_admin_patient_id'] ?? 0);
+        }
+
         $patient = $patientModel->getPatientById($patientId);
 
         if (!$patient) {

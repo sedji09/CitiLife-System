@@ -138,6 +138,20 @@
         } catch (e) {}
       }
 
+      // Helper to check valid fallback URL
+      let validFallbackHref = null;
+      if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#' && isCleanPage(fallbackUrl)) {
+        try {
+          const fbParsed = new URL(fallbackUrl, window.location.origin);
+          if (fbParsed.origin === window.location.origin) {
+            // Distinct URL or distinct page
+            if (fbParsed.pathname !== currentUrl.pathname || (fbParsed.search !== currentUrl.search && !currentUrl.search.includes('id='))) {
+              validFallbackHref = fbParsed.href;
+            }
+          }
+        } catch (e) {}
+      }
+
       // 2. Scan sessionStorage history stack going backwards for a distinct previous page
       let targetUrl = null;
       let targetIndex = -1;
@@ -149,7 +163,8 @@
             if (item && item !== currentHref) {
               try {
                 const itemUrl = new URL(item);
-                const isDiff = (itemUrl.pathname !== currentUrl.pathname) || (itemUrl.search !== currentUrl.search);
+                // Must be different pathname, or different query on a non-detail page
+                const isDiff = (itemUrl.pathname !== currentUrl.pathname);
                 if (itemUrl.origin === currentUrl.origin && isDiff && isCleanPage(item)) {
                   targetUrl = item;
                   targetIndex = i;
@@ -171,36 +186,31 @@
       } catch (e) {}
 
       // 3. Fallback to button's explicit fallbackUrl/href if provided
-      if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#' && isCleanPage(fallbackUrl)) {
-        try {
-          const fbParsed = new URL(fallbackUrl, window.location.origin);
-          if (fbParsed.origin === window.location.origin) {
-            const isDiff = (fbParsed.pathname !== currentUrl.pathname) || (fbParsed.search !== currentUrl.search);
-            if (isDiff) {
-              sessionStorage.setItem('citilife_nav_is_back', '1');
-              window.location.href = fbParsed.href;
-              return;
-            }
-          }
-        } catch (e) {}
+      if (validFallbackHref) {
+        sessionStorage.setItem('citilife_nav_is_back', '1');
+        window.location.href = validFallbackHref;
+        return;
       }
 
       // 4. Role-specific last table/queue URL fallback
       try {
         const lastTable = sessionStorage.getItem('radtech_last_table_url') || sessionStorage.getItem('Citilife_last_worklist_url');
         if (lastTable && lastTable !== currentHref && isCleanPage(lastTable)) {
-          sessionStorage.setItem('citilife_nav_is_back', '1');
-          window.location.href = lastTable;
-          return;
+          const ltUrl = new URL(lastTable);
+          if (ltUrl.pathname !== currentUrl.pathname) {
+            sessionStorage.setItem('citilife_nav_is_back', '1');
+            window.location.href = lastTable;
+            return;
+          }
         }
       } catch (e) {}
 
       // 5. Browser history back
       if (window.history.length > 1) {
         window.history.back();
-        if (fallbackUrl) {
+        if (validFallbackHref) {
           setTimeout(() => {
-            window.location.href = fallbackUrl;
+            window.location.href = validFallbackHref;
           }, 350);
         }
         return;
@@ -2073,7 +2083,7 @@
           }
 
           // Special case associations: keep sidebar item active for sub-pages
-          if (targetPage === 'patient-lists' && ['patient-lists', 'patient-approval', 'patient-details'].includes(currentPage)) {
+          if (targetPage === 'patient-lists' && ['patient-lists', 'patient-approval', 'patient-details', 'correction-requests', 'correction-request'].includes(currentPage)) {
             return true;
           }
           if (targetPage === 'patient-records' && ['patient-records', 'patient-details', 'patient-history', 'records-history'].includes(currentPage)) {

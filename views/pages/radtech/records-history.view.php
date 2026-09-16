@@ -3,7 +3,12 @@ require_once __DIR__ . '/../../../config/database.php';
 
 $caseModel = new \CaseModel($pdo);
 
-$caseId   = (int) ($_GET['id'] ?? 0);
+$caseId = (int) ($_GET['id'] ?? 0);
+if ($caseId > 0) {
+    $_SESSION['active_record_history_case_id'] = $caseId;
+} else {
+    $caseId = (int) ($_SESSION['active_record_history_case_id'] ?? 0);
+}
 $branchId = $_SESSION['branch_id'] ?? 1;
 
 // Fetch case details (Backend logic)
@@ -25,7 +30,7 @@ if (!$caseDetails || !$isInBranch || !$isReleased) {
         </div>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Record Not Available</h3>
         <p class="text-sm text-gray-500 mb-6">Record not found or invalid branch access.</p>
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=xray-patient-records" data-back-btn title="Back"
+        <a href="<?= url('xray-patient-records') ?>" data-back-btn data-fallback="<?= url('xray-patient-records') ?>" title="Back"
             class="inline-flex items-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm py-2.5 px-5 transition shadow-sm">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Patient Records
         </a>
@@ -567,6 +572,14 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     </div>
 
     <script>
+        // Clean URL to hide id and role parameters
+        if (window.history && window.history.replaceState) {
+            try {
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState(null, document.title, cleanUrl);
+            } catch (e) {}
+        }
+
         function openReportViewer(url) {
             // Open the report in a popup window similar to the COR viewer
             const popupWidth = 850;

@@ -3,9 +3,12 @@ require_once __DIR__ . '/../../../config/database.php';
 
 $caseModel = new \CaseModel($pdo);
 
-$caseId = $_GET['id'] ?? 0;
-
-
+$caseId = (int) ($_GET['id'] ?? 0);
+if ($caseId > 0) {
+    $_SESSION['active_rad_record_history_case_id'] = $caseId;
+} else {
+    $caseId = (int) ($_SESSION['active_rad_record_history_case_id'] ?? 0);
+}
 
 // Fetch case details (Backend logic)
 $caseDetails = $caseModel->getCaseById($caseId);
@@ -34,10 +37,8 @@ if (!empty($caseDetails['image_path'])) {
 <?php
 $backPage = $_GET['back_to'] ?? 'patient-history';
 $backId   = $_GET['back_id'] ?? '';
-$backUrl  = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=" . urlencode($backPage);
-if ($backId) {
-    $backUrl .= "&id=" . urlencode($backId);
-}
+$backQuery = $backId ? ('?id=' . urlencode($backId)) : '';
+$backUrl   = url($backPage . $backQuery);
 ?>
 
 <!-- Header nav -->
@@ -533,3 +534,12 @@ if ($backId) {
 
     </div>
 </div>
+
+<script>
+    if (window.history && window.history.replaceState) {
+        try {
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState(null, document.title, cleanUrl);
+        } catch (e) {}
+    }
+</script>

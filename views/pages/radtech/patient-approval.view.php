@@ -124,7 +124,7 @@ foreach ($allServices as $service) {
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700">
             Patient Requests
         </a>
-        <a href="<?= url('patient-lists?tab=disputes') ?>"
+        <a href="<?= url('correction-requests') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
@@ -530,13 +530,26 @@ foreach ($allServices as $service) {
         }
     });
 
+    // ── Clean up URL to prevent exposed parameters ──────────────────────────────
+    try {
+        const cleanUrl = new URL(window.location.href);
+        if (cleanUrl.searchParams.has('success') || cleanUrl.searchParams.has('error')) {
+            cleanUrl.searchParams.delete('success');
+            cleanUrl.searchParams.delete('error');
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+            if (window.__APP__) {
+                window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
+            }
+        }
+    } catch (e) {}
+
     // ── Highlight row from notification ───────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         const params = new window.URLSearchParams(window.location.search);
         const highlightId = params.get('highlight');
         if (!highlightId) return;
 
-        // Clean up URL to prevent polling duplication
+        // Clean up URL to prevent polling duplication or exposed parameters
         try {
             const cleanUrl = new URL(window.location.href);
             cleanUrl.searchParams.delete('highlight');
@@ -683,8 +696,7 @@ foreach ($allServices as $service) {
     function submitRejectRequest(requestId, reason) {
         const form = document.createElement('form');
         form.method = 'POST';
-        const projectBase = '<?= (defined('PROJECT_DIR') && PROJECT_DIR) ? '/' . PROJECT_DIR . '/' : '/' ?>';
-        form.action = projectBase + 'index.php?role=radtech&page=patient-approval&action=reject&id=' + encodeURIComponent(requestId);
+        form.action = '<?= url('patient-approval?action=reject&id=') ?>' + encodeURIComponent(requestId);
 
         const reasonInput = document.createElement('input');
         reasonInput.type = 'hidden';

@@ -53,7 +53,7 @@ if (!function_exists('getXrayImageLabel')) {
     }
 }
 
-$from = $_GET['from'] ?? '';
+$from = !empty($fromParam) ? $fromParam : ($_GET['from'] ?? ($_SESSION['active_radtech_case_from'] ?? ''));
 
 if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     $backLink = url('branch-xray-cases');
@@ -66,7 +66,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 } elseif ($from === 'queue' || $from === 'patient-queue') {
     $backLink = url('patient-lists');
 } elseif ($from === 'disputes' || !empty($activeDispute) || !empty($_GET['dispute_id'])) {
-    $backLink = url('patient-lists?tab=disputes');
+    $backLink = url('correction-requests');
 } else {
     $backLink = url('patient-lists');
 }
@@ -517,7 +517,7 @@ $catBadgeLabel = match ($dCategory) {
                                     <p class="text-xs text-amber-700">The report has been amended. Patient demographic correction is still required to resolve this ticket.</p>
                                 </div>
                             </div>
-                            <a href="<?= url('patient-lists?tab=disputes&highlight_dispute_id=' . (int)($activeDispute['id'] ?? 0)) ?>"
+                            <a href="<?= url('correction-requests?highlight_dispute_id=' . (int)($activeDispute['id'] ?? 0)) ?>"
                                 class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg shadow-sm transition whitespace-nowrap">
                                 <i data-lucide="clipboard-check" class="w-4 h-4"></i>
                                 Fix Patient Info
@@ -2618,3 +2618,12 @@ $catBadgeLabel = match ($dCategory) {
             Preparing the results...</p>
     </div>
 </div>
+
+<script>
+    // Clean URL to hide id, role, dispute_id, and from parameters
+    if (window.history && window.history.replaceState) {
+        try {
+            window.history.replaceState(null, document.title, window.location.pathname);
+        } catch (e) {}
+    }
+</script>

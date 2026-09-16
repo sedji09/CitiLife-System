@@ -19,7 +19,13 @@ class ViewRecordRequestController
         $recordModel = new RecordRequestModel($pdo);
         $caseModel = new CaseModel($pdo);
 
-        $id = $_GET['id'] ?? null;
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id > 0) {
+            $_SESSION['active_record_request_id'] = $id;
+        } else {
+            $id = (int)($_SESSION['active_record_request_id'] ?? 0);
+        }
+
         if (!$id) {
             redirect(url('record-request'));
         }

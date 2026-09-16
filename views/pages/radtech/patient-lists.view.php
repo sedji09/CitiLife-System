@@ -8,6 +8,9 @@ $pendingDisputeCount = count(array_filter($disputes, function ($d) {
     return in_array($d['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification']);
 }));
 $currentTab = $_GET['tab'] ?? 'completed';
+if (isset($page) && in_array($page, ['correction-requests', 'correction-request'], true)) {
+    $currentTab = 'disputes';
+}
 if (!empty($_GET['dispute_id']) || !empty($_GET['highlight_dispute_id'])) {
     $currentTab = 'disputes';
 }
@@ -126,16 +129,16 @@ if ($hlTarget && empty($_GET['tab'])) {
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
-        <a id="tab-btn-queue" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists"
+        <a id="tab-btn-queue" href="<?= url('patient-lists') ?>" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey) return; event.preventDefault(); switchTab('queue');"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= (($_GET['page'] ?? 'patient-lists') === 'patient-lists' && $currentTab !== 'disputes') ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Queue
         </a>
-        <a id="tab-btn-approval" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-approval"
+        <a id="tab-btn-approval" href="<?= url('patient-approval') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Requests
         </a>
 
-        <a id="tab-btn-disputes" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&tab=disputes"
+        <a id="tab-btn-disputes" href="<?= url('correction-requests') ?>" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey) return; event.preventDefault(); switchTab('disputes');"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= $currentTab === 'disputes' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
@@ -389,7 +392,7 @@ if ($hlTarget && empty($_GET['tab'])) {
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-1.5">
                                     <!-- View button always active -->
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>&from=queue"
+                                    <a href="<?= url('patient-details?id=' . $row['id'] . '&from=queue') ?>"
                                         class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                         title="View Case">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
@@ -1443,7 +1446,7 @@ if ($hlTarget && empty($_GET['tab'])) {
 
                                             <?php if ($showAmendBtn): ?>
                                                 <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
-                                                <a href="<?= url('patient-details?role=radtech&id=' . (int) $d['case_id'] . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
+                                                <a href="<?= url('patient-details?id=' . (int) $d['case_id'] . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
                                                     class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                     title="<?= !empty($d['is_amended']) ? 'Report Already Edited (Click to re-edit if needed)' : htmlspecialchars($amendBtnTitle) ?>">
                                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -1792,9 +1795,9 @@ if ($hlTarget && empty($_GET['tab'])) {
                 tabBtnDisputes.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700';
             }
             try {
-                const cleanUrl = new URL(window.location.href);
-                cleanUrl.searchParams.set('tab', 'disputes');
-                window.history.replaceState({}, document.title, cleanUrl.toString());
+                const targetPath = '<?= url("correction-requests") ?>';
+                const cleanUrl = new URL(targetPath, window.location.origin);
+                window.history.replaceState({}, document.title, cleanUrl.pathname);
             } catch (e) {}
         } else {
             if (queueControls) queueControls.classList.remove('hidden');
@@ -1808,16 +1811,17 @@ if ($hlTarget && empty($_GET['tab'])) {
                 tabBtnDisputes.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
             }
             try {
-                const cleanUrl = new URL(window.location.href);
-                cleanUrl.searchParams.delete('tab');
-                window.history.replaceState({}, document.title, cleanUrl.toString());
+                const targetPath = '<?= url("patient-lists") ?>';
+                const cleanUrl = new URL(targetPath, window.location.origin);
+                window.history.replaceState({}, document.title, cleanUrl.pathname);
             } catch (e) {}
         }
     }
     window.switchTab = switchTab;
 
     window.handlePageHighlight = function (targetId) {
-        const isDisputes = (new window.URLSearchParams(window.location.search)).get('tab') === 'disputes';
+        const isDisputes = (new window.URLSearchParams(window.location.search)).get('tab') === 'disputes' ||
+            window.location.pathname.toLowerCase().includes('correction-request');
         const norm = str => (str || '').toLowerCase().replace(/[\s\-_]/g, '');
         const tNorm = norm(targetId);
 
@@ -1848,7 +1852,8 @@ if ($hlTarget && empty($_GET['tab'])) {
     document.addEventListener('DOMContentLoaded', () => {
         try {
             sessionStorage.setItem('radtech_last_table_url', window.location.href);
-            const isDisputesTab = (new URLSearchParams(window.location.search)).get('tab') === 'disputes';
+            const isDisputesTab = (new URLSearchParams(window.location.search)).get('tab') === 'disputes' ||
+                window.location.pathname.toLowerCase().includes('correction-request');
             const hasHighlight = (new URLSearchParams(window.location.search)).has('highlight') ||
                 (new URLSearchParams(window.location.search)).has('highlight_case') ||
                 (new URLSearchParams(window.location.search)).has('dispute_id');
@@ -1860,6 +1865,27 @@ if ($hlTarget && empty($_GET['tab'])) {
                 }
             } else if (hasHighlight) {
                 currentDisputesPage = 1;
+            }
+
+            // Clean raw parameters like role, page, tab, etc. if present to maintain clean URLs
+            const urlObj = new URL(window.location.href);
+            let cleaned = false;
+            if (urlObj.searchParams.get('tab') === 'disputes') {
+                urlObj.searchParams.delete('tab');
+                // Rewrite pathname to /correction-requests cleanly
+                const targetPath = '<?= url("correction-requests") ?>';
+                const parsedTarget = new URL(targetPath, window.location.origin);
+                urlObj.pathname = parsedTarget.pathname;
+                cleaned = true;
+            }
+            ['role', 'page', 'tab', 'dispute_id', 'highlight_dispute_id', 'highlight_case', 'highlight', 'case_id', 'case_number', 'is_new'].forEach(p => {
+                if (urlObj.searchParams.has(p)) {
+                    urlObj.searchParams.delete(p);
+                    cleaned = true;
+                }
+            });
+            if (cleaned) {
+                window.history.replaceState({}, document.title, urlObj.pathname + (urlObj.search && urlObj.search !== '?' ? urlObj.search : ''));
             }
         } catch (e) { }
 
@@ -3152,7 +3178,7 @@ if ($hlTarget && empty($_GET['tab'])) {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=' + caseId + '&from=disputes';
+                window.location.href = '<?= url('patient-details?id=') ?>' + caseId + '&from=disputes';
             }
         });
     }
@@ -3204,7 +3230,7 @@ if ($hlTarget && empty($_GET['tab'])) {
         if (isFixOpen || isVerOpen || isAmendOpen) return;
 
         if (isDisputesTab) {
-            fetch('<?= url("patient-lists?tab=disputes&ajax_polling=1") ?>&_t=' + Date.now())
+            fetch('<?= url("correction-requests?ajax_polling=1") ?>&_t=' + Date.now())
                 .then(res => res.text())
                 .then(html => {
                     const parser = new DOMParser();
