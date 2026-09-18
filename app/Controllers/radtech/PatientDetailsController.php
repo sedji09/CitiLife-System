@@ -110,6 +110,7 @@ class PatientDetailsController
                     }
 
                     // Check if case has an active dispute and handle status transition
+                    $activeDispute = null;
                     if (file_exists(__DIR__ . '/../../Models/ResultDisputeModel.php')) {
                         require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
                         $disputeMdl = new \ResultDisputeModel($pdo);

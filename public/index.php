@@ -59,7 +59,14 @@ try {
         $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$_SESSION['user_id']]);
     }
 } catch (Exception $e) {
-    die("Database initialization failed: " . $e->getMessage());
+    error_log("Database initialization failed: " . $e->getMessage());
+    http_response_code(503);
+    if (file_exists(basePath('views/errors/503.view.php'))) {
+        loadView('errors/503');
+    } else {
+        die("Service temporarily unavailable. Please try again shortly.");
+    }
+    exit;
 }
 
 // 7. Load Router and routes

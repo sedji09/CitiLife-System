@@ -82,6 +82,14 @@ if (isset($_GET['action'])) {
                     }
                 }
 
+                        // Fetch active dispute if any
+                        $activeDispute = null;
+                        if (file_exists(__DIR__ . '/../../Models/ResultDisputeModel.php')) {
+                            require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+                            $disputeMdl = new \ResultDisputeModel($pdo);
+                            $activeDispute = $disputeMdl->getActiveDisputeByCase($id);
+                        }
+
                         // Resolve all active disputes for this case
                         $pdo->prepare("UPDATE result_disputes SET status = 'Resolved', resolved_by = ?, resolved_at = NOW(), resolution_notes = COALESCE(resolution_notes, 'Amended report released by RadTech.') WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected')")
                             ->execute([$currentUserId, $id]);
@@ -186,6 +194,14 @@ if (isset($_GET['action'])) {
                     }
 
                     if ($caseData && $caseData['released'] == 0) {
+                        // Fetch active dispute if any
+                        $activeDispute = null;
+                        if (file_exists(__DIR__ . '/../../Models/ResultDisputeModel.php')) {
+                            require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
+                            $disputeMdl = new \ResultDisputeModel($pdo);
+                            $activeDispute = $disputeMdl->getActiveDisputeByCase($id);
+                        }
+
                         // Resolve all active disputes for this case
                         $pdo->prepare("UPDATE result_disputes SET status = 'Resolved', resolved_by = ?, resolved_at = NOW(), resolution_notes = COALESCE(resolution_notes, 'Amended report released by RadTech.') WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected')")
                             ->execute([$currentUserId, $id]);

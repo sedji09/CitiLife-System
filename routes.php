@@ -145,7 +145,7 @@ $router->get('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.ph
 $router->post('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
 $router->get('/branch-dashboard', 'auth/branch-dashboard.php');
 $router->get('/patient-dashboard', 'auth/patient-dashboard.php');
-$router->get('/image', 'ImageController@serve');
+$router->get('/image', 'App\Controllers\ImageController@view', ['auth']);
 $router->get('/test-env', function() {
     $config_path = __DIR__ . '/config/smtp.php';
     $config = require $config_path;
@@ -156,7 +156,8 @@ $router->get('/test-env', function() {
 });
 $router->get('/test-email', 'app/Api/test_email.php');
 
-$router->get('/radtech/patient-registration', 'radtech/PatientRegistrationController@index');
+$router->get('/radtech/patient-registration', 'App\Controllers\radtech\PatientRegistrationController@handle', ['auth']);
+$router->post('/radtech/patient-registration', 'App\Controllers\radtech\PatientRegistrationController@handle', ['auth']);
 $router->post('/radtech/re-edit-case', 'App\Controllers\radtech\ReEditController@handle', ['auth']);
 $router->post('/app/api/re_edit_case.php', 'App\Controllers\radtech\ReEditController@handle', ['auth']);
 $router->get('/app/api/messages.php', 'app/Api/messages.php');
@@ -246,6 +247,12 @@ $router->get('/tailwind/src/output.css', function() {
         echo "CSS not found";
     }
 });
+
+// Test / Preview Error Pages
+$router->get('/test-error/403', function() use ($router) { $router->error(403); });
+$router->get('/test-error/404', function() use ($router) { $router->error(404); });
+$router->get('/test-error/500', function() use ($router) { $router->error(500); });
+$router->get('/test-error/503', function() use ($router) { $router->error(503); });
 
 
 

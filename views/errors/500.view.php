@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 // Always redirect to login page, logout first for security
-$homeLink = "/" . PROJECT_DIR . "/logout";
+$homeLink = url('logout');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,8 +12,8 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>500 - Server Error | Citilife System</title>
-    <link rel="icon" type="image/png" href="<?= function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : ('/' . PROJECT_DIR . '/public/assets/img/logo/citilife-logo.png') ?>">
-    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
+    <link rel="icon" type="image/png" href="<?= function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : url('public/assets/img/logo/citilife-logo.png') ?>">
+    <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
 
@@ -45,10 +45,8 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
         .mascot-img {
             width: 100%;
             height: auto;
-            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.05));
+            filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.07));
             animation: float 6s ease-in-out infinite;
-            mask-image: radial-gradient(circle, black 40%, transparent 80%);
-            -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
         }
 
         @keyframes float {
@@ -92,21 +90,20 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
 
     <div class="max-w-xl w-full flex flex-col items-center">
         <div class="mascot-container mb-2">
-            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/errors/500_illustrations.png" alt="500" class="mascot-img">
+            <img src="<?= url('public/assets/img/errors/500_illustrations.png?v=' . filemtime(__DIR__ . '/../../public/assets/img/errors/500_illustrations.png')) ?>" alt="500" class="mascot-img">
         </div>
 
         <div class="relative z-10 w-full">
             <h1 class="error-code mb-2">500</h1>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">System Under Maintenance.
-            </h2>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Internal Server Error</h2>
             <p class="text-base text-gray-500 mb-6 max-w-md mx-auto leading-relaxed">
-                The system encountered an unexpected issue. Our technical team is currently working on it. We apologize for the inconvenience!
+                Something went wrong while processing your request on our server. Our technical team has been notified. Please try refreshing or return to the main portal.
             </p>
 
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-md mx-auto">
                 <a href="<?= $_SERVER['REQUEST_URI'] ?>"
-                    class="bg-red-600 w-full px-8 py-4 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    class="bg-red-600 hover:bg-red-700 flex-1 w-full h-12 px-5 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm whitespace-nowrap shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -114,7 +111,7 @@ $homeLink = "/" . PROJECT_DIR . "/logout";
                     Refresh the Page
                 </a>
                 <a href="<?= $homeLink ?>"
-                    class="w-full px-8 py-4 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 text-sm">
+                    class="flex-1 w-full h-12 px-5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 text-sm whitespace-nowrap shadow-xs">
                     Go Back
                 </a>
             </div>

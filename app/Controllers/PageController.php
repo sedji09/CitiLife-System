@@ -161,7 +161,8 @@ class PageController
                 'accept-privacy'
             ];
             if (!in_array($page, $patientAllowedPages, true)) {
-                redirect(url('dashboard?error=unauthorized'));
+                $router = new \Framework\Router();
+                $router->error(403);
             }
         }
 

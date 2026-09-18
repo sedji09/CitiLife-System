@@ -147,7 +147,12 @@ class Router
     public function error($httpCode = 404)
     {
         http_response_code($httpCode);
-        loadView("errors/{$httpCode}");
+        if (file_exists(basePath("views/errors/{$httpCode}.view.php"))) {
+            loadView("errors/{$httpCode}");
+        } else {
+            loadView("errors/404");
+        }
+        exit;
     }
 }
 

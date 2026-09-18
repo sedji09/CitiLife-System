@@ -9,6 +9,11 @@ class ImageController
     /**
      * Handles secure viewing of uploaded images
      */
+    public function serve()
+    {
+        return $this->view();
+    }
+
     public function view()
     {
         // Must be logged in (also handled by 'auth' middleware)

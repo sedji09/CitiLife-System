@@ -2289,8 +2289,8 @@ $catBadgeLabel = match ($dCategory) {
             }
         });
     })();
-</script>
 
+    document.addEventListener('DOMContentLoaded', function () {
         // Smart return to originating table (Patient Error Reports, Patient Queue, Report Ready, Dashboard, etc.)
         const backBtn = document.getElementById('patient-details-back-btn');
         if (backBtn) {
