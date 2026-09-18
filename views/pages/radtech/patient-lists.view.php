@@ -405,7 +405,7 @@ if ($hlTarget && empty($_GET['tab'])) {
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-1.5">
                                     <!-- View button always active -->
-                                    <a href="<?= url('patient-details?id=' . $row['id'] . '&from=queue') ?>"
+                                    <a href="<?= url('patient-details?ref=' . generateReportToken($row['id']) . '&from=queue') ?>"
                                         class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                         title="View Case">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
@@ -1467,7 +1467,7 @@ if ($hlTarget && empty($_GET['tab'])) {
 
                                             <?php if ($showAmendBtn): ?>
                                                 <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
-                                                <a href="<?= url('patient-details?id=' . (int) $d['case_id'] . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
+                                                <a href="<?= url('patient-details?ref=' . generateReportToken((int) $d['case_id']) . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
                                                     class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                     title="<?= !empty($d['is_amended']) ? 'Report Already Edited (Click to re-edit if needed)' : htmlspecialchars($amendBtnTitle) ?>">
                                                     <i data-lucide="edit-3" class="w-4 h-4"></i>

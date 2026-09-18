@@ -21,7 +21,25 @@ class PatientDetailsController
         // 1. Ensure Schema
         $caseModel->ensureSchema();
 
-        $caseId = $_GET['id'] ?? 0;
+        $refToken = $_GET['ref'] ?? $_GET['token'] ?? '';
+        $rawId = $_GET['id'] ?? 0;
+        $caseId = 0;
+        if (!empty($refToken) && function_exists('verifyReportToken')) {
+            $caseId = verifyReportToken($refToken);
+        }
+        if (!$caseId && $rawId) {
+            $caseId = (int)$rawId;
+        }
+
+        if ($caseId > 0) {
+            $_SESSION['active_branch_admin_case_id'] = $caseId;
+            if (!empty($_GET['from'])) {
+                $_SESSION['active_branch_admin_from'] = $_GET['from'];
+            }
+        } else {
+            $caseId = (int)($_SESSION['active_branch_admin_case_id'] ?? 0);
+        }
+
         $errorMsg = '';
         $branchId = $_SESSION['branch_id'] ?? 1;
 

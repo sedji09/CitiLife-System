@@ -24,7 +24,16 @@ class PatientDetailsController
         // 1. Ensure Schema
         $caseModel->ensureSchema();
 
-        $caseId    = (int)($_GET['id'] ?? 0);
+        $refToken = $_GET['ref'] ?? $_GET['token'] ?? '';
+        $rawId = (int)($_GET['id'] ?? 0);
+        $caseId = 0;
+        if (!empty($refToken) && function_exists('verifyReportToken')) {
+            $caseId = verifyReportToken($refToken);
+        }
+        if (!$caseId && $rawId) {
+            $caseId = $rawId;
+        }
+
         $fromParam = $_GET['from'] ?? '';
         $disputeId = (int)($_GET['dispute_id'] ?? 0);
 

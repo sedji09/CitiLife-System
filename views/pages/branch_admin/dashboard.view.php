@@ -414,7 +414,7 @@
               </tr>
             <?php else: ?>
               <?php foreach ($recentCases as $case): ?>
-                <tr class="hover:bg-gray-50 transition-colors dash-table-tr cursor-pointer" onclick="window.location.href='<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=patient-details&id=<?= $case['id'] ?>&from=branch-xray-cases'">
+                <tr class="hover:bg-gray-50 transition-colors dash-table-tr cursor-pointer" onclick="window.location.href='<?= url('patient-details?ref=' . generateReportToken($case['id']) . '&from=branch-xray-cases') ?>'">
                   <td class="px-4 py-3 font-bold text-gray-900 whitespace-nowrap text-main dash-table-td">
                     <?= htmlspecialchars($case['case_number']) ?>
                   </td>

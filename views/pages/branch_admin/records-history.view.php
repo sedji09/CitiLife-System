@@ -3,7 +3,20 @@ require_once __DIR__ . '/../../../config/database.php';
 
 $caseModel = new \CaseModel($pdo);
 
-$caseId = $_GET['id'] ?? 0;
+$refToken = $_GET['ref'] ?? $_GET['token'] ?? '';
+$rawId = $_GET['id'] ?? 0;
+$caseId = 0;
+if (!empty($refToken) && function_exists('verifyReportToken')) {
+    $caseId = verifyReportToken($refToken);
+}
+if (!$caseId && $rawId) {
+    $caseId = (int)$rawId;
+}
+if ($caseId > 0) {
+    $_SESSION['active_branch_admin_rec_id'] = $caseId;
+} else {
+    $caseId = (int)($_SESSION['active_branch_admin_rec_id'] ?? 0);
+}
 $branchId = $_SESSION['branch_id'] ?? 1;
 
 // Fetch case details (Backend logic)
@@ -532,4 +545,11 @@ $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card'
         
         window.open(url, 'ReportViewer', `width=${popupWidth},height=${popupHeight},top=${top},left=${left},scrollbars=yes,resizable=yes`);
     }
+
+    // Clean URL address bar so ?id=... or ?ref=... is never exposed
+    try {
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, document.title, window.location.pathname);
+        }
+    } catch(e) {}
 </script>

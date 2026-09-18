@@ -187,7 +187,7 @@
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-1.5">
                                     <!-- View button -->
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-details&id=<?= $row['id'] ?>&from=report-ready"
+                                    <a href="<?= url('patient-details?ref=' . generateReportToken($row['id']) . '&from=report-ready') ?>"
                                         class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                         title="View Case">
                                         <i data-lucide="eye" class="w-4 h-4"></i>

@@ -576,5 +576,12 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
                 closeXrayLightbox();
             }
         });
+
+        // Clean URL address bar so ?id=... or ?ref=... is never exposed to users
+        try {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, document.title, window.location.pathname);
+            }
+        } catch(e) {}
     })();
 </script>
