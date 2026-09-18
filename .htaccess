@@ -1,3 +1,5 @@
+Options -Indexes
+
 RewriteEngine On
 
 # Case-insensitive rewrite for app/api requests so both app/api and app/Api work on Linux/Railway

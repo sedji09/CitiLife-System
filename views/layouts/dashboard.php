@@ -143,9 +143,9 @@ if ($role !== 'patient') {
 }
 
 $currentPath = $_SERVER['REQUEST_URI']; // includes query string
-$basePath = "/" . PROJECT_DIR;
+$basePath = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . PROJECT_DIR : '';
 
-$logoPath = function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : ("/" . PROJECT_DIR . "/public/assets/img/logo/citilife-logo.png");
+$logoPath = function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : url('public/assets/img/logo/citilife-logo.png');
 $appName = function_exists('getSystemName') ? getSystemName() : 'CitiLife Diagnostic Center';
 $autoLogoutMinutes = function_exists('getSystemSetting') ? intval(getSystemSetting('auto_logout_minutes', 0)) : 0;
 ?>

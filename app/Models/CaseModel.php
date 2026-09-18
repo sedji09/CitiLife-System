@@ -327,7 +327,7 @@ class CaseModel
                 if ($dispData) {
                     $disputeMdl->updateDisputeStatusForCase($caseId, 'Pending RadTech Verification', 'radtech');
 
-                    $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $dispData['id'] . "&highlight=" . urlencode($cData['case_number']);
+                    $link = url("patient-lists?tab=disputes&dispute_id=" . $dispData['id'] . "&highlight=" . urlencode($cData['case_number']));
 
                     // Notify RadTech that revised report has been submitted back and is located in Correction Requests
                     $notificationModel->add(
@@ -343,7 +343,7 @@ class CaseModel
                     $notificationModel->add(
                         "Revised Report Available",
                         "Radiologist has revised and re-submitted the report for Case #{$cData['case_number']} ({$patientName} - {$branchLabel}). Report is available for printing.",
-                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        url("branch-xray-cases?tab=queue&highlight=" . urlencode($cData['case_number'])),
                         null,
                         'branch_admin',
                         $cData['branch_id']
@@ -355,7 +355,7 @@ class CaseModel
                         $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
                     } catch (\Exception $e) {}
                 } elseif ($wasForRevision) {
-                    $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
+                    $link = url("patient-lists?highlight=" . urlencode($cData['case_number']));
 
                     // Notify RadTech that revised report has been submitted back
                     $notificationModel->add(
@@ -371,7 +371,7 @@ class CaseModel
                     $notificationModel->add(
                         "Revised Report Available",
                         "Radiologist has revised and re-submitted the report for Case #{$cData['case_number']} ({$patientName} - {$branchLabel}). Report is available for printing.",
-                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        url("branch-xray-cases?tab=queue&highlight=" . urlencode($cData['case_number'])),
                         null,
                         'branch_admin',
                         $cData['branch_id']
@@ -384,9 +384,9 @@ class CaseModel
                     } catch (\Exception $e) {}
                 } elseif ($wasAlreadySubmitted) {
                     if (in_array($cData['status'], ['Released', 'Completed'])) {
-                        $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=xray-patient-records&highlight=" . urlencode($cData['case_number']);
+                        $link = url("xray-patient-records?highlight=" . urlencode($cData['case_number']));
                     } else {
-                        $link = "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']);
+                        $link = url("patient-lists?highlight=" . urlencode($cData['case_number']));
                     }
 
                     // Notify RadTech about findings change
@@ -403,7 +403,7 @@ class CaseModel
                     $notificationModel->add(
                         "Edited Report Ready",
                         "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). This report has been edited and is ready for printing.",
-                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        url("branch-xray-cases?tab=queue&highlight=" . urlencode($cData['case_number'])),
                         null,
                         'branch_admin',
                         $cData['branch_id']
@@ -413,7 +413,7 @@ class CaseModel
                     $notificationModel->add(
                         "Report Ready",
                         "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). Awaiting release.",
-                        "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($cData['case_number']),
+                        url("patient-lists?highlight=" . urlencode($cData['case_number'])),
                         null,
                         'radtech',
                         $cData['branch_id']
@@ -423,7 +423,7 @@ class CaseModel
                     $notificationModel->add(
                         "Report Ready",
                         "Radiology report is ready for Case {$cData['case_number']} ({$patientName} - {$branchLabel}). Report is available for viewing and printing.",
-                        "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number']),
+                        url("branch-xray-cases?tab=queue&highlight=" . urlencode($cData['case_number'])),
                         null,
                         'branch_admin',
                         $cData['branch_id']
@@ -435,7 +435,7 @@ class CaseModel
                         $notificationModel->add(
                             "Reading Completed",
                             "Your X-ray for Case {$cData['case_number']} has been read. It will be released shortly.",
-                            "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}&highlight=" . urlencode($cData['case_number']),
+                            url("dashboard?case_id={$caseId}&highlight=" . urlencode($cData['case_number'])),
                             $patientUserId,
                             'patient'
                         );
@@ -449,7 +449,7 @@ class CaseModel
                             require_once __DIR__ . '/../Helpers/mailer_helper.php';
                             $patientName = $cData['first_name'] . ' ' . $cData['last_name'];
                             $subject = "Your X-ray Report is Ready - Citilife System";
-                            $dashboardUrl = appBaseUrl() . "/" . PROJECT_DIR . "/patient-login?redirect=" . urlencode("/" . PROJECT_DIR . "/dashboard");
+                            $dashboardUrl = appBaseUrl() . url("patient-login?redirect=" . urlencode(url("dashboard")));
                             $body = renderNotificationEmail(
                                 $patientName,
                                 "Your X-ray Report is Ready",
@@ -1283,13 +1283,13 @@ class CaseModel
                         $branchStmt->execute([$cData['branch_id']]);
                         $branchName = $branchStmt->fetchColumn() ?: '';
                     }
-                    $notifLink = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=worklist";
+                    $notifLink = url("worklist");
                     $params = [];
                     if (!empty($branchName)) {
                         $params[] = "branch=" . urlencode($branchName);
                     }
                     $params[] = "highlight_case=" . urlencode($cData['case_number']);
-                    $notifLink .= "&" . implode("&", $params);
+                    $notifLink .= "?" . implode("&", $params);
 
                     $notificationModel->add(
                         "New X-ray Uploaded",
@@ -1354,7 +1354,7 @@ class CaseModel
 
                 $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
                 if ($patientUserId) {
-                    $notificationModel->add("Request Approved", "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.", "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id={$caseId}&highlight=" . urlencode($caseNumber), $patientUserId, 'patient');
+                    $notificationModel->add("Request Approved", "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.", url("dashboard?case_id={$caseId}&highlight=" . urlencode($caseNumber)), $patientUserId, 'patient');
                 }
 
                 $pdo->commit();
@@ -1369,7 +1369,7 @@ class CaseModel
 
                 $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
                 if ($patientUserId) {
-                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&highlight=" . urlencode($requestData['request_number']), $patientUserId, 'patient');
+                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), url("dashboard?highlight=" . urlencode($requestData['request_number'])), $patientUserId, 'patient');
                 }
 
                 $pdo->commit();

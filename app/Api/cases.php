@@ -7,12 +7,7 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/session.php';
 
-if (!defined('PROJECT_DIR')) {
-    $scriptDir = trim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
-    $parts = explode('/', str_replace('\\', '/', $scriptDir));
-    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'CitiLife-System');
-}
-
+require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Models/CaseModel.php';
 require_once __DIR__ . '/../Models/CaseStatusTransition.php';
@@ -21,6 +16,7 @@ require_once __DIR__ . '/../Models/ResultDisputeModel.php';
 $caseId = intval($_GET['case_id'] ?? ($_POST['case_id'] ?? 0));
 $patientId = $_SESSION['patient_id'] ?? null;
 $userId = $_SESSION['user_id'] ?? null;
+$sessionRole = $_SESSION['role'] ?? '';
 
 if (!$caseId) {
     echo json_encode(['success' => false, 'message' => 'Missing case_id parameter.']);
@@ -44,10 +40,18 @@ try {
         exit;
     }
 
-    // Security check: if patient is logged in, ensure case belongs to them
-    if ($patientId && (int) $case['patient_id'] !== (int) $patientId) {
-        echo json_encode(['success' => false, 'message' => 'Unauthorized case access.']);
-        exit;
+    // Security check: if patient is logged in, strictly ensure case belongs to them
+    if ($sessionRole === 'patient') {
+        if (!$patientId && $userId) {
+            $stmtP = $pdo->prepare("SELECT patient_id FROM users WHERE id = ?");
+            $stmtP->execute([$userId]);
+            $patientId = (int) $stmtP->fetchColumn();
+            if ($patientId) $_SESSION['patient_id'] = $patientId;
+        }
+        if (!$patientId || (int) $case['patient_id'] !== (int) $patientId) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized case access.']);
+            exit;
+        }
     }
 
     $activeDispute = $disputeModel->getActiveDisputeByCase($caseId);

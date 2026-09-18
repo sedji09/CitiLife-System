@@ -204,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insertStmt->execute([$verificationToken, $patientId, $email]);
 
                     $isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? 'localhost', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
-                    $prefix = $isLocalhost && defined('PROJECT_DIR') ? '/' . PROJECT_DIR : '';
+                    $prefix = ($isLocalhost && defined('PROJECT_DIR') && PROJECT_DIR !== '') ? '/' . PROJECT_DIR : '';
                     $verifyLink = appBaseUrl() . $prefix . '/verify?token=' . $verificationToken;
 
                     $emailBody = renderActionEmail(

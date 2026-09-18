@@ -30,18 +30,18 @@ class PageController
         }
 
         // 1. Determine requested page from request URI
-        $uri = $_SERVER['REQUEST_URI'];
-        $path = parse_url($uri, PHP_URL_PATH);
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $path = parse_url($uri, PHP_URL_PATH) ?? '';
         if (defined('PROJECT_DIR') && PROJECT_DIR !== '') {
             $projectPrefix = '/' . PROJECT_DIR;
-            if (stripos($path, $projectPrefix) === 0) {
+            if ($path !== '' && stripos($path, $projectPrefix) === 0) {
                 $path = substr($path, strlen($projectPrefix));
             }
         }
-        if (preg_match('#^/citilife[-_]system(?:/|$)#i', $path)) {
+        if (!empty($path) && preg_match('#^/citilife[-_]system(?:/|$)#i', $path)) {
             $path = preg_replace('#^/citilife[-_]system#i', '', $path);
         }
-        $page = trim($path, '/');
+        $page = trim((string)$path, '/');
         if ($page === '' || $page === 'index.php') {
             $page = $_GET['page'] ?? 'dashboard';
         }
@@ -143,6 +143,26 @@ class PageController
 
         if (isset($pagePermMap[$page])) {
             guardPermission($role, $pagePermMap[$page]);
+        }
+
+        // Strict security guard: patient role cannot access staff clinical / admin pages
+        if ($role === 'patient') {
+            $patientAllowedPages = [
+                'dashboard',
+                'my-records',
+                'case-status',
+                'registration',
+                'services-pricing',
+                'service-pricing',
+                'view-report',
+                'download-report',
+                'print-report',
+                'feedback',
+                'accept-privacy'
+            ];
+            if (!in_array($page, $patientAllowedPages, true)) {
+                redirect(url('dashboard?error=unauthorized'));
+            }
         }
 
         // Handle aliases for clean routes

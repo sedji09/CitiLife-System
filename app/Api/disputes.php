@@ -6,13 +6,6 @@
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/session.php';
-
-if (!defined('PROJECT_DIR')) {
-    $scriptDir = trim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
-    $parts = explode('/', str_replace('\\', '/', $scriptDir));
-    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'CitiLife-System');
-}
-
 require_once __DIR__ . '/../../helpers.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../Models/ResultDisputeModel.php';
@@ -338,8 +331,8 @@ try {
             $patientName = htmlspecialchars($disputeInfo['first_name']);
             $caseNum = htmlspecialchars($disputeInfo['case_number']);
             $reportUrl = !empty($disputeInfo['case_id']) 
-                ? (appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $disputeInfo['case_id'])
-                : (appBaseUrl() . "/" . PROJECT_DIR . "/dashboard");
+                ? (appBaseUrl() . url("case-status?case_id=" . $disputeInfo['case_id']))
+                : (appBaseUrl() . url("dashboard"));
 
             $emailSubject = "Correction Request Resolved - Citilife Diagnostic Center";
             $emailBody = renderNotificationEmail(
@@ -670,7 +663,7 @@ try {
                 require_once __DIR__ . '/../../app/Helpers/mailer_helper.php';
                 $patientName = htmlspecialchars($newName);
                 $caseNum = htmlspecialchars($currentCase['case_number']);
-                $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $caseId;
+                $reportUrl = appBaseUrl() . url("case-status?case_id=" . $caseId);
 
                 $emailSubject = "Amended X-ray Report Released - Citilife Diagnostic Center";
                 $emailBody = renderNotificationEmail(

@@ -5,10 +5,25 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $sessionUserId = $_SESSION['user_id'] ?? 0;
 $sessionRole = $_SESSION['role'] ?? '';
+$sessionPatientId = $_SESSION['patient_id'] ?? 0;
+
+// Resolve patient_id if not present in session for patient role
+if ($sessionRole === 'patient' && empty($sessionPatientId) && !empty($sessionUserId)) {
+    try {
+        $stmtPat = $pdo->prepare("SELECT patient_id FROM users WHERE id = ?");
+        $stmtPat->execute([$sessionUserId]);
+        $sessionPatientId = (int) $stmtPat->fetchColumn();
+        if ($sessionPatientId) {
+            $_SESSION['patient_id'] = $sessionPatientId;
+        }
+    } catch (\Throwable $e) {}
+}
 
 $caseModel = new \CaseModel($pdo);
 $userModel = new \UserModel($pdo);
 $branchModel = new \BranchModel($pdo);
+require_once __DIR__ . '/../../../app/Models/AuditLogModel.php';
+$auditLogModel = new \AuditLogModel($pdo);
 
 $allActiveBranches = $branchModel->getActiveBranches();
 $branchNamesList = [];
@@ -26,21 +41,101 @@ $branchesBannerHtml = !empty($branchNamesList)
 
 $GLOBALS['branchesBannerHtml'] = $branchesBannerHtml;
 
-$id = (int) ($_GET['id'] ?? 0);
+// 1. Resolve Case ID from ref token, direct ID, or session fallback
+$id = 0;
+if (!empty($_GET['ref'])) {
+    if (function_exists('verifyReportToken')) {
+        $id = verifyReportToken($_GET['ref']);
+    }
+    if (!$id) {
+        $dec = base64_decode($_GET['ref']);
+        if (strpos($dec, 'Citilife_Case_') === 0) {
+            $id = (int) str_replace('Citilife_Case_', '', $dec);
+        }
+    }
+} elseif (!empty($_GET['token']) && function_exists('verifyReportToken')) {
+    $id = verifyReportToken($_GET['token']);
+} elseif (!empty($_GET['id'])) {
+    $id = (int) $_GET['id'];
+} elseif (!empty($_SESSION['active_print_report_id'])) {
+    $id = (int) $_SESSION['active_print_report_id'];
+}
+
 $isPreview = filter_var($_GET['preview'] ?? false, FILTER_VALIDATE_BOOLEAN);
 $isDownload = filter_var($_GET['download'] ?? false, FILTER_VALIDATE_BOOLEAN);
 $isSnapshot = filter_var($_GET['snapshot'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-if (!$id) {
-    die('<p style="font-family:sans-serif;padding:2rem;color:red;">Invalid case ID.</p>');
+// Unauthenticated users cannot view print reports
+if (empty($sessionUserId) && empty($sessionRole)) {
+    redirect(url('login'));
+    exit;
 }
 
-// 1. Fetch case details (Backend logic)
+if (!$id) {
+    die('<div style="font-family:sans-serif;padding:2.5rem;text-align:center;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;max-width:520px;margin:4rem auto;box-shadow:0 10px 25px rgba(0,0,0,0.08);">'
+      . '<div style="font-size:2.5rem;margin-bottom:1rem;">&#9888;</div>'
+      . '<h3 style="margin-top:0;color:#991b1b;">Invalid Report Link</h3>'
+      . '<p style="color:#4b5563;font-size:0.95rem;line-height:1.5;">The requested report reference is invalid or missing.</p>'
+      . '<button onclick="window.close(); history.back();" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Go Back</button>'
+      . '</div>');
+}
+
+// 2. Fetch case details (Backend logic)
 $case = $caseModel->getCaseById($id);
 
 if (!$case) {
-    die('<p style="font-family:sans-serif;padding:2rem;color:red;">Case not found.</p>');
+    die('<div style="font-family:sans-serif;padding:2.5rem;text-align:center;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;max-width:520px;margin:4rem auto;box-shadow:0 10px 25px rgba(0,0,0,0.08);">'
+      . '<div style="font-size:2.5rem;margin-bottom:1rem;">&#128196;</div>'
+      . '<h3 style="margin-top:0;color:#991b1b;">Report Not Found</h3>'
+      . '<p style="color:#4b5563;font-size:0.95rem;line-height:1.5;">The requested case report could not be found in the database.</p>'
+      . '<button onclick="window.close(); history.back();" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Go Back</button>'
+      . '</div>');
 }
+
+// 3. STRICT IDOR & ROLE AUTHORIZATION CHECKS
+if ($sessionRole === 'patient') {
+    if (empty($sessionPatientId) || (int) ($case['patient_id'] ?? 0) !== (int) $sessionPatientId) {
+        $auditLogModel->addLog(
+            $sessionUserId,
+            'SECURITY_ALERT_IDOR',
+            'Medical Records',
+            'Case',
+            $id,
+            "Patient user #{$sessionUserId} (Patient #{$sessionPatientId}) attempted to access unauthorized Case #{$id} belonging to Patient #{$case['patient_id']} via URL manipulation."
+        );
+        die('<div style="font-family:sans-serif;padding:2.5rem;text-align:center;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;max-width:520px;margin:4rem auto;box-shadow:0 10px 25px rgba(0,0,0,0.08);">'
+          . '<div style="font-size:3rem;margin-bottom:1rem;">&#128274;</div>'
+          . '<h2 style="margin-top:0;color:#991b1b;font-size:1.4rem;">Security Violation: Access Denied</h2>'
+          . '<p style="color:#4b5563;font-size:0.95rem;line-height:1.5;">You do not have authorization to view or print this medical report. This unauthorized access attempt has been logged for compliance with the Data Privacy Act.</p>'
+          . '<button onclick="window.location.href=\'' . url('my-records') . '\'" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Return to My Records</button>'
+          . '</div>');
+    }
+}
+
+// Staff branch scoping (RadTech and Branch Admin only allowed to access cases from their assigned branch)
+if (in_array($sessionRole, ['radtech', 'branch_admin'], true)) {
+    $staffBranchId = (int) ($_SESSION['branch_id'] ?? 0);
+    $caseBranchId = (int) ($case['branch_id'] ?? 0);
+    if ($staffBranchId > 0 && $caseBranchId > 0 && $staffBranchId !== $caseBranchId) {
+        $auditLogModel->addLog(
+            $sessionUserId,
+            'CROSS_BRANCH_ACCESS_DENIED',
+            'Medical Records',
+            'Case',
+            $id,
+            "Staff user #{$sessionUserId} from Branch #{$staffBranchId} attempted to access Case #{$id} from Branch #{$caseBranchId}."
+        );
+        die('<div style="font-family:sans-serif;padding:2.5rem;text-align:center;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;max-width:520px;margin:4rem auto;box-shadow:0 10px 25px rgba(0,0,0,0.08);">'
+          . '<div style="font-size:3rem;margin-bottom:1rem;">&#128274;</div>'
+          . '<h2 style="margin-top:0;color:#991b1b;font-size:1.4rem;">Access Restricted: Branch Mismatch</h2>'
+          . '<p style="color:#4b5563;font-size:0.95rem;line-height:1.5;">This record belongs to another branch. You are only authorized to print and view records assigned to your branch.</p>'
+          . '<button onclick="window.close(); history.back();" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Go Back</button>'
+          . '</div>');
+    }
+}
+
+// Store verified case ID in session for clean reload
+$_SESSION['active_print_report_id'] = $case['id'];
 
 $isReverted = !empty($case['re_edit_reason']) 
     || (!in_array($case['status'], ['Completed', 'Released']) && ($case['report_status'] ?? '') === 'Draft') 
@@ -1209,7 +1304,7 @@ if (!$isMultiExam) {
                         }
                         // Fallback if history.back or close fails
                         setTimeout(() => {
-                            window.location.href = '<?= PROJECT_DIR ?>/index.php?page=xray-patient-records';
+                            window.location.href = '<?= url('xray-patient-records') ?>';
                         }, 500);
                     }, 1500); // 1.5 second delay so they see the checkmark
                 <?php endif; ?>
@@ -1222,7 +1317,7 @@ if (!$isMultiExam) {
                         window.history.back();
                     } else {
                         window.close();
-                        setTimeout(() => window.location.href = '<?= PROJECT_DIR ?>/index.php?page=xray-patient-records', 500);
+                        setTimeout(() => window.location.href = '<?= url('xray-patient-records') ?>', 500);
                     }
                 <?php else: ?>
                     window.print();
@@ -1231,6 +1326,29 @@ if (!$isMultiExam) {
 
             if (btnBar) btnBar.style.display = 'flex';
         }
+
+        // Clean URL address bar so ?id=... or ?ref=... is never exposed to users or panelists
+        (function() {
+            try {
+                if (window.history && window.history.replaceState && window.location.search) {
+                    const params = new URLSearchParams(window.location.search);
+                    const isSnapshot = params.get('snapshot');
+                    const noShadow = params.get('no_shadow');
+                    const page = params.get('page');
+
+                    let cleanParts = [];
+                    if (page) cleanParts.push('page=' + encodeURIComponent(page));
+                    if (isSnapshot) cleanParts.push('snapshot=1');
+                    if (noShadow) cleanParts.push('no_shadow=1');
+
+                    let cleanUrl = window.location.pathname;
+                    if (cleanParts.length > 0) {
+                        cleanUrl += '?' + cleanParts.join('&');
+                    }
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            } catch (e) {}
+        })();
     </script>
 </body>
 

@@ -22,11 +22,6 @@ if ($userId == 0 && isset($_SESSION['email'])) {
     }
 }
 
-if (!defined('PROJECT_DIR')) {
-    $parts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
-    define('PROJECT_DIR', (isset($parts[0]) && $parts[0] !== 'app' && $parts[0] !== 'index.php') ? $parts[0] : 'Citilife-System');
-}
-
 // Auto-insert and dismiss overdue case notifications (only for radiologist/admin_central, throttled to at most once every 60 seconds)
 if (in_array($_SESSION['role'] ?? '', ['radiologist', 'admin_central'])) {
     if (!isset($_SESSION['last_overdue_check']) || (time() - $_SESSION['last_overdue_check'] > 60)) {

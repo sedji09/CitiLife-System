@@ -64,7 +64,7 @@ if ($patientId) {
 
 $activeCaseDispute = null;
 $latestCaseDispute = null;
-if ($caseId) {
+if ($caseRow && $caseId) {
     $activeCaseDispute = $disputeModel->getActiveDisputeByCase($caseId);
     $stmtD = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? ORDER BY created_at DESC LIMIT 1");
     $stmtD->execute([$caseId]);
@@ -146,7 +146,7 @@ $statusDescriptions = [
 
     <!-- Page Header -->
     <div class="flex items-center gap-4">
-        <a href="javascript:void(0)" data-back-btn data-fallback="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records" title="Back to Records"
+        <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('my-records') ?>" title="Back to Records"
             class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
@@ -163,7 +163,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Case Not Found</h3>
             <p class="text-sm text-gray-500 mb-5">We could not locate the details for this case.</p>
-            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records" data-back-btn title="Back"
+            <a href="<?= url('my-records') ?>" data-back-btn title="Back"
                 class="inline-flex items-center gap-2 rounded-xl bg-gray-600 hover:bg-gray-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to My Records
             </a>
@@ -176,7 +176,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Request Rejected</h3>
             <p class="text-sm text-gray-500 mb-5">This request has been rejected. You can view it under the <strong>Rejected</strong> tab in My Records.</p>
-            <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>my-records?tab=rejected"
+            <a href="<?= url('my-records?tab=rejected') ?>"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Go to My Records
             </a>
@@ -363,7 +363,7 @@ $statusDescriptions = [
                                 <span class="italic font-medium">"<?= htmlspecialchars($caseRow['rejection_reason']) ?>"</span>
                             </p>
                             <p class="text-xs text-red-700 mt-2">
-                                Please visit your <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=dashboard" class="font-bold underline text-red-800 hover:text-red-900">Dashboard</a> to resubmit the correct Reference Number and a clear screenshot of your payment receipt.
+                                Please visit your <a href="<?= url('dashboard') ?>" class="font-bold underline text-red-800 hover:text-red-900">Dashboard</a> to resubmit the correct Reference Number and a clear screenshot of your payment receipt.
                             </p>
                         </div>
                     </div>
@@ -481,7 +481,7 @@ $statusDescriptions = [
                         </span>
                         <?php
                         $isExpired = strtotime($caseRow['created_at']) < strtotime('-3 months');
-                        $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $caseRow['id']);
+                        $reportUrl = $isExpired ? 'javascript:void(0)' : url('view-report?ref=' . generateReportToken($caseRow['id']));
                         $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                         $btnLabel = ($isCorrectionWorkflow && ($caseRow['status'] ?? '') === 'Resolved') ? 'View Updated Report' : 'View Report';
                         ?>
@@ -500,7 +500,7 @@ $statusDescriptions = [
                                 <span class="italic font-medium">"<?= htmlspecialchars($caseRow['rejection_reason'] ?: 'Request could not be approved at this time.') ?>"</span>
                             </div>
                         </div>
-                        <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=registration"
+                        <a href="<?= url('registration') ?>"
                             class="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl text-white font-semibold text-[11px] sm:text-xs py-2 sm:py-2.5 px-4 sm:px-5 transition shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap shrink-0 bg-red-600 hover:bg-red-700">
                             <i data-lucide="plus-circle" class="w-3.5 h-3.5 sm:w-4 h-4"></i>
                             <span>Submit New Request</span>
@@ -586,7 +586,7 @@ $statusDescriptions = [
             const caseId = dot.getAttribute('data-case-id');
             if (!caseId || caseId === '0') return;
 
-            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/case_activity.php?action=status&case_id=${caseId}&_t=` + Date.now())
+            fetch(`<?= url('app/Api/case_activity.php?action=status&case_id=') ?>${caseId}&_t=` + Date.now())
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.success) {
@@ -739,7 +739,7 @@ $statusDescriptions = [
             if (document.hidden) return;
             if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
 
-            fetch(`<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/cases.php?case_id=${caseId}&_t=` + Date.now())
+            fetch(`<?= url('app/Api/cases.php?case_id=') ?>${caseId}&_t=` + Date.now())
                 .then(res => res.json())
                 .then(data => {
                     if (!data.success) return;
@@ -767,5 +767,14 @@ $statusDescriptions = [
         }
 
         setInterval(pollCaseStatus, 3000);
+    })();
+
+    // Mask query parameters (?case_id=... / ?request_id=...) from browser URL bar
+    (function() {
+        try {
+            if (window.history && window.history.replaceState && window.location.search) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (e) {}
     })();
 </script>

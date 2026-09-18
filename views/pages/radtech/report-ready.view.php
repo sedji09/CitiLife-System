@@ -211,7 +211,7 @@
 
                                         <!-- Print Result -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?ref=' . generateReportToken($row['id'])) ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                             title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>

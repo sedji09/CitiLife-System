@@ -94,7 +94,7 @@ if (isset($_GET['action'])) {
                     $notificationModel->add(
                         $notifTitle,
                         $notifMsg,
-                        "/" . PROJECT_DIR . "/case-status?case_id={$id}",
+                        url("case-status?case_id={$id}"),
                         $patientUserId
                     );
 
@@ -103,7 +103,7 @@ if (isset($_GET['action'])) {
                     if ($patientUser && !empty($patientUser['email'])) {
                         require_once __DIR__ . '/../../Helpers/mailer_helper.php';
                         $patientName = $caseData['first_name'] . ' ' . $caseData['last_name'];
-                        $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
+                        $reportUrl = appBaseUrl() . url("case-status?case_id=" . $id);
 
                         if ($activeDispute) {
                             $subject = "Correction Request Resolved - Citilife Diagnostic Center";

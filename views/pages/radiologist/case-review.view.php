@@ -16,7 +16,7 @@ $activeDispute = $disputeMdl->getActiveDisputeByCase($caseDetails['id']);
 
 $backPage = $_GET['back_to'] ?? 'worklist';
 $backId = $_GET['back_id'] ?? '';
-$backUrl = "/" . PROJECT_DIR . "/index.php?role=radiologist&page=" . urlencode($backPage);
+$backUrl = url("index.php?role=radiologist&page=" . urlencode($backPage));
 if ($backId) {
     $backUrl .= "&id=" . urlencode($backId);
 }

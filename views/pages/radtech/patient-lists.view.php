@@ -1,12 +1,17 @@
 <?php
 require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
+require_once __DIR__ . '/../../../app/Models/CaseModel.php';
 $disputeModel = new \ResultDisputeModel($pdo);
 $branchId = $_SESSION['branch_id'] ?? 1;
 $disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
 $pendingDisputeCount = count(array_filter($disputes, function ($d) {
     return in_array($d['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification']);
 }));
+if (!isset($caseModel)) {
+    $caseModel = new \CaseModel($pdo);
+}
+$pendingApprovalCount = count($caseModel->getPendingCases($branchId));
 $currentTab = $_GET['tab'] ?? 'completed';
 if (isset($page) && in_array($page, ['correction-requests', 'correction-request'], true)) {
     $currentTab = 'disputes';
@@ -136,6 +141,14 @@ if ($hlTarget && empty($_GET['tab'])) {
         <a id="tab-btn-approval" href="<?= url('patient-approval') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium <?= ($_GET['page'] ?? 'patient-lists') === 'patient-approval' ? 'text-red-600 border-b-2 border-red-600 hover:text-red-700' : 'text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300'; ?>">
             Patient Requests
+            <?php if ($pendingApprovalCount > 0): ?>
+                <span id="radtech-approval-tab-badge"
+                    class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200"
+                    style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;"
+                    title="<?= $pendingApprovalCount ?>">
+                    <?= $pendingApprovalCount > 99 ? '99+' : $pendingApprovalCount ?>
+                </span>
+            <?php endif; ?>
         </a>
 
         <a id="tab-btn-disputes" href="<?= url('correction-requests') ?>" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey) return; event.preventDefault(); switchTab('disputes');"
@@ -410,7 +423,7 @@ if ($hlTarget && empty($_GET['tab'])) {
 
                                         <!-- Print Result — active when Report Ready -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?id=' . $row['id']) ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?ref=' . generateReportToken($row['id'])) ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                             title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
@@ -1206,6 +1219,13 @@ if ($hlTarget && empty($_GET['tab'])) {
             <option value="Other Concern">Other Concern</option>
         </select>
 
+        <select id="disputes-filter-status"
+            class="w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
+            <option value="All">All Statuses</option>
+            <option value="Pending">Needs Action (Pending)</option>
+            <option value="Resolved">Resolved</option>
+        </select>
+
         <select id="disputes-sort-date"
             class="w-44 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option value="Newest">Newest Request</option>
@@ -1317,6 +1337,7 @@ if ($hlTarget && empty($_GET['tab'])) {
                             data-name="<?= htmlspecialchars($disputePatName) ?>"
                             data-patient-number="<?= htmlspecialchars($d['patient_number'] ?? '') ?>"
                             data-correction="<?= htmlspecialchars($catLabel) ?>"
+                            data-status="<?= htmlspecialchars($d['status'] ?? '') ?>"
                             data-date="<?= htmlspecialchars($d['created_at']) ?>"
                             data-timestamp="<?= strtotime($d['created_at']) ?: 0 ?>">
                             <td class="py-3 px-4 font-medium"><?= htmlspecialchars($d['case_number']) ?></td>
@@ -1486,10 +1507,12 @@ if ($hlTarget && empty($_GET['tab'])) {
 
         const searchInput = document.getElementById('disputes-search-input');
         const filterCat = document.getElementById('disputes-filter-category');
+        const filterStatus = document.getElementById('disputes-filter-status');
         const sortDate = document.getElementById('disputes-sort-date');
 
         const searchVal = (searchInput?.value || '').toLowerCase().trim();
         const catVal = filterCat?.value || 'All';
+        const statusVal = filterStatus?.value || 'All';
         const sortVal = sortDate?.value || 'Newest';
 
         let rows = Array.from(tbody.querySelectorAll('tr.dispute-table-row'));
@@ -1508,19 +1531,28 @@ if ($hlTarget && empty($_GET['tab'])) {
 
         // 2. Filter rows
         let matchedRows = [];
+        const pendingStatuses = ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification'];
         rows.forEach(row => {
             const caseNum = (row.dataset.case || row.dataset.id || '').toLowerCase();
             const patientName = (row.dataset.name || '').toLowerCase();
             const patientNum = (row.dataset.patientNumber || '').toLowerCase();
             const correctionType = (row.dataset.correction || '').trim();
+            const rowStatus = (row.dataset.status || '').trim();
 
             const matchesSearch = !searchVal ||
                 caseNum.includes(searchVal) ||
                 patientName.includes(searchVal) ||
                 patientNum.includes(searchVal);
             const matchesCategory = (catVal === 'All') || (correctionType === catVal);
+            
+            let matchesStatus = true;
+            if (statusVal === 'Pending') {
+                matchesStatus = pendingStatuses.includes(rowStatus);
+            } else if (statusVal === 'Resolved') {
+                matchesStatus = (rowStatus === 'Resolved');
+            }
 
-            if (matchesSearch && matchesCategory) {
+            if (matchesSearch && matchesCategory && matchesStatus) {
                 matchedRows.push(row);
             } else {
                 row.style.display = 'none';
@@ -1655,7 +1687,7 @@ if ($hlTarget && empty($_GET['tab'])) {
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target && (e.target.id === 'disputes-filter-category' || e.target.id === 'disputes-sort-date')) {
+        if (e.target && (e.target.id === 'disputes-filter-category' || e.target.id === 'disputes-filter-status' || e.target.id === 'disputes-sort-date')) {
             currentDisputesPage = 1;
             applyDisputesFilter();
         }
@@ -3216,6 +3248,22 @@ if ($hlTarget && empty($_GET['tab'])) {
     let lastDisputesRawHtml = document.getElementById('disputes-table-body')?.innerHTML.trim() || '';
     let lastQueueRawHtml = document.getElementById('table-body')?.innerHTML.trim() || '';
 
+    function syncTabBadge(badgeId, targetBtnId, newDoc) {
+        const newBadge = newDoc.getElementById(badgeId);
+        const curBadge = document.getElementById(badgeId);
+        const parentBtn = document.getElementById(targetBtnId);
+        if (newBadge) {
+            if (curBadge) {
+                curBadge.innerHTML = newBadge.innerHTML;
+                if (newBadge.title) curBadge.title = newBadge.title;
+            } else if (parentBtn) {
+                parentBtn.appendChild(newBadge.cloneNode(true));
+            }
+        } else if (curBadge) {
+            curBadge.remove();
+        }
+    }
+
     setInterval(() => {
         if (document.visibilityState === 'hidden') return;
 
@@ -3248,14 +3296,8 @@ if ($hlTarget && empty($_GET['tab'])) {
                         }
                     }
 
-                    const newBadge = doc.getElementById('radtech-disputes-tab-badge');
-                    const curBadge = document.getElementById('radtech-disputes-tab-badge');
-                    if (newBadge && curBadge) {
-                        curBadge.innerHTML = newBadge.innerHTML;
-                        if (newBadge.title) curBadge.title = newBadge.title;
-                    } else if (!newBadge && curBadge) {
-                        curBadge.remove();
-                    }
+                    syncTabBadge('radtech-approval-tab-badge', 'tab-btn-approval', doc);
+                    syncTabBadge('radtech-disputes-tab-badge', 'tab-btn-disputes', doc);
                 })
                 .catch(() => { });
         } else {
@@ -3279,14 +3321,8 @@ if ($hlTarget && empty($_GET['tab'])) {
                         }
                     }
 
-                    const newBadge = doc.getElementById('radtech-disputes-tab-badge');
-                    const curBadge = document.getElementById('radtech-disputes-tab-badge');
-                    if (newBadge && curBadge) {
-                        curBadge.innerHTML = newBadge.innerHTML;
-                        if (newBadge.title) curBadge.title = newBadge.title;
-                    } else if (!newBadge && curBadge) {
-                        curBadge.remove();
-                    }
+                    syncTabBadge('radtech-approval-tab-badge', 'tab-btn-approval', doc);
+                    syncTabBadge('radtech-disputes-tab-badge', 'tab-btn-disputes', doc);
                 })
                 .catch(() => { });
         }

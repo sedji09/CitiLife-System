@@ -110,7 +110,7 @@ class ReportReadyController
                             $notificationModel->add(
                                 $notifTitle,
                                 $notifMsg,
-                                "/" . PROJECT_DIR . "/case-status?case_id={$id}",
+                                url("case-status?case_id={$id}"),
                                 $patientUserId
                             );
                         }
@@ -119,7 +119,7 @@ class ReportReadyController
                         $notificationModel->add(
                             "Report Released",
                             "Official report for Case {$caseData['case_number']} (" . formatFullName($caseData) . ") has been released and is available in Patient Records.",
-                            "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records&highlight=" . urlencode($caseData['case_number']),
+                            url("branch-xray-cases?tab=records&highlight=" . urlencode($caseData['case_number'])),
                             null,
                             'branch_admin',
                             $branchId
@@ -131,7 +131,7 @@ class ReportReadyController
                             if ($patientUser && !empty($patientUser['email'])) {
                                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
                                 $patientName = formatFullName($caseData);
-                                $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
+                                $reportUrl = appBaseUrl() . url("case-status?case_id=" . $id);
 
                                 if ($activeDispute) {
                                     $subject = "Correction Request Resolved - Citilife Diagnostic Center";
@@ -213,7 +213,7 @@ class ReportReadyController
                             $notificationModel->add(
                                 $notifTitle,
                                 $notifMsg,
-                                "/" . PROJECT_DIR . "/case-status?case_id={$id}",
+                                url("case-status?case_id={$id}"),
                                 $patientUserId
                             );
                         }

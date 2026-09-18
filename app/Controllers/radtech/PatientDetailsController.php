@@ -145,7 +145,7 @@ class PatientDetailsController
                         $notificationModel->add(
                             $notifTitle,
                             $notifMsg,
-                            "/" . PROJECT_DIR . "/case-status?case_id={$id}",
+                            url("case-status?case_id={$id}"),
                             $patientUserId
                         );
 
@@ -503,7 +503,8 @@ class PatientDetailsController
                         require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
                         $dMdl = new \ResultDisputeModel($pdo);
                         $dMdl->advanceStatus($linkedDispute['id'], 'Correction Completed');
-                        $dMdl->advanceStatus($linkedDispute['id'], 'Resolved');
+                        $pdo->prepare("UPDATE result_disputes SET status = 'Resolved', resolved_by = ?, resolved_at = NOW(), resolution_notes = COALESCE(resolution_notes, 'Demographics resolved by RadTech.') WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected')")
+                            ->execute([$currentUserId ?? 0, $caseId]);
 
                         $pdo->prepare("UPDATE cases SET status = 'Released', released = 1, is_amended = 1, status_timestamp = NOW() WHERE id = ?")
                             ->execute([$caseId]);

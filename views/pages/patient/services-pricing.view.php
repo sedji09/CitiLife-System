@@ -109,7 +109,7 @@
                                     <span class="text-base font-bold text-gray-900 dark:text-white">
                                         ₱ <?= number_format($service['price'], 2) ?>
                                     </span>
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration" title="Request this exam"
+                                    <a href="<?= url('registration') ?>" title="Request this exam"
                                         class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors inline-flex items-center justify-center shrink-0">
                                         <i data-lucide="chevron-right" class="w-4 h-4 shrink-0"></i>
                                     </a>

@@ -11,8 +11,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 // Determine base path for redirects (empty on Railway/production, /ProjectDir on localhost)
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$isLocal = strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false;
-$redirectBase = $isLocal ? ('/' . (defined('PROJECT_DIR') ? PROJECT_DIR : 'Citilife-System')) : '';
+$redirectBase = (defined('PROJECT_DIR') && PROJECT_DIR !== '') ? ('/' . PROJECT_DIR) : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $patientModel = new PatientModel($pdo);

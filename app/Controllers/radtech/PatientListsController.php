@@ -82,13 +82,9 @@ if (isset($_GET['action'])) {
                     }
                 }
 
-                        // Check if case has an active dispute and mark as Resolved
-                        require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
-                        $disputeMdl = new \ResultDisputeModel($pdo);
-                        $activeDispute = $disputeMdl->getActiveDisputeByCase($id);
-                        if ($activeDispute) {
-                            $disputeMdl->updateDisputeStatus($activeDispute['id'], 'Resolved', 'radtech', 'Amended report released by RadTech.', $currentUserId);
-                        }
+                        // Resolve all active disputes for this case
+                        $pdo->prepare("UPDATE result_disputes SET status = 'Resolved', resolved_by = ?, resolved_at = NOW(), resolution_notes = COALESCE(resolution_notes, 'Amended report released by RadTech.') WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected')")
+                            ->execute([$currentUserId, $id]);
 
                         $caseModel->releaseResult($id);
                         $_SESSION['flash_success'] = "Result released. Case moved to X-ray Patient Records.";
@@ -109,7 +105,7 @@ if (isset($_GET['action'])) {
                             $notificationModel->add(
                                 $notifTitle,
                                 $notifMsg,
-                                "/" . PROJECT_DIR . "/case-status?case_id={$id}",
+                                url("case-status?case_id={$id}"),
                                 $patientUserId
                             );
                         }
@@ -118,7 +114,7 @@ if (isset($_GET['action'])) {
                         $notificationModel->add(
                             "Report Released",
                             "Official report for Case {$caseData['case_number']} (" . formatFullName($caseData) . ") has been released and is available in Patient Records.",
-                            "/" . PROJECT_DIR . "/index.php?page=branch-xray-cases&tab=records&highlight=" . urlencode($caseData['case_number']),
+                            url("branch-xray-cases?tab=records&highlight=" . urlencode($caseData['case_number'])),
                             null,
                             'branch_admin',
                             $branchId
@@ -130,7 +126,7 @@ if (isset($_GET['action'])) {
                             if ($patientUser && !empty($patientUser['email'])) {
                                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
                                 $patientName = formatFullName($caseData);
-                                $reportUrl = appBaseUrl() . "/" . PROJECT_DIR . "/case-status?case_id=" . $id;
+                                $reportUrl = appBaseUrl() . url("case-status?case_id=" . $id);
 
                                 if ($activeDispute) {
                                     $subject = "Correction Request Resolved - Citilife Diagnostic Center";
@@ -190,13 +186,9 @@ if (isset($_GET['action'])) {
                     }
 
                     if ($caseData && $caseData['released'] == 0) {
-                        // Check if case has an active dispute and mark as Resolved
-                        require_once __DIR__ . '/../../Models/ResultDisputeModel.php';
-                        $disputeMdl = new \ResultDisputeModel($pdo);
-                        $activeDispute = $disputeMdl->getActiveDisputeByCase($id);
-                        if ($activeDispute) {
-                            $disputeMdl->updateDisputeStatus($activeDispute['id'], 'Resolved', 'radtech', 'Amended report released by RadTech.', $currentUserId);
-                        }
+                        // Resolve all active disputes for this case
+                        $pdo->prepare("UPDATE result_disputes SET status = 'Resolved', resolved_by = ?, resolved_at = NOW(), resolution_notes = COALESCE(resolution_notes, 'Amended report released by RadTech.') WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected')")
+                            ->execute([$currentUserId, $id]);
 
                         $caseModel->releaseResult($id);
                         $_SESSION['flash_success'] = "Result released. Case moved to X-ray Patient Records.";

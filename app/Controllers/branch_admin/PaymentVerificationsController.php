@@ -112,7 +112,7 @@ class PaymentVerificationsController
                                 $notifModel->add(
                                     "Request Approved",
                                     "Your payment for request {$reqData['request_number']} has been verified and approved (Case #{$caseNumber}). Please proceed to the X-ray room for examination.",
-                                    "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status&case_id=" . urlencode($newCaseId) . "&highlight=" . urlencode($caseNumber),
+                                    url("dashboard?case_id=" . urlencode($newCaseId) . "&highlight=" . urlencode($caseNumber)),
                                     $patUser['user_id'],
                                     'patient'
                                 );
@@ -122,7 +122,7 @@ class PaymentVerificationsController
                             $notifModel->add(
                                 "New Patient in Queue",
                                 "Case #{$caseNumber} ({$reqData['exam_type']}) payment verified and approved. Ready for X-ray examination.",
-                                "/" . PROJECT_DIR . "/index.php?role=radtech&page=patient-lists&highlight=" . urlencode($caseNumber),
+                                url("patient-lists?highlight=" . urlencode($caseNumber)),
                                 null,
                                 'radtech',
                                 $reqBranchId

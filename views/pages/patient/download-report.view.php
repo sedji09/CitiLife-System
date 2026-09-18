@@ -26,18 +26,21 @@ $branchesBannerHtml = !empty($branchNamesList)
 
 $userId = $_SESSION['user_id'] ?? null;
 if (isset($_GET['ref'])) {
-    $decoded = base64_decode($_GET['ref']);
-    if (strpos($decoded, 'Citilife_Case_') === 0) {
-        $id = (int) str_replace('Citilife_Case_', '', $decoded);
-    } else {
-        $id = 0;
+    if (function_exists('verifyReportToken')) {
+        $id = verifyReportToken($_GET['ref']);
+    }
+    if (!$id) {
+        $decoded = base64_decode($_GET['ref']);
+        if (strpos($decoded, 'Citilife_Case_') === 0) {
+            $id = (int) str_replace('Citilife_Case_', '', $decoded);
+        }
     }
 } else {
     $id = (int) ($_GET['id'] ?? 0);
 }
 
 // Redirect back to view-report (with ref token instead of raw id) just to be safe
-$refToken = base64_encode('Citilife_Case_' . $id);
+$refToken = function_exists('generateReportToken') ? generateReportToken($id) : base64_encode('Citilife_Case_' . $id);
 $patientId = $_SESSION['patient_id'] ?? null;
 
 if (!$id || !$patientId) {

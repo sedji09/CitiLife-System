@@ -74,15 +74,20 @@ $refToken = $_SESSION['active_report_ref'] ?? '';
 $id = 0;
 
 if (!empty($refToken)) {
-    $decoded = base64_decode($refToken);
-    if (strpos($decoded, 'Citilife_Case_') === 0) {
-        $id = (int) str_replace('Citilife_Case_', '', $decoded);
+    if (function_exists('verifyReportToken')) {
+        $id = verifyReportToken($refToken);
+    }
+    if (!$id) {
+        $decoded = base64_decode($refToken);
+        if (strpos($decoded, 'Citilife_Case_') === 0) {
+            $id = (int) str_replace('Citilife_Case_', '', $decoded);
+        }
     }
 } else {
     // Fallback if someone uses raw ?id= somehow (e.g. older versions)
     $id = (int) ($_GET['id'] ?? 0);
     if ($id > 0) {
-        $_SESSION['active_report_ref'] = base64_encode('Citilife_Case_' . $id);
+        $_SESSION['active_report_ref'] = function_exists('generateReportToken') ? generateReportToken($id) : base64_encode('Citilife_Case_' . $id);
         redirect(url('view-report'));
     }
 }

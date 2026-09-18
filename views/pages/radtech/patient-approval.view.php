@@ -27,11 +27,12 @@ $branches = $branchModel->getAllBranches();
 $userBranchId = $_SESSION['branch_id'] ?? null;
 $selectedBranchId = $_GET['branch_id'] ?? 'all';
 $pendingPatients = $caseModel->getPendingCases($selectedBranchId);
+$pendingApprovalCount = count($caseModel->getPendingCases($branchId));
 
 $disputeModel = new \ResultDisputeModel($pdo);
 $disputes = $disputeModel->getDisputesForClinic($branchId, 'radtech');
 $pendingDisputeCount = count(array_filter($disputes, function($d) { 
-    return in_array($d['status'], ['Pending RadTech Review', 'Pending RadTech Verification']); 
+    return in_array($d['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification']); 
 }));
 
 require_once __DIR__ . '/../../../app/Models/ServiceModel.php';
@@ -116,15 +117,20 @@ foreach ($allServices as $service) {
 <!-- Navigation Tabs -->
 <div class="mt-6 border-b border-gray-200">
     <nav class="flex gap-3">
-        <a href="<?= url('patient-lists') ?>"
+        <a id="tab-btn-queue" href="<?= url('patient-lists') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Patient Queue
         </a>
-        <a href="<?= url('patient-approval') ?>"
+        <a id="tab-btn-approval" href="<?= url('patient-approval') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700">
             Patient Requests
+            <?php if ($pendingApprovalCount > 0): ?>
+                <span id="radtech-approval-tab-badge" class="ml-1 tab-circle-badge bg-red-100 text-red-700 border border-red-200" style="width: 26px; height: 26px; min-width: 26px; min-height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;" title="<?= $pendingApprovalCount ?>">
+                    <?= $pendingApprovalCount > 99 ? '99+' : $pendingApprovalCount ?>
+                </span>
+            <?php endif; ?>
         </a>
-        <a href="<?= url('correction-requests') ?>"
+        <a id="tab-btn-disputes" href="<?= url('correction-requests') ?>"
             class="flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300">
             Correction Requests
             <?php if ($pendingDisputeCount > 0): ?>
@@ -707,4 +713,32 @@ foreach ($allServices as $service) {
         document.body.appendChild(form);
         form.submit();
     }
+
+    function syncTabBadge(badgeId, targetBtnId, newDoc) {
+        const newBadge = newDoc.getElementById(badgeId);
+        const curBadge = document.getElementById(badgeId);
+        const parentBtn = document.getElementById(targetBtnId);
+        if (newBadge) {
+            if (curBadge) {
+                curBadge.innerHTML = newBadge.innerHTML;
+                if (newBadge.title) curBadge.title = newBadge.title;
+            } else if (parentBtn) {
+                parentBtn.appendChild(newBadge.cloneNode(true));
+            }
+        } else if (curBadge) {
+            curBadge.remove();
+        }
+    }
+
+    setInterval(() => {
+        fetch('<?= url("patient-approval") ?>?_t=' + Date.now())
+            .then(res => res.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                syncTabBadge('radtech-approval-tab-badge', 'tab-btn-approval', doc);
+                syncTabBadge('radtech-disputes-tab-badge', 'tab-btn-disputes', doc);
+            })
+            .catch(() => {});
+    }, 4000);
 </script>

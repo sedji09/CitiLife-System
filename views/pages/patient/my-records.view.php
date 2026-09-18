@@ -171,7 +171,7 @@ $statusBadge = [
                     </div>
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">No Completed Records</h3>
                     <p class="text-sm text-gray-500 mb-5">Your completed X-ray examination history will appear here.</p>
-                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>registration"
+                    <a href="<?= url('registration') ?>"
                         class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
                     </a>
@@ -298,7 +298,7 @@ $statusBadge = [
                                 <?php
                                 $isExpired = strtotime($c['created_at']) < strtotime('-3 months');
                                 $contacts = array_filter([$c['branch_contact'] ?? '', $c['branch_contact_2'] ?? '', $c['branch_contact_3'] ?? '']);
-                                $reportUrl = $isExpired ? 'javascript:void(0)' : (PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/') . 'view-report?ref=' . base64_encode('Citilife_Case_' . $c['id']);
+                                $reportUrl = $isExpired ? 'javascript:void(0)' : url('view-report?ref=' . generateReportToken($c['id']));
                                 $onClickAttr = $isExpired ? 'onclick="showExpiredAlert(event, ' . htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') . ')"' : '';
                                 ?>
                                 <a href="<?= $reportUrl ?>" <?= $onClickAttr ?>
@@ -407,7 +407,7 @@ $statusBadge = [
 
                             <div
                                 class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end items-center gap-2 sm:gap-3">
-                                <a href="<?= (defined('PROJECT_DIR') ? '/' . PROJECT_DIR . '/' : '/') ?>index.php?role=patient&page=registration"
+                                <a href="<?= url('registration') ?>"
                                     class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                     <i data-lucide="plus-circle" class="w-4 h-4"></i> <span>Submit New Request</span>
                                 </a>

@@ -1,3 +1,5 @@
+Options -Indexes
+
 RewriteEngine On
 
 # If the request is a real file or directory, serve it directly

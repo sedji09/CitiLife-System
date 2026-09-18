@@ -428,6 +428,40 @@ if (!function_exists('formatFullName')) {
     }
 }
 
+if (!function_exists('generateReportToken')) {
+    /**
+     * Generate an HMAC signed base64url token for a case ID to prevent IDOR and URL tampering
+     *
+     * @param int|string $caseId
+     * @return string
+     */
+    function generateReportToken($caseId)
+    {
+        $caseId = (int) $caseId;
+        $secretKey = 'CitiLife_Secure_HMAC_Secret_Token_2026';
+        $sig = substr(hash_hmac('sha256', (string) $caseId, $secretKey), 0, 12);
+        return rtrim(strtr(base64_encode($caseId . ':' . $sig), '+/', '-_'), '=');
+    }
+}
 
-
-
+if (!function_exists('verifyReportToken')) {
+    /**
+     * Verify an HMAC signed token and extract the case ID
+     *
+     * @param string $token
+     * @return int 0 if invalid, case ID if valid
+     */
+    function verifyReportToken($token)
+    {
+        if (empty($token) || !is_string($token)) return 0;
+        $decoded = base64_decode(strtr($token, '-_', '+/'));
+        if (!$decoded || strpos($decoded, ':') === false) return 0;
+        list($caseId, $sig) = explode(':', $decoded, 2);
+        $secretKey = 'CitiLife_Secure_HMAC_Secret_Token_2026';
+        $expectedSig = substr(hash_hmac('sha256', (string) $caseId, $secretKey), 0, 12);
+        if (hash_equals($expectedSig, $sig)) {
+            return (int) $caseId;
+        }
+        return 0;
+    }
+}

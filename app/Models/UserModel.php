@@ -140,8 +140,8 @@ class UserModel {
                                 ? "Your patient account has been approved! You can now log in to the Patient Portal." 
                                 : "Your patient account registration was rejected by the branch admin.";
                 $notifLink  = ($action === 'Approve')
-                                ? "/" . PROJECT_DIR . "/index.php?role=patient&page=xray-status"
-                                : "/" . PROJECT_DIR . "/patient-login.php";
+                                ? url('dashboard')
+                                : url('patient-login');
                 
                 $notificationModel->add($notifTitle, $notifMsg, $notifLink, $userId);
             }

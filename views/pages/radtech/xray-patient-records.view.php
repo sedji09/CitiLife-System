@@ -121,14 +121,14 @@ $records = $caseModel->getReleasedRecords($branchId);
                                     <?php if ($isReportAvailable): ?>
                                         <!-- Print -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>', 'Yes, Print', true, event)"
+                                            onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?ref=' . generateReportToken($row['id'])) ?>', 'Yes, Print', true, event)"
                                             class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
 
                                         <!-- Download PDF -->
                                         <a href="javascript:void(0)"
-                                            onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=print-report&id=<?= $row['id'] ?>&download=true', 'Yes, Download', true, event)"
+                                            onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= url('print-report?ref=' . generateReportToken($row['id']) . '&download=true') ?>', 'Yes, Download', true, event)"
                                             class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Download PDF">
                                             <i data-lucide="download" class="w-4 h-4"></i>
                                         </a>

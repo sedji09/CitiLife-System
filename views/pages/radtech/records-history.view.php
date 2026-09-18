@@ -168,7 +168,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                 ?>
                 <?php if ($isReportAvailable): ?>
                     <?php
-                    $reportUrl = url("print-report?id=" . $caseId . "&preview=true");
+                    $reportUrl = url("print-report?ref=" . generateReportToken($caseId) . "&preview=true");
                     ?>
 
                     <button type="button" aria-label="Download or Print Report"
