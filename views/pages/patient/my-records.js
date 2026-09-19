@@ -13,30 +13,50 @@
     // State per tab
     const state = {
         completed: { page: 1 },
+        pending: { page: 1 },
         rejected: { page: 1 },
         cancelled: { page: 1 },
         disputes: { page: 1 }
     };
 
-    // Default tab (Stealth Mode: capture ?tab and then clean URL)
+    // Default tab from URL query param or sessionStorage
     const urlParams = new URLSearchParams(window.location.search);
-    let currentTab = urlParams.get('tab') || 'completed';
+    let currentTab = urlParams.get('tab') || sessionStorage.getItem('patient_records_active_tab') || 'completed';
+    if (!['completed', 'pending', 'rejected', 'cancelled', 'disputes'].includes(currentTab)) {
+        currentTab = 'completed';
+    }
 
-    // Immediately clean the URL bar to hide the tab parameter
+    // Keep URL parameter in sync without reloading so browser refresh stays on current tab
     if (window.history && window.history.replaceState) {
         const cleanUrl = new URL(window.location.href);
-        if (cleanUrl.searchParams.has('tab')) {
-            cleanUrl.searchParams.delete('tab');
+        if (cleanUrl.searchParams.get('tab') !== currentTab) {
+            cleanUrl.searchParams.set('tab', currentTab);
             window.history.replaceState(null, null, cleanUrl.toString());
         }
     }
 
     // Global exposed function for tab switching
     window.switchPatientTab = function (tabId) {
+        if (!['completed', 'pending', 'rejected', 'cancelled', 'disputes'].includes(tabId)) {
+            tabId = 'completed';
+        }
         currentTab = tabId;
 
+        try {
+            sessionStorage.setItem('patient_records_active_tab', tabId);
+        } catch (e) {}
+
+        // Persist in URL query param so refresh / back stays on this tab
+        if (window.history && window.history.replaceState) {
+            const currentUrl = new URL(window.location.href);
+            if (currentUrl.searchParams.get('tab') !== tabId) {
+                currentUrl.searchParams.set('tab', tabId);
+                window.history.replaceState(null, null, currentUrl.toString());
+            }
+        }
+
         // Hide all contents
-        ['completed', 'rejected', 'cancelled', 'disputes'].forEach(t => {
+        ['completed', 'pending', 'rejected', 'cancelled', 'disputes'].forEach(t => {
             const el = document.getElementById(`tab-${t}-content`);
             if (el) el.classList.add('hidden');
 
@@ -61,6 +81,9 @@
 
         // Re-render the active tab
         renderTab(tabId);
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     };
 
     function getFilteredItems(tabId) {
@@ -74,6 +97,11 @@
             searchId = 'completed-search-input';
             filterId = 'completed-branch-filter';
             sortId = 'completed-sort-date';
+        } else if (tabId === 'pending') {
+            containerId = 'pending-cards-container';
+            searchId = 'pending-search-input';
+            filterId = 'pending-branch-filter';
+            sortId = 'pending-sort-date';
         } else if (tabId === 'rejected') {
             containerId = 'rejected-cards-container';
             searchId = 'rejected-search-input';
@@ -98,8 +126,9 @@
         // Select items in container based on tab
         const items = Array.from(container.querySelectorAll(
             tabId === 'completed' ? '.completed-card' :
-                tabId === 'rejected' ? '.rejected-card' :
-                    tabId === 'cancelled' ? '.cancelled-card' : '.dispute-card'
+                tabId === 'pending' ? '.pending-card' :
+                    tabId === 'rejected' ? '.rejected-card' :
+                        tabId === 'cancelled' ? '.cancelled-card' : '.dispute-card'
         ));
 
         // Sorting (only implemented for completed and rejected via data-date if present)
@@ -188,14 +217,14 @@
 
     // Event Listeners
     document.addEventListener('input', (e) => {
-        if (['completed-search-input', 'rejected-search-input', 'cancelled-search-input'].includes(e.target.id)) {
+        if (['completed-search-input', 'pending-search-input', 'rejected-search-input', 'cancelled-search-input'].includes(e.target.id)) {
             state[currentTab].page = 1;
             renderTab(currentTab);
         }
     });
 
     document.addEventListener('change', (e) => {
-        if (['completed-branch-filter', 'completed-sort-date'].includes(e.target.id)) {
+        if (['completed-branch-filter', 'completed-sort-date', 'pending-branch-filter', 'pending-sort-date'].includes(e.target.id)) {
             state[currentTab].page = 1;
             renderTab(currentTab);
         }
@@ -205,7 +234,7 @@
         const btn = e.target.closest('button');
         if (!btn) return;
 
-        const match = btn.id.match(/^(completed|rejected|cancelled|disputes)-(prev|next)-btn$/);
+        const match = btn.id.match(/^(completed|pending|rejected|cancelled|disputes)-(prev|next)-btn$/);
         if (match) {
             const tabId = match[1];
             const action = match[2];
@@ -224,6 +253,7 @@
 
     function init() {
         renderTab('completed');
+        renderTab('pending');
         renderTab('rejected');
         renderTab('cancelled');
         renderTab('disputes');
@@ -232,6 +262,23 @@
 
         // Highlighting for case params
         handleHighlight();
+
+        // Listen for browser back/forward or bfcache navigation
+        window.addEventListener('pageshow', function () {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab') || sessionStorage.getItem('patient_records_active_tab');
+            if (tab && tab !== currentTab && typeof window.switchPatientTab === 'function') {
+                window.switchPatientTab(tab);
+            }
+        });
+
+        window.addEventListener('popstate', function () {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab') || sessionStorage.getItem('patient_records_active_tab') || 'completed';
+            if (tab && typeof window.switchPatientTab === 'function') {
+                window.switchPatientTab(tab);
+            }
+        });
 
         // Real-time polling for disputes
         setInterval(() => {
@@ -261,7 +308,7 @@
         // Determine which tab has the case
         let foundTab = null;
         let foundItem = null;
-        ['completed', 'rejected', 'cancelled', 'disputes'].forEach(tabId => {
+        ['completed', 'pending', 'rejected', 'cancelled', 'disputes'].forEach(tabId => {
             if (foundTab) return;
             const container = document.getElementById(`${tabId}-cards-container`);
             if (container) {

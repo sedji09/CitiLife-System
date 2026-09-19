@@ -312,7 +312,7 @@ class CaseModel
 
         if ($this->saveFinding($caseId, $radiologistId, $saveData, $isFinal)) {
             $cData = $this->getCaseById($caseId);
-            
+
             // Only notify if it's Final
             if ($isFinal && $cData && !empty($cData['branch_id'])) {
                 // Determine branch name/code for the message
@@ -353,7 +353,8 @@ class CaseModel
                     try {
                         $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title IN ('Case Returned for Revision', 'Correction Request', 'New Correction Request') AND link LIKE ? AND is_read = 0");
                         $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
-                    } catch (\Exception $e) {}
+                    } catch (\Exception $e) {
+                    }
                 } elseif ($wasForRevision) {
                     $link = url("patient-lists?highlight=" . urlencode($cData['case_number']));
 
@@ -381,7 +382,8 @@ class CaseModel
                     try {
                         $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title = 'Case Returned for Revision' AND link LIKE ? AND is_read = 0");
                         $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
-                    } catch (\Exception $e) {}
+                    } catch (\Exception $e) {
+                    }
                 } elseif ($wasAlreadySubmitted) {
                     if (in_array($cData['status'], ['Released', 'Completed'])) {
                         $link = url("xray-patient-records?highlight=" . urlencode($cData['case_number']));
@@ -652,7 +654,12 @@ class CaseModel
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
             
-            ORDER BY created_at DESC
+            ORDER BY 
+                CASE 
+                    WHEN status IS NOT NULL AND status NOT IN ('Released', 'Completed', 'Cancelled', 'Rejected') THEN 0 
+                    ELSE 1 
+                END ASC,
+                created_at DESC
             LIMIT 1
         ";
         $stmt = $this->pdo->prepare($sql);
@@ -695,7 +702,7 @@ class CaseModel
                 NULL as radtech_submitted_at
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
-            WHERE r.patient_id = ? AND r.status IN ('Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified', 'Rejected', 'Cancelled')
+            WHERE r.patient_id = ? AND r.status IN ('Pending', 'Pending Approval', 'Pending Payment', 'Payment Verifying', 'Payment Verified', 'Rejected', 'Cancelled')
 
             UNION ALL
 
@@ -1112,7 +1119,7 @@ class CaseModel
 
         if (!empty($branchId) && $branchId !== 'all') {
             $where .= " AND r.branch_id = ?";
-            $params[] = (int)$branchId;
+            $params[] = (int) $branchId;
         }
 
         $sql = "SELECT r.*, r.id as request_id, b.name as branch_name, p.first_name, p.middle_name, p.last_name, p.birthdate, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.home_address 
@@ -1268,7 +1275,7 @@ class CaseModel
             try {
                 $stmtChk = $this->pdo->prepare("SELECT 1 FROM result_disputes WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected') LIMIT 1");
                 $stmtChk->execute([$caseId]);
-                $hasDispute = (bool)$stmtChk->fetchColumn();
+                $hasDispute = (bool) $stmtChk->fetchColumn();
             } catch (\Exception $e) {
                 $hasDispute = false;
             }

@@ -42,12 +42,18 @@ try {
         }
 
         // Verify case belongs to patient
-        $stmt = $pdo->prepare("SELECT id, branch_id, case_number FROM cases WHERE id = ? AND patient_id = ?");
+        $stmt = $pdo->prepare("SELECT id, branch_id, case_number, created_at FROM cases WHERE id = ? AND patient_id = ?");
         $stmt->execute([$caseId, $patientId]);
         $case = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$case) {
             echo json_encode(['success' => false, 'message' => 'Case record not found.']);
+            exit;
+        }
+
+        // Check if report correction window has expired (7 days)
+        if (strtotime($case['created_at']) < strtotime('-7 days')) {
+            echo json_encode(['success' => false, 'message' => 'Correction requests are only permitted within 7 days from the examination date.']);
             exit;
         }
 

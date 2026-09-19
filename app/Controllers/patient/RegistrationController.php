@@ -68,6 +68,21 @@ class RegistrationController
             }
         }
 
+        // Fetch active/ongoing exams for duplicate checking & patient UI info
+        $activePatientExams = [];
+        if ($linkedPatientId) {
+            $rawActiveList = $caseModel->getActiveCasesByPatient($linkedPatientId) ?: [];
+            foreach ($rawActiveList as $ac) {
+                if (!in_array($ac['status'] ?? '', ['Released', 'Completed', 'Cancelled', 'Rejected'])) {
+                    $activePatientExams[] = [
+                        'ref' => $ac['case_number'] ?? 'Request',
+                        'exam_type' => $ac['exam_type'] ?: 'General Examination',
+                        'status' => $ac['status'] ?? 'Pending'
+                    ];
+                }
+            }
+        }
+
         // Fetch System Closing Settings
         $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('system_status', 'closed_branches', 'closed_message')");
         $dbSettings = [];
@@ -169,26 +184,65 @@ class RegistrationController
                         } elseif ($isBranchClosed($regData['branch_id'])) {
                             $error = 'The selected branch is currently closed for online requests. ' . $closedMessage;
                         } else {
+                            // Check for existing active/ongoing request for the same exam type
+                            $duplicateExamName = '';
+                            $duplicateRefNumber = '';
 
-
-                            $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
-
-                            if (isset($result['case_id'])) {
-                                $requestId = $result['case_id']; // This is the request_id returned by registerRequest
-
-
-
-                                $auditLogModel->addLog(
-                                    $userId,
-                                    'Submitted X-Ray Request',
-                                    'Patient Portal',
-                                    'Patient',
-                                    $result['patient_id'] ?? $userId,
-                                    "Patient requested a new X-ray via portal",
-                                    $regData['branch_id']
-                                );
+                            $incomingRaw = strtolower(trim($regData['exam_type']));
+                            $incomingExams = array_filter(array_map('trim', explode(',', $incomingRaw)));
+                            if (empty($incomingExams)) {
+                                $incomingExams = ['to be determined'];
                             }
-                            redirect(url('dashboard?registered=1'));
+
+                            foreach ($activePatientExams as $act) {
+                                $activeExamRaw = strtolower(trim($act['exam_type'] ?? ''));
+                                $activeExams = array_filter(array_map('trim', explode(',', $activeExamRaw)));
+                                if (empty($activeExams)) {
+                                    $activeExams = ['to be determined'];
+                                }
+
+                                $refNo = $act['ref'] ?? 'ongoing request';
+
+                                foreach ($incomingExams as $inExam) {
+                                    if ($inExam === 'to be determined' && in_array('to be determined', $activeExams)) {
+                                        $duplicateExamName = 'General Examination';
+                                        $duplicateRefNumber = $refNo;
+                                        break 2;
+                                    }
+
+                                    foreach ($activeExams as $actExam) {
+                                        if ($actExam === 'to be determined') continue;
+
+                                        // Check exact or partial match (e.g. 'chest' matches 'chest pa')
+                                        if ($inExam === $actExam || stripos($actExam, $inExam) !== false || stripos($inExam, $actExam) !== false) {
+                                            $duplicateExamName = $act['exam_type'] ?: $inExam;
+                                            $duplicateRefNumber = $refNo;
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ($duplicateRefNumber !== '') {
+                                $error = "You currently have an active/ongoing request for {$duplicateExamName} ({$duplicateRefNumber}). Duplicate requests for the same examination are restricted while one is in progress. You may still request other body parts.";
+                            } else {
+                                $result = $patientModel->processRegistration($regData, $caseModel, $notificationModel);
+
+                                if (isset($result['case_id'])) {
+                                    $requestId = $result['case_id']; // This is the request_id returned by registerRequest
+
+                                    $auditLogModel->addLog(
+                                        $userId,
+                                        'Submitted X-Ray Request',
+                                        'Patient Portal',
+                                        'Patient',
+                                        $result['patient_id'] ?? $userId,
+                                        "Patient requested a new X-ray via portal",
+                                        $regData['branch_id']
+                                    );
+                                }
+                                redirect(url('dashboard?registered=1'));
+                            }
                         }
                     }
                 } catch (\Exception $e) {

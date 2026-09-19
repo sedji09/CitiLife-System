@@ -16,6 +16,8 @@ if (empty($_SESSION['data_privacy_accepted'])):
                 /* Darker, slate-tinted overlay */
                 backdrop-filter: blur(8px);
                 font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             #dpm-modal {
@@ -24,8 +26,9 @@ if (empty($_SESSION['data_privacy_accepted'])):
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
                 width: 100%;
                 max-width: 850px;
-                height: 100%;
-                max-height: 85vh;
+                height: auto;
+                max-height: 88vh;
+                max-height: 88dvh;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
@@ -102,8 +105,10 @@ if (empty($_SESSION['data_privacy_accepted'])):
 
             /* 3. SCROLLABLE BODY */
             #dpm-scroll-area {
-                flex-grow: 1;
+                flex: 1 1 auto;
+                min-height: 0;
                 overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
                 background-color: #f1f5f9;
                 padding: 2rem;
                 scrollbar-width: thin;
@@ -274,6 +279,10 @@ if (empty($_SESSION['data_privacy_accepted'])):
                 align-items: center;
                 gap: 1rem;
                 flex-shrink: 0;
+                position: sticky;
+                bottom: 0;
+                z-index: 20;
+                box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
             }
 
             .dpm-btn {
@@ -338,8 +347,10 @@ if (empty($_SESSION['data_privacy_accepted'])):
 
                 #dpm-modal {
                     border-radius: 20px 20px 0 0;
-                    max-height: 94vh;
-                    height: 94vh;
+                    max-height: 90vh;
+                    max-height: 90dvh;
+                    height: 90vh;
+                    height: 90dvh;
                     margin-top: auto;
                     box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.25);
                 }
@@ -467,8 +478,13 @@ if (empty($_SESSION['data_privacy_accepted'])):
                 #dpm-footer {
                     flex-direction: row;
                     padding: 0.75rem 1rem;
+                    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
                     gap: 0.65rem;
                     background-color: #ffffff;
+                    position: sticky;
+                    bottom: 0;
+                    z-index: 20;
+                    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
                 }
 
                 .dpm-btn {

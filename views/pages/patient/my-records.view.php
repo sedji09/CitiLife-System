@@ -12,6 +12,7 @@ $feedbackModel = new \FeedbackModel($pdo);
 
 $userId = $_SESSION['user_id'] ?? 0;
 $completedCases = [];
+$pendingCases = [];
 $rejectedCases = [];
 $cancelledCases = [];
 $feedbackCaseIds = [];
@@ -47,6 +48,15 @@ if ($patientRow && isset($patientRow['patient_number'])) {
             $completedCases[] = $c;
         }
     }
+
+    // Fetch Pending / Ongoing cases
+    $rawPending = $caseModel->getActiveCasesByPatient($patientId) ?: [];
+    foreach ($rawPending as $p) {
+        if (!in_array($p['status'] ?? '', ['Released', 'Completed', 'Cancelled', 'Rejected'])) {
+            $pendingCases[] = $p;
+        }
+    }
+
     $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
     $disputedCaseIds = array_column($patientDisputes, 'case_id');
     $disputesByCaseId = [];
@@ -79,25 +89,28 @@ if ($patientRow && isset($patientRow['patient_number'])) {
         return strtotime($b['created_at']) - strtotime($a['created_at']);
     };
     usort($completedCases, $sortByDateDesc);
+    usort($pendingCases, $sortByDateDesc);
     usort($rejectedCases, $sortByDateDesc);
     usort($cancelledCases, $sortByDateDesc);
 }
 
+$activeTab = in_array($_GET['tab'] ?? '', ['completed', 'pending', 'rejected', 'cancelled', 'disputes']) ? $_GET['tab'] : 'completed';
+
 $statusBadge = [
-    'Pending' => ['bg' => 'bg-orange-50', 'text' => 'text-orange-700', 'border' => 'border-orange-400', 'label' => 'Pending'],
-    'Pending Approval' => ['bg' => 'bg-orange-50', 'text' => 'text-orange-700', 'border' => 'border-orange-400', 'label' => 'Pending'],
-    'Pending Payment' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-400', 'label' => 'Pending Payment'],
-    'Payment Verifying' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'Payment Verifying'],
-    'Payment Verified' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-400', 'label' => 'Payment Verified'],
-    'Approved' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'Approved'],
-    'X-ray Taken' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'X-ray Taken'],
-    'Under Reading' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' => 'border-blue-400', 'label' => 'Under Reading'],
-    'Report Ready' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'border' => 'border-indigo-400', 'label' => 'Report Ready'],
-    'Released' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Released'],
-    'Completed' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Completed'],
-    'Edited' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'border' => 'border-green-400', 'label' => 'Edited'],
-    'Rejected' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-400', 'label' => 'Rejected'],
-    'Cancelled' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-400', 'label' => 'Cancelled'],
+    'Pending' => ['bg' => '#FFF7ED', 'text' => '#C2410C', 'border' => '#FED7AA', 'label' => 'Pending'],
+    'Pending Approval' => ['bg' => '#FFF7ED', 'text' => '#C2410C', 'border' => '#FED7AA', 'label' => 'Pending'],
+    'Pending Payment' => ['bg' => '#FFFBEB', 'text' => '#D97706', 'border' => '#FDE68A', 'label' => 'Pending Payment'],
+    'Payment Verifying' => ['bg' => '#EFF6FF', 'text' => '#1D4ED8', 'border' => '#BFDBFE', 'label' => 'Payment Verifying'],
+    'Payment Verified' => ['bg' => '#ECFDF5', 'text' => '#059669', 'border' => '#A7F3D0', 'label' => 'Payment Verified'],
+    'Approved' => ['bg' => '#F0FDF4', 'text' => '#15803D', 'border' => '#BBF7D0', 'label' => 'Approved'],
+    'X-ray Taken' => ['bg' => '#EFF6FF', 'text' => '#1D4ED8', 'border' => '#BFDBFE', 'label' => 'X-ray Taken'],
+    'Under Reading' => ['bg' => '#EFF6FF', 'text' => '#1D4ED8', 'border' => '#DBEAFE', 'label' => 'Under Reading'],
+    'Report Ready' => ['bg' => '#EEF2FF', 'text' => '#4338CA', 'border' => '#C7D2FE', 'label' => 'Report Ready'],
+    'Released' => ['bg' => '#F0FDF4', 'text' => '#15803D', 'border' => '#BBF7D0', 'label' => 'Released'],
+    'Completed' => ['bg' => '#F0FDF4', 'text' => '#15803D', 'border' => '#BBF7D0', 'label' => 'Completed'],
+    'Edited' => ['bg' => '#F0FDF4', 'text' => '#15803D', 'border' => '#BBF7D0', 'label' => 'Edited'],
+    'Rejected' => ['bg' => '#FEF2F2', 'text' => '#991B1B', 'border' => '#FECACA', 'label' => 'Rejected'],
+    'Cancelled' => ['bg' => '#FEF2F2', 'text' => '#991B1B', 'border' => '#FECACA', 'label' => 'Cancelled'],
 ];
 ?>
 
@@ -133,7 +146,7 @@ $statusBadge = [
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">My Records & Reports</h1>
-            <p class="text-xs sm:text-sm text-gray-500 mt-1">View your completed and rejected X-ray examination records,
+            <p class="text-xs sm:text-sm text-gray-500 mt-1">View your completed, ongoing, and rejected X-ray examination records,
                 and track the status of your correction requests.</p>
         </div>
     </div>
@@ -142,19 +155,26 @@ $statusBadge = [
     <div class="border-b border-gray-200">
         <nav class="flex overflow-x-auto flex-nowrap custom-scrollbar">
             <button type="button" id="tab-patient-completed-btn" onclick="switchPatientTab('completed')"
-                class="whitespace-nowrap py-3 px-5 text-sm font-bold border-b-2 border-red-600 text-red-600 transition text-center">
+                class="whitespace-nowrap py-3 px-5 text-sm <?= $activeTab === 'completed' ? 'font-bold border-b-2 border-red-600 text-red-600' : 'font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700' ?> transition text-center">
                 Completed Records
             </button>
+            <button type="button" id="tab-patient-pending-btn" onclick="switchPatientTab('pending')"
+                class="whitespace-nowrap py-3 px-5 text-sm <?= $activeTab === 'pending' ? 'font-bold border-b-2 border-red-600 text-red-600' : 'font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700' ?> transition text-center flex items-center gap-1.5">
+                <span>Pending / Ongoing</span>
+                <?php if (!empty($pendingCases)): ?>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-red-100 text-red-700 font-bold"><?= count($pendingCases) ?></span>
+                <?php endif; ?>
+            </button>
             <button type="button" id="tab-patient-rejected-btn" onclick="switchPatientTab('rejected')"
-                class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
+                class="whitespace-nowrap py-3 px-5 text-sm <?= $activeTab === 'rejected' ? 'font-bold border-b-2 border-red-600 text-red-600' : 'font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700' ?> transition text-center">
                 Rejected Records
             </button>
             <button type="button" id="tab-patient-cancelled-btn" onclick="switchPatientTab('cancelled')"
-                class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
+                class="whitespace-nowrap py-3 px-5 text-sm <?= $activeTab === 'cancelled' ? 'font-bold border-b-2 border-red-600 text-red-600' : 'font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700' ?> transition text-center">
                 Cancelled Requests
             </button>
             <button type="button" id="tab-patient-disputes-btn" onclick="switchPatientTab('disputes')"
-                class="whitespace-nowrap py-3 px-5 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition text-center">
+                class="whitespace-nowrap py-3 px-5 text-sm <?= $activeTab === 'disputes' ? 'font-bold border-b-2 border-red-600 text-red-600' : 'font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700' ?> transition text-center">
                 Correction Requests
             </button>
         </nav>
@@ -163,7 +183,7 @@ $statusBadge = [
     <!-- Records -->
     <div id="my-records-wrapper">
         <!-- COMPLETED RECORDS TAB -->
-        <div id="tab-completed-content">
+        <div id="tab-completed-content"<?= $activeTab === 'completed' ? '' : ' class="hidden"' ?>>
             <?php if (empty($completedCases)): ?>
                 <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-6 sm:p-10 text-center">
                     <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -207,7 +227,7 @@ $statusBadge = [
                 <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-start gap-3">
                     <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"></i>
                     <p class="text-xs sm:text-sm text-blue-800">
-                        <strong>Note:</strong> You can only request corrections for your X-ray records within <strong>30
+                        <strong>Note:</strong> You can only request corrections for your X-ray records within <strong>7
                             days</strong> from the examination date. The "Request Correction" option is automatically
                         disabled for older records.
                     </p>
@@ -240,7 +260,8 @@ $statusBadge = [
                                         class="text-sm font-bold text-gray-800"><?= htmlspecialchars($c['case_number']) ?></span>
                                 </div>
                                 <span
-                                    class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold <?= $badge['bg'] ?> <?= $badge['text'] ?> <?= $badge['border'] ?>">
+                                    class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+                                    style="background-color: <?= $badge['bg'] ?> !important; border-color: <?= $badge['border'] ?> !important; color: <?= $badge['text'] ?> !important;">
                                     <?= htmlspecialchars($badge['label']) ?>
                                 </span>
                             </div>
@@ -272,8 +293,8 @@ $statusBadge = [
                             <div
                                 class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-1.5 sm:gap-3">
                                 <?php
-                                $isExpired30Days = strtotime($c['created_at']) < strtotime('-30 days');
-                                if (!in_array($c['id'], $disputedCaseIds) && !$isExpired30Days && !$isAmendedCase):
+                                $isExpired7Days = strtotime($c['created_at']) < strtotime('-7 days');
+                                if (!in_array($c['id'], $disputedCaseIds) && !$isExpired7Days && !$isAmendedCase):
                                     ?>
                                     <button type="button"
                                         onclick="openDisputeModal(<?= $c['id'] ?>, <?= htmlspecialchars(json_encode($c['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($c['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
@@ -332,8 +353,157 @@ $statusBadge = [
             <?php endif; ?>
         </div>
 
+        <!-- PENDING / ONGOING CASES TAB -->
+        <div id="tab-pending-content"<?= $activeTab === 'pending' ? '' : ' class="hidden"' ?>>
+            <?php if (empty($pendingCases)): ?>
+                <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-6 sm:p-10 text-center">
+                    <div class="mx-auto h-16 w-16 rounded-full bg-orange-50 flex items-center justify-center mb-4">
+                        <i data-lucide="clock" class="w-8 h-8 text-orange-500"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">No Pending Cases</h3>
+                    <p class="text-sm text-gray-500 mb-5">You currently have no ongoing or pending X-ray requests.</p>
+                    <a href="<?= url('registration') ?>"
+                        class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
+                    </a>
+                </div>
+            <?php else: ?>
+                <!-- Search & Filters -->
+                <div class="mb-4 sm:mb-6 flex flex-col md:flex-row gap-2 sm:gap-3 md:items-center">
+                    <div class="relative flex-1">
+                        <input type="text" id="pending-search-input"
+                            placeholder="Search pending cases (Request / Case # or Exam)..."
+                            class="w-full rounded-lg sm:rounded-xl border border-gray-200 bg-white pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="search" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 md:flex md:flex-nowrap md:gap-3">
+                        <select id="pending-branch-filter"
+                            class="w-full md:w-auto min-w-[140px] rounded-lg sm:rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm">
+                            <option>All Branches</option>
+                            <?php foreach ($branchModel->getAllBranches() as $b): ?>
+                                <option><?= htmlspecialchars($b['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <select id="pending-sort-date"
+                            class="w-full md:w-auto min-w-[140px] rounded-lg sm:rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-sm">
+                            <option>Newest Case</option>
+                            <option>Oldest Case</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Info Banner -->
+                <div class="mb-4 bg-orange-50 border border-orange-200/80 rounded-xl p-3 flex items-start gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0"></i>
+                    <p class="text-xs sm:text-sm text-orange-950">
+                        Track your ongoing X-ray requests here. Once completed, your results will move to <strong>Completed Records</strong>.
+                    </p>
+                </div>
+
+                <!-- Pending Cards Container -->
+                <div id="pending-cards-container" class="space-y-4">
+                    <?php foreach ($pendingCases as $c): ?>
+                        <?php
+                        $isReq = ($c['record_type'] ?? '') === 'Request';
+                        $statusKey = $c['status'] ?? 'Pending';
+                        $badge = $statusBadge[$statusKey] ?? ['bg' => 'bg-orange-50', 'text' => 'text-orange-700', 'border' => 'border-orange-400', 'label' => $statusKey];
+                        $branchName = $c['branch_name'] ?? $c['branch'] ?? '—';
+                        $trackUrl = url('case-status?' . ($isReq ? 'request_id=' : 'case_id=') . $c['id'] . '&from=pending');
+                        ?>
+                        <div class="pending-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                            data-id="<?= htmlspecialchars($c['case_number']) ?>" data-case-id="<?= $c['id'] ?>"
+                            data-exam="<?= htmlspecialchars($c['exam_type'] ?? '') ?>"
+                            data-branch="<?= htmlspecialchars($branchName) ?>"
+                            data-date="<?= htmlspecialchars($c['created_at']) ?>">
+
+                            <!-- Card Header -->
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm uppercase tracking-wide">
+                                        <?= $isReq ? 'Request No.' : 'Case No.' ?>
+                                    </span>
+                                    <span class="text-sm font-bold text-gray-800"><?= htmlspecialchars($c['case_number']) ?></span>
+                                </div>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+                                    style="background-color: <?= $badge['bg'] ?> !important; border-color: <?= $badge['border'] ?> !important; color: <?= $badge['text'] ?> !important;">
+                                    <span class="w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse" style="background-color: <?= $badge['text'] ?> !important;"></span>
+                                    <?= htmlspecialchars($badge['label']) ?>
+                                </span>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-4 sm:p-5 flex gap-4 sm:gap-6 items-start">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex-shrink-0 flex items-center justify-center border"
+                                    style="background-color: <?= $badge['bg'] ?> !important; border-color: <?= $badge['border'] ?> !important; color: <?= $badge['text'] ?> !important;">
+                                    <i data-lucide="clock" class="w-7 h-7"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
+                                        <h4 class="text-base sm:text-lg font-bold text-gray-900 leading-tight">
+                                            <?= htmlspecialchars($c['exam_type'] ?? 'General X-Ray') ?>
+                                        </h4>
+                                        <?php if (!empty($c['amount_due']) && (float)$c['amount_due'] > 0 && ($c['status'] ?? '') === 'Pending Payment'): ?>
+                                            <span class="text-xs sm:text-sm font-bold text-amber-600">
+                                                Due: ₱<?= number_format((float)$c['amount_due'], 2) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                                        <span class="flex items-center gap-1.5">
+                                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                                            <?= htmlspecialchars(date('M j, Y - h:i A', strtotime($c['created_at']))) ?>
+                                        </span>
+                                        <span class="flex items-center gap-1.5">
+                                            <i data-lucide="map-pin" class="w-4 h-4"></i> <?= htmlspecialchars($branchName) ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Footer -->
+                            <div class="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2 sm:gap-3">
+                                <?php if (($c['status'] ?? '') === 'Pending Payment'): ?>
+                                    <a href="<?= $trackUrl ?>"
+                                        class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                        Pay Now
+                                    </a>
+                                <?php endif; ?>
+                                <a href="<?= $trackUrl ?>"
+                                    class="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                                    <i data-lucide="activity" class="w-4 h-4"></i>
+                                    Track Status
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Pagination -->
+                <div id="pending-pagination"
+                    class="mt-6 flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm gap-4">
+                    <span id="pending-count-info"
+                        class="text-xs sm:text-sm text-gray-500 font-medium order-2 sm:order-1"></span>
+                    <div class="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
+                        <button id="pending-prev-btn"
+                            class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+                        <span id="pending-page-info"
+                            class="text-sm font-bold text-gray-700 min-w-[80px] text-center"></span>
+                        <button id="pending-next-btn"
+                            class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <!-- REJECTED RECORDS TAB -->
-        <div id="tab-rejected-content" class="hidden">
+        <div id="tab-rejected-content"<?= $activeTab === 'rejected' ? '' : ' class="hidden"' ?>>
             <?php if (empty($rejectedCases)): ?>
                 <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-6 sm:p-10 text-center">
                     <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -444,7 +614,7 @@ $statusBadge = [
         </div>
 
         <!-- CANCELLED REQUESTS TAB -->
-        <div id="tab-cancelled-content" class="hidden">
+        <div id="tab-cancelled-content"<?= $activeTab === 'cancelled' ? '' : ' class="hidden"' ?>>
             <?php if (empty($cancelledCases)): ?>
                 <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-6 sm:p-10 text-center">
                     <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -547,7 +717,7 @@ $statusBadge = [
         </div>
 
         <!-- CORRECTION REQUESTS TAB -->
-        <div id="tab-disputes-content" class="hidden">
+        <div id="tab-disputes-content"<?= $activeTab === 'disputes' ? '' : ' class="hidden"' ?>>
 
             <?php if (empty($patientDisputes)): ?>
                 <div class="rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-6 sm:p-10 text-center">

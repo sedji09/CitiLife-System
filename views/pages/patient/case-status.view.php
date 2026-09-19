@@ -65,10 +65,10 @@ if ($patientId) {
 $activeCaseDispute = null;
 $latestCaseDispute = null;
 if ($caseRow && $caseId) {
-    $activeCaseDispute = $disputeModel->getActiveDisputeByCase($caseId);
+    $activeCaseDispute = $disputeModel->getActiveDisputeByCase($caseId) ?: null;
     $stmtD = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? ORDER BY created_at DESC LIMIT 1");
     $stmtD->execute([$caseId]);
-    $latestCaseDispute = $stmtD->fetch(PDO::FETCH_ASSOC);
+    $latestCaseDispute = $stmtD->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
 $isRejectedGlobal = ($userAccountStatus === 'Rejected');
@@ -148,9 +148,13 @@ $statusDescriptions = [
 
 <div id="case-status-container" class="space-y-4 sm:space-y-5 pb-8 max-w-3xl mx-auto">
 
+    <?php
+    $fromTab = in_array($_GET['from'] ?? '', ['completed', 'pending', 'rejected', 'cancelled', 'disputes']) ? $_GET['from'] : '';
+    $backFallback = $fromTab ? url('my-records?tab=' . $fromTab) : url('my-records');
+    ?>
     <!-- Page Header -->
     <div class="flex items-center gap-4">
-        <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('my-records') ?>" title="Back to Records"
+        <a href="<?= $backFallback ?>" data-back-btn data-fallback="<?= $backFallback ?>" title="Back to Records"
             class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
@@ -167,7 +171,7 @@ $statusDescriptions = [
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Case Not Found</h3>
             <p class="text-sm text-gray-500 mb-5">We could not locate the details for this case.</p>
-            <a href="<?= url('my-records') ?>" data-back-btn title="Back"
+            <a href="<?= $backFallback ?>" data-back-btn data-fallback="<?= $backFallback ?>" title="Back"
                 class="inline-flex items-center gap-2 rounded-xl bg-gray-600 hover:bg-gray-700 text-white font-semibold text-sm py-3 px-5 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to My Records
             </a>
@@ -196,14 +200,14 @@ $statusDescriptions = [
         $statusVal = $caseRow['status'] ?? 'Pending';
         $recordType = $caseRow['record_type'] ?? ($reqId ? 'Request' : 'Case');
 
-        $isCorrectionWorkflow = ($latestCaseDispute !== null && !in_array($latestCaseDispute['status'], ['Rejected']))
+        $isCorrectionWorkflow = (!empty($latestCaseDispute) && is_array($latestCaseDispute) && !in_array($latestCaseDispute['status'] ?? '', ['Rejected']))
             || (int)($caseRow['is_amended'] ?? 0) === 1
             || \CaseStatusTransition::isErrorWorkflow($statusVal);
 
         if ($isCorrectionWorkflow) {
             $steps = \CaseStatusTransition::getErrorStepsList();
-            $dispStatus = $latestCaseDispute['status'] ?? ($statusVal ?: 'Issue Reported');
-            if ($dispStatus === 'Resolved' || $dispStatus === 'Correction Completed' || ($latestCaseDispute === null && (int)($caseRow['is_amended'] ?? 0) === 1)) {
+            $dispStatus = (!empty($latestCaseDispute) && is_array($latestCaseDispute) ? ($latestCaseDispute['status'] ?? null) : null) ?? ($statusVal ?: 'Issue Reported');
+            if ($dispStatus === 'Resolved' || $dispStatus === 'Correction Completed' || (empty($latestCaseDispute) && (int)($caseRow['is_amended'] ?? 0) === 1)) {
                 $currentStep = 4;
                 $displayStatus = 'Edited';
             } else {
@@ -307,7 +311,16 @@ $statusDescriptions = [
                                 $pending = $num > $currentStep;
                                 $stepLabelHtml = str_replace(
                                     ['RadTech Verification', 'X-ray Examination', 'Radiologist Reading', 'Finalizing Report', 'For RadTech Review', 'Correction in Progress', 'Correction Completed', 'Issue Reported'],
-                                    ['RadTech<br class="sm:hidden">Verification', 'X-ray<br class="sm:hidden">Examination', 'Radiologist<br class="sm:hidden">Reading', 'Finalizing<br class="sm:hidden">Report', 'For RadTech<br class="sm:hidden">Review', 'Correction in<br class="sm:hidden">Progress', 'Correction<br class="sm:hidden">Completed', 'Issue<br class="sm:hidden">Reported'],
+                                    [
+                                        'RadTech<br>Verification',
+                                        'X-ray<br>Examination',
+                                        'Radiologist<br>Reading',
+                                        'Finalizing<br>Report',
+                                        'For RadTech<br>Review',
+                                        'Correction in<br>Progress',
+                                        'Correction<br>Completed',
+                                        'Issue<br>Reported'
+                                    ],
                                     htmlspecialchars($stepLabel)
                                 );
                                 ?>
@@ -338,7 +351,7 @@ $statusDescriptions = [
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs md:whitespace-nowrap leading-[1.08] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full" style="letter-spacing: -0.04em; word-break: normal; overflow-wrap: normal;">
+                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs leading-[1.12] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full" style="letter-spacing: normal; word-break: normal; overflow-wrap: normal;">
                                         <?= $stepLabelHtml ?>
                                     </span>
                                 </div>

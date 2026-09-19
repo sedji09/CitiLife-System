@@ -188,6 +188,53 @@ document.addEventListener('DOMContentLoaded', function () {
         const examInput = form.querySelector('input[name="exam_type"]');
         const selectedExams = (examInput && examInput.value.trim()) ? examInput.value.trim() : 'To be determined by Radiologic Technologist';
 
+        // Check for active ongoing duplicate exam
+        const activeExams = <?= json_encode($activePatientExams ?? []) ?>;
+        if (activeExams && activeExams.length > 0) {
+            const rawChosen = (examInput && examInput.value.trim()) ? examInput.value.trim().toLowerCase() : 'to be determined';
+            const chosenParts = rawChosen.split(',').map(s => s.trim()).filter(Boolean);
+
+            let duplicateFound = null;
+            for (const act of activeExams) {
+                const actExamRaw = (act.exam_type || '').toLowerCase();
+                const actParts = actExamRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+                for (const cp of chosenParts) {
+                    if (cp === 'to be determined' && (actExamRaw === 'to be determined' || actParts.includes('to be determined'))) {
+                        duplicateFound = act;
+                        break;
+                    }
+                    for (const ap of actParts) {
+                        if (ap !== 'to be determined' && (cp === ap || ap.includes(cp) || cp.includes(ap))) {
+                            duplicateFound = act;
+                            break;
+                        }
+                    }
+                    if (duplicateFound) break;
+                }
+                if (duplicateFound) break;
+            }
+
+            if (duplicateFound) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Active Request in Progress',
+                        html: `You currently have an ongoing request for <b>${duplicateFound.exam_type}</b> (<b>${duplicateFound.ref}</b>).<br><br>To prevent duplicate requests and unintentional double payments, submitting the same examination is restricted while one is still in progress.<br><br><span class="text-xs text-gray-500">You may still request other body parts if you have a separate prescription (e.g., Spine, Skull, Extremities).</span>`,
+                        confirmButtonColor: '#dc2626',
+                        confirmButtonText: 'I Understand',
+                        customClass: {
+                            popup: 'rounded-2xl',
+                            confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                        }
+                    });
+                } else {
+                    alert(`You currently have an active request for ${duplicateFound.exam_type} (${duplicateFound.ref}). Duplicate requests for the same examination are not permitted while in progress.`);
+                }
+                return;
+            }
+        }
+
         if (typeof Swal !== 'undefined') {
             const result = await Swal.fire({
                 title: 'Are you sure?',

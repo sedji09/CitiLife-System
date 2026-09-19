@@ -749,7 +749,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         $isPendingPayment = ($caseStatusVal === 'Pending Payment');
         $isCompletedOrReleased = in_array($caseStatusVal, ['Released', 'Completed']);
         $isExpired = strtotime($latestCase['created_at']) < strtotime('-3 months');
-        $isExpired30Days = strtotime($latestCase['created_at']) < strtotime('-30 days');
+        $isExpired7Days = strtotime($latestCase['created_at']) < strtotime('-7 days');
         ?>
 
         <!-- Latest X-ray Status Card -->
@@ -785,12 +785,21 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 $active = $num === $currentStep && $currentStep !== count($steps);
                                 $pending = $num > $currentStep;
                                 $stepLabelHtml = str_replace(
-                                    ['RadTech Verification', 'X-ray Examination', 'Radiologist Reading', 'Finalizing Report', 'For RadTech Review', 'Correction in Progress', 'Correction Completed', 'Issue Reported'],
-                                    ['RadTech<br class="sm:hidden">Verification', 'X-ray<br class="sm:hidden">Examination', 'Radiologist<br class="sm:hidden">Reading', 'Finalizing<br class="sm:hidden">Report', 'For RadTech<br class="sm:hidden">Review', 'Correction in<br class="sm:hidden">Progress', 'Correction<br class="sm:hidden">Completed', 'Issue<br class="sm:hidden">Reported'],
-                                    htmlspecialchars($stepLabel)
-                                );
-                                ?>
-                                <div class="flex flex-col items-center flex-1 min-w-0 text-center px-0">
+                                     ['RadTech Verification', 'X-ray Examination', 'Radiologist Reading', 'Finalizing Report', 'For RadTech Review', 'Correction in Progress', 'Correction Completed', 'Issue Reported'],
+                                     [
+                                         'RadTech<br>Verification',
+                                         'X-ray<br>Examination',
+                                         'Radiologist<br>Reading',
+                                         'Finalizing<br>Report',
+                                         'For RadTech<br>Review',
+                                         'Correction in<br>Progress',
+                                         'Correction<br>Completed',
+                                         'Issue<br>Reported'
+                                     ],
+                                     htmlspecialchars($stepLabel)
+                                 );
+                                 ?>
+                                 <div class="flex flex-col items-center flex-1 min-w-0 text-center px-0">
                                     <div class="relative flex items-center w-full">
                                         <?php
                                         $nextNum = $num + 1;
@@ -817,7 +826,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs md:whitespace-nowrap leading-[1.08] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full" style="letter-spacing: -0.04em; word-break: normal; overflow-wrap: normal;">
+                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs leading-[1.12] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full" style="letter-spacing: normal; word-break: normal; overflow-wrap: normal;">
                                         <?= $stepLabelHtml ?>
                                     </span>
                                 </div>
@@ -994,7 +1003,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     <?php endif; ?>
 
                     <?php if ($isCompletedOrReleased): ?>
-                        <?php if (!in_array($latestCase['id'], $disputedCaseIds) && !$isExpired30Days && !$isCorrectionWorkflow): ?>
+                        <?php if (!in_array($latestCase['id'], $disputedCaseIds) && !$isExpired7Days && !$isCorrectionWorkflow): ?>
                             <button type="button"
                                 onclick="openDisputeModal(<?= $latestCase['id'] ?>, <?= htmlspecialchars(json_encode($latestCase['case_number']), ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars(json_encode($latestCase['exam_type'] ?? 'General Exam'), ENT_QUOTES, 'UTF-8') ?>)"
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
