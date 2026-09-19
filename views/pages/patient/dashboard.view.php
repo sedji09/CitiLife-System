@@ -364,6 +364,11 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         color: #e2e8f0 !important;
     }
 
+    body.theme-dark #horizontal-stepper-tracker .bg-white {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
     body.theme-dark .status-summary-box strong {
         color: #fff !important;
     }
@@ -769,18 +774,23 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </span>
             </div>
 
-            <div class="p-4 sm:p-5">
+            <div class="px-1.5 py-4 sm:p-5">
                 <!-- Step Progress Bar -->
                 <?php if (!$isRejected): ?>
-                    <div class="w-full pt-2 pb-2">
-                        <div class="flex items-start justify-between w-full gap-0.5 sm:gap-1">
+                    <div class="w-full pt-2 pb-2" id="horizontal-stepper-tracker">
+                        <div class="flex items-start justify-between w-full gap-0 sm:gap-1">
                             <?php foreach ($steps as $num => $stepLabel): ?>
                                 <?php
                                 $done = $num < $currentStep || ($num === count($steps) && $currentStep === count($steps));
                                 $active = $num === $currentStep && $currentStep !== count($steps);
                                 $pending = $num > $currentStep;
+                                $stepLabelHtml = str_replace(
+                                    ['RadTech Verification', 'X-ray Examination', 'Radiologist Reading', 'Finalizing Report', 'For RadTech Review', 'Correction in Progress', 'Correction Completed', 'Issue Reported'],
+                                    ['RadTech<br class="sm:hidden">Verification', 'X-ray<br class="sm:hidden">Examination', 'Radiologist<br class="sm:hidden">Reading', 'Finalizing<br class="sm:hidden">Report', 'For RadTech<br class="sm:hidden">Review', 'Correction in<br class="sm:hidden">Progress', 'Correction<br class="sm:hidden">Completed', 'Issue<br class="sm:hidden">Reported'],
+                                    htmlspecialchars($stepLabel)
+                                );
                                 ?>
-                                <div class="flex flex-col items-center flex-1 min-w-0 text-center px-0.5 sm:px-0">
+                                <div class="flex flex-col items-center flex-1 min-w-0 text-center px-0">
                                     <div class="relative flex items-center w-full">
                                         <?php
                                         $nextNum = $num + 1;
@@ -788,23 +798,17 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                         $nextActive = $nextNum === $currentStep && $currentStep !== count($steps);
                                         ?>
                                         <?php if ($num > 1): ?>
-                                            <div
-                                                class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>">
-                                            </div>
+                                            <div class="absolute left-0 right-1/2 top-1/2 -translate-y-1/2 h-0.5 <?= $done ? 'bg-green-500' : ($active ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
                                         <?php endif; ?>
                                         <?php if ($num < count($steps)): ?>
-                                            <div
-                                                class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>">
-                                            </div>
+                                            <div class="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-0.5 <?= $nextDone ? 'bg-green-500' : ($nextActive ? 'bg-red-500' : 'bg-gray-200') ?>"></div>
                                         <?php endif; ?>
-                                        <div
-                                            class="relative z-10 mx-auto h-6 w-6 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-base md:text-lg font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
-                                    <?php if ($done): ?>bg-green-500 text-white
-                                    <?php elseif ($active): ?>bg-red-500 text-white
-                                    <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
+                                        <div class="relative z-10 mx-auto h-7 w-7 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full flex items-center justify-center text-[10px] sm:text-base md:text-lg font-bold ring-[2px] sm:ring-[3.5px] ring-white transition shrink-0
+                                            <?php if ($done): ?>bg-green-500 text-white
+                                            <?php elseif ($active): ?>bg-red-500 text-white
+                                            <?php else: ?>bg-white border sm:border-2 border-gray-200 text-gray-400<?php endif; ?>">
                                             <?php if (($num === 5 && ($latestCase['status'] ?? '') === 'Under Reading') || ($isCorrectionWorkflow && $num === 3 && in_array($displayStatus, ['For RadTech Review', 'Pending RadTech Review', 'Correction in Progress']))): ?>
-                                                <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>"
-                                                    class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
+                                                <span id="rad-activity-dot" data-case-id="<?= $latestCase['id'] ?>" class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-white rounded-full bg-gray-400 z-20 transition-colors"></span>
                                             <?php endif; ?>
                                             <?php if ($done): ?>
                                                 <i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>
@@ -813,10 +817,8 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <span
-                                        class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs md:whitespace-nowrap leading-[1.1] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full"
-                                        style="word-break: normal; overflow-wrap: normal;">
-                                        <?= htmlspecialchars($stepLabel) ?>
+                                    <span class="mt-1.5 sm:mt-2 text-center text-[8px] sm:text-xs md:whitespace-nowrap leading-[1.08] sm:leading-tight <?= $done || $active ? 'stepper-text-active font-medium' : 'text-gray-400 font-medium' ?> w-full" style="letter-spacing: -0.04em; word-break: normal; overflow-wrap: normal;">
+                                        <?= $stepLabelHtml ?>
                                     </span>
                                 </div>
                             <?php endforeach; ?>
@@ -824,134 +826,134 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                     </div>
                 <?php endif; ?>
 
-                <!-- Status Summary Box -->
-                <div class="<?= $isRejected ? 'mt-0' : 'mt-4 sm:mt-5' ?> rounded-xl p-4 sm:p-5 border status-summary-box"
-                    style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
-                    <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
-                        Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
-                    </p>
-                    <?php if ($sDesc): ?>
-                        <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed"
-                            style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
-                    <?php endif; ?>
-                </div>
-
-                <?php if (($latestCase['status'] ?? '') === 'Pending Payment' && !empty($latestCase['rejection_reason'])): ?>
-                    <!-- Payment Issue Notice -->
-                    <div
-                        class="mt-4 rounded-2xl bg-red-50/95 border border-red-200 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
-                        <div
-                            class="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
-                            <i data-lucide="alert-triangle" class="w-5 h-5 stroke-[2.2]"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-sm font-bold text-red-900">Payment Submission Returned</h4>
-                            <p class="text-xs sm:text-sm text-red-800 mt-1 leading-relaxed">
-                                <span class="font-semibold">Reason from Clinic:</span>
-                                <span
-                                    class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason']) ?>"</span>
-                            </p>
-                            <p class="text-xs text-red-700 mt-2">
-                                Please click the <strong>Pay Now</strong> button below to resubmit the correct Reference Number
-                                and a clear screenshot of your payment receipt.
-                            </p>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Separator Divider -->
-                <hr class="border-t border-gray-200" style="margin-top: 24px; margin-bottom: 24px; border-color: #e5e7eb;">
-
-                <!-- Case Information Details Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div class="space-y-4">
-                        <!-- Reference Number -->
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Reference #</p>
-                                <p class="text-sm font-semibold text-red-600">
-                                    <?= htmlspecialchars($latestCase['case_number']) ?>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Branch -->
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Branch</p>
-                                <p class="text-sm font-semibold text-gray-800">
-                                    <?= htmlspecialchars($latestCase['branch_name'] ?? ($latestCase['branch'] ?? '—')) ?>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Date -->
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Date</p>
-                                <p class="text-sm font-semibold text-gray-800">
-                                    <?= htmlspecialchars(date('F j, Y', strtotime($latestCase['created_at']))) ?>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Radiologic Technologist (if assigned) -->
-                        <?php if ($radtechName): ?>
-                            <div class="flex items-center gap-3">
-                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                    <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Radiologic Technologist</p>
-                                    <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
-                                </div>
-                            </div>
+                <div class="px-2.5 sm:px-0">
+                    <!-- Status Summary Box -->
+                    <div class="<?= $isRejected ? 'mt-0' : 'mt-4 sm:mt-5' ?> rounded-xl p-4 sm:p-5 border status-summary-box"
+                        style="background: <?= $sInfo['bg'] ?>; border-color: <?= $sInfo['border'] ?>">
+                        <p class="text-sm font-semibold" style="color: <?= $sInfo['text'] ?>">
+                            Current Status: <strong><?= htmlspecialchars($sInfo['label']) ?></strong>
+                        </p>
+                        <?php if ($sDesc): ?>
+                            <p class="text-xs sm:text-sm mt-1 sm:mt-1.5 leading-relaxed"
+                                style="color: <?= $sInfo['text'] ?>; opacity: 0.85"><?= $sDesc ?></p>
                         <?php endif; ?>
                     </div>
 
-                    <div class="space-y-4">
-                        <!-- Examination Type -->
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
+                    <?php if (($latestCase['status'] ?? '') === 'Pending Payment' && !empty($latestCase['rejection_reason'])): ?>
+                        <!-- Payment Issue Notice -->
+                        <div
+                            class="mt-4 rounded-2xl bg-red-50/95 border border-red-200 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
+                            <div
+                                class="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 stroke-[2.2]"></i>
                             </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Examination Type</p>
-                                <p class="text-sm font-semibold text-gray-800">
-                                    <?= htmlspecialchars($latestCase['exam_type'] ?? '—') ?>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-red-900">Payment Submission Returned</h4>
+                                <p class="text-xs sm:text-sm text-red-800 mt-1 leading-relaxed">
+                                    <span class="font-semibold">Reason from Clinic:</span>
+                                    <span
+                                        class="italic font-medium">"<?= htmlspecialchars($latestCase['rejection_reason']) ?>"</span>
+                                </p>
+                                <p class="text-xs text-red-700 mt-2">
+                                    Please click the <strong>Pay Now</strong> button below to resubmit the correct Reference Number
+                                    and a clear screenshot of your payment receipt.
                                 </p>
                             </div>
                         </div>
+                    <?php endif; ?>
 
-                        <!-- Branch Contact -->
-                        <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <i data-lucide="phone-call" class="w-4 h-4 text-red-500"></i>
+                    <!-- Separator Divider -->
+                    <hr class="border-t border-gray-200" style="margin-top: 24px; margin-bottom: 24px; border-color: #e5e7eb;">
+
+                    <!-- Case Information Details Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div class="space-y-4">
+                            <!-- Reference Number -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="hash" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Reference #</p>
+                                    <p class="text-sm font-semibold text-red-600">
+                                        <?= htmlspecialchars($latestCase['case_number']) ?>
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Branch Contact</p>
-                                <?php if (!empty($contacts)): ?>
-                                    <button type="button"
-                                        onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
-                                        class="mt-0.5 inline-flex items-center justify-center px-2.5 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 hover:text-red-600 text-xs font-semibold rounded-lg transition shadow-2xs active:scale-95">
-                                        View Numbers
-                                    </button>
-                                <?php else: ?>
-                                    <p class="text-sm font-semibold text-gray-400">&mdash;</p>
-                                <?php endif; ?>
+
+                            <!-- Branch -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="map-pin" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Branch</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars($latestCase['branch_name'] ?? ($latestCase['branch'] ?? '—')) ?>
+                                    </p>
+                                </div>
                             </div>
+
+                            <!-- Date -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Date</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars(date('F j, Y', strtotime($latestCase['created_at']))) ?>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Radiologic Technologist (if assigned) -->
+                            <?php if ($radtechName): ?>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                        <i data-lucide="user-check" class="w-4 h-4 text-red-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Radiologic Technologist</p>
+                                        <p class="text-sm font-semibold text-gray-800">RT <?= htmlspecialchars($radtechName) ?></p>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
+                        <div class="space-y-4">
+                            <!-- Examination Type -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="scan-line" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Examination Type</p>
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars($latestCase['exam_type'] ?? '—') ?>
+                                    </p>
+                                </div>
+                            </div>
 
+                            <!-- Branch Contact -->
+                            <div class="flex items-center gap-3">
+                                <div class="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <i data-lucide="phone-call" class="w-4 h-4 text-red-500"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Branch Contact</p>
+                                    <?php if (!empty($contacts)): ?>
+                                        <button type="button"
+                                            onclick='showContactOptions(<?= htmlspecialchars(json_encode(array_values($contacts)), ENT_QUOTES, 'UTF-8') ?>)'
+                                            class="mt-0.5 inline-flex items-center justify-center px-2.5 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 hover:text-red-600 text-xs font-semibold rounded-lg transition shadow-2xs active:scale-95">
+                                            View Numbers
+                                        </button>
+                                    <?php else: ?>
+                                        <p class="text-sm font-semibold text-gray-400">&mdash;</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1853,70 +1855,65 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         function getExamStep(st) { return EXAM_STEP_MAP[st] || 2; }
 
         function updateStepperDOM(newStatus, isErrorWorkflow, errorStep, errorStepData) {
-            const stepperWrap = statusCard.querySelector('.flex.items-start.justify-between.w-full');
-            if (!stepperWrap) return;
-
-            const stepCells = stepperWrap.querySelectorAll(':scope > div');
             const steps = isErrorWorkflow ? ERROR_STEPS : EXAM_STEPS;
             const totalSteps = Object.keys(steps).length;
             const currStep = isErrorWorkflow
                 ? (errorStep || getErrorStep(newStatus))
                 : getExamStep(newStatus);
 
-            stepCells.forEach((cell, idx) => {
-                const num = idx + 1;
-                const done = num < currStep || (num === totalSteps && currStep === totalSteps);
-                const active = num === currStep && currStep !== totalSteps;
+            // 1. Update Horizontal Stepper
+            const stepperContainer = statusCard.querySelector('#horizontal-stepper-tracker, #desktop-stepper-tracker');
+            if (stepperContainer) {
+                const stepCells = stepperContainer.querySelectorAll(':scope > div > div');
+                stepCells.forEach((cell, idx) => {
+                    const num = idx + 1;
+                    const done = num < currStep || (num === totalSteps && currStep === totalSteps);
+                    const active = num === currStep && currStep !== totalSteps;
 
-                // ── Circle ──
-                const circle = cell.querySelector('.relative.z-10');
-                if (circle) {
-                    circle.className = circle.className
-                        .replace(/bg-green-500|bg-red-500|bg-white|border\s|sm:border-2\s|border-gray-200\s|text-gray-400|text-white/g, '')
-                        .trim();
-                    if (done) circle.classList.add('bg-green-500', 'text-white');
-                    else if (active) circle.classList.add('bg-red-500', 'text-white');
-                    else circle.classList.add('bg-white', 'border', 'sm:border-2', 'border-gray-200', 'text-gray-400');
+                    const circle = cell.querySelector('.relative.z-10');
+                    if (circle) {
+                        circle.className = circle.className
+                            .replace(/bg-green-500|bg-red-500|bg-white|border\s|border-2\s|sm:border-2\s|border-gray-200\s|text-gray-400|text-white/g, '')
+                            .trim();
+                        if (done) circle.classList.add('bg-green-500', 'text-white');
+                        else if (active) circle.classList.add('bg-red-500', 'text-white');
+                        else circle.classList.add('bg-white', 'border', 'sm:border-2', 'border-gray-200', 'text-gray-400');
 
-                    // inner: check icon or number
-                    const svgIcon = circle.querySelector('i[data-lucide="check"]');
-                    const numSpan = circle.querySelector('span[data-num]') || circle;
-                    if (done) {
-                        circle.innerHTML = (circle.querySelector('span#rad-activity-dot') ? circle.querySelector('span#rad-activity-dot').outerHTML : '')
-                            + '<i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>';
-                        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [circle] });
-                    } else if (!circle.querySelector('i[data-lucide]')) {
-                        const dot = circle.querySelector('span#rad-activity-dot');
-                        circle.innerHTML = (dot ? dot.outerHTML : '') + num;
+                        if (done) {
+                            circle.innerHTML = (circle.querySelector('span#rad-activity-dot') ? circle.querySelector('span#rad-activity-dot').outerHTML : '')
+                                + '<i data-lucide="check" class="w-3.5 h-3.5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]"></i>';
+                            if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [circle] });
+                        } else if (!circle.querySelector('i[data-lucide]')) {
+                            const dot = circle.querySelector('span#rad-activity-dot');
+                            circle.innerHTML = (dot ? dot.outerHTML : '') + num;
+                        }
                     }
-                }
 
-                // ── Connector lines ──
-                const nextNum = num + 1;
-                const nextDone = nextNum < currStep || (nextNum === totalSteps && currStep === totalSteps);
-                const nextActive = nextNum === currStep && currStep !== totalSteps;
+                    const nextNum = num + 1;
+                    const nextDone = nextNum < currStep || (nextNum === totalSteps && currStep === totalSteps);
+                    const nextActive = nextNum === currStep && currStep !== totalSteps;
 
-                const leftLine = cell.querySelector('.absolute.left-0.right-1\\/2');
-                const rightLine = cell.querySelector('.absolute.left-1\\/2.right-0');
-                if (leftLine) {
-                    leftLine.className = leftLine.className
-                        .replace(/bg-green-500|bg-red-500|bg-gray-200/g, '').trim()
-                        + (done ? ' bg-green-500' : active ? ' bg-red-500' : ' bg-gray-200');
-                }
-                if (rightLine) {
-                    rightLine.className = rightLine.className
-                        .replace(/bg-green-500|bg-red-500|bg-gray-200/g, '').trim()
-                        + (nextDone ? ' bg-green-500' : nextActive ? ' bg-red-500' : ' bg-gray-200');
-                }
+                    const leftLine = cell.querySelector('.absolute.left-0.right-1\\/2');
+                    const rightLine = cell.querySelector('.absolute.left-1\\/2.right-0');
+                    if (leftLine) {
+                        leftLine.className = leftLine.className
+                            .replace(/border-green-500|border-red-500|border-gray-200|bg-green-500|bg-red-500|bg-gray-200/g, '').trim()
+                            + (done ? ' bg-green-500' : active ? ' bg-red-500' : ' bg-gray-200');
+                    }
+                    if (rightLine) {
+                        rightLine.className = rightLine.className
+                            .replace(/border-green-500|border-red-500|border-gray-200|bg-green-500|bg-red-500|bg-gray-200/g, '').trim()
+                            + (nextDone ? ' bg-green-500' : nextActive ? ' bg-red-500' : ' bg-gray-200');
+                    }
 
-                // ── Label text ──
-                const labelSpan = cell.querySelector('span.mt-1\\.5, span.mt-2');
-                if (labelSpan) {
-                    labelSpan.className = labelSpan.className
-                        .replace(/stepper-text-active|text-gray-400/g, '').trim()
-                        + ((done || active) ? ' stepper-text-active' : ' text-gray-400');
-                }
-            });
+                    const labelSpan = cell.querySelector('span.text-center');
+                    if (labelSpan) {
+                        labelSpan.className = labelSpan.className
+                            .replace(/stepper-text-active|text-gray-400/g, '').trim()
+                            + ((done || active) ? ' stepper-text-active font-medium' : ' text-gray-400 font-medium');
+                    }
+                });
+            }
         }
 
         function updateStatusBox(newStatus) {
