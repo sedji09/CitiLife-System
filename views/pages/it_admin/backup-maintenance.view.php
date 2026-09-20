@@ -16,24 +16,22 @@
     </div>
 
     <!-- Alert Messages -->
-    <?php if ($success): ?>
+    <?php if ($success && !empty($lastDeletedFile)): ?>
         <div id="backup-success-alert" class="rounded-xl bg-green-50 border border-green-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all duration-500 ease-out">
             <div class="flex items-center gap-3">
                 <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600 shrink-0"></i>
                 <p class="text-sm font-bold text-green-800"><?= htmlspecialchars($success) ?></p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <?php if (!empty($lastDeletedFile)): ?>
-                    <form action="" method="POST" class="inline shrink-0">
-                        <input type="hidden" name="action" value="restore_deleted_file">
-                        <input type="hidden" name="filename" value="<?= htmlspecialchars($lastDeletedFile) ?>">
-                        <button type="submit"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition cursor-pointer">
-                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                            Restore to Table
-                        </button>
-                    </form>
-                <?php endif; ?>
+                <form action="" method="POST" class="inline shrink-0">
+                    <input type="hidden" name="action" value="restore_deleted_file">
+                    <input type="hidden" name="filename" value="<?= htmlspecialchars($lastDeletedFile) ?>">
+                    <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition cursor-pointer">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        Restore to Table
+                    </button>
+                </form>
                 <button type="button" onclick="dismissAlert('backup-success-alert')" class="text-green-600 hover:text-green-800 p-1 rounded-md hover:bg-green-100 transition cursor-pointer" title="Dismiss">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -484,6 +482,75 @@
 
     setupAutoDismiss('backup-success-alert', 6000);
     setupAutoDismiss('backup-error-alert', 6000);
+
+    <?php if ($success): ?>
+    (function () {
+        function triggerSuccessAlert() {
+            if (typeof Swal !== 'undefined') {
+                const sMsg = <?= json_encode($success) ?>;
+                let alertTitle = 'Success!';
+                const lower = sMsg.toLowerCase();
+                if (lower.includes('permanent') || lower.includes('purged')) {
+                    alertTitle = 'Successfully Deleted';
+                } else if (lower.includes('deleted') || lower.includes('trash')) {
+                    alertTitle = 'Successfully Deleted';
+                } else if (lower.includes('restored') || lower.includes('database restored')) {
+                    alertTitle = 'Successfully Restored';
+                } else if (lower.includes('generated') || lower.includes('backup created') || lower.includes('created') || lower.includes('export')) {
+                    alertTitle = 'Backup Successful';
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: alertTitle,
+                    text: sMsg,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#10b981',
+                    timer: 3500,
+                    timerProgressBar: true,
+                    customClass: {
+                        popup: 'rounded-3xl border-0 shadow-2xl',
+                        confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                    }
+                });
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', triggerSuccessAlert);
+        } else {
+            triggerSuccessAlert();
+        }
+    })();
+    <?php endif; ?>
+
+    <?php if ($error): ?>
+    (function () {
+        function triggerErrorAlert() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Action Failed',
+                    text: <?= json_encode($error) ?>,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#ef4444',
+                    timer: 4500,
+                    timerProgressBar: true,
+                    customClass: {
+                        popup: 'rounded-3xl border-0 shadow-2xl',
+                        confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                    }
+                });
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', triggerErrorAlert);
+        } else {
+            triggerErrorAlert();
+        }
+    })();
+    <?php endif; ?>
 
     function syncSnapshotCardHeight() {
         const statsCard = document.getElementById('stats-card');
