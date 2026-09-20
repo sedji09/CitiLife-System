@@ -72,7 +72,7 @@
 }
 
 .cs-trigger:hover {
-    border-color: #f87171;
+    border-color: #d1d5db;
 }
 
 /* Disabled select state */
@@ -336,6 +336,47 @@ body.theme-dark .cs-option.cs-selected,
     color: #fca5a5 !important;
     font-weight: 700 !important;
 }
+
+/* ==========================================================================
+   IT Admin Indigo Theme Variant (Matches #4f46e5 / #6366f1)
+   Used exclusively where .cs-theme-indigo is applied
+   ========================================================================== */
+.cs-wrapper.cs-theme-indigo.cs-open .cs-trigger,
+.cs-wrapper.cs-theme-indigo .cs-trigger:focus-visible {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
+}
+
+.cs-wrapper.cs-theme-indigo.cs-open .cs-chevron {
+    color: #4f46e5 !important;
+}
+
+/* Gray hover for options */
+.cs-wrapper.cs-theme-indigo .cs-option:hover,
+.cs-dropdown.cs-theme-indigo .cs-option:hover {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+}
+
+/* Selected option: Indigo background, deep indigo text, vibrant checkmark */
+.cs-wrapper.cs-theme-indigo .cs-option.cs-selected,
+.cs-dropdown.cs-theme-indigo .cs-option.cs-selected {
+    background-color: #e0e7ff !important;
+    color: #3730a3 !important;
+    font-weight: 700 !important;
+}
+
+.cs-wrapper.cs-theme-indigo .cs-option.cs-selected:hover,
+.cs-dropdown.cs-theme-indigo .cs-option.cs-selected:hover {
+    background-color: #e0e7ff !important;
+    color: #3730a3 !important;
+}
+
+.cs-wrapper.cs-theme-indigo .cs-check-icon,
+.cs-dropdown.cs-theme-indigo .cs-check-icon {
+    color: #4f46e5 !important;
+}
+
 
 body.theme-dark .cs-check-icon,
 .theme-dark .cs-check-icon {

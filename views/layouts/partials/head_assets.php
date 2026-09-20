@@ -46,9 +46,13 @@
     table td a[class*="p-1.5"][class*="border-green"]:hover,
     table td button[class*="p-1.5"][class*="border-green"]:hover,
     table td a[class*="p-1.5"][class*="border-emerald"]:hover,
-    table td button[class*="p-1.5"][class*="border-emerald"]:hover {
-      background-color: #16a34a !important;
-      border-color: #16a34a !important;
+    table td button[class*="p-1.5"][class*="border-emerald"]:hover,
+    a[class*="border-emerald"]:hover,
+    button[class*="border-emerald"]:hover,
+    a[class*="border-green"]:hover,
+    button[class*="border-green"]:hover {
+      background-color: #059669 !important;
+      border-color: #059669 !important;
       color: #ffffff !important;
     }
     table td a[class*="p-1.5"][class*="border-yellow"]:hover,
@@ -60,7 +64,9 @@
       color: #ffffff !important;
     }
     table td a[class*="p-1.5"][class*="border-red"]:hover,
-    table td button[class*="p-1.5"][class*="border-red"]:hover {
+    table td button[class*="p-1.5"][class*="border-red"]:hover,
+    a[class*="border-red"]:hover,
+    button[class*="border-red"]:hover {
       background-color: #dc2626 !important;
       border-color: #dc2626 !important;
       color: #ffffff !important;
@@ -82,7 +88,13 @@
       color: #ffffff !important;
     }
     table td a[class*="p-1.5"]:hover svg,
-    table td button[class*="p-1.5"]:hover svg {
+    table td button[class*="p-1.5"]:hover svg,
+    a[class*="border-emerald"]:hover svg,
+    button[class*="border-emerald"]:hover svg,
+    a[class*="border-green"]:hover svg,
+    button[class*="border-green"]:hover svg,
+    a[class*="border-red"]:hover svg,
+    button[class*="border-red"]:hover svg {
       stroke: #ffffff !important;
     }
 

@@ -49,6 +49,9 @@
                     if (c === 'py-2' || c === 'text-xs') {
                         this.wrapper.classList.add('cs-compact');
                     }
+                    if (c === 'cs-theme-indigo' || c.startsWith('cs-theme-')) {
+                        this.wrapper.classList.add(c);
+                    }
                 });
             }
 
@@ -90,6 +93,9 @@
             // Dropdown List
             this.dropdown = document.createElement('div');
             this.dropdown.className = 'cs-dropdown';
+            if (this.wrapper.classList.contains('cs-theme-indigo')) {
+                this.dropdown.classList.add('cs-theme-indigo');
+            }
             this.wrapper.appendChild(this.dropdown);
 
             // Build Options

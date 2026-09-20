@@ -39,12 +39,24 @@ try {
     die(" Connection failed: " . $e->getMessage() . "\n");
 }
 
-$sqlFile = __DIR__ . '/../citilife_backup.sql';
-if (!file_exists($sqlFile)) {
-    die("Error: File $sqlFile not found.\n");
+$sqlFile = null;
+$backupDir = __DIR__ . '/../storage/backups/';
+if (is_dir($backupDir)) {
+    $files = glob($backupDir . '*.sql');
+    if (!empty($files)) {
+        rsort($files);
+        $sqlFile = $files[0];
+    }
+}
+if (!$sqlFile || !file_exists($sqlFile)) {
+    $sqlFile = __DIR__ . '/../schema_only.sql';
 }
 
-echo "Reading 'citilife_backup.sql'...\n";
+if (!file_exists($sqlFile)) {
+    die("Error: No SQL file found in storage/backups/ or root.\n");
+}
+
+echo "Reading SQL file: " . basename($sqlFile) . "...\n";
 $raw = file_get_contents($sqlFile);
 
 // If file is UTF-16LE, convert to clean UTF-8
