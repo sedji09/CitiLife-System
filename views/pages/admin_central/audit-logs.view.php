@@ -199,15 +199,29 @@
                                 </td>
                                 <td class="px-4 py-4">
                                     <?php
+                                    $act = $log['action'] ?? '';
+                                    $det = $log['details'] ?? '';
+                                    $mod = $log['module'] ?? '';
+
                                     $statusLabel = 'Successful';
                                     $sColor = 'green';
-                                    if (stripos($log['action'], 'Rejected') !== false || (isset($log['details']) && stripos($log['details'], 'Rejected') !== false)) {
+
+                                    // Check for unsuccessful/failed actions
+                                    $isUnsuccessful = false;
+                                    foreach (['fail', 'unsuccessful', 'reject', 'denied', 'lockout', 'locked', 'invalid', 'cancel', 'error'] as $kw) {
+                                        if (stripos($act, $kw) !== false || stripos($det, $kw) !== false) {
+                                            $isUnsuccessful = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if ($isUnsuccessful) {
                                         $statusLabel = 'Unsuccessful';
                                         $sColor = 'red';
-                                    } elseif (($log['module'] ?? '') === 'Patient Management' && strpos($log['action'], 'Registered') !== false) {
+                                    } elseif ($mod === 'Patient Management' && strpos($act, 'Registered') !== false) {
                                         $statusLabel = 'Pending';
                                         $sColor = 'red';
-                                    } elseif (strpos($log['action'], 'Password Reset') !== false) {
+                                    } elseif (strpos($act, 'Password Reset') !== false) {
                                         $sColor = 'gray';
                                     }
                                     ?>

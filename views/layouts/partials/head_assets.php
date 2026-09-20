@@ -38,7 +38,9 @@
 
     /* ===== Global Table Action Buttons Hover (Strictly scoped to table action buttons) ===== */
     table td a[class*="p-1.5"][class*="border-blue"]:hover,
-    table td button[class*="p-1.5"][class*="border-blue"]:hover {
+    table td button[class*="p-1.5"][class*="border-blue"]:hover,
+    table td a[class*="p-2"][class*="border-blue"]:hover,
+    table td button[class*="p-2"][class*="border-blue"]:hover {
       background-color: #2563eb !important;
       border-color: #2563eb !important;
       color: #ffffff !important;
@@ -47,10 +49,12 @@
     table td button[class*="p-1.5"][class*="border-green"]:hover,
     table td a[class*="p-1.5"][class*="border-emerald"]:hover,
     table td button[class*="p-1.5"][class*="border-emerald"]:hover,
-    a[class*="border-emerald"]:hover,
-    button[class*="border-emerald"]:hover,
-    a[class*="border-green"]:hover,
-    button[class*="border-green"]:hover {
+    table td a[class*="p-2"][class*="border-emerald"]:hover,
+    table td button[class*="p-2"][class*="border-emerald"]:hover,
+    #trash-modal a[class*="border-emerald"]:hover,
+    #trash-modal button[class*="border-emerald"]:hover,
+    #trash-modal a[class*="border-green"]:hover,
+    #trash-modal button[class*="border-green"]:hover {
       background-color: #059669 !important;
       border-color: #059669 !important;
       color: #ffffff !important;
@@ -58,15 +62,19 @@
     table td a[class*="p-1.5"][class*="border-yellow"]:hover,
     table td button[class*="p-1.5"][class*="border-yellow"]:hover,
     table td a[class*="p-1.5"][class*="border-amber"]:hover,
-    table td button[class*="p-1.5"][class*="border-amber"]:hover {
+    table td button[class*="p-1.5"][class*="border-amber"]:hover,
+    table td a[class*="p-2"][class*="border-amber"]:hover,
+    table td button[class*="p-2"][class*="border-amber"]:hover {
       background-color: #d97706 !important;
       border-color: #d97706 !important;
       color: #ffffff !important;
     }
     table td a[class*="p-1.5"][class*="border-red"]:hover,
     table td button[class*="p-1.5"][class*="border-red"]:hover,
-    a[class*="border-red"]:hover,
-    button[class*="border-red"]:hover {
+    table td a[class*="p-2"][class*="border-red"]:hover,
+    table td button[class*="p-2"][class*="border-red"]:hover,
+    #trash-modal a[class*="border-red"]:hover,
+    #trash-modal button[class*="border-red"]:hover {
       background-color: #dc2626 !important;
       border-color: #dc2626 !important;
       color: #ffffff !important;
@@ -74,7 +82,9 @@
     table td a[class*="p-1.5"][class*="border-gray"]:hover,
     table td button[class*="p-1.5"][class*="border-gray"]:hover,
     table td a[class*="p-1.5"][class*="border-slate"]:hover,
-    table td button[class*="p-1.5"][class*="border-slate"]:hover {
+    table td button[class*="p-1.5"][class*="border-slate"]:hover,
+    table td a[class*="p-2"][class*="border-slate"]:hover,
+    table td button[class*="p-2"][class*="border-slate"]:hover {
       background-color: #4b5563 !important;
       border-color: #4b5563 !important;
       color: #ffffff !important;
@@ -82,20 +92,52 @@
     table td a[class*="p-1.5"][class*="border-purple"]:hover,
     table td button[class*="p-1.5"][class*="border-purple"]:hover,
     table td a[class*="p-1.5"][class*="border-indigo"]:hover,
-    table td button[class*="p-1.5"][class*="border-indigo"]:hover {
+    table td button[class*="p-1.5"][class*="border-indigo"]:hover,
+    table td a[class*="p-2"][class*="border-indigo"]:hover,
+    table td button[class*="p-2"][class*="border-indigo"]:hover {
       background-color: #9333ea !important;
       border-color: #9333ea !important;
       color: #ffffff !important;
     }
     table td a[class*="p-1.5"]:hover svg,
     table td button[class*="p-1.5"]:hover svg,
-    a[class*="border-emerald"]:hover svg,
-    button[class*="border-emerald"]:hover svg,
-    a[class*="border-green"]:hover svg,
-    button[class*="border-green"]:hover svg,
-    a[class*="border-red"]:hover svg,
-    button[class*="border-red"]:hover svg {
+    table td a[class*="p-2"]:hover svg,
+    table td button[class*="p-2"]:hover svg,
+    #trash-modal a[class*="border-emerald"]:hover svg,
+    #trash-modal button[class*="border-emerald"]:hover svg,
+    #trash-modal a[class*="border-green"]:hover svg,
+    #trash-modal button[class*="border-green"]:hover svg,
+    #trash-modal a[class*="border-red"]:hover svg,
+    #trash-modal button[class*="border-red"]:hover svg {
       stroke: #ffffff !important;
+    }
+
+    /* Tabs must never have a background color on hover, focus, or active */
+    nav button,
+    nav a,
+    button[id^="tab-"],
+    a[id^="tab-"],
+    button[id*="-tab-"],
+    a[id*="-tab-"] {
+      background-color: transparent !important;
+      background: transparent !important;
+    }
+    nav button:hover,
+    nav a:hover,
+    nav button:focus,
+    nav a:focus,
+    nav button:active,
+    nav a:active,
+    button[id^="tab-"]:hover,
+    a[id^="tab-"]:hover,
+    button[id^="tab-"]:focus,
+    a[id^="tab-"]:focus,
+    button[id^="tab-"]:active,
+    a[id^="tab-"]:active,
+    button[id*="-tab-"]:hover,
+    a[id*="-tab-"]:hover {
+      background-color: transparent !important;
+      background: transparent !important;
     }
 
     /* ===== Settings Modal Responsive Styles ===== */

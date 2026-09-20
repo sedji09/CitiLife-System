@@ -498,26 +498,38 @@
                 <?php
                 // Data mapping logic for premium labels
                 $actionLabel = $log['action'] ?? 'Activity Recorded';
+                $act = $log['action'] ?? '';
+                $det = $log['details'] ?? '';
+                $mod = $log['module'] ?? '';
+
                 $statusLabel = 'Successful';
                 $sColor = 'green';
 
-                // Priority: Check for explicit rejections
-                if (stripos($log['action'], 'Rejected') !== false || stripos($log['details'], 'Rejected') !== false) {
+                // Check for unsuccessful/failed actions
+                $isUnsuccessful = false;
+                foreach (['fail', 'unsuccessful', 'reject', 'denied', 'lockout', 'locked', 'invalid', 'cancel', 'error'] as $kw) {
+                    if (stripos($act, $kw) !== false || stripos($det, $kw) !== false) {
+                        $isUnsuccessful = true;
+                        break;
+                    }
+                }
+
+                if ($isUnsuccessful) {
                   $statusLabel = 'Unsuccessful';
                   $sColor = 'red';
-                } elseif ($log['module'] === 'Patient Management') {
+                } elseif ($mod === 'Patient Management') {
                   $actionLabel = 'Account Registration';
-                  if (strpos($log['action'], 'Registered') !== false) {
+                  if (strpos($act, 'Registered') !== false) {
                     $statusLabel = 'Pending Approval';
                     $sColor = 'red';
                   }
-                } elseif ($log['module'] === 'X-ray Case') {
+                } elseif ($mod === 'X-ray Case') {
                   $actionLabel = 'X-ray Examination';
-                } elseif ($log['module'] === 'Record Request') {
+                } elseif ($mod === 'Record Request') {
                   $actionLabel = 'Information Request';
                   $statusLabel = 'Pending';
                   $sColor = 'red';
-                } elseif (strpos($log['action'], 'Password Reset') !== false) {
+                } elseif (strpos($act, 'Password Reset') !== false) {
                   $actionLabel = 'Password Reset';
                   $statusLabel = 'Successful';
                   $sColor = 'gray';

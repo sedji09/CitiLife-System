@@ -138,6 +138,22 @@ $statusBadge = [
         background-color: #2d3748 !important;
         /* Slightly lighter than background */
     }
+
+    /* Clean tab buttons - no background, active state is underline only */
+    nav button[id^="tab-patient-"],
+    button[id^="tab-patient-"] {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+    nav button[id^="tab-patient-"]:hover,
+    nav button[id^="tab-patient-"]:focus,
+    nav button[id^="tab-patient-"]:active,
+    button[id^="tab-patient-"]:hover,
+    button[id^="tab-patient-"]:focus,
+    button[id^="tab-patient-"]:active {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
 </style>
 
 <div class="space-y-4 sm:space-y-5 pb-8 max-w-5xl mx-auto">
