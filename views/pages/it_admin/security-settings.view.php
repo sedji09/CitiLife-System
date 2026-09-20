@@ -110,7 +110,7 @@
             </button>
             <button type="button"
                 onclick="confirmFormAction(this, 'update_security', 'Confirm Policy Update', 'Are you sure you want to apply these system-wide security changes? All staff accounts will be immediately affected.', 'action', event)"
-                class="px-8 py-3 rounded-xl bg-red-600 text-sm font-bold text-white hover:bg-red-700 shadow-lg shadow-red-500/30 transition transform active:scale-95">
+                class="px-8 py-3 rounded-xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition transform active:scale-95 cursor-pointer">
                 Save Security Policies
             </button>
         </div>
