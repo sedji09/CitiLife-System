@@ -166,6 +166,12 @@ class PageController
             }
         }
 
+        // Strict security guard: staff/admin roles cannot access patient-exclusive portal pages
+        if (in_array($page, ['my-records', 'case-status'], true) && $role !== 'patient') {
+            $router = new \Framework\Router();
+            $router->error(403);
+        }
+
         // Handle aliases for clean routes
         $actualPage = $page;
         if ($page === 'correction-requests' || $page === 'correction-request') {

@@ -41,10 +41,8 @@ if (!function_exists('guardPermission')) {
      */
     function guardPermission($role, $permKey, $redirect = true) {
         if (hasPermission($role, $permKey) === 0) {
-            if ($redirect) {
-                redirect(url('dashboard?error=unauthorized'));
-            }
-            return false;
+            $router = new \Framework\Router();
+            $router->error(403);
         }
         return true;
     }
