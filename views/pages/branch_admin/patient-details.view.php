@@ -353,230 +353,160 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
     </div>
 </div> <!-- End of Grid -->
 
-<!-- Medical Image Lightbox Modal with Interactive Zoom & Pan Controls -->
-<div id="xray-lightbox-modal"
-    class="fixed inset-0 z-[9999] hidden bg-black/90 backdrop-blur-md flex flex-col opacity-0 transition-opacity duration-300 select-none">
-    
-    <!-- Lightbox Top Navigation & Controls Toolbar -->
-    <div class="h-16 px-6 flex items-center justify-between bg-black/50 border-b border-white/10 shrink-0 z-30">
-        <div class="flex items-center gap-3 text-white">
-            <i data-lucide="image" class="w-5 h-5 text-blue-400"></i>
-            <div>
-                <h4 id="xray-lightbox-title" class="text-sm font-semibold text-white tracking-wide">Diagnostic X-Ray Image</h4>
-                <p class="text-[11px] text-gray-400">Mouse wheel or buttons to zoom • Drag to pan when zoomed</p>
-            </div>
-        </div>
+<!-- Image Lightbox Modal with Blurred Gray Background & Right-Side Close Button -->
+<style>
+    #xray-lightbox-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        z-index: 9999999 !important;
+        display: none;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 24px !important;
+        box-sizing: border-box !important;
+        opacity: 0;
+        transition: opacity 0.25s ease-out;
+        cursor: pointer;
+        user-select: none;
+    }
+    #xray-lightbox-modal.is-open {
+        display: flex !important;
+        opacity: 1 !important;
+    }
+    #xray-lightbox-wrapper {
+        position: relative !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        max-width: min(440px, 85vw) !important;
+        max-height: 72vh !important;
+        cursor: default !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important;
+        background: #000000 !important;
+        transform: scale(0.95);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #xray-lightbox-modal.is-open #xray-lightbox-wrapper {
+        transform: scale(1) !important;
+    }
+    #xray-lightbox-main-img {
+        display: block !important;
+        max-width: min(440px, 85vw) !important;
+        max-height: 72vh !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
+        border-radius: 16px !important;
+        background-color: #000000 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        pointer-events: auto !important;
+    }
+    #xray-lightbox-close-btn {
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+        border: 1px solid rgba(229, 231, 235, 0.9) !important;
+        cursor: pointer !important;
+        z-index: 50 !important;
+        padding: 0 !important;
+        outline: none !important;
+        transition: transform 0.15s ease, background-color 0.15s ease !important;
+    }
+    #xray-lightbox-close-btn:hover {
+        background-color: #f3f4f6 !important;
+        transform: scale(1.08) !important;
+    }
+    #xray-lightbox-close-btn:active {
+        transform: scale(0.95) !important;
+    }
+</style>
 
-        <!-- Floating Zoom & Action Control Pill -->
-        <div class="flex items-center bg-gray-900/80 backdrop-blur-md border border-white/20 rounded-xl p-1 gap-1 shadow-2xl">
-            <button type="button" id="lb-btn-zoom-out" title="Zoom Out (-)"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/15 transition-all">
-                <i data-lucide="minus" class="w-4 h-4"></i>
-            </button>
-            <button type="button" id="lb-btn-zoom-reset" title="Click to Reset 100%"
-                class="px-2.5 h-8 rounded-lg flex items-center justify-center text-xs font-mono font-medium text-white hover:bg-white/15 transition-all">
-                <span id="lb-zoom-level">100%</span>
-            </button>
-            <button type="button" id="lb-btn-zoom-in" title="Zoom In (+)"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/15 transition-all">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-            </button>
-            <div class="w-px h-5 bg-white/20 my-auto mx-0.5"></div>
-            <button type="button" id="lb-btn-rotate" title="Rotate 90°"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/15 transition-all">
-                <i data-lucide="rotate-cw" class="w-4 h-4"></i>
-            </button>
-            <button type="button" id="lb-btn-fit" title="Fit to Screen"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/15 transition-all">
-                <i data-lucide="maximize-2" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <!-- Close Button -->
-        <button type="button" onclick="closeXrayLightbox()"
-            class="w-10 h-10 rounded-xl bg-white/10 hover:bg-red-600/80 border border-white/15 flex items-center justify-center text-white transition-all shadow-lg"
-            title="Close (Esc)">
-            <i data-lucide="x" class="w-5 h-5"></i>
+<div id="xray-lightbox-modal" v-pre onclick="closeXrayLightbox(event)">
+    <div id="xray-lightbox-wrapper" onclick="event.stopPropagation()">
+        <!-- Circular Close Button on the Right Side -->
+        <button type="button" id="xray-lightbox-close-btn" onclick="closeXrayLightbox(event)" title="Close (Esc)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
         </button>
-    </div>
 
-    <!-- Viewer Stage -->
-    <div id="xray-lightbox-stage" class="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center cursor-default bg-black/60">
-        <img id="xray-lightbox-main-img" src="" alt="X-Ray Image"
-            class="max-w-[90vw] max-h-[85vh] object-contain transition-transform duration-75 select-none pointer-events-auto shadow-2xl rounded"
-            draggable="false">
+        <!-- Centered X-Ray Image (Compact Natural Scale) -->
+        <img id="xray-lightbox-main-img" src="" alt="X-Ray Image" draggable="false">
     </div>
 </div>
 
 <script>
     (function () {
-        let scale = 1;
-        let rotation = 0;
-        let translateX = 0;
-        let translateY = 0;
-        let isDragging = false;
-        let startX = 0;
-        let startY = 0;
-        const MIN_ZOOM = 0.5;
-        const MAX_ZOOM = 6.0;
-        const ZOOM_STEP = 0.25;
-
-        const modal = document.getElementById('xray-lightbox-modal');
-        const img = document.getElementById('xray-lightbox-main-img');
-        const stage = document.getElementById('xray-lightbox-stage');
-        const zoomLevelEl = document.getElementById('lb-zoom-level');
-        const btnZoomIn = document.getElementById('lb-btn-zoom-in');
-        const btnZoomOut = document.getElementById('lb-btn-zoom-out');
-        const btnZoomReset = document.getElementById('lb-btn-zoom-reset');
-        const btnRotate = document.getElementById('lb-btn-rotate');
-        const btnFit = document.getElementById('lb-btn-fit');
-
-        function applyTransform() {
-            if (!img) return;
-            img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${rotation}deg)`;
-            if (zoomLevelEl) {
-                zoomLevelEl.textContent = Math.round(scale * 100) + '%';
-            }
-            if (scale > 1) {
-                img.style.cursor = isDragging ? 'grabbing' : 'grab';
-                if (stage) stage.style.cursor = isDragging ? 'grabbing' : 'grab';
-            } else {
-                img.style.cursor = 'default';
-                if (stage) stage.style.cursor = 'default';
-            }
+        function getElements() {
+            const modal = document.getElementById('xray-lightbox-modal');
+            const img = document.getElementById('xray-lightbox-main-img');
+            return { modal, img };
         }
 
-        function resetViewer() {
-            scale = 1;
-            rotation = 0;
-            translateX = 0;
-            translateY = 0;
-            applyTransform();
-        }
-
-        window.openXrayLightbox = function (src, label) {
+        window.openXrayLightbox = function (src) {
+            let { modal, img } = getElements();
             if (!modal || !img) return;
+
+            // Ensure modal is directly under document.body to avoid layout clipping and Vue v-dom detachment
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+                const els = getElements();
+                modal = els.modal;
+                img = els.img;
+            }
+
             img.src = src;
-            const titleEl = document.getElementById('xray-lightbox-title');
-            if (titleEl && label) {
-                titleEl.textContent = label;
-            }
-            resetViewer();
+            document.body.style.overflow = 'hidden';
+            modal.style.display = 'flex';
 
-            document.body.classList.add('overflow-hidden');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-            }, 10);
-            if (window.lucide) window.lucide.createIcons();
+            // Force reflow for smooth animation
+            void modal.offsetWidth;
+            modal.classList.add('is-open');
         };
 
-        window.closeXrayLightbox = function () {
+        window.closeXrayLightbox = function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            const { modal, img } = getElements();
             if (!modal || !img) return;
-            modal.classList.add('opacity-0');
-            document.body.classList.remove('overflow-hidden');
+
+            modal.classList.remove('is-open');
+            document.body.style.overflow = '';
+
             setTimeout(() => {
-                modal.classList.add('hidden');
-                img.src = '';
-                resetViewer();
-            }, 300);
+                if (!modal.classList.contains('is-open')) {
+                    modal.style.display = 'none';
+                    img.src = '';
+                }
+            }, 260);
         };
-
-        if (btnZoomIn) {
-            btnZoomIn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (scale < MAX_ZOOM) {
-                    scale = Math.min(scale + ZOOM_STEP, MAX_ZOOM);
-                    applyTransform();
-                }
-            });
-        }
-
-        if (btnZoomOut) {
-            btnZoomOut.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (scale > MIN_ZOOM) {
-                    scale = Math.max(scale - ZOOM_STEP, MIN_ZOOM);
-                    if (scale <= 1) { translateX = 0; translateY = 0; }
-                    applyTransform();
-                }
-            });
-        }
-
-        if (btnZoomReset) {
-            btnZoomReset.addEventListener('click', (e) => {
-                e.stopPropagation();
-                resetViewer();
-            });
-        }
-
-        if (btnFit) {
-            btnFit.addEventListener('click', (e) => {
-                e.stopPropagation();
-                resetViewer();
-            });
-        }
-
-        if (btnRotate) {
-            btnRotate.addEventListener('click', (e) => {
-                e.stopPropagation();
-                rotation = (rotation + 90) % 360;
-                applyTransform();
-            });
-        }
-
-        // Mouse Wheel Zoom
-        if (stage) {
-            stage.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-                const newScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale + delta));
-                if (newScale !== scale) {
-                    scale = newScale;
-                    if (scale <= 1) { translateX = 0; translateY = 0; }
-                    applyTransform();
-                }
-            }, { passive: false });
-
-            // Drag to Pan
-            stage.addEventListener('mousedown', (e) => {
-                if (e.target.closest('button')) return;
-                if (scale <= 1) return;
-                isDragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                applyTransform();
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                translateX = e.clientX - startX;
-                translateY = e.clientY - startY;
-                applyTransform();
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    applyTransform();
-                }
-            });
-
-            // Close on clicking backdrop when not zoomed
-            stage.addEventListener('click', (e) => {
-                if (e.target === stage && scale <= 1) {
-                    closeXrayLightbox();
-                }
-            });
-        }
 
         // Close on Escape Key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-                closeXrayLightbox();
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('xray-lightbox-modal');
+                if (modal && modal.classList.contains('is-open')) {
+                    closeXrayLightbox(e);
+                }
             }
-        });
-
         // Clean URL address bar so ?id=... or ?ref=... is never exposed to users
         try {
             if (window.history && window.history.replaceState) {

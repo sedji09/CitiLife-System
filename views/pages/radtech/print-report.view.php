@@ -112,25 +112,58 @@ if ($sessionRole === 'patient') {
     }
 }
 
-// Staff branch scoping (RadTech and Branch Admin only allowed to access cases from their assigned branch)
+// Staff branch scoping (RadTech and Branch Admin only allowed to access cases from their assigned branch unless authorized via an Approved Record Request)
 if (in_array($sessionRole, ['radtech', 'branch_admin'], true)) {
     $staffBranchId = (int) ($_SESSION['branch_id'] ?? 0);
     $caseBranchId = (int) ($case['branch_id'] ?? 0);
     if ($staffBranchId > 0 && $caseBranchId > 0 && $staffBranchId !== $caseBranchId) {
-        $auditLogModel->addLog(
-            $sessionUserId,
-            'CROSS_BRANCH_ACCESS_DENIED',
-            'Medical Records',
-            'Case',
-            $id,
-            "Staff user #{$sessionUserId} from Branch #{$staffBranchId} attempted to access Case #{$id} from Branch #{$caseBranchId}."
-        );
-        die('<div style="font-family:sans-serif;padding:2.5rem;text-align:center;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;max-width:520px;margin:4rem auto;box-shadow:0 10px 25px rgba(0,0,0,0.08);">'
-          . '<div style="font-size:3rem;margin-bottom:1rem;">&#128274;</div>'
-          . '<h2 style="margin-top:0;color:#991b1b;font-size:1.4rem;">Access Restricted: Branch Mismatch</h2>'
-          . '<p style="color:#4b5563;font-size:0.95rem;line-height:1.5;">This record belongs to another branch. You are only authorized to print and view records assigned to your branch.</p>'
-          . '<button onclick="window.close(); history.back();" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Go Back</button>'
-          . '</div>');
+        $isCrossBranchAuthorized = false;
+        try {
+            // Check if there is an approved record request allowing this staff's branch to access this specific case
+            $stmtReqAuth = $pdo->prepare("
+                SELECT r.status
+                FROM record_requests r
+                LEFT JOIN cases c ON (LOWER(TRIM(r.patient_no)) = LOWER(TRIM(c.case_number)))
+                LEFT JOIN patients p ON (c.patient_id = p.id OR LOWER(TRIM(r.patient_no)) = LOWER(TRIM(p.patient_number)))
+                WHERE r.branch_id = ? 
+                  AND (
+                      LOWER(TRIM(r.patient_no)) = LOWER(TRIM(?))
+                      OR c.id = ? 
+                      OR (p.id IS NOT NULL AND p.id = ?)
+                  )
+                ORDER BY r.id DESC
+                LIMIT 1
+            ");
+            $stmtReqAuth->execute([
+                $staffBranchId,
+                $case['case_number'] ?? '',
+                $case['id'] ?? 0,
+                $case['patient_id'] ?? 0
+            ]);
+            $latestReqStatus = $stmtReqAuth->fetchColumn();
+            if ($latestReqStatus === 'Approved') {
+                $isCrossBranchAuthorized = true;
+            }
+        } catch (\Throwable $e) {
+            error_log("Notice: Cross-branch record request authorization check failed: " . $e->getMessage());
+        }
+
+        if (!$isCrossBranchAuthorized) {
+            $auditLogModel->addLog(
+                $sessionUserId,
+                'CROSS_BRANCH_ACCESS_DENIED',
+                'Medical Records',
+                'Case',
+                $id,
+                "Staff user #{$sessionUserId} from Branch #{$staffBranchId} attempted to access Case #{$id} from Branch #{$caseBranchId}."
+            );
+            die('<div style="font-family:sans-serif;padding:2.5rem;text-align:center;color:#991b1b;background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;max-width:520px;margin:4rem auto;box-shadow:0 10px 25px rgba(0,0,0,0.08);">'
+              . '<div style="font-size:3rem;margin-bottom:1rem;">&#128274;</div>'
+              . '<h2 style="margin-top:0;color:#991b1b;font-size:1.4rem;">Access Restricted: Branch Mismatch</h2>'
+              . '<p style="color:#4b5563;font-size:0.95rem;line-height:1.5;">This record belongs to another branch. You are only authorized to print and view records assigned to your branch.</p>'
+              . '<button onclick="window.close(); history.back();" style="margin-top:1.5rem;padding:0.6rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Go Back</button>'
+              . '</div>');
+        }
     }
 }
 
