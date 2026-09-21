@@ -27,16 +27,41 @@
 
     function parseDateISO(str) {
         if (!str || typeof str !== 'string') return null;
-        const parts = str.trim().split('-');
+        const s = str.trim();
+        // Format: YYYY-MM-DD
+        const parts = s.split('-');
         if (parts.length === 3) {
             const y = parseInt(parts[0], 10);
             const m = parseInt(parts[1], 10) - 1;
             const d = parseInt(parts[2], 10);
-            const dt = new Date(y, m, d);
-            if (!isNaN(dt.getTime()) && dt.getDate() === d) return dt;
+            if (!isNaN(y) && !isNaN(m) && !isNaN(d) && y > 1900 && m >= 0 && m <= 11 && d >= 1 && d <= 31) {
+                const dt = new Date(y, m, d);
+                if (!isNaN(dt.getTime()) && dt.getDate() === d) return dt;
+            }
+        }
+        // Format: YYYY/MM/DD or MM/DD/YYYY
+        const slashParts = s.split('/');
+        if (slashParts.length === 3) {
+            if (slashParts[0].length === 4) { // YYYY/MM/DD
+                const y = parseInt(slashParts[0], 10);
+                const m = parseInt(slashParts[1], 10) - 1;
+                const d = parseInt(slashParts[2], 10);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                    const dt = new Date(y, m, d);
+                    if (!isNaN(dt.getTime()) && dt.getDate() === d) return dt;
+                }
+            } else if (slashParts[2].length === 4) { // MM/DD/YYYY
+                const m = parseInt(slashParts[0], 10) - 1;
+                const d = parseInt(slashParts[1], 10);
+                const y = parseInt(slashParts[2], 10);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                    const dt = new Date(y, m, d);
+                    if (!isNaN(dt.getTime()) && dt.getDate() === d) return dt;
+                }
+            }
         }
         // Fallback for other standard formats
-        const fallback = new Date(str);
+        const fallback = new Date(s);
         return isNaN(fallback.getTime()) ? null : fallback;
     }
 
@@ -142,6 +167,36 @@
             this.input.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.open();
+            });
+
+            // Allow manual typing and sync live with calendar
+            this.input.addEventListener('input', () => {
+                const val = this.input.value.trim();
+                const parsed = parseDateISO(val);
+                if (parsed) {
+                    this.selectedDate = parsed;
+                    this.viewDate = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+                    this.render();
+                    if (typeof this.options.onSelect === 'function') {
+                        this.options.onSelect(formatDateISO(parsed), parsed);
+                    }
+                }
+            });
+
+            this.input.addEventListener('blur', () => {
+                const val = this.input.value.trim();
+                if (val) {
+                    const parsed = parseDateISO(val);
+                    if (parsed) {
+                        const formatted = formatDateISO(parsed);
+                        if (this.input.value !== formatted) {
+                            this.input.value = formatted;
+                            this.selectedDate = parsed;
+                            this.viewDate = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+                            this.render();
+                        }
+                    }
+                }
             });
 
             // If there's an associated label or icon, make it open the picker too

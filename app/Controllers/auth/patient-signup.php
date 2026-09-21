@@ -512,8 +512,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate
                                 <span class="text-red-500">*</span></label>
                             <div class="relative">
-                                <input id="d_birthdate" name="birthdate" type="text" required readonly
-                                    placeholder="Select birthdate"
+                                <input id="d_birthdate" name="birthdate" type="text" required
+                                    placeholder="YYYY-MM-DD"
                                     class="appearance-none block w-full px-3.5 py-2.5 pl-10 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm transition-all cursor-pointer"
                                     value="<?= htmlspecialchars($birthdate ?? '') ?>">
                                 <i data-lucide="calendar" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
@@ -710,9 +710,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
                             <div class="relative mb-6 overflow-visible" id="m_birthdate_container" style="min-height: 330px;">
-                                <input type="text" id="m_birthdate" name="birthdate" required readonly
+                                <input type="text" id="m_birthdate" name="birthdate" required
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-red-600 focus:ring-1 focus:ring-red-600 focus:outline-none transition-all cursor-pointer"
-                                    placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
+                                    placeholder="YYYY-MM-DD" value="<?= htmlspecialchars($birthdate ?? '') ?>" />
                                 <i data-lucide="calendar"
                                     class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"

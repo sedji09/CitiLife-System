@@ -772,7 +772,7 @@ if (!$isMultiExam) {
     <div class="page">
         <!-- Watermark -->
         <div class="watermark">
-            <img src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/img/logo/logo-template.png" alt="Watermark">
+            <img src="<?= getSystemLogoUrl() ?>" alt="Watermark">
         </div>
 
         <!-- Header -->

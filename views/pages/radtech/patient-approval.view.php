@@ -429,7 +429,7 @@ foreach ($allServices as $service) {
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Birthdate</label>
                         <div class="relative mt-1">
-                            <input type="text" id="modalBirthdate" readonly placeholder="Select birthdate"
+                            <input type="text" id="modalBirthdate" placeholder="YYYY-MM-DD"
                                 class="text-sm text-gray-900 bg-gray-50 p-2 pr-8 rounded w-full border border-gray-200"
                                 required>
                             <i data-lucide="calendar"

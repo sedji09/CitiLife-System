@@ -165,7 +165,7 @@
                             <?php $birthdateValue = $_POST['birthdate'] ?? ''; ?>
                             <div class="relative">
                                 <input type="text" id="birthdate" name="birthdate" required
-                                    placeholder="Select birthdate" readonly
+                                    placeholder="YYYY-MM-DD"
                                     value="<?= htmlspecialchars($birthdateValue) ?>"
                                     class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 req-new transition-all cursor-pointer shadow-sm">
                                 <i data-lucide="calendar" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>

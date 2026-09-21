@@ -1408,8 +1408,8 @@ $catBadgeLabel = match ($dCategory) {
                             class="text-xs text-blue-600 font-semibold"><?= !empty($caseDetails['age']) ? $caseDetails['age'] . ' yrs old' : '' ?></span>
                     </div>
                     <div class="relative">
-                        <input type="text" name="birthdate" id="modal_pat_birthdate" readonly
-                            placeholder="Select birthdate" required
+                        <input type="text" name="birthdate" id="modal_pat_birthdate"
+                            placeholder="YYYY-MM-DD" required
                             value="<?= htmlspecialchars($caseDetails['birthdate'] ?? '') ?>"
                             class="w-full text-sm text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl p-2.5 pr-9 outline-none transition cursor-pointer">
                         <i data-lucide="calendar"

@@ -223,9 +223,9 @@
                 <div>
                     <label for="birthdate" class="block text-sm font-semibold text-gray-700 mb-1.5">Birthdate</label>
                     <div class="relative">
-                        <input type="text" id="birthdate" name="birthdate" required readonly placeholder="yyyy-mm-dd"
+                        <input type="text" id="birthdate" name="birthdate" required placeholder="YYYY-MM-DD"
                             class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all cursor-pointer">
-                        <i data-lucide="calendar" class="absolute left-3 top-3 w-4 h-4 text-gray-400"></i>
+                        <i data-lucide="calendar" class="absolute left-3 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
                     </div>
                 </div>
                 <div>
