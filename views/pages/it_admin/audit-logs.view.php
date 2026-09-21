@@ -45,8 +45,7 @@
 
     <!-- Filter Bar -->
     <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-        <form method="GET" action="" class="flex flex-col gap-4" id="filterForm">
-            <input type="hidden" name="page" value="audit-logs">
+        <form method="GET" action="<?= url('audit-logs') ?>" class="flex flex-col gap-4" id="filterForm">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- Search -->
@@ -241,8 +240,14 @@
                 <div class="flex items-center flex-wrap gap-1.5">
                     <?php
                     $renderPageBtn = function($label, $targetPage, $disabled, $isActive = false) use ($filters) {
-                        $query = http_build_query(array_merge(array_filter($filters), ['page' => 'audit-logs', 'p' => $targetPage]));
-                        $url = '?' . $query;
+                        $cleanFilters = [];
+                        foreach ($filters as $k => $v) {
+                            if ($v !== '' && $v !== null && !($k === 'sort' && $v === 'desc')) {
+                                $cleanFilters[$k] = $v;
+                            }
+                        }
+                        $cleanFilters['p'] = $targetPage;
+                        $url = url('audit-logs') . '?' . http_build_query($cleanFilters);
                         
                         if ($isActive) {
                             return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';
@@ -394,5 +399,12 @@
         document.querySelectorAll('select.filter-control, select[name="module"], select[name="rl"], select[name="role"], select[name="sort"]').forEach(select => {
             select.addEventListener('change', saveScroll);
         });
+
+        // Hide query parameters from address bar so it stays completely clean as /audit-logs
+        try {
+            if (window.history && window.history.replaceState && window.location.search) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.hash);
+            }
+        } catch (e) { }
     });
 </script>

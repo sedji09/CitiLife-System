@@ -2081,95 +2081,16 @@ $catBadgeLabel = match ($dCategory) {
 <?php endif; ?>
 
 <!-- Image Lightbox Modal with Blurred Gray Background & Right-Side Close Button -->
-<style>
-    #xray-lightbox-modal {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: rgba(15, 23, 42, 0.65) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        z-index: 9999999 !important;
-        display: none;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 24px !important;
-        box-sizing: border-box !important;
-        opacity: 0;
-        transition: opacity 0.25s ease-out;
-        cursor: pointer;
-        user-select: none;
-    }
-    #xray-lightbox-modal.is-open {
-        display: flex !important;
-        opacity: 1 !important;
-    }
-    #xray-lightbox-wrapper {
-        position: relative !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        max-width: min(440px, 85vw) !important;
-        max-height: 72vh !important;
-        cursor: default !important;
-        border-radius: 16px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important;
-        background: #000000 !important;
-        transform: scale(0.95);
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    #xray-lightbox-modal.is-open #xray-lightbox-wrapper {
-        transform: scale(1) !important;
-    }
-    #xray-lightbox-main-img {
-        display: block !important;
-        max-width: min(440px, 85vw) !important;
-        max-height: 72vh !important;
-        width: auto !important;
-        height: auto !important;
-        object-fit: contain !important;
-        border-radius: 16px !important;
-        background-color: #000000 !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        pointer-events: auto !important;
-    }
-    #xray-lightbox-close-btn {
-        position: absolute !important;
-        top: 12px !important;
-        right: 12px !important;
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 50% !important;
-        background-color: #ffffff !important;
-        color: #111827 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-        border: 1px solid rgba(229, 231, 235, 0.9) !important;
-        cursor: pointer !important;
-        z-index: 50 !important;
-        padding: 0 !important;
-        outline: none !important;
-        transition: transform 0.15s ease, background-color 0.15s ease !important;
-    }
-    #xray-lightbox-close-btn:hover {
-        background-color: #f3f4f6 !important;
-        transform: scale(1.08) !important;
-    }
-    #xray-lightbox-close-btn:active {
-        transform: scale(0.95) !important;
-    }
-</style>
-
-<div id="xray-lightbox-modal" v-pre onclick="closeXrayLightbox(event)">
-    <div id="xray-lightbox-wrapper" onclick="event.stopPropagation()">
-        <!-- Circular Close Button on the Right Side -->
-        <button type="button" id="xray-lightbox-close-btn" onclick="closeXrayLightbox(event)" title="Close (Esc)">
+<div id="xray-lightbox-modal" v-pre
+    style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(15, 23, 42, 0.65) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; z-index: 9999999 !important; display: none; align-items: center !important; justify-content: center !important; padding: 24px !important; box-sizing: border-box !important; opacity: 0; transition: opacity 0.25s ease-out; cursor: pointer; user-select: none;"
+    onclick="closeXrayLightbox(event)">
+    <div id="xray-lightbox-wrapper"
+        style="position: relative !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; max-width: min(440px, 85vw) !important; max-height: 72vh !important; cursor: default !important; border-radius: 16px !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important; background: #000000 !important; transform: scale(0.95); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);"
+        onclick="event.stopPropagation()">
+        <!-- Circular Close Button Outside on the Top-Right Side -->
+        <button type="button" id="xray-lightbox-close-btn"
+            style="position: absolute !important; top: -16px !important; right: -16px !important; width: 38px !important; height: 38px !important; border-radius: 50% !important; background-color: #ffffff !important; color: #111827 !important; display: flex !important; align-items: center !important; justify-content: center !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important; border: 1px solid rgba(229, 231, 235, 0.9) !important; cursor: pointer !important; z-index: 60 !important; padding: 0 !important; outline: none !important;"
+            onclick="closeXrayLightbox(event)">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2177,7 +2098,9 @@ $catBadgeLabel = match ($dCategory) {
         </button>
 
         <!-- Centered X-Ray Image (Compact Natural Scale) -->
-        <img id="xray-lightbox-main-img" src="" alt="X-Ray Image" draggable="false">
+        <img id="xray-lightbox-main-img" src="" alt="X-Ray Image"
+            style="display: block !important; max-width: min(440px, 85vw) !important; max-height: 72vh !important; width: auto !important; height: auto !important; object-fit: contain !important; border-radius: 16px !important; background-color: #000000 !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; pointer-events: auto !important;"
+            draggable="false">
     </div>
 </div>
 
@@ -2185,19 +2108,21 @@ $catBadgeLabel = match ($dCategory) {
     (function () {
         function getElements() {
             const modal = document.getElementById('xray-lightbox-modal');
+            const wrapper = document.getElementById('xray-lightbox-wrapper');
             const img = document.getElementById('xray-lightbox-main-img');
-            return { modal, img };
+            return { modal, wrapper, img };
         }
 
         window.openXrayLightbox = function (src) {
-            let { modal, img } = getElements();
+            let { modal, wrapper, img } = getElements();
             if (!modal || !img) return;
 
-            // Ensure modal is directly under document.body to avoid layout clipping and Vue v-dom detachment
+            // Ensure modal is directly under document.body so no parent container clips or hides it
             if (modal.parentElement !== document.body) {
                 document.body.appendChild(modal);
                 const els = getElements();
                 modal = els.modal;
+                wrapper = els.wrapper;
                 img = els.img;
             }
 
@@ -2207,19 +2132,21 @@ $catBadgeLabel = match ($dCategory) {
 
             // Force reflow for smooth animation
             void modal.offsetWidth;
-            modal.classList.add('is-open');
+            modal.style.opacity = '1';
+            if (wrapper) wrapper.style.transform = 'scale(1)';
         };
 
         window.closeXrayLightbox = function (e) {
             if (e && e.stopPropagation) e.stopPropagation();
-            const { modal, img } = getElements();
+            const { modal, wrapper, img } = getElements();
             if (!modal || !img) return;
 
-            modal.classList.remove('is-open');
+            modal.style.opacity = '0';
+            if (wrapper) wrapper.style.transform = 'scale(0.95)';
             document.body.style.overflow = '';
 
             setTimeout(() => {
-                if (!modal.classList.contains('is-open')) {
+                if (modal.style.opacity === '0') {
                     modal.style.display = 'none';
                     img.src = '';
                 }
@@ -2230,7 +2157,7 @@ $catBadgeLabel = match ($dCategory) {
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('xray-lightbox-modal');
-                if (modal && !modal.classList.contains('hidden')) {
+                if (modal && modal.style.display === 'flex') {
                     closeXrayLightbox(e);
                 }
             }

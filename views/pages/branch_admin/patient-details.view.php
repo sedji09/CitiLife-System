@@ -11,7 +11,8 @@ if (isset($caseNotFound) && $caseNotFound) {
 
 <!-- Header -->
 <div class="flex items-center gap-4">
-    <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('branch-xray-cases') ?>" title="Back" class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
+    <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('branch-xray-cases') ?>" title="Back"
+        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>
     </a>
     <div>
@@ -39,18 +40,15 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div class="px-2 space-y-2">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Case Number</span>
-                    <span
-                        class="font-bold text-gray-900"><?= htmlspecialchars($caseDetails['case_number']) ?></span>
+                    <span class="font-bold text-gray-900"><?= htmlspecialchars($caseDetails['case_number']) ?></span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Patient Number</span>
-                    <span
-                        class="font-bold text-gray-900"><?= htmlspecialchars($caseDetails['patient_number']) ?></span>
+                    <span class="font-bold text-gray-900"><?= htmlspecialchars($caseDetails['patient_number']) ?></span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Full Name</span>
-                    <span
-                        class="font-bold text-gray-900"><?= htmlspecialchars(formatFullName($caseDetails)) ?></span>
+                    <span class="font-bold text-gray-900"><?= htmlspecialchars(formatFullName($caseDetails)) ?></span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-600">Age/Sex</span>
@@ -85,11 +83,12 @@ if (isset($caseNotFound) && $caseNotFound) {
             <div>
                 <label class="block text-gray-600 text-sm font-medium mb-1.5">Exam Types</label>
                 <div class="flex flex-wrap gap-2">
-                    <?php 
+                    <?php
                     $exams = explode(',', $caseDetails['exam_type']);
-                    foreach($exams as $ex): 
-                    ?>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                    foreach ($exams as $ex):
+                        ?>
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
                             <?= htmlspecialchars(trim($ex)) ?>
                         </span>
                     <?php endforeach; ?>
@@ -165,292 +164,236 @@ if (isset($caseNotFound) && $caseNotFound) {
 
 </div>
 
-<?php 
-$isReverted = !empty($caseDetails['re_edit_reason']) 
-    || ($caseDetails['report_status'] ?? '') === 'Draft' 
+<?php
+$isReverted = !empty($caseDetails['re_edit_reason'])
+    || ($caseDetails['report_status'] ?? '') === 'Draft'
     || in_array($caseDetails['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
-$isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isReverted; 
+$isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 'Released']) && !$isReverted;
 ?>
 
 <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
-    <div class="mb-4">
-        <div class="flex items-center gap-2">
-            <i data-lucide="image" class="h-5 w-5 text-blue-600"></i>
-            <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Archive</h3>
+    <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
+        <div class="mb-4">
+            <div class="flex items-center gap-2">
+                <i data-lucide="image" class="h-5 w-5 text-blue-600"></i>
+                <h3 class="text-lg font-semibold text-gray-800">Diagnostic Image Archive</h3>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Archived X-ray images and diagnostic files</p>
         </div>
-        <p class="text-xs text-gray-500 mt-1">Archived X-ray images and diagnostic files</p>
-    </div>
 
-    <div id="file-preview-area" class="flex-1 flex flex-col justify-center">
-        <!-- Read-only image grid -->
-        <?php
-        if (!function_exists('getXrayImageLabel')) {
-            function getXrayImageLabel($sPath, $idx = 0, $examType = '') {
-                $baseName = pathinfo($sPath, PATHINFO_FILENAME);
-                if (preg_match('/^case_\d+_\d+_\d+_(.+)$/', $baseName, $m)) {
-                    return trim($m[1]);
-                }
-                if (!empty($examType)) {
-                    $exams = array_values(array_filter(array_map('trim', explode(',', $examType))));
-                    if (isset($exams[$idx]) && $exams[$idx] !== '') {
-                        return $exams[$idx];
+        <div id="file-preview-area" class="flex-1 flex flex-col justify-center">
+            <!-- Read-only image grid -->
+            <?php
+            if (!function_exists('getXrayImageLabel')) {
+                function getXrayImageLabel($sPath, $idx = 0, $examType = '')
+                {
+                    $baseName = pathinfo($sPath, PATHINFO_FILENAME);
+                    if (preg_match('/^case_\d+_\d+_\d+_(.+)$/', $baseName, $m)) {
+                        return trim($m[1]);
                     }
+                    if (!empty($examType)) {
+                        $exams = array_values(array_filter(array_map('trim', explode(',', $examType))));
+                        if (isset($exams[$idx]) && $exams[$idx] !== '') {
+                            return $exams[$idx];
+                        }
+                    }
+                    if (!preg_match('/^case_\d+/i', $baseName) && strlen($baseName) > 2) {
+                        return str_replace(['_', '-'], ' ', $baseName);
+                    }
+                    if (!empty($examType) && !str_contains($examType, ',')) {
+                        return trim($examType);
+                    }
+                    return 'IMG ' . ($idx + 1);
                 }
-                if (!preg_match('/^case_\d+/i', $baseName) && strlen($baseName) > 2) {
-                    return str_replace(['_', '-'], ' ', $baseName);
-                }
-                if (!empty($examType) && !str_contains($examType, ',')) {
-                    return trim($examType);
-                }
-                return 'IMG ' . ($idx + 1);
             }
-        }
-        $savedPaths = [];
-        if (!empty($caseDetails['image_path'])) {
-            $decoded = json_decode($caseDetails['image_path'], true);
-            if (is_array($decoded)) {
-                $savedPaths = $decoded;
-            } else {
-                $savedPaths = [$caseDetails['image_path']]; // legacy single path
+            $savedPaths = [];
+            if (!empty($caseDetails['image_path'])) {
+                $decoded = json_decode($caseDetails['image_path'], true);
+                if (is_array($decoded)) {
+                    $savedPaths = $decoded;
+                } else {
+                    $savedPaths = [$caseDetails['image_path']]; // legacy single path
+                }
             }
-        }
-        ?>
-        <?php if (!empty($savedPaths)): ?>
-            <div class="flex flex-wrap gap-4">
-                <?php foreach ($savedPaths as $idx => $sPath): ?>
-                    <?php 
-                    $imgLabel = getXrayImageLabel($sPath, $idx, $caseDetails['exam_type'] ?? ''); 
-                    $cleanImgUrl = url(ltrim($sPath, '/'));
-                    ?>
-                    <div onclick="openXrayLightbox('<?= $cleanImgUrl ?>', '<?= htmlspecialchars($imgLabel, ENT_QUOTES) ?>')"
-                        style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
-                        class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
-                        title="<?= htmlspecialchars($imgLabel) ?> — Click to view fullscreen">
-                        <img src="<?= $cleanImgUrl ?>" 
-                             alt="<?= htmlspecialchars($imgLabel) ?>"
-                             class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
-                        
-                        <!-- Center Expand Icon on Hover -->
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                            <div class="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                                <i data-lucide="maximize-2" class="w-5 h-5 text-white stroke-[2.5]"></i>
+            ?>
+            <?php if (!empty($savedPaths)): ?>
+                <div class="flex flex-wrap gap-4">
+                    <?php foreach ($savedPaths as $idx => $sPath): ?>
+                        <?php
+                        $imgLabel = getXrayImageLabel($sPath, $idx, $caseDetails['exam_type'] ?? '');
+                        $cleanImgUrl = url(ltrim($sPath, '/'));
+                        ?>
+                        <div onclick="openXrayLightbox('<?= $cleanImgUrl ?>', '<?= htmlspecialchars($imgLabel, ENT_QUOTES) ?>')"
+                            style="width: 128px; height: 128px; min-width: 128px; min-height: 128px;"
+                            class="group relative rounded-2xl overflow-hidden border-2 border-gray-300 hover:border-red-600 bg-black cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md shrink-0 flex items-center justify-center select-none"
+                            title="<?= htmlspecialchars($imgLabel) ?> — Click to view fullscreen">
+                            <img src="<?= $cleanImgUrl ?>" alt="<?= htmlspecialchars($imgLabel) ?>"
+                                class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200">
+
+                            <!-- Center Expand Icon on Hover -->
+                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
+                                    <i data-lucide="maximize-2" class="w-5 h-5 text-white stroke-[2.5]"></i>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Label -->
+                            <div class="absolute bottom-0 left-0 right-0 bg-black/75 text-[10px] font-bold text-white py-1 px-1.5 text-center uppercase tracking-wider z-10 pointer-events-none truncate"
+                                title="<?= htmlspecialchars($imgLabel) ?>">
+                                <?= htmlspecialchars($imgLabel) ?>
                             </div>
                         </div>
-
-                        <!-- Bottom Label -->
-                        <div class="absolute bottom-0 left-0 right-0 bg-black/75 text-[10px] font-bold text-white py-1 px-1.5 text-center uppercase tracking-wider z-10 pointer-events-none truncate" title="<?= htmlspecialchars($imgLabel) ?>">
-                            <?= htmlspecialchars($imgLabel) ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[200px]">
-                <div class="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
-                    <i data-lucide="image-off" class="h-6 w-6 text-gray-400"></i>
+                    <?php endforeach; ?>
                 </div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-1">No Images Uploaded</h4>
-                <p class="text-xs text-gray-500 max-w-[280px]">No diagnostic X-ray images have been uploaded for this case yet.</p>
-            </div>
-        <?php endif; ?>
-    </div>
+            <?php else: ?>
+                <div
+                    class="bg-gray-50 border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[200px]">
+                    <div
+                        class="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                        <i data-lucide="image-off" class="h-6 w-6 text-gray-400"></i>
+                    </div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-1">No Images Uploaded</h4>
+                    <p class="text-xs text-gray-500 max-w-[280px]">No diagnostic X-ray images have been uploaded for this
+                        case yet.</p>
+                </div>
+            <?php endif; ?>
+        </div>
 
-    <!-- Action Buttons -->
-    <div class="mt-6 flex gap-4 shrink-0">
-        <?php if ($isReportReady): ?>
-            <a href="javascript:void(0)"
-                onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?ref=' . generateReportToken($caseId)) ?>', 'Yes, Print', true, event)"
-                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
-                <i data-lucide="printer" class="w-4 h-4"></i>
-                Print Result
-            </a>
-        <?php else: ?>
-            <button type="button" disabled title="Print Result (Available after Radiologist submits report)"
-                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-400 cursor-not-allowed shadow-sm">
-                <i data-lucide="printer" class="w-4 h-4"></i>
-                Print Result
-            </button>
-        <?php endif; ?>
+        <!-- Action Buttons -->
+        <div class="mt-6 flex gap-4 shrink-0">
+            <?php if ($isReportReady): ?>
+                <a href="javascript:void(0)"
+                    onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?ref=' . generateReportToken($caseId)) ?>', 'Yes, Print', true, event)"
+                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition shadow-sm">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    Print Result
+                </a>
+            <?php else: ?>
+                <button type="button" disabled title="Print Result (Available after Radiologist submits report)"
+                    class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-400 cursor-not-allowed shadow-sm">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    Print Result
+                </button>
+            <?php endif; ?>
+        </div>
     </div>
-</div>
 
     <!-- Radiologist Report Findings Card -->
     <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
         <div class="mb-4">
             <div class="flex items-center gap-2">
                 <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
-                <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-700' ?>">Radiologist Report Findings</h3>
+                <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-700' ?>">Radiologist
+                    Report Findings</h3>
             </div>
             <p class="text-xs text-gray-500 mt-1">Official radiological interpretation and clinical impression</p>
         </div>
-        
+
         <?php if ($isReportReady): ?>
-        
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
-            <?php
-            $findingsRaw = trim($caseDetails['findings'] ?? '');
-            $impressionRaw = trim($caseDetails['impression'] ?? '');
-            $isMultiExam = false;
-            $parsedFindings = [];
 
-            if (!empty($findingsRaw) && (str_starts_with($findingsRaw, '{') || str_starts_with($findingsRaw, '['))) {
-                $decoded = json_decode($findingsRaw, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $isMultiExam = true;
-                    $parsedFindings = $decoded;
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+                <?php
+                $findingsRaw = trim($caseDetails['findings'] ?? '');
+                $impressionRaw = trim($caseDetails['impression'] ?? '');
+                $isMultiExam = false;
+                $parsedFindings = [];
+
+                if (!empty($findingsRaw) && (str_starts_with($findingsRaw, '{') || str_starts_with($findingsRaw, '['))) {
+                    $decoded = json_decode($findingsRaw, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $isMultiExam = true;
+                        $parsedFindings = $decoded;
+                    }
                 }
-            }
-            ?>
+                ?>
 
-            <?php if ($isMultiExam): ?>
-                <?php foreach ($parsedFindings as $examName => $reportData): ?>
-                    <div class="mb-4 last:mb-0 border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                        <h5 class="text-xs font-bold text-red-600 mb-2 uppercase tracking-wide flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-                            <?= htmlspecialchars($examName) ?>
-                        </h5>
-                        <div class="space-y-3 pl-3">
-                            <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                                <p class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed"><?= htmlspecialchars($reportData['findings'] ?? '—') ?></p>
+                <?php if ($isMultiExam): ?>
+                    <?php foreach ($parsedFindings as $examName => $reportData): ?>
+                        <div class="mb-4 last:mb-0 border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                            <h5 class="text-xs font-bold text-red-600 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                <?= htmlspecialchars($examName) ?>
+                            </h5>
+                            <div class="space-y-3 pl-3">
+                                <div>
+                                    <span
+                                        class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
+                                    <p class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed">
+                                        <?= htmlspecialchars($reportData['findings'] ?? '—') ?></p>
+                                </div>
+                                <?php if (!empty($reportData['impression'])): ?>
+                                    <div>
+                                        <span
+                                            class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
+                                        <p
+                                            class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm">
+                                            <?= htmlspecialchars($reportData['impression']) ?></p>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <?php if (!empty($reportData['impression'])): ?>
-                            <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                <p class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm"><?= htmlspecialchars($reportData['impression']) ?></p>
-                            </div>
-                            <?php endif; ?>
                         </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
+                            <div
+                                class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm">
+                                <?= htmlspecialchars($findingsRaw ?: '—') ?></div>
+                        </div>
+                        <?php if (!empty($impressionRaw)): ?>
+                            <div>
+                                <span
+                                    class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
+                                <div
+                                    class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm">
+                                    <?= htmlspecialchars($impressionRaw) ?></div>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="space-y-3">
-                    <div>
-                        <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                        <div class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm"><?= htmlspecialchars($findingsRaw ?: '—') ?></div>
-                    </div>
-                    <?php if (!empty($impressionRaw)): ?>
-                    <div>
-                        <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                        <div class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm"><?= htmlspecialchars($impressionRaw) ?></div>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-        </div>
+                <?php endif; ?>
+            </div>
         <?php else: ?>
             <!-- Waiting for Report Empty State -->
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[200px]">
-                <div class="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
+            <div
+                class="bg-gray-50 border border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[200px]">
+                <div
+                    class="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
                     <i data-lucide="clock" class="h-6 w-6 text-gray-400"></i>
                 </div>
                 <h4 class="text-sm font-semibold text-gray-700 mb-1">Waiting for Report</h4>
-                <p class="text-xs text-gray-500 max-w-[280px]">The radiologist has not yet submitted the findings and impression for this case.</p>
+                <p class="text-xs text-gray-500 max-w-[280px]">The radiologist has not yet submitted the findings and
+                    impression for this case.</p>
             </div>
         <?php endif; ?>
     </div>
 </div> <!-- End of Grid -->
 
 <!-- Image Lightbox Modal with Blurred Gray Background & Right-Side Close Button -->
-<style>
-    #xray-lightbox-modal {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: rgba(15, 23, 42, 0.65) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        z-index: 9999999 !important;
-        display: none;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 24px !important;
-        box-sizing: border-box !important;
-        opacity: 0;
-        transition: opacity 0.25s ease-out;
-        cursor: pointer;
-        user-select: none;
-    }
-    #xray-lightbox-modal.is-open {
-        display: flex !important;
-        opacity: 1 !important;
-    }
-    #xray-lightbox-wrapper {
-        position: relative !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        max-width: min(440px, 85vw) !important;
-        max-height: 72vh !important;
-        cursor: default !important;
-        border-radius: 16px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important;
-        background: #000000 !important;
-        transform: scale(0.95);
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    #xray-lightbox-modal.is-open #xray-lightbox-wrapper {
-        transform: scale(1) !important;
-    }
-    #xray-lightbox-main-img {
-        display: block !important;
-        max-width: min(440px, 85vw) !important;
-        max-height: 72vh !important;
-        width: auto !important;
-        height: auto !important;
-        object-fit: contain !important;
-        border-radius: 16px !important;
-        background-color: #000000 !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        pointer-events: auto !important;
-    }
-    #xray-lightbox-close-btn {
-        position: absolute !important;
-        top: 12px !important;
-        right: 12px !important;
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 50% !important;
-        background-color: #ffffff !important;
-        color: #111827 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-        border: 1px solid rgba(229, 231, 235, 0.9) !important;
-        cursor: pointer !important;
-        z-index: 50 !important;
-        padding: 0 !important;
-        outline: none !important;
-        transition: transform 0.15s ease, background-color 0.15s ease !important;
-    }
-    #xray-lightbox-close-btn:hover {
-        background-color: #f3f4f6 !important;
-        transform: scale(1.08) !important;
-    }
-    #xray-lightbox-close-btn:active {
-        transform: scale(0.95) !important;
-    }
-</style>
-
-<div id="xray-lightbox-modal" v-pre onclick="closeXrayLightbox(event)">
-    <div id="xray-lightbox-wrapper" onclick="event.stopPropagation()">
-        <!-- Circular Close Button on the Right Side -->
-        <button type="button" id="xray-lightbox-close-btn" onclick="closeXrayLightbox(event)" title="Close (Esc)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+<div id="xray-lightbox-modal" v-pre
+    style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(15, 23, 42, 0.65) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; z-index: 9999999 !important; display: none; align-items: center !important; justify-content: center !important; padding: 24px !important; box-sizing: border-box !important; opacity: 0; transition: opacity 0.25s ease-out; cursor: pointer; user-select: none;"
+    onclick="closeXrayLightbox(event)">
+    <div id="xray-lightbox-wrapper"
+        style="position: relative !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; max-width: min(440px, 85vw) !important; max-height: 72vh !important; cursor: default !important; border-radius: 16px !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important; background: #000000 !important; transform: scale(0.95); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);"
+        onclick="event.stopPropagation()">
+        <!-- Circular Close Button Outside on the Top-Right Side -->
+        <button type="button" id="xray-lightbox-close-btn"
+            style="position: absolute !important; top: -16px !important; right: -16px !important; width: 38px !important; height: 38px !important; border-radius: 50% !important; background-color: #ffffff !important; color: #111827 !important; display: flex !important; align-items: center !important; justify-content: center !important; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important; border: 1px solid rgba(229, 231, 235, 0.9) !important; cursor: pointer !important; z-index: 60 !important; padding: 0 !important; outline: none !important;"
+            onclick="closeXrayLightbox(event)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="#111827" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                style="display:block;">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
         </button>
 
         <!-- Centered X-Ray Image (Compact Natural Scale) -->
-        <img id="xray-lightbox-main-img" src="" alt="X-Ray Image" draggable="false">
+        <img id="xray-lightbox-main-img" src="" alt="X-Ray Image"
+            style="display: block !important; max-width: min(440px, 85vw) !important; max-height: 72vh !important; width: auto !important; height: auto !important; object-fit: contain !important; border-radius: 16px !important; background-color: #000000 !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; pointer-events: auto !important;"
+            draggable="false">
     </div>
 </div>
 
@@ -458,19 +401,21 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
     (function () {
         function getElements() {
             const modal = document.getElementById('xray-lightbox-modal');
+            const wrapper = document.getElementById('xray-lightbox-wrapper');
             const img = document.getElementById('xray-lightbox-main-img');
-            return { modal, img };
+            return { modal, wrapper, img };
         }
 
         window.openXrayLightbox = function (src) {
-            let { modal, img } = getElements();
+            let { modal, wrapper, img } = getElements();
             if (!modal || !img) return;
 
-            // Ensure modal is directly under document.body to avoid layout clipping and Vue v-dom detachment
+            // Ensure modal is directly under document.body so no parent container clips or hides it
             if (modal.parentElement !== document.body) {
                 document.body.appendChild(modal);
                 const els = getElements();
                 modal = els.modal;
+                wrapper = els.wrapper;
                 img = els.img;
             }
 
@@ -480,19 +425,21 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
 
             // Force reflow for smooth animation
             void modal.offsetWidth;
-            modal.classList.add('is-open');
+            modal.style.opacity = '1';
+            if (wrapper) wrapper.style.transform = 'scale(1)';
         };
 
         window.closeXrayLightbox = function (e) {
             if (e && e.stopPropagation) e.stopPropagation();
-            const { modal, img } = getElements();
+            const { modal, wrapper, img } = getElements();
             if (!modal || !img) return;
 
-            modal.classList.remove('is-open');
+            modal.style.opacity = '0';
+            if (wrapper) wrapper.style.transform = 'scale(0.95)';
             document.body.style.overflow = '';
 
             setTimeout(() => {
-                if (!modal.classList.contains('is-open')) {
+                if (modal.style.opacity === '0') {
                     modal.style.display = 'none';
                     img.src = '';
                 }
@@ -503,15 +450,17 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('xray-lightbox-modal');
-                if (modal && modal.classList.contains('is-open')) {
+                if (modal && modal.style.display === 'flex') {
                     closeXrayLightbox(e);
                 }
             }
+        });
+
         // Clean URL address bar so ?id=... or ?ref=... is never exposed to users
         try {
             if (window.history && window.history.replaceState) {
                 window.history.replaceState(null, document.title, window.location.pathname);
             }
-        } catch(e) {}
+        } catch (e) { }
     })();
 </script>

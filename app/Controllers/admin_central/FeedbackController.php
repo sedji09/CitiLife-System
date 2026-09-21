@@ -19,7 +19,25 @@ class FeedbackController
 
         $branches = $branchModel->getAllBranches();
         
-        $filterBranchId = isset($_GET['branch_id']) && $_GET['branch_id'] !== '' ? (int)$_GET['branch_id'] : null;
+        if (isset($_POST['branch_id'])) {
+            if ($_POST['branch_id'] === '' || $_POST['branch_id'] === '0') {
+                unset($_SESSION['admin_feedback_branch_id']);
+                $filterBranchId = null;
+            } else {
+                $filterBranchId = (int)$_POST['branch_id'];
+                $_SESSION['admin_feedback_branch_id'] = $filterBranchId;
+            }
+        } elseif (isset($_GET['branch_id'])) {
+            if ($_GET['branch_id'] === '' || $_GET['branch_id'] === '0') {
+                unset($_SESSION['admin_feedback_branch_id']);
+                $filterBranchId = null;
+            } else {
+                $filterBranchId = (int)$_GET['branch_id'];
+                $_SESSION['admin_feedback_branch_id'] = $filterBranchId;
+            }
+        } else {
+            $filterBranchId = !empty($_SESSION['admin_feedback_branch_id']) ? (int)$_SESSION['admin_feedback_branch_id'] : null;
+        }
 
         $feedbacks = [];
         $stats = null;

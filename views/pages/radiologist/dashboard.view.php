@@ -314,12 +314,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     const monthNum = document.getElementById('monthPickerMonth').value;
                     const monthYear = document.getElementById('monthPickerYear').value;
 
-                    let url = '?role=radiologist&page=dashboard&filter=' + filter;
-                    if (filter === 'monthly') url += '&month=' + monthYear + '-' + monthNum;
-                    if (filter === 'yearly') url += '&year=' + document.getElementById('yearPickerValue').value;
-
-                    window.history.pushState({ path: url }, '', url);
-                    if (window.__APP__) window.__APP__.currentPath = url;
+                    try {
+                        sessionStorage.setItem('Citilife_radDashboard_filter', filter);
+                        if (filter === 'monthly') sessionStorage.setItem('Citilife_radDashboard_month', monthYear + '-' + monthNum);
+                        if (filter === 'yearly') sessionStorage.setItem('Citilife_radDashboard_year', document.getElementById('yearPickerValue').value);
+                        window.history.replaceState(null, document.title, window.location.pathname);
+                        if (window.__APP__) window.__APP__.currentPath = window.location.pathname;
+                    } catch (e) {}
 
                     if (typeof fetchDashboardData === 'function') {
                         fetchDashboardData();
@@ -531,6 +532,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 </div>
 
 <script>
+    // Clean URL address bar so ?filter=...&year=... is never left exposed
+    try {
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, document.title, window.location.pathname);
+        }
+    } catch (e) {}
+
     document.addEventListener('DOMContentLoaded', function () {
         const ctx = document.getElementById('priorityChart').getContext('2d');
         window.priorityChart = new Chart(ctx, {

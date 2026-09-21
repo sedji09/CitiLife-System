@@ -95,8 +95,6 @@
                                 <option value="60" <?= $autoLogoutMins == 60 ? 'selected' : '' ?>>1 Hour</option>
                                 <option value="120" <?= $autoLogoutMins == 120 ? 'selected' : '' ?>>2 Hours</option>
                             </select>
-                            <i data-lucide="chevron-down"
-                                class="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none"></i>
                         </div>
                     </div>
                 </div>

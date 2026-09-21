@@ -49,7 +49,7 @@
         </div>
         <div class="flex items-center gap-3">
             <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role']) || (!empty($filters['sort']) && $filters['sort'] !== 'desc')): ?>
-                <a href="<?= isset($_GET['page']) ? '?page=' . htmlspecialchars($_GET['page']) : url('audit-logs') ?>"
+                <a href="<?= url('audit-logs') ?>"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     Clear Filters
@@ -60,8 +60,7 @@
 
     <!-- Filter Bar -->
     <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-        <form method="GET" action="" class="flex flex-col gap-4" id="filterForm">
-            <input type="hidden" name="page" value="audit-logs">
+        <form method="GET" action="<?= url('audit-logs') ?>" class="flex flex-col gap-4" id="filterForm">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- Search -->
@@ -262,21 +261,14 @@
                     $page_num = (int) ($page_num ?? 1);
                     $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) use ($filters) {
                         $params = [];
-                        if (isset($_GET['page'])) {
-                            $params['page'] = $_GET['page'];
-                        }
-                        if (isset($_GET['role'])) {
-                            $params['role'] = $_GET['role'];
-                        }
-
                         foreach ($filters as $k => $v) {
-                            if ($v !== '' && $v !== null) {
+                            if ($v !== '' && $v !== null && !($k === 'sort' && $v === 'desc')) {
                                 $params[$k] = $v;
                             }
                         }
                         $params['p'] = $targetPage;
 
-                        $url = '?' . http_build_query($params);
+                        $url = url('audit-logs') . '?' . http_build_query($params);
 
                         if ($isActive) {
                             return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';
@@ -430,5 +422,12 @@
         document.querySelectorAll('select.filter-control, select[name="module"], select[name="rl"], select[name="role"], select[name="sort"]').forEach(select => {
             select.addEventListener('change', saveScroll);
         });
+
+        // Hide query parameters from address bar so it stays completely clean as /audit-logs
+        try {
+            if (window.history && window.history.replaceState && window.location.search) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.hash);
+            }
+        } catch (e) { }
     });
 </script>

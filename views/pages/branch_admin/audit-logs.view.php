@@ -155,8 +155,8 @@
                 branch</p>
         </div>
         <div class="flex items-center gap-2">
-            <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role'])): ?>
-                <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=branch_admin&page=audit-logs"
+            <?php if (!empty($filters['search']) || !empty($filters['module']) || !empty($filters['role']) || (!empty($filters['sort']) && $filters['sort'] !== 'desc')): ?>
+                <a href="<?= url('audit-logs') ?>"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     Clear Filters
@@ -166,84 +166,56 @@
     </div>
 
     <!-- Search & Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
+    <form id="auditFilterForm" method="GET" action="<?= url('audit-logs') ?>" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
         <!-- Search Field -->
         <div class="relative w-full group lg:col-span-2">
-            <form method="GET" action="index.php">
-                <input type="hidden" name="role" value="branch_admin">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
-                <input type="hidden" name="rl" value="<?= htmlspecialchars($filters['role']) ?>">
-                <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'] ?? '') ?>">
-                <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
-                    placeholder="Search by action, user, or details..."
-                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm filter-control">
-                <i data-lucide="search"
-                    class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors audit-text-muted"></i>
-                <button type="submit" class="hidden">Search</button>
-            </form>
+            <input type="text" name="search" value="<?= htmlspecialchars($filters['search']) ?>"
+                placeholder="Search by action, user, or details..."
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm filter-control">
+            <i data-lucide="search"
+                class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors audit-text-muted"></i>
+            <button type="submit" class="hidden">Search</button>
         </div>
 
         <!-- Module Filter -->
         <div>
-            <form method="GET" action="index.php">
-                <input type="hidden" name="role" value="branch_admin">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
-                <input type="hidden" name="rl" value="<?= htmlspecialchars($filters['role']) ?>">
-                <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'] ?? '') ?>">
-                <select name="module" onchange="this.form.submit()"
-                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
-                    <option value="">All Modules</option>
-                    <?php foreach ($distinctModules as $mod): ?>
-                        <option value="<?= htmlspecialchars($mod) ?>" <?= ($filters['module'] == $mod) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($mod) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
+            <select name="module" onchange="document.getElementById('auditFilterForm').submit()"
+                class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
+                <option value="">All Modules</option>
+                <?php foreach ($distinctModules as $mod): ?>
+                    <option value="<?= htmlspecialchars($mod) ?>" <?= ($filters['module'] == $mod) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($mod) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
         <!-- Role Filter (rl) -->
         <div>
-            <form method="GET" action="index.php">
-                <input type="hidden" name="role" value="branch_admin">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
-                <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
-                <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'] ?? '') ?>">
-                <select name="rl" onchange="this.form.submit()"
-                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
-                    <option value="">All Roles</option>
-                    <?php foreach ($distinctRoles as $rl): ?>
-                        <?php if ($rl === 'patient')
-                            continue; ?>
-                        <option value="<?= htmlspecialchars($rl) ?>" <?= ($filters['role'] == $rl) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars(ucwords(str_replace('_', ' ', $rl))) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
+            <select name="rl" onchange="document.getElementById('auditFilterForm').submit()"
+                class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
+                <option value="">All Roles</option>
+                <?php foreach ($distinctRoles as $rl): ?>
+                    <?php if ($rl === 'patient')
+                        continue; ?>
+                    <option value="<?= htmlspecialchars($rl) ?>" <?= ($filters['role'] == $rl) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars(ucwords(str_replace('_', ' ', $rl))) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
         <!-- Sort Filter -->
         <div>
-            <form method="GET" action="index.php">
-                <input type="hidden" name="role" value="branch_admin">
-                <input type="hidden" name="page" value="audit-logs">
-                <input type="hidden" name="search" value="<?= htmlspecialchars($filters['search']) ?>">
-                <input type="hidden" name="module" value="<?= htmlspecialchars($filters['module']) ?>">
-                <input type="hidden" name="rl" value="<?= htmlspecialchars($filters['role']) ?>">
-                <select name="sort" onchange="this.form.submit()"
-                    class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
-                    <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>New audit logs
-                    </option>
-                    <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Old audit logs
-                    </option>
-                </select>
-            </form>
+            <select name="sort" onchange="document.getElementById('auditFilterForm').submit()"
+                class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm cursor-pointer hover:bg-gray-50 filter-control">
+                <option value="desc" <?= (($filters['sort'] ?? '') !== 'asc') ? 'selected' : '' ?>>New audit logs
+                </option>
+                <option value="asc" <?= (($filters['sort'] ?? '') === 'asc') ? 'selected' : '' ?>>Old audit logs
+                </option>
+            </select>
         </div>
-    </div>
+    </form>
 
     <!-- Audit Logs Table Card -->
     <div id="audit-log-card" class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-12 audit-card">
@@ -373,17 +345,20 @@
                 <?php
                 $renderPageBtn = function($label, $targetPage, $disabled, $isActive = false) use ($filters) {
                     $params = [
-                        'role' => 'branch_admin',
-                        'page' => 'audit-logs',
                         'p' => $targetPage,
                         'search' => $filters['search'] ?? '',
                         'module' => $filters['module'] ?? '',
                         'rl' => $filters['role'] ?? '',
                         'sort' => $filters['sort'] ?? ''
                     ];
-                    // Remove empty params
-                    $params = array_filter($params, function($v) { return $v !== ''; });
-                    $url = '?' . http_build_query($params);
+                    // Remove empty params and default sort
+                    $cleanParams = [];
+                    foreach ($params as $k => $v) {
+                        if ($v !== '' && $v !== null && !($k === 'sort' && $v === 'desc')) {
+                            $cleanParams[$k] = $v;
+                        }
+                    }
+                    $url = url('audit-logs') . ($cleanParams ? '?' . http_build_query($cleanParams) : '');
                     
                     if ($isActive) {
                         return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600 audit-text-main">' . $label . '</span>';
@@ -485,5 +460,12 @@
         document.querySelectorAll('select.filter-control, select[name="module"], select[name="rl"], select[name="role"], select[name="sort"]').forEach(select => {
             select.addEventListener('change', saveScroll);
         });
+
+        // Hide query parameters from address bar so it stays completely clean as /audit-logs
+        try {
+            if (window.history && window.history.replaceState && window.location.search) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.hash);
+            }
+        } catch (e) { }
     });
 </script>

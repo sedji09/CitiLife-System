@@ -15,9 +15,7 @@
             <p class="text-xs text-gray-500 mt-1">System-wide overview of patient and branch statistics.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <form method="GET" action="" class="flex items-center gap-2" onsubmit="event.preventDefault();">
-                <input type="hidden" name="role" value="admin_central">
-                <input type="hidden" name="page" value="dashboard">
+            <form method="GET" action="<?= url('dashboard') ?>" class="flex items-center gap-2" onsubmit="event.preventDefault();">
                 <select name="filter" onchange="updateMainFilter(this.value)"
                     class="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all cursor-pointer">
                     <option value="today" <?= ($_GET['filter'] ?? 'today') === 'today' ? 'selected' : '' ?>>Today</option>
@@ -434,7 +432,7 @@
     }
     async function updateMainFilter(filter) {
         try {
-            const url = `?role=admin_central&page=dashboard&filter=${filter}`;
+            const url = `<?= url('dashboard') ?>?filter=${encodeURIComponent(filter)}`;
             window.history.pushState({path: url}, '', url);
 
             const fetchUrl = url + '&ajax_main_filter=1';

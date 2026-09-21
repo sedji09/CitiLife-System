@@ -130,7 +130,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 <div id="worklist-controls" class="relative z-30 mt-6 px-4">
     <div class="flex flex-wrap items-center gap-2.5 w-full">
         <!-- Search -->
-        <div class="relative flex-1 max-w-[320px] min-w-[200px] group shrink-0">
+        <div class="relative flex-1 min-w-[220px] group">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <i data-lucide="search" class="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors"></i>
             </div>
@@ -164,23 +164,37 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         $rawStatusUrl = $_GET['status'] ?? $_GET['filterStatus'] ?? '';
         $normalizedStatus = '';
         $lowerStatusUrl = strtolower(trim($rawStatusUrl));
-        if ($lowerStatusUrl === 'overdue') {
-            $normalizedStatus = 'Overdue';
-        } elseif (in_array($lowerStatusUrl, ['under reading', 'under_reading', 'in progress', 'inprogress'])) {
-            $normalizedStatus = 'In Progress';
-        } elseif (in_array($lowerStatusUrl, ['for revision', 'for_revision'])) {
-            $normalizedStatus = 'For Revision';
-        } elseif ($lowerStatusUrl === 'pending') {
-            $normalizedStatus = 'Pending';
+        $initialIsRelease = (($_GET['tab'] ?? '') === 'release' || in_array($lowerStatusUrl, ['completed', 'completed_today', 'report ready', 'report_ready']));
+        if ($initialIsRelease) {
+            if (in_array($lowerStatusUrl, ['completed', 'completed_today'])) {
+                $normalizedStatus = 'Completed';
+            } elseif (in_array($lowerStatusUrl, ['report ready', 'report_ready'])) {
+                $normalizedStatus = 'Report Ready';
+            }
+        } else {
+            if ($lowerStatusUrl === 'overdue') {
+                $normalizedStatus = 'Overdue';
+            } elseif (in_array($lowerStatusUrl, ['under reading', 'under_reading', 'in progress', 'inprogress'])) {
+                $normalizedStatus = 'In Progress';
+            } elseif (in_array($lowerStatusUrl, ['for revision', 'for_revision'])) {
+                $normalizedStatus = 'For Revision';
+            } elseif ($lowerStatusUrl === 'pending') {
+                $normalizedStatus = 'Pending';
+            }
         }
         ?>
         <select id="filterStatus"
             class="w-28 lg:w-32 shrink-0 px-2.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 text-xs sm:text-sm bg-white shadow-sm font-normal text-gray-600 cursor-pointer">
             <option value="" <?= $normalizedStatus === '' ? 'selected' : '' ?>>All Statuses</option>
-            <option value="For Revision" <?= $normalizedStatus === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
-            <option value="Pending" <?= $normalizedStatus === 'Pending' ? 'selected' : '' ?>>Pending</option>
-            <option value="In Progress" <?= $normalizedStatus === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
-            <option value="Overdue" <?= $normalizedStatus === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
+            <?php if ($initialIsRelease): ?>
+                <option value="Report Ready" <?= $normalizedStatus === 'Report Ready' ? 'selected' : '' ?>>Report Ready</option>
+                <option value="Completed" <?= $normalizedStatus === 'Completed' ? 'selected' : '' ?>>Completed</option>
+            <?php else: ?>
+                <option value="For Revision" <?= $normalizedStatus === 'For Revision' ? 'selected' : '' ?>>For Revision</option>
+                <option value="Pending" <?= $normalizedStatus === 'Pending' ? 'selected' : '' ?>>Pending</option>
+                <option value="In Progress" <?= $normalizedStatus === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
+                <option value="Overdue" <?= $normalizedStatus === 'Overdue' ? 'selected' : '' ?>>Overdue</option>
+            <?php endif; ?>
         </select>
 
         <!-- Filter by Date -->
@@ -194,6 +208,8 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         } elseif ($lowerDateUrl === 'today') {
             $urlDateFilter = 'Today';
         } elseif (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) || isset($_GET['priority'])) {
+            $urlDateFilter = 'All';
+        } elseif ($initialIsRelease) {
             $urlDateFilter = 'All';
         } else {
             $urlDateFilter = 'Today';
@@ -384,7 +400,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                     </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
+                                    <a href="<?= url('case-review?id=' . $row['id'] . '&branch_id=' . $row['branch_id']) ?>"
                                         class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
                                         <i data-lucide="microscope" class="w-4 h-4 mr-1"></i> Review Case
                                     </a>
@@ -451,6 +467,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                             $isEmergency = ($pUpper === 'STAT') ? 1 : 0;
                             $rowDate = !empty($row['radtech_submitted_at']) ? $row['radtech_submitted_at'] : $row['created_at'];
                             $isToday = (date('Y-m-d', strtotime($rowDate)) === date('Y-m-d'));
+                            $rawRelStatus = $row['status'] ?? 'Report Ready';
                             ?>
                             <?php $pFullName = formatFullName($row); ?>
                             <tr class="hover:bg-white/10 transition-colors release-record-row cursor-pointer"
@@ -459,6 +476,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                 data-branch="<?= htmlspecialchars($row['branch_name']) ?>"
                                 data-priority="<?= htmlspecialchars($row['priority']) ?>" data-stat="<?= $isEmergency ?>"
                                 data-pweight="<?= $pWeight ?>" data-is-today="<?= $isToday ? 'true' : 'false' ?>"
+                                data-status="<?= htmlspecialchars($rawRelStatus) ?>"
                                 data-search="<?= htmlspecialchars(strtolower($row['case_number'] . ' ' . $pFullName . ' ' . $row['branch_name'] . ' ' . ($row['exam_type'] ?? ''))) ?>"
                                 data-date="<?= strtotime($rowDate) ?>">
                                 <td class="py-3 px-3 whitespace-nowrap">
@@ -549,7 +567,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                                     </span>
                                 </td>
                                 <td class="py-3 px-3 whitespace-nowrap">
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=case-review&id=<?= $row['id'] ?>&branch_id=<?= $row['branch_id'] ?>"
+                                    <a href="<?= url('case-review?id=' . $row['id'] . '&branch_id=' . $row['branch_id']) ?>"
                                         class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm transition">
                                         <i data-lucide="microscope" class="w-4 h-4 mr-1"></i> Review Case
                                     </a>
@@ -576,73 +594,32 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
 </div>
 
 <script>
-    // Tab Switching for Radiologist: Pending Worklist vs Pending Release
+    // Tab States: completely isolated between Pending Worklist and Pending Release
+    let currentActiveTab = 'worklist';
+    const tabStates = {
+        worklist: {
+            search: '',
+            branch: '',
+            priority: '',
+            status: '',
+            date: 'Today',
+            sort: 'date_desc',
+            page: 1
+        },
+        release: {
+            search: '',
+            branch: '',
+            priority: '',
+            status: '',
+            date: 'All',
+            sort: 'date_desc',
+            page: 1
+        }
+    };
+
+    // Forward declaration of switchRadTab so inline onclick="switchRadTab(...)" is never undefined
     window.switchRadTab = function (tab) {
-        sessionStorage.setItem('Citilife_radWorklist_tab', tab);
-        try {
-            const cleanUrl = new URL(window.location.href);
-            if (tab === 'release') {
-                cleanUrl.searchParams.set('tab', 'release');
-            } else {
-                cleanUrl.searchParams.delete('tab');
-            }
-            window.history.replaceState({}, document.title, cleanUrl.toString());
-            sessionStorage.setItem('Citilife_last_worklist_url', cleanUrl.toString());
-        } catch (e) {}
-        const workCard = document.getElementById('worklist-table-card');
-        const relCard = document.getElementById('release-table-card');
-        const workBtn = document.getElementById('tab-rad-worklist-btn');
-        const relBtn = document.getElementById('tab-rad-release-btn');
-        const worklistTitle = document.getElementById('worklist-title');
-        const worklistSubtitle = document.getElementById('worklist-subtitle');
-        const branchValue = document.getElementById('filterBranch') ? document.getElementById('filterBranch').value : '';
-
-        if (tab === 'release') {
-            if (workCard) workCard.classList.add('hidden');
-            if (relCard) relCard.classList.remove('hidden');
-
-            if (relBtn) relBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
-            if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
-
-            if (worklistTitle && worklistSubtitle) {
-                if (branchValue) {
-                    worklistTitle.innerText = "Pending Release - " + branchValue;
-                    worklistSubtitle.innerText = "Cases with completed readings awaiting release for " + branchValue + " branch";
-                } else {
-                    worklistTitle.innerText = "Pending Release";
-                    worklistSubtitle.innerText = "Cases with completed readings awaiting release across all branches";
-                }
-            }
-
-            if (typeof updateReleaseTable === 'function') {
-                updateReleaseTable();
-            }
-        } else {
-            // tab === 'worklist'
-            if (workCard) workCard.classList.remove('hidden');
-            if (relCard) relCard.classList.add('hidden');
-
-            if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
-            if (relBtn) relBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
-
-            if (worklistTitle && worklistSubtitle) {
-                if (branchValue) {
-                    worklistTitle.innerText = "Worklist - " + branchValue;
-                    worklistSubtitle.innerText = "Manage pending cases for " + branchValue + " branch";
-                } else {
-                    worklistTitle.innerText = "Worklist";
-                    worklistSubtitle.innerText = "Manage pending cases across all branches";
-                }
-            }
-
-            if (typeof updateTable === 'function') {
-                updateTable();
-            }
-        }
-
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        currentActiveTab = tab;
     };
 
     // Search, Filter, Sort, Pagination & State Persistence Logic
@@ -664,151 +641,293 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         const RELEASE_ROWS_PER_PAGE = 7;
         let currentReleasePage = 1;
 
-        function saveWorklistState() {
-            if (searchInput) sessionStorage.setItem('Citilife_radWorklist_search', searchInput.value);
-            if (filterBranch) sessionStorage.setItem('Citilife_radWorklist_branch', filterBranch.value);
-            if (filterPriority) sessionStorage.setItem('Citilife_radWorklist_priority', filterPriority.value);
-            if (filterStatus) sessionStorage.setItem('Citilife_radWorklist_status', filterStatus.value);
-            if (filterDate) sessionStorage.setItem('Citilife_radWorklist_date', filterDate.value);
-            if (sortOption) sessionStorage.setItem('Citilife_radWorklist_sort', sortOption.value);
-            sessionStorage.setItem('Citilife_radWorklist_page', currentPage);
-            sessionStorage.setItem('Citilife_radWorklist_releasePage', currentReleasePage);
+        // Dynamically update status dropdown options based on the active tab
+        function updateStatusDropdown(tab, selectedVal = '') {
+            if (!filterStatus) return;
+
+            if (tab === 'release') {
+                filterStatus.innerHTML = `
+                    <option value="">All Statuses</option>
+                    <option value="Report Ready">Report Ready</option>
+                    <option value="Completed">Completed</option>
+                `;
+            } else {
+                filterStatus.innerHTML = `
+                    <option value="">All Statuses</option>
+                    <option value="For Revision">For Revision</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Overdue">Overdue</option>
+                `;
+            }
+
+            filterStatus.value = selectedVal || '';
+
+            if (filterStatus._customSelect) {
+                if (typeof filterStatus._customSelect.buildOptions === 'function') {
+                    filterStatus._customSelect.buildOptions();
+                }
+                if (typeof filterStatus._customSelect.sync === 'function') {
+                    filterStatus._customSelect.sync();
+                }
+            }
         }
 
-        function restoreWorklistState() {
-            const params = new URLSearchParams(window.location.search);
-            const hasHighlight = params.has('highlight_case') || params.has('highlight') || params.has('case_id');
+        // Save current tab's inputs to its dedicated tabState & sessionStorage
+        function saveCurrentTabInputs() {
+            if (!tabStates[currentActiveTab]) return;
 
-            if (hasHighlight) {
-                if (filterDate) filterDate.value = 'All';
-                if (params.has('branch')) {
-                    if (filterBranch) filterBranch.value = params.get('branch');
-                } else if (filterBranch && filterBranch.value) {
-                    // Retain server pre-selection
-                } else {
-                    if (filterBranch) filterBranch.value = '';
-                }
-                if (filterPriority) filterPriority.value = '';
-                if (filterStatus) filterStatus.value = '';
-                if (searchInput) searchInput.value = '';
+            tabStates[currentActiveTab].search = searchInput ? searchInput.value : '';
+            tabStates[currentActiveTab].branch = filterBranch ? filterBranch.value : '';
+            tabStates[currentActiveTab].priority = filterPriority ? filterPriority.value : '';
+            tabStates[currentActiveTab].status = filterStatus ? filterStatus.value : '';
+            tabStates[currentActiveTab].date = filterDate ? filterDate.value : (currentActiveTab === 'release' ? 'All' : 'Today');
+            tabStates[currentActiveTab].sort = sortOption ? sortOption.value : 'date_desc';
+            tabStates[currentActiveTab].page = (currentActiveTab === 'worklist') ? currentPage : currentReleasePage;
+
+            try {
+                sessionStorage.setItem('Citilife_radWorklist_state_' + currentActiveTab, JSON.stringify(tabStates[currentActiveTab]));
+            } catch (e) {}
+        }
+
+        // Backward compatibility
+        function saveWorklistState() {
+            saveCurrentTabInputs();
+        }
+
+        // Apply a specific tab's filters to the DOM inputs
+        function applyTabInputs(tab) {
+            const st = tabStates[tab] || {
+                search: '',
+                branch: '',
+                priority: '',
+                status: '',
+                date: tab === 'release' ? 'All' : 'Today',
+                sort: 'date_desc',
+                page: 1
+            };
+
+            if (searchInput) searchInput.value = st.search || '';
+            if (filterBranch) filterBranch.value = st.branch || '';
+            if (filterPriority) filterPriority.value = st.priority || '';
+            if (filterDate) filterDate.value = st.date || (tab === 'release' ? 'All' : 'Today');
+            if (sortOption) sortOption.value = st.sort || 'date_desc';
+
+            if (tab === 'worklist') {
+                currentPage = st.page || 1;
             } else {
-                if (params.has('branch')) {
-                    const rawB = (params.get('branch') || '').trim();
-                    if (filterBranch) filterBranch.value = (rawB.toLowerCase() === 'all') ? '' : rawB;
-                } else if (filterBranch) {
-                    const savedBranch = sessionStorage.getItem('Citilife_radWorklist_branch');
-                    if (savedBranch !== null) filterBranch.value = savedBranch;
-                }
-
-                if (params.has('priority')) {
-                    const rawP = (params.get('priority') || '').trim();
-                    const upperP = rawP.toUpperCase();
-                    if (upperP === 'STAT') {
-                        if (filterPriority) filterPriority.value = 'STAT';
-                    } else if (upperP === 'URGENT') {
-                        if (filterPriority) filterPriority.value = 'Urgent';
-                    } else if (upperP === 'ROUTINE') {
-                        if (filterPriority) filterPriority.value = 'Routine';
-                    } else {
-                        if (filterPriority) filterPriority.value = '';
-                    }
-                } else if (filterPriority) {
-                    const savedPriority = sessionStorage.getItem('Citilife_radWorklist_priority');
-                    if (savedPriority !== null) filterPriority.value = savedPriority;
-                }
-
-                if (params.has('status') || params.has('filterStatus')) {
-                    const rawSt = (params.get('status') || params.get('filterStatus') || '').trim();
-                    const lowerSt = rawSt.toLowerCase();
-                    let mappedSt = '';
-                    if (lowerSt === 'overdue') {
-                        mappedSt = 'Overdue';
-                    } else if (lowerSt === 'under reading' || lowerSt === 'under_reading' || lowerSt === 'in progress' || lowerSt === 'inprogress') {
-                        mappedSt = 'In Progress';
-                    } else if (lowerSt === 'for revision' || lowerSt === 'for_revision') {
-                        mappedSt = 'For Revision';
-                    } else if (lowerSt === 'pending') {
-                        mappedSt = 'Pending';
-                    } else {
-                        mappedSt = ''; // All Statuses
-                    }
-                    if (filterStatus) filterStatus.value = mappedSt;
-                } else if (filterStatus) {
-                    const savedStatus = sessionStorage.getItem('Citilife_radWorklist_status');
-                    if (savedStatus !== null) filterStatus.value = savedStatus;
-                }
-
-                if (params.has('date') || params.has('filterDate')) {
-                    const rawD = (params.get('date') || params.get('filterDate') || '').trim();
-                    const lowerD = rawD.toLowerCase();
-                    if (lowerD === 'backlog') {
-                        if (filterDate) filterDate.value = 'Backlog';
-                    } else if (lowerD === 'today') {
-                        if (filterDate) filterDate.value = 'Today';
-                    } else if (lowerD === 'all') {
-                        if (filterDate) filterDate.value = 'All';
-                    } else if (filterDate) {
-                        filterDate.value = rawD;
-                    }
-                } else if (filterDate) {
-                    const savedDate = sessionStorage.getItem('Citilife_radWorklist_date');
-                    if (savedDate !== null && !params.has('status') && !params.has('priority')) filterDate.value = savedDate;
-                }
-
-                if (params.has('sort')) {
-                    if (sortOption) sortOption.value = params.get('sort');
-                } else if (sortOption) {
-                    const savedSort = sessionStorage.getItem('Citilife_radWorklist_sort');
-                    if (savedSort !== null) sortOption.value = savedSort;
-                }
-
-                if (params.has('search')) {
-                    if (searchInput) searchInput.value = params.get('search');
-                } else if (searchInput) {
-                    const savedSearch = sessionStorage.getItem('Citilife_radWorklist_search');
-                    if (savedSearch !== null) searchInput.value = savedSearch;
-                }
+                currentReleasePage = st.page || 1;
             }
 
-            if (!hasHighlight) {
-                if (params.has('status') || params.has('priority') || params.has('date') || params.has('branch')) {
-                    currentPage = 1;
-                    currentReleasePage = 1;
-                } else {
-                    const savedPage = parseInt(sessionStorage.getItem('Citilife_radWorklist_page'));
-                    if (savedPage && savedPage > 0) {
-                        currentPage = savedPage;
-                    }
-                    const savedReleasePage = parseInt(sessionStorage.getItem('Citilife_radWorklist_releasePage'));
-                    if (savedReleasePage && savedReleasePage > 0) {
-                        currentReleasePage = savedReleasePage;
-                    }
-                }
+            updateStatusDropdown(tab, st.status || '');
 
-                // Tab restoration logic
-                if (params.get('tab') === 'release' || params.get('status') === 'completed_today') {
-                    window.switchRadTab('release');
-                } else if (params.get('tab') === 'worklist') {
-                    window.switchRadTab('worklist');
-                } else {
-                    const savedTab = sessionStorage.getItem('Citilife_radWorklist_tab');
-                    if (savedTab) {
-                        window.switchRadTab(savedTab);
-                    }
-                }
-            }
-
-            // Sync custom select labels if already initialized
-            [filterBranch, filterPriority, filterStatus, filterDate, sortOption].forEach(sel => {
+            // Sync all custom select triggers
+            [filterBranch, filterPriority, filterDate, sortOption].forEach(sel => {
                 if (sel && sel._customSelect && typeof sel._customSelect.sync === 'function') {
                     sel._customSelect.sync();
                 }
             });
+        }
+
+        let isInitialized = false;
+
+        // Full Tab Switching function
+        window.switchRadTab = function (tab, skipSave = false) {
+            if (tab !== 'worklist' && tab !== 'release') tab = 'worklist';
+
+            // 1. If switching away from an existing active tab, save its current filter state ONLY IF already initialized
+            if (!skipSave && isInitialized && currentActiveTab && tabStates[currentActiveTab] && searchInput) {
+                saveCurrentTabInputs();
+            }
+
+            // 2. Set new active tab
+            currentActiveTab = tab;
+            sessionStorage.setItem('Citilife_radWorklist_tab', tab);
+            try {
+                window.history.replaceState(null, document.title, window.location.pathname);
+                sessionStorage.setItem('Citilife_last_worklist_url', window.location.pathname);
+            } catch (e) {}
+
+            // 3. Tab button styles and card visibility
+            const workCard = document.getElementById('worklist-table-card');
+            const relCard = document.getElementById('release-table-card');
+            const workBtn = document.getElementById('tab-rad-worklist-btn');
+            const relBtn = document.getElementById('tab-rad-release-btn');
+            const worklistTitle = document.getElementById('worklist-title');
+            const worklistSubtitle = document.getElementById('worklist-subtitle');
+
+            if (tab === 'release') {
+                if (workCard) workCard.classList.add('hidden');
+                if (relCard) relCard.classList.remove('hidden');
+
+                if (relBtn) relBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
+                if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+            } else {
+                if (workCard) workCard.classList.remove('hidden');
+                if (relCard) relCard.classList.add('hidden');
+
+                if (workBtn) workBtn.className = "pb-3 px-2 text-sm font-bold border-b-2 border-red-600 text-red-600 transition flex items-center gap-2";
+                if (relBtn) relBtn.className = "pb-3 px-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition flex items-center gap-2";
+            }
+
+            // 4. Load & apply the target tab's own isolated filters to the controls
+            applyTabInputs(tab);
+
+            // 5. Update header title & subtitle with the branch for this tab
+            const curBranch = filterBranch ? filterBranch.value : '';
+            if (worklistTitle && worklistSubtitle) {
+                if (tab === 'release') {
+                    if (curBranch) {
+                        worklistTitle.innerText = "Pending Release - " + curBranch;
+                        worklistSubtitle.innerText = "Cases with completed readings awaiting release for " + curBranch + " branch";
+                    } else {
+                        worklistTitle.innerText = "Pending Release";
+                        worklistSubtitle.innerText = "Cases with completed readings awaiting release across all branches";
+                    }
+                } else {
+                    if (curBranch) {
+                        worklistTitle.innerText = "Worklist - " + curBranch;
+                        worklistSubtitle.innerText = "Manage pending cases for " + curBranch + " branch";
+                    } else {
+                        worklistTitle.innerText = "Worklist";
+                        worklistSubtitle.innerText = "Manage pending cases across all branches";
+                    }
+                }
+            }
+
+            // 6. Update only the active tab's table
+            if (tab === 'release') {
+                if (typeof updateReleaseTable === 'function') {
+                    updateReleaseTable();
+                }
+            } else {
+                if (typeof updateTable === 'function') {
+                    updateTable();
+                }
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        };
+
+        function restoreWorklistState() {
+            // 1. Load saved states from sessionStorage if available
+            try {
+                const savedWl = sessionStorage.getItem('Citilife_radWorklist_state_worklist');
+                if (savedWl) {
+                    const parsed = JSON.parse(savedWl);
+                    if (parsed && typeof parsed === 'object') {
+                        Object.assign(tabStates.worklist, parsed);
+                    }
+                }
+            } catch (e) {}
 
             try {
-                sessionStorage.setItem('Citilife_last_worklist_url', window.location.href);
+                const savedRel = sessionStorage.getItem('Citilife_radWorklist_state_release');
+                if (savedRel) {
+                    const parsed = JSON.parse(savedRel);
+                    if (parsed && typeof parsed === 'object') {
+                        Object.assign(tabStates.release, parsed);
+                    }
+                }
+            } catch (e) {}
+
+            // 2. Inspect URL parameters
+            const params = new URLSearchParams(window.location.search);
+            const hasHighlight = params.has('highlight_case') || params.has('highlight') || params.has('case_id');
+
+            let initialTab = 'worklist';
+            if (params.get('tab') === 'release' || params.get('status') === 'completed_today' || params.get('status') === 'Report Ready') {
+                initialTab = 'release';
+            } else if (params.get('tab') === 'worklist') {
+                initialTab = 'worklist';
+            } else {
+                const savedTab = sessionStorage.getItem('Citilife_radWorklist_tab');
+                if (savedTab === 'release' || savedTab === 'worklist') {
+                    initialTab = savedTab;
+                }
+            }
+
+            if (hasHighlight) {
+                tabStates[initialTab].date = 'All';
+                tabStates[initialTab].search = '';
+                tabStates[initialTab].priority = '';
+                tabStates[initialTab].status = '';
+                if (params.has('branch')) {
+                    tabStates[initialTab].branch = params.get('branch');
+                }
+            } else {
+                if (params.has('branch')) {
+                    const rawB = (params.get('branch') || '').trim();
+                    tabStates[initialTab].branch = (rawB.toLowerCase() === 'all') ? '' : rawB;
+                }
+                if (params.has('priority')) {
+                    const rawP = (params.get('priority') || '').trim().toUpperCase();
+                    if (rawP === 'STAT') tabStates[initialTab].priority = 'STAT';
+                    else if (rawP === 'URGENT') tabStates[initialTab].priority = 'Urgent';
+                    else if (rawP === 'ROUTINE') tabStates[initialTab].priority = 'Routine';
+                    else tabStates[initialTab].priority = '';
+                }
+                if (params.has('status') || params.has('filterStatus')) {
+                    const rawSt = (params.get('status') || params.get('filterStatus') || '').trim();
+                    const lowerSt = rawSt.toLowerCase();
+                    let mappedSt = '';
+                    if (initialTab === 'release') {
+                        if (lowerSt === 'completed' || lowerSt === 'completed_today') mappedSt = 'Completed';
+                        else if (lowerSt === 'report ready' || lowerSt === 'report_ready') mappedSt = 'Report Ready';
+                    } else {
+                        if (lowerSt === 'overdue') mappedSt = 'Overdue';
+                        else if (['under reading', 'under_reading', 'in progress', 'inprogress'].includes(lowerSt)) mappedSt = 'In Progress';
+                        else if (['for revision', 'for_revision'].includes(lowerSt)) mappedSt = 'For Revision';
+                        else if (lowerSt === 'pending') mappedSt = 'Pending';
+                    }
+                    tabStates[initialTab].status = mappedSt;
+                }
+                if (params.has('date') || params.has('filterDate')) {
+                    const rawD = (params.get('date') || params.get('filterDate') || '').trim().toLowerCase();
+                    if (rawD === 'backlog') tabStates[initialTab].date = 'Backlog';
+                    else if (rawD === 'today') tabStates[initialTab].date = 'Today';
+                    else if (rawD === 'all') tabStates[initialTab].date = 'All';
+                }
+                if (params.has('sort')) {
+                    tabStates[initialTab].sort = params.get('sort');
+                }
+                if (params.has('search')) {
+                    tabStates[initialTab].search = params.get('search');
+                }
+            }
+
+            // 3. Switch to initial tab and populate inputs (skipSave = true so we don't wipe out loaded state!)
+            window.switchRadTab(initialTab, true);
+            isInitialized = true;
+            saveCurrentTabInputs();
+
+            // Re-sync all custom selects after custom-select.js has initialized
+            setTimeout(() => {
+                [filterBranch, filterPriority, filterStatus, filterDate, sortOption].forEach(sel => {
+                    if (sel && sel._customSelect) {
+                        if (typeof sel._customSelect.buildOptions === 'function') {
+                            sel._customSelect.buildOptions();
+                        }
+                        if (typeof sel._customSelect.sync === 'function') {
+                            sel._customSelect.sync();
+                        }
+                    }
+                });
+            }, 80);
+
+            try {
+                sessionStorage.setItem('Citilife_last_worklist_url', window.location.pathname);
             } catch (e) {}
         }
+
+        window.addEventListener('beforeunload', () => {
+            if (isInitialized) saveCurrentTabInputs();
+        });
+        window.addEventListener('pagehide', () => {
+            if (isInitialized) saveCurrentTabInputs();
+        });
 
         // --- Pending Worklist Table Logic ---
         function updateTable() {
@@ -1033,6 +1152,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
             const branchValue = filterBranch ? filterBranch.value : '';
             const priorityValue = filterPriority ? filterPriority.value : '';
+            const statusValue = filterStatus ? filterStatus.value : '';
             const dateValue = filterDate ? filterDate.value : 'All';
             const sortValue = sortOption ? sortOption.value : 'date_desc';
 
@@ -1097,7 +1217,10 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     matchesDate = !isToday;
                 }
 
-                if (matchesSearch && matchesBranch && matchesPriority && matchesDate) {
+                const rowStatus = row.dataset.status || '';
+                const matchesStatus = statusValue === '' || rowStatus === statusValue;
+
+                if (matchesSearch && matchesBranch && matchesPriority && matchesDate && matchesStatus) {
                     filteredReleaseRows.push(row);
                 } else {
                     row.style.display = 'none';
@@ -1229,13 +1352,19 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             container.appendChild(createButton('Last &raquo;', totalPages, currentReleasePage >= totalPages));
         }
 
-        // Reset to page 1 on filter/sort change and update both tables
+        // Reset to page 1 on filter/sort change and update active table only
         function onFilterSortChange() {
-            currentPage = 1;
-            currentReleasePage = 1;
-            saveWorklistState();
-            updateTable();
-            updateReleaseTable();
+            if (currentActiveTab === 'worklist') {
+                currentPage = 1;
+                if (tabStates.worklist) tabStates.worklist.page = 1;
+                saveCurrentTabInputs();
+                updateTable();
+            } else {
+                currentReleasePage = 1;
+                if (tabStates.release) tabStates.release.page = 1;
+                saveCurrentTabInputs();
+                updateReleaseTable();
+            }
         }
 
         if (searchInput) searchInput.addEventListener('input', onFilterSortChange);
@@ -1271,25 +1400,39 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             }
 
             if (targetRow) {
-                // If branch filter is not set yet, sync it to the highlighted case's branch
-                if (filterBranch && !filterBranch.value && targetRow.dataset.branch) {
-                    filterBranch.value = targetRow.dataset.branch;
-                    sessionStorage.setItem('Citilife_radWorklist_branch', targetRow.dataset.branch);
-                }
+                const rowBranch = targetRow.dataset.branch || '';
 
                 if (isReleaseTab) {
+                    if (rowBranch && tabStates.release) tabStates.release.branch = rowBranch;
+                    if (tabStates.release) {
+                        tabStates.release.date = 'All';
+                        tabStates.release.priority = '';
+                        tabStates.release.status = '';
+                        tabStates.release.search = '';
+                    }
                     if (typeof switchRadTab === 'function') switchRadTab('release');
                     const branchVal = filterBranch ? filterBranch.value : '';
                     const validRelRows = Array.from(document.querySelectorAll('.release-record-row')).filter(r => !branchVal || r.dataset.branch === branchVal);
                     const index = validRelRows.indexOf(targetRow);
                     currentReleasePage = index >= 0 ? Math.floor(index / RELEASE_ROWS_PER_PAGE) + 1 : 1;
+                    if (tabStates.release) tabStates.release.page = currentReleasePage;
+                    saveCurrentTabInputs();
                     updateReleaseTable();
                 } else {
+                    if (rowBranch && tabStates.worklist) tabStates.worklist.branch = rowBranch;
+                    if (tabStates.worklist) {
+                        tabStates.worklist.date = 'All';
+                        tabStates.worklist.priority = '';
+                        tabStates.worklist.status = '';
+                        tabStates.worklist.search = '';
+                    }
                     if (typeof switchRadTab === 'function') switchRadTab('worklist');
                     const branchVal = filterBranch ? filterBranch.value : '';
                     const validMainRows = Array.from(document.querySelectorAll('.record-row')).filter(r => !branchVal || r.dataset.branch === branchVal);
                     const index = validMainRows.indexOf(targetRow);
                     currentPage = index >= 0 ? Math.floor(index / ROWS_PER_PAGE) + 1 : 1;
+                    if (tabStates.worklist) tabStates.worklist.page = currentPage;
+                    saveCurrentTabInputs();
                     updateTable();
                 }
 
@@ -1336,31 +1479,24 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                         setTimeout(() => banner.remove(), 500);
                     }, 6000);
 
-                    const newUrl = new URL(window.location);
-                    newUrl.searchParams.delete('highlight_case');
-                    newUrl.searchParams.delete('highlight');
-                    newUrl.searchParams.delete('case_id');
-                    newUrl.searchParams.delete('is_new');
-                    window.history.replaceState({}, document.title, newUrl.toString());
+                    try {
+                        window.history.replaceState(null, document.title, window.location.pathname);
+                    } catch (e) {}
                 }, 200);
             }
         }
 
-        // Restore saved filters, page, and active tab from session
+        // Restore saved filters, page, and active tab from session or URL
         restoreWorklistState();
 
-        const paramsList = new window.URLSearchParams(window.location.search);
-        if (paramsList.get('tab') === 'release' || paramsList.get('status') === 'Report Ready' || paramsList.get('status') === 'completed_today') {
-            window.switchRadTab('release');
-        } else if (paramsList.get('tab') === 'worklist' || paramsList.get('status') === 'pending') {
-            window.switchRadTab('worklist');
-        }
-
-        // Render both tables
-        updateTable();
-        updateReleaseTable();
-
         handleHighlight();
+
+        // Clean URL address bar so ?branch=... &highlight_case=... are never left exposed
+        try {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, document.title, window.location.pathname);
+            }
+        } catch (e) {}
 
         // Ensure lucide icons are rendered
         if (typeof lucide !== 'undefined') {
@@ -1379,7 +1515,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             if (isTyping) return;
 
             isSyncingWorklist = true;
-            fetch(window.location.href, { cache: 'no-store' })
+            fetch(window.location.pathname, { cache: 'no-store' })
                 .then(res => res.text())
                 .then(html => {
                     const parser = new DOMParser();
@@ -1396,7 +1532,9 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                         if (newWlCount !== curWlCount || newCaseIds !== curCaseIds) {
                             curWorklistTbody.innerHTML = newWorklistTbody.innerHTML;
                             allRows = Array.from(curWorklistTbody.querySelectorAll('tr.record-row'));
-                            updateTable();
+                            if (currentActiveTab === 'worklist') {
+                                updateTable();
+                            }
                         }
                     }
 
@@ -1411,7 +1549,9 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                         if (newRelCount !== curRelCount || newRelCaseIds !== curRelCaseIds) {
                             curReleaseTbody.innerHTML = newReleaseTbody.innerHTML;
                             allReleaseRows = Array.from(curReleaseTbody.querySelectorAll('tr.release-record-row'));
-                            updateReleaseTable();
+                            if (currentActiveTab === 'release') {
+                                updateReleaseTable();
+                            }
                         }
                     }
 

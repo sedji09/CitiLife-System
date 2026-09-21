@@ -291,11 +291,11 @@
               const monthNum = document.getElementById('monthPickerMonth').value;
               const monthYear = document.getElementById('monthPickerYear').value;
 
-              let url = '?role=branch_admin&page=dashboard&filter=' + filter;
+              let url = '<?= url("dashboard") ?>?filter=' + encodeURIComponent(filter);
               if (filter === 'monthly') {
-                  url += '&month=' + monthYear + '-' + monthNum;
+                  url += '&month=' + encodeURIComponent(monthYear + '-' + monthNum);
               } else if (filter === 'yearly') {
-                  url += '&year=' + document.getElementById('yearPickerValue').value;
+                  url += '&year=' + encodeURIComponent(document.getElementById('yearPickerValue').value);
               }
               window.location.href = url;
           }
@@ -306,7 +306,7 @@
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
     <!-- Total Patients of Branch Card -->
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&tab=records"
+    <a href="<?= url('branch-xray-cases?tab=records') ?>"
       class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-xs font-semibold text-gray-500 group-hover:text-blue-600 transition">Total Patients
@@ -320,7 +320,7 @@
     </a>
 
     <!-- X-ray Cases Today Card -->
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&tab=queue"
+    <a href="<?= url('branch-xray-cases?tab=queue') ?>"
       class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">X-ray Cases
@@ -335,7 +335,7 @@
     </a>
 
     <!-- Pending Cases Card -->
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&status=Pending&date=All"
+    <a href="<?= url('branch-xray-cases?status=Pending&date=All') ?>"
       class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-xs font-semibold text-gray-500 group-hover:text-yellow-600 transition">Pending</p>
@@ -348,7 +348,7 @@
     </a>
 
     <!-- Backlog Cases Card -->
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?page=branch-xray-cases&date=Backlog"
+    <a href="<?= url('branch-xray-cases?date=Backlog') ?>"
       class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
       <div class="flex items-center justify-between">
         <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">Backlogs</p>
@@ -466,7 +466,7 @@
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col dash-card">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between dash-card-header">
         <h3 class="font-bold text-gray-900 text-lg text-main">System Audit Logs</h3>
-        <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>audit-logs" class="text-xs font-bold text-red-600 hover:text-red-700">View All
+        <a href="<?= url('audit-logs') ?>" class="text-xs font-bold text-red-600 hover:text-red-700">View All
           Logs</a>
       </div>
 

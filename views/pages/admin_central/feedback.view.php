@@ -5,8 +5,8 @@
             <p class="text-gray-500 text-sm mt-1">Global feedback and ratings from all patients across branches.</p>
         </div>
         <div class="flex items-center gap-3">
-            <form action="<?= url('feedback') ?>" method="GET" class="flex items-center gap-2">
-                <select name="branch_id" class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition" onchange="this.form.submit()">
+            <form action="<?= url('feedback') ?>" method="POST" class="flex items-center gap-2">
+                <select name="branch_id" class="appearance-none px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition cursor-pointer" onchange="this.form.submit()">
                     <option value="">All Branches</option>
                     <?php foreach ($branches as $branch): ?>
                         <option value="<?= $branch['id'] ?>" <?= $filterBranchId == $branch['id'] ? 'selected' : '' ?>>
@@ -172,17 +172,16 @@
                 <div class="flex items-center flex-wrap gap-1.5">
                     <?php
                     $page_num = (int) ($page_num ?? 1);
-                    $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) use ($filterBranchId) {
+                    $renderPageBtn = function ($label, $targetPage, $disabled, $isActive = false) {
                         $queryData = [];
-                        if ($filterBranchId) {
-                            $queryData['branch_id'] = $filterBranchId;
+                        if ($targetPage > 1) {
+                            $queryData['p'] = $targetPage;
                         }
-                        $queryData['p'] = $targetPage;
                         if (!empty($_GET['highlight'])) {
                             $queryData['highlight'] = $_GET['highlight'];
                         }
-                        $query = http_build_query($queryData);
-                        $url = url('feedback?' . $query);
+                        $query = !empty($queryData) ? '?' . http_build_query($queryData) : '';
+                        $url = url('feedback' . $query);
 
                         if ($isActive) {
                             return '<span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600">' . $label . '</span>';
@@ -236,3 +235,14 @@
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Strip branch_id or query params from address bar to keep URL clean as /feedback
+        try {
+            if (window.history && window.history.replaceState && window.location.search) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.hash);
+            }
+        } catch (e) { }
+    });
+</script>

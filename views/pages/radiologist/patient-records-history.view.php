@@ -35,8 +35,14 @@ if (!empty($caseDetails['image_path'])) {
 ?>
 
 <?php
-$backPage = $_GET['back_to'] ?? 'patient-history';
-$backId   = $_GET['back_id'] ?? '';
+if (!empty($_GET['back_to'])) {
+    $_SESSION['active_rad_record_history_back_to'] = $_GET['back_to'];
+}
+if (!empty($_GET['back_id'])) {
+    $_SESSION['active_rad_record_history_back_id'] = $_GET['back_id'];
+}
+$backPage = $_GET['back_to'] ?? ($_SESSION['active_rad_record_history_back_to'] ?? 'patient-history');
+$backId   = $_GET['back_id'] ?? ($_SESSION['active_rad_record_history_back_id'] ?? '');
 $backQuery = $backId ? ('?id=' . urlencode($backId)) : '';
 $backUrl   = url($backPage . $backQuery);
 ?>

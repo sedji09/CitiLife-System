@@ -105,7 +105,7 @@ $records = $caseModel->getReleasedRecords($branchId);
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="flex items-center gap-1.5">
                                     <!-- View -->
-                                    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=records-history&id=<?= $row['id'] ?>"
+                                    <a href="<?= url('records-history?id=' . $row['id']) ?>"
                                         class="p-1.5 rounded-md border border-blue-500 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                         title="View Record">
                                         <i data-lucide="eye" class="w-4 h-4"></i>

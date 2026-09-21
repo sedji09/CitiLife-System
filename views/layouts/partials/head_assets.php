@@ -22,6 +22,79 @@
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     }
 
+    /* ===== Global X-Ray Lightbox Modal Styles ===== */
+    #xray-lightbox-modal {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(15, 23, 42, 0.65) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      z-index: 9999999 !important;
+      display: none;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 24px !important;
+      box-sizing: border-box !important;
+      cursor: pointer;
+      user-select: none;
+    }
+    #xray-lightbox-wrapper {
+      position: relative !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      max-width: min(440px, 85vw) !important;
+      max-height: 72vh !important;
+      cursor: default !important;
+      border-radius: 16px !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important;
+      background: #000000 !important;
+    }
+    #xray-lightbox-main-img {
+      display: block !important;
+      max-width: min(440px, 85vw) !important;
+      max-height: 72vh !important;
+      width: auto !important;
+      height: auto !important;
+      object-fit: contain !important;
+      border-radius: 16px !important;
+      background-color: #000000 !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      pointer-events: auto !important;
+    }
+    #xray-lightbox-close-btn {
+      position: absolute !important;
+      top: -16px !important;
+      right: -16px !important;
+      width: 38px !important;
+      height: 38px !important;
+      border-radius: 50% !important;
+      background-color: #ffffff !important;
+      color: #111827 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+      border: 1px solid rgba(229, 231, 235, 0.9) !important;
+      cursor: pointer !important;
+      z-index: 60 !important;
+      padding: 0 !important;
+      outline: none !important;
+      transition: transform 0.15s ease, background-color 0.15s ease !important;
+    }
+    #xray-lightbox-close-btn:hover {
+      background-color: #f3f4f6 !important;
+      transform: scale(1.1) !important;
+    }
+    #xray-lightbox-close-btn:active {
+      transform: scale(0.95) !important;
+    }
+
 
     /* ===== Global Table Action Buttons Base & Colors ===== */
     .bg-blue-600 { background-color: #2563eb !important; }
@@ -45,20 +118,91 @@
       border-color: #2563eb !important;
       color: #ffffff !important;
     }
+    /* ===== Success Green Table Action Buttons (Light by default, solid vibrant on hover) ===== */
+    table td a[class*="p-1.5"][class*="border-green"],
+    table td button[class*="p-1.5"][class*="border-green"],
+    table td a[class*="p-1.5"][class*="border-emerald"],
+    table td button[class*="p-1.5"][class*="border-emerald"],
+    table td a[class*="p-2"][class*="border-green"],
+    table td button[class*="p-2"][class*="border-green"],
+    table td a[class*="p-2"][class*="border-emerald"],
+    table td button[class*="p-2"][class*="border-emerald"] {
+      background-color: #f0fdf4 !important; /* Soft light green */
+      border-color: #86efac !important;
+      color: #16a34a !important;
+    }
+    table td a[class*="p-1.5"][class*="border-green"] svg,
+    table td button[class*="p-1.5"][class*="border-green"] svg,
+    table td a[class*="p-1.5"][class*="border-emerald"] svg,
+    table td button[class*="p-1.5"][class*="border-emerald"] svg,
+    table td a[class*="p-2"][class*="border-green"] svg,
+    table td button[class*="p-2"][class*="border-green"] svg,
+    table td a[class*="p-2"][class*="border-emerald"] svg,
+    table td button[class*="p-2"][class*="border-emerald"] svg {
+      stroke: #16a34a !important;
+      color: #16a34a !important;
+    }
+
     table td a[class*="p-1.5"][class*="border-green"]:hover,
     table td button[class*="p-1.5"][class*="border-green"]:hover,
     table td a[class*="p-1.5"][class*="border-emerald"]:hover,
     table td button[class*="p-1.5"][class*="border-emerald"]:hover,
+    table td a[class*="p-2"][class*="border-green"]:hover,
+    table td button[class*="p-2"][class*="border-green"]:hover,
     table td a[class*="p-2"][class*="border-emerald"]:hover,
     table td button[class*="p-2"][class*="border-emerald"]:hover,
-    #trash-modal a[class*="border-emerald"]:hover,
-    #trash-modal button[class*="border-emerald"]:hover,
-    #trash-modal a[class*="border-green"]:hover,
-    #trash-modal button[class*="border-green"]:hover {
-      background-color: #059669 !important;
-      border-color: #059669 !important;
+    table td a[class*="p-1.5"][class*="border-green"]:focus,
+    table td button[class*="p-1.5"][class*="border-green"]:focus,
+    table td a[class*="p-1.5"][class*="border-emerald"]:focus,
+    table td button[class*="p-1.5"][class*="border-emerald"]:focus {
+      background-color: #22c55e !important; /* Solid vibrant green on hover */
+      border-color: #22c55e !important;
       color: #ffffff !important;
     }
+    table td a[class*="p-1.5"][class*="border-green"]:hover svg,
+    table td button[class*="p-1.5"][class*="border-green"]:hover svg,
+    table td a[class*="p-1.5"][class*="border-emerald"]:hover svg,
+    table td button[class*="p-1.5"][class*="border-emerald"]:hover svg,
+    table td a[class*="p-2"][class*="border-green"]:hover svg,
+    table td button[class*="p-2"][class*="border-green"]:hover svg,
+    table td a[class*="p-2"][class*="border-emerald"]:hover svg,
+    table td button[class*="p-2"][class*="border-emerald"]:hover svg,
+    table td a[class*="p-1.5"][class*="border-green"]:focus svg,
+    table td button[class*="p-1.5"][class*="border-green"]:focus svg,
+    table td a[class*="p-1.5"][class*="border-emerald"]:focus svg,
+    table td button[class*="p-1.5"][class*="border-emerald"]:focus svg {
+      stroke: #ffffff !important;
+      color: #ffffff !important;
+    }
+
+    /* Danger (Red) Matching Style */
+    table td a[class*="border-red"],
+    table td button[class*="border-red"] {
+      background-color: #fef2f2 !important;
+      border-color: #fca5a5 !important;
+      color: #dc2626 !important;
+    }
+    table td a[class*="border-red"] svg,
+    table td button[class*="border-red"] svg {
+      stroke: #dc2626 !important;
+      color: #dc2626 !important;
+    }
+    table td a[class*="border-red"]:hover,
+    table td button[class*="border-red"]:hover,
+    table td a[class*="border-red"]:focus,
+    table td button[class*="border-red"]:focus {
+      background-color: #dc2626 !important;
+      border-color: #dc2626 !important;
+      color: #ffffff !important;
+    }
+    table td a[class*="border-red"]:hover svg,
+    table td button[class*="border-red"]:hover svg,
+    table td a[class*="border-red"]:focus svg,
+    table td button[class*="border-red"]:focus svg {
+      stroke: #ffffff !important;
+      color: #ffffff !important;
+    }
+
     table td a[class*="p-1.5"][class*="border-yellow"]:hover,
     table td button[class*="p-1.5"][class*="border-yellow"]:hover,
     table td a[class*="p-1.5"][class*="border-amber"]:hover,
@@ -67,16 +211,6 @@
     table td button[class*="p-2"][class*="border-amber"]:hover {
       background-color: #d97706 !important;
       border-color: #d97706 !important;
-      color: #ffffff !important;
-    }
-    table td a[class*="p-1.5"][class*="border-red"]:hover,
-    table td button[class*="p-1.5"][class*="border-red"]:hover,
-    table td a[class*="p-2"][class*="border-red"]:hover,
-    table td button[class*="p-2"][class*="border-red"]:hover,
-    #trash-modal a[class*="border-red"]:hover,
-    #trash-modal button[class*="border-red"]:hover {
-      background-color: #dc2626 !important;
-      border-color: #dc2626 !important;
       color: #ffffff !important;
     }
     table td a[class*="p-1.5"][class*="border-gray"]:hover,
@@ -99,22 +233,22 @@
       border-color: #9333ea !important;
       color: #ffffff !important;
     }
-    table td a[class*="p-1.5"]:hover svg,
-    table td button[class*="p-1.5"]:hover svg,
-    table td a[class*="p-2"]:hover svg,
-    table td button[class*="p-2"]:hover svg,
-    #trash-modal a[class*="border-emerald"]:hover svg,
-    #trash-modal button[class*="border-emerald"]:hover svg,
-    #trash-modal a[class*="border-green"]:hover svg,
-    #trash-modal button[class*="border-green"]:hover svg,
-    #trash-modal a[class*="border-red"]:hover svg,
-    #trash-modal button[class*="border-red"]:hover svg {
+    table td a[class*="p-1.5"][class*="border-blue"]:hover svg,
+    table td button[class*="p-1.5"][class*="border-blue"]:hover svg,
+    table td a[class*="p-2"][class*="border-blue"]:hover svg,
+    table td button[class*="p-2"][class*="border-blue"]:hover svg,
+    table td a[class*="p-1.5"][class*="border-purple"]:hover svg,
+    table td button[class*="p-1.5"][class*="border-purple"]:hover svg {
       stroke: #ffffff !important;
     }
 
     /* Tabs must never have a background color on hover, focus, or active */
-    nav button,
-    nav a,
+    div[class*="border-b"] nav button,
+    div[class*="border-b"] nav a,
+    nav[aria-label="Tabs"] button,
+    nav[aria-label="Tabs"] a,
+    [role="tablist"] button,
+    [role="tablist"] a,
     button[id^="tab-"],
     a[id^="tab-"],
     button[id*="-tab-"],
@@ -122,12 +256,20 @@
       background-color: transparent !important;
       background: transparent !important;
     }
-    nav button:hover,
-    nav a:hover,
-    nav button:focus,
-    nav a:focus,
-    nav button:active,
-    nav a:active,
+    div[class*="border-b"] nav button:hover,
+    div[class*="border-b"] nav a:hover,
+    div[class*="border-b"] nav button:focus,
+    div[class*="border-b"] nav a:focus,
+    div[class*="border-b"] nav button:active,
+    div[class*="border-b"] nav a:active,
+    nav[aria-label="Tabs"] button:hover,
+    nav[aria-label="Tabs"] a:hover,
+    nav[aria-label="Tabs"] button:focus,
+    nav[aria-label="Tabs"] a:focus,
+    nav[aria-label="Tabs"] button:active,
+    nav[aria-label="Tabs"] a:active,
+    [role="tablist"] button:hover,
+    [role="tablist"] a:hover,
     button[id^="tab-"]:hover,
     a[id^="tab-"]:hover,
     button[id^="tab-"]:focus,
@@ -138,6 +280,16 @@
     a[id*="-tab-"]:hover {
       background-color: transparent !important;
       background: transparent !important;
+    }
+
+    /* Ensure Sidebar navigation active and hover backgrounds are preserved */
+    aside nav a.bg-red-50,
+    aside nav a[class*="bg-red-50"] {
+      background-color: #fef2f2 !important;
+      color: #b91c1c !important;
+    }
+    aside nav a:hover:not(.bg-red-50):not([class*="bg-red-50"]) {
+      background-color: #f3f4f6 !important;
     }
 
     /* ===== Settings Modal Responsive Styles ===== */

@@ -113,9 +113,9 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
             yearFilter.classList.add('hidden');
           }
 
-          let url = '?role=radtech&page=dashboard&filter=' + filter;
-          if (filter === 'monthly') url += '&month=' + document.getElementById('monthPicker').value;
-          if (filter === 'yearly') url += '&year=' + document.getElementById('yearPicker').value;
+          let url = '<?= url("dashboard") ?>?filter=' + encodeURIComponent(filter);
+          if (filter === 'monthly') url += '&month=' + encodeURIComponent(document.getElementById('monthPicker').value);
+          if (filter === 'yearly') url += '&year=' + encodeURIComponent(document.getElementById('yearPicker').value);
 
           window.history.pushState({ path: url }, '', url);
           if (window.__APP__) window.__APP__.currentPath = url; // Ensure global polling uses new URL
@@ -252,7 +252,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($totalPatients) ?></p>
     </div>
 
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&status=Pending&filterDate=All" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+    <a href="<?= url('patient-lists?status=Pending&filterDate=All') ?>" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">Pending</p>
         <i data-lucide="clock-3" class="w-5 h-5 text-orange-400 shrink-0"></i>
@@ -260,7 +260,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($pendingApprovals) ?></p>
     </a>
 
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&filterPriority=Urgent&filterDate=All" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+    <a href="<?= url('patient-lists?filterPriority=Urgent&filterDate=All') ?>" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">Urgent Cases</p>
         <i data-lucide="chart-spline" class="w-5 h-5 text-yellow-400 shrink-0"></i>
@@ -268,7 +268,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($priorityCases) ?></p>
     </a>
 
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&filterPriority=STAT&filterDate=All" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+    <a href="<?= url('patient-lists?filterPriority=STAT&filterDate=All') ?>" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">STAT</p>
         <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400 shrink-0"></i>
@@ -284,7 +284,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($completedCases) ?></p>
     </div>
 
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radtech&page=patient-lists&filterDate=Backlog"
+    <a href="<?= url('patient-lists?filterDate=Backlog') ?>"
       class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">Backlog</p>

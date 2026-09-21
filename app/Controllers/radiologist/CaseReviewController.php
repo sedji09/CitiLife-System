@@ -18,8 +18,21 @@ $caseModel = new \CaseModel($pdo);
 $notificationModel = new \NotificationModel($pdo);
 $auditLogModel = new \AuditLogModel($pdo);
 
-$caseId = $_GET['id'] ?? 0;
-$branchIdQuery = $_GET['branch_id'] ?? 0;
+$rawId = $_POST['case_id'] ?? $_GET['id'] ?? 0;
+$rawBranchId = $_POST['branch_id'] ?? $_GET['branch_id'] ?? 0;
+$caseId = 0;
+if ($rawId) {
+    $caseId = (int)$rawId;
+}
+if ($caseId > 0) {
+    $_SESSION['active_radiologist_case_id'] = $caseId;
+    if (!empty($rawBranchId)) {
+        $_SESSION['active_radiologist_branch_id'] = (int)$rawBranchId;
+    }
+} else {
+    $caseId = (int)($_SESSION['active_radiologist_case_id'] ?? 0);
+}
+$branchIdQuery = !empty($rawBranchId) ? (int)$rawBranchId : (int)($_SESSION['active_radiologist_branch_id'] ?? 0);
 $radiologistId = $_SESSION['user_id'] ?? 1;
 
 $successMsg = '';

@@ -20,7 +20,16 @@ $caseModel = new \CaseModel($pdo);
 // 1. Ensure Schema
 $caseModel->ensureSchema();
 
-$caseId = $_GET['id'] ?? 0;
+$rawId = $_GET['id'] ?? 0;
+$caseId = 0;
+if ($rawId) {
+    $caseId = (int)$rawId;
+}
+if ($caseId > 0) {
+    $_SESSION['active_radiologist_patient_details_case_id'] = $caseId;
+} else {
+    $caseId = (int)($_SESSION['active_radiologist_patient_details_case_id'] ?? 0);
+}
 $errorMsg = '';
 
 // Radiologists have strictly read-only access to patient details

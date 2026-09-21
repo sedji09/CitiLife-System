@@ -123,6 +123,28 @@
     transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
 }
 
+/* Ensure only a single chevron is ever visible */
+.cs-trigger .cs-chevron ~ .cs-chevron,
+.cs-trigger svg.cs-chevron + svg.cs-chevron,
+.cs-wrapper ~ [data-lucide="chevron-down"],
+.cs-wrapper ~ .lucide-chevron-down,
+.cs-wrapper + [data-lucide="chevron-down"],
+.cs-wrapper + .lucide-chevron-down,
+.cs-wrapper ~ svg.lucide-chevron-down,
+.cs-wrapper + svg.lucide-chevron-down,
+.cs-wrapper ~ i.lucide-chevron-down,
+.cs-wrapper + i.lucide-chevron-down,
+[data-lucide="chevron-down"] ~ .cs-wrapper,
+.lucide-chevron-down ~ .cs-wrapper {
+    display: none !important;
+}
+
+.cs-wrapper select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
 .cs-wrapper.cs-open .cs-chevron {
     transform: rotate(180deg);
     color: #dc2626;

@@ -14,11 +14,17 @@ require_once __DIR__ . '/../../../app/Models/ResultDisputeModel.php';
 $disputeMdl = new \ResultDisputeModel($pdo);
 $activeDispute = $disputeMdl->getActiveDisputeByCase($caseDetails['id']);
 
-$backPage = $_GET['back_to'] ?? 'worklist';
-$backId = $_GET['back_id'] ?? '';
-$backUrl = url("index.php?role=radiologist&page=" . urlencode($backPage));
+if (!empty($_GET['back_to'])) {
+    $_SESSION['active_case_review_back_to'] = $_GET['back_to'];
+}
+if (!empty($_GET['back_id'])) {
+    $_SESSION['active_case_review_back_id'] = $_GET['back_id'];
+}
+$backPage = $_GET['back_to'] ?? ($_SESSION['active_case_review_back_to'] ?? 'worklist');
+$backId = $_GET['back_id'] ?? ($_SESSION['active_case_review_back_id'] ?? '');
+$backUrl = url(urlencode($backPage));
 if ($backId) {
-    $backUrl .= "&id=" . urlencode($backId);
+    $backUrl .= "?id=" . urlencode($backId);
 }
 ?>
 
@@ -370,7 +376,7 @@ if ($backId) {
                 <?php else: ?>
                     <?php foreach ($patientHistory as $h): ?>
                         <div class="px-5 py-3 hover:bg-red-50 transition cursor-pointer group"
-                            onclick="window.location.href='<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>index.php?role=radiologist&page=patient-records-history&id=<?= $h['id'] ?>&back_to=case-review&back_id=<?= $caseId ?>'">
+                            onclick="window.location.href='<?= url('patient-records-history?id=' . $h['id'] . '&back_to=case-review&back_id=' . $caseId) ?>'">
                             <div class="flex justify-between items-start">
                                 <p class="text-xs font-bold text-gray-800 group-hover:text-red-600 transition">
                                     <?= htmlspecialchars($h['exam_type']) ?></p>
@@ -449,6 +455,8 @@ if ($backId) {
 
         <!-- Hidden form -->
         <form id="report-form" method="POST" action="">
+            <input type="hidden" name="case_id" value="<?= (int)$caseId ?>">
+            <input type="hidden" name="branch_id" value="<?= (int)($caseDetails['branch_id'] ?? $branchIdQuery) ?>">
             <input type="hidden" name="clinical_information" id="clinical_information_hidden"
                 value="<?= htmlspecialchars($caseDetails['clinical_information'] ?? '') ?>">
             <input type="hidden" name="exam_reports" id="exam_reports_hidden" value="">
@@ -533,6 +541,13 @@ if ($backId) {
 </div>
 
 <script>
+    // Clean URL address bar so ?id=...&branch_id=... is never exposed in browser address bar
+    try {
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, document.title, window.location.pathname);
+        }
+    } catch (e) { }
+
     document.addEventListener('DOMContentLoaded', () => {
 
         const examKeys = <?= json_encode($examTypes) ?>;
@@ -1017,8 +1032,7 @@ if ($backId) {
                                         });
 
                                         // 3. Redirect to worklist
-                                        const baseDir = '<?= defined("PROJECT_DIR") && PROJECT_DIR ? "/" . PROJECT_DIR : "" ?>';
-                                        window.location.href = data.redirect || `${baseDir}/index.php?role=radiologist&page=worklist`;
+                                        window.location.href = data.redirect || '<?= url("worklist") ?>';
                                     } else {
                                         Swal.fire({
                                             icon: 'error',

@@ -29,6 +29,85 @@
   };
 </script>
 
+<!-- Universal URL & Filter Cleaner: Keep address bar clean from empty params and legacy role/page -->
+<script>
+(function () {
+  function cleanCurrentUrl() {
+    if (!window.history || !window.history.replaceState) return;
+    try {
+      const u = new URL(window.location.href);
+      if (!u.search) return;
+
+      const path = u.pathname.toLowerCase();
+      // On audit-logs and dashboard, hide all query parameters completely so URL stays clean as /audit-logs or /dashboard
+      if (path.includes('audit-logs') || path.includes('dashboard')) {
+        window.history.replaceState(null, document.title, u.pathname + u.hash);
+        return;
+      }
+
+      let changed = false;
+
+      // Strip legacy role and page query params
+      if (u.searchParams.has('role')) {
+        u.searchParams.delete('role');
+        changed = true;
+      }
+      if (u.searchParams.has('page')) {
+        u.searchParams.delete('page');
+        changed = true;
+      }
+
+      // Strip any query parameter with empty value (e.g. search=&module=&rl=)
+      const toDelete = [];
+      u.searchParams.forEach((val, key) => {
+        if (val === '' || val === null || val === undefined) {
+          toDelete.push(key);
+        }
+      });
+      if (toDelete.length > 0) {
+        toDelete.forEach(k => u.searchParams.delete(k));
+        changed = true;
+      }
+
+      if (changed) {
+        const query = u.searchParams.toString();
+        const cleanUrl = u.pathname + (query ? '?' + query : '') + u.hash;
+        window.history.replaceState(null, document.title, cleanUrl);
+      }
+    } catch (e) {}
+  }
+
+  // Run on page load
+  cleanCurrentUrl();
+
+  // Intercept all GET form submissions across the system so empty fields are not included in the URL
+  document.addEventListener('submit', function (e) {
+    const form = e.target;
+    if (!form || (form.method && form.method.toUpperCase() !== 'GET')) return;
+
+    const disabledInputs = [];
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+      if (!el.name) return;
+      // Do not submit empty inputs (prevents ?search=&module=&rl=)
+      if (el.value === '' || el.value === null || el.value === undefined) {
+        el.disabled = true;
+        disabledInputs.push(el);
+      } else if (el.name === 'role' || (el.name === 'page' && form.action && !form.action.endsWith('index.php'))) {
+        // Do not submit redundant role/page hidden inputs
+        el.disabled = true;
+        disabledInputs.push(el);
+      }
+    });
+
+    // Restore disabled state shortly after submission so browser history / back-forward cache isn't permanently disabled
+    setTimeout(() => {
+      disabledInputs.forEach(el => { el.disabled = false; });
+    }, 400);
+  }, true);
+})();
+</script>
+
 <!-- Universal Navigation History Tracker & Smart Back Engine -->
 <script>
 (function () {

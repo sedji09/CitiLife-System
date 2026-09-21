@@ -14,7 +14,12 @@
     class CustomSelect {
         constructor(selectEl) {
             this.select = selectEl;
-            if (!this.select || this.select._customSelect) return;
+            if (!this.select || 
+                this.select._customSelect || 
+                this.select.closest('.cs-wrapper') || 
+                this.select.hasAttribute('data-custom-select-initialized')) {
+                return;
+            }
 
             // Skip if explicitly flagged or has no-custom-select class
             if (this.select.hasAttribute('data-no-custom') || 
@@ -22,9 +27,10 @@
                 return;
             }
 
+            this.select.setAttribute('data-custom-select-initialized', 'true');
+            this.select._customSelect = this;
             this.isOpen = false;
             this.init();
-            this.select._customSelect = this;
         }
 
         init() {
@@ -61,6 +67,12 @@
             if (this.select.style.maxWidth) this.wrapper.style.maxWidth = this.select.style.maxWidth;
             if (this.select.style.flex) this.wrapper.style.flex = this.select.style.flex;
 
+            // Remove any sibling manual chevrons in the original parent container
+            if (this.select.parentNode) {
+                const manualChevrons = this.select.parentNode.querySelectorAll(':scope > [data-lucide="chevron-down"], :scope > .lucide-chevron-down, :scope > svg.lucide-chevron-down, :scope > i.lucide-chevron-down');
+                manualChevrons.forEach(el => el.remove());
+            }
+
             // Insert wrapper before select and move select inside
             this.select.parentNode.insertBefore(this.wrapper, this.select);
             this.wrapper.appendChild(this.select);
@@ -87,7 +99,9 @@
             this.label.className = 'cs-label';
 
             this.trigger.appendChild(this.label);
-            this.trigger.insertAdjacentHTML('beforeend', CHEVRON_SVG);
+            if (!this.trigger.querySelector('.cs-chevron')) {
+                this.trigger.insertAdjacentHTML('beforeend', CHEVRON_SVG);
+            }
             this.wrapper.appendChild(this.trigger);
 
             // Dropdown List
@@ -335,6 +349,7 @@
                 this.wrapper.remove();
                 this.select.classList.remove('cs-native-hidden');
             }
+            this.select.removeAttribute('data-custom-select-initialized');
             delete this.select._customSelect;
         }
     }
@@ -356,10 +371,15 @@
     // Global init helper
     function initCustomSelects(root = document) {
         if (!root) return;
-        const selects = root.querySelectorAll('select:not([data-no-custom]):not(.no-custom-select)');
-        selects.forEach(select =>
-            !select._customSelect && select.offsetParent !== null && new CustomSelect(select)
-        );
+        const selects = root.querySelectorAll('select:not([data-no-custom]):not(.no-custom-select):not([data-custom-select-initialized])');
+        selects.forEach(select => {
+            if (select._customSelect || select.closest('.cs-wrapper') || select.hasAttribute('data-custom-select-initialized')) {
+                return;
+            }
+            if (select.offsetParent !== null) {
+                new CustomSelect(select);
+            }
+        });
     }
 
     window.CustomSelect = CustomSelect;
