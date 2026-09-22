@@ -8,7 +8,7 @@
 <main class="flex-1 overflow-y-auto p-4 lg:p-6">
     <div class="mx-auto max-w-5xl space-y-6">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-2 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <?php 
                 $backUrl = ($source === 'records') ? url('patient-records') : url('patient-details' . (!empty($patient['id']) ? '?id=' . $patient['id'] : '')); 
