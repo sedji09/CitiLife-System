@@ -48,7 +48,7 @@ if ($patientId) {
     $feedbackCaseIds = $feedbackModel->getPatientFeedbackCaseIds($patientId);
     $patientDisputes = $disputeModel->getDisputesByPatient($patientId);
     $disputedCaseIds = array_column($patientDisputes, 'case_id');
-    $activeCaseDispute = ($latestCase && !empty($latestCase['id'])) ? $disputeModel->getActiveDisputeByCase($latestCase['id']) : null;
+    $activeCaseDispute = ($latestCase && !empty($latestCase['id']) && ($latestCase['record_type'] ?? '') === 'Case') ? $disputeModel->getActiveDisputeByCase($latestCase['id']) : null;
 }
 
 // 4. Fetch RadTech name if assigned
@@ -98,7 +98,7 @@ $isRejected = ($userAccountStatus === 'Rejected');
 $isCorrectionWorkflow = false;
 $activeDisputeStatus = '';
 $latestCaseDispute = null;
-if ($latestCase && !empty($latestCase['id'])) {
+if ($latestCase && !empty($latestCase['id']) && ($latestCase['record_type'] ?? '') === 'Case') {
     $stmtD = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? ORDER BY created_at DESC LIMIT 1");
     $stmtD->execute([$latestCase['id']]);
     $latestCaseDispute = $stmtD->fetch(PDO::FETCH_ASSOC);
