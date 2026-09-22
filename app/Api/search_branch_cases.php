@@ -33,7 +33,6 @@ try {
         WHERE 
             b.name = :branch AND
             c.released = 1 AND
-            c.approval_status = 'Approved' AND
             c.status IN ('Completed', 'Released') AND
             c.exam_type != 'To be determined' AND
             (REPLACE(REPLACE(CONCAT(p.first_name, ' ', p.last_name), '-', ''), ' ', '') LIKE :name_clean
