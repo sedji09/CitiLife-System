@@ -18,6 +18,26 @@
         <span id="topbarDateTime" class="whitespace-nowrap"></span>
       </div>
 
+      <!-- Availability Toggle (Radiologist Only) -->
+      <div v-if="role === 'radiologist'" class="hidden sm:flex mr-2 has-tooltip bottom-tooltip"
+           data-tooltip="Toggle your availability for receiving cases">
+        <label class="flex items-center gap-2 border border-gray-300 rounded-full px-3 py-1.5 bg-white shadow-sm hover:bg-gray-50 cursor-pointer transition-colors m-0">
+          <input type="checkbox" v-model="editIsAvailable" @change="toggleAvailability" style="opacity:0;width:0;height:0;position:absolute;">
+          <div style="position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;">
+            <span :style="editIsAvailable
+                    ? 'position:absolute;inset:0;border-radius:999px;background:#dc2626;transition:0.2s;'
+                    : 'position:absolute;inset:0;border-radius:999px;background:#d1d5db;transition:0.2s;'"></span>
+            <span
+              :style="editIsAvailable
+                    ? 'position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background-color:#fff;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);'
+                    : 'position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background-color:#fff;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);'"></span>
+          </div>
+          <span style="font-size:13px;font-weight:600;transition:color 0.2s;user-select:none;" :style="editIsAvailable ? 'color:#dc2626;' : 'color:#6b7280;'">
+            {{ editIsAvailable ? 'Available' : 'Unavailable' }}
+          </span>
+        </label>
+      </div>
+
       <!-- Theme Switcher (Dark / Light Mode) -->
       <button @click.prevent="toggleTheme" type="button"
         class="relative rounded-full border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-100 shadow-sm has-tooltip bottom-tooltip transition active:scale-95 flex items-center justify-center cursor-pointer"

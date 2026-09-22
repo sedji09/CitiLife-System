@@ -1219,14 +1219,14 @@ $catBadgeLabel = match ($dCategory) {
                                 $caseCount = isset($rad['active_case_count']) ? (int) $rad['active_case_count'] : 0;
                                 $isAvailable = isset($rad['is_available']) ? (int) $rad['is_available'] === 1 : true;
                                 ?>
-                                <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors <?= $isAvailable ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed opacity-60 bg-gray-50' ?>"
-                                    <?= $isAvailable ? "onclick=\"
-                                    document.getElementById('radiologist_id').value = '{$rad['id']}';
-                                    document.getElementById('rad-selected-text').innerHTML = 'Dr. " . addslashes(htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name'])))) . "';
+                                <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-pointer hover:bg-gray-100 <?= !$isAvailable ? 'opacity-60 bg-gray-50' : '' ?>"
+                                    onclick="
+                                    document.getElementById('radiologist_id').value = '<?= $rad['id'] ?>';
+                                    document.getElementById('rad-selected-text').innerHTML = 'Dr. <?= addslashes(htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name'])))) ?> <?= !$isAvailable ? "<span class=\'text-gray-500 text-xs ml-1 font-normal\'>(Unavailable)</span>" : '' ?>';
                                     document.getElementById('rad-options').classList.add('hidden');
                                     document.getElementById('rad-selection-error').classList.add('hidden');
-                                    \"" : '' ?>>
-                                    <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-500' ?>">Dr.
+                                    ">
+                                    <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-600' ?>">Dr.
                                         <?= htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name']))) ?></span>
                                     <?php if ($isAvailable): ?>
                                         <span
@@ -1248,9 +1248,9 @@ $catBadgeLabel = match ($dCategory) {
 
                     <script>
                         document.addEventListener('DOMContentLoaded', function () {
-                            const availableOptions = document.querySelectorAll('#rad-options li.cursor-pointer');
-                            if (availableOptions.length === 1) {
-                                availableOptions[0].click();
+                            const allOptions = document.querySelectorAll('#rad-options li');
+                            if (allOptions.length === 1) {
+                                allOptions[0].click();
                                 // Disable dropdown button to make it look like a static selection
                                 const btn = document.querySelector('#custom-radiologist-select button');
                                 if (btn) {

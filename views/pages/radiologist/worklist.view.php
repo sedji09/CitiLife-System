@@ -27,8 +27,9 @@ if (empty($urlBranch) && !empty($_GET['branch_id'])) {
 // 1. Fetch Pending Worklist cases ('Pending', 'Under Reading', 'For Revision')
 $pendingRecords = $caseModel->getWorklist(null, null, ['Pending', 'Under Reading', 'For Revision'], true, $radiologistId);
 
-// 2. Fetch Pending Release cases ('Report Ready' awaiting release by RadTech, and completed reports)
-$releaseRecords = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], false, $radiologistId);
+// 2. Fetch Pending Release cases ('Report Ready' awaiting release by RadTech, and completed reports if filtered)
+$releaseStatuses = ($statusParam === 'completed_today') ? ['Report Ready', 'Completed'] : ['Report Ready'];
+$releaseRecords = $caseModel->getWorklist(null, null, $releaseStatuses, false, $radiologistId);
 if ($statusParam === 'completed_today') {
     $releaseRecords = array_filter($releaseRecords, function ($r) {
         return !empty($r['date_completed']) && date('Y-m-d', strtotime($r['date_completed'])) === date('Y-m-d');

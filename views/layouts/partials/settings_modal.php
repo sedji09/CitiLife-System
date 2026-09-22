@@ -205,28 +205,6 @@
           </div>
         </div>
 
-        <!-- SECTION: Availability (Radiologist Only) -->
-        <p v-if="role === 'radiologist'"
-          style="font-size:10px;font-weight:700;color: var(--modal-text-light, #9ca3af);text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px 0;">
-          Availability</p>
-
-        <div v-if="role === 'radiologist'" class="settings-flex-row" style="padding:14px 0;border-bottom:1px solid var(--modal-border-light, #f3f4f6);">
-          <div>
-            <div style="font-size:13px;font-weight:600;color: var(--modal-text, #111827);">Available for Cases</div>
-            <div style="font-size:11px;color: var(--modal-text-light, #9ca3af);margin-top:2px;">Turn this off if you are away. RadTechs won't be able to send you new cases.</div>
-          </div>
-          <label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;cursor:pointer;">
-            <input type="checkbox" v-model="editIsAvailable" @change="toggleAvailability" style="opacity:0;width:0;height:0;position:absolute;">
-            <span :style="editIsAvailable
-                    ? 'position:absolute;inset:0;border-radius:999px;background:#dc2626;transition:0.2s;'
-                    : 'position:absolute;inset:0;border-radius:999px;background:#d1d5db;transition:0.2s;'"></span>
-            <span
-              :style="editIsAvailable
-                    ? 'position:absolute;top:3px;left:21px;width:18px;height:18px;border-radius:50%;background-color: var(--modal-bg, #fff);transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);'
-                    : 'position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background-color: var(--modal-bg, #fff);transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);'"></span>
-          </label>
-        </div>
-
         <!-- SECTION: Security -->
         <p
           style="font-size:10px;font-weight:700;color: var(--modal-text-light, #9ca3af);text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px 0;">

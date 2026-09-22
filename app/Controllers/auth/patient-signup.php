@@ -266,15 +266,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Patient Registration - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
-    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-datepicker.css?v=<?= time() ?>">
-    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
-    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-select.css?v=<?= time() ?>">
-    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-select.js?v=<?= time() ?>"></script>
-    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-tooltip.css?v=<?= time() ?>">
-    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
-    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
+    <link rel="stylesheet"
+        href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-datepicker.css?v=<?= time() ?>">
+    <script
+        src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-datepicker.js?v=<?= time() ?>"></script>
+    <link rel="stylesheet"
+        href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-select.css?v=<?= time() ?>">
+    <script
+        src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-select.js?v=<?= time() ?>"></script>
+    <link rel="stylesheet"
+        href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-tooltip.css?v=<?= time() ?>">
+    <script
+        src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
+    <script
+        src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/sweetalert2/sweetalert2.all.min.js?v=<?= time() ?>"></script>
     <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/alerts.js?v=<?= time() ?>"></script>
-    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
+    <script
+        src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
 
     <!-- Load Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -373,6 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* Desktop specific visibility */
         @media (min-width: 641px) {
+
             /* Hide mobile form on desktop */
             #mobileFormContainer {
                 display: none !important;
@@ -380,43 +389,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         <?php if (isset($_GET['iframe'])): ?>
-        /* Iframe overrides for a seamless modal experience */
-        body {
-            background: transparent !important;
-            padding: 0 !important;
-            min-height: 0 !important;
-        }
-        .glass-panel {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: none !important;
-            border-radius: 0 !important;
-            max-width: 100% !important;
-        }
-        /* Real-time Field Validation States */
-        .field-error {
-            border-color: #f87171 !important;
-            background-color: #fef2f2 !important;
-        }
-        .field-error:focus {
-            border-color: #ef4444 !important;
-            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
-        }
-        .field-success {
-            border-color: #86efac !important;
-        }
-        .field-success:focus {
-            border-color: #22c55e !important;
-            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
-        }
-        .field-warning {
-            border-color: #fcd34d !important;
-            background-color: #fffbeb !important;
-        }
-        .field-warning:focus {
-            border-color: #f59e0b !important;
-            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
-        }
+            /* Iframe overrides for a seamless modal experience */
+            body {
+                background: transparent !important;
+                padding: 0 !important;
+                min-height: 0 !important;
+            }
+
+            .glass-panel {
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+            }
+
+            /* Real-time Field Validation States */
+            .field-error {
+                border-color: #f87171 !important;
+                background-color: #fef2f2 !important;
+            }
+
+            .field-error:focus {
+                border-color: #ef4444 !important;
+                box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+            }
+
+            .field-success {
+                border-color: #86efac !important;
+            }
+
+            .field-success:focus {
+                border-color: #22c55e !important;
+                box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+            }
+
+            .field-warning {
+                border-color: #fcd34d !important;
+                background-color: #fffbeb !important;
+            }
+
+            .field-warning:focus {
+                border-color: #f59e0b !important;
+                box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
+            }
+
         <?php endif; ?>
     </style>
 </head>
@@ -486,7 +503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <span class="text-red-500">*</span></label>
                             <input id="d_patient_number" name="patient_number" type="text" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
-                                placeholder="e.g. PAT-GAP-2026-001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
+                                placeholder="e.g. PATGAP-2026-00001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
                             <p id="d_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             <p class="text-xs text-gray-500 mt-1">Found on your clinic receipt or given by staff.</p>
                         </div>
@@ -516,11 +533,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="d_birthdate" class="block text-sm font-semibold text-gray-700 mb-1">Birthdate
                                 <span class="text-red-500">*</span></label>
                             <div class="relative">
-                                <input id="d_birthdate" name="birthdate" type="text" required
+                                <input id="d_birthdate" name="birthdate" type="text" required readonly
                                     placeholder="YYYY-MM-DD"
-                                    class="appearance-none block w-full px-3.5 py-2.5 pl-10 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm transition-all cursor-pointer"
+                                    class="appearance-none block w-full px-3.5 py-2.5 pl-10 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm transition-all cursor-pointer bg-white"
                                     value="<?= htmlspecialchars($birthdate ?? '') ?>">
-                                <i data-lucide="calendar" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                                <i data-lucide="calendar"
+                                    class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
                             </div>
                             <p id="d_birthdate_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
@@ -528,7 +546,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Sex -->
                         <div>
                             <label for="d_sex" class="block text-sm font-semibold text-gray-700 mb-1">Sex <span
-                                     class="text-red-500">*</span></label>
+                                    class="text-red-500">*</span></label>
                             <div class="relative">
                                 <select id="d_sex" name="sex" required
                                     class="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white transition-all">
@@ -564,8 +582,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input id="d_contact_number" name="contact_number" type="text" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                                 placeholder="Ex: 09123456789" value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                maxlength="11"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             <p id="d_contact_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                         </div>
 
@@ -680,8 +697,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     placeholder=" " value="<?= htmlspecialchars($patientNumber ?? '') ?>" />
                                 <label for="m_patient_number"
                                     class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Patient
-                                    ID (e.g. PAT-GAP-2026-001) <span class="text-red-500">*</span></label>
-                                <p id="m_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
+                                    ID (e.g. PATGAP-2026-00001) <span class="text-red-500">*</span></label>
+                                <p id="m_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200">
+                                </p>
                             </div>
 
                             <div class="grid grid-cols-2 gap-3 mb-6">
@@ -692,7 +710,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="m_first_name"
                                         class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">First
                                         name <span class="text-red-500">*</span></label>
-                                    <p id="m_first_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
+                                    <p id="m_first_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200">
+                                    </p>
                                 </div>
                                 <div class="relative">
                                     <input type="text" id="m_last_name" name="last_name" required
@@ -701,7 +720,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="m_last_name"
                                         class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Last
                                         name <span class="text-red-500">*</span></label>
-                                    <p id="m_last_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
+                                    <p id="m_last_name_feedback" class="hidden text-xs mt-1.5 transition-all duration-200">
+                                    </p>
                                 </div>
                             </div>
                             <button type="button" onclick="nextStep(1)"
@@ -713,14 +733,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">When is your birthday?</h2>
                             <p class="text-[15px] text-gray-800 mb-6">Enter your birthdate.</p>
 
-                            <div class="relative mb-6 overflow-visible" id="m_birthdate_container" style="min-height: 330px;">
-                                <input type="text" id="m_birthdate" name="birthdate" required
+                            <div class="relative mb-6 overflow-visible" id="m_birthdate_container"
+                                style="min-height: 330px;">
+                                <input type="text" id="m_birthdate" name="birthdate" required readonly
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 pr-10 text-[15px] font-medium text-gray-900 focus:border-red-600 focus:ring-1 focus:ring-red-600 focus:outline-none transition-all cursor-pointer"
-                                    placeholder="YYYY-MM-DD" value="<?= htmlspecialchars($birthdate ?? '') ?>" />
+                                    placeholder=" " value="<?= htmlspecialchars($birthdate ?? '') ?>" />
                                 <i data-lucide="calendar"
                                     class="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none"></i>
                                 <label for="m_birthdate"
-                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-red-600 pointer-events-none transition-all cursor-pointer">Birthdate <span class="text-red-500">*</span></label>
+                                    class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-red-600 pointer-events-none transition-all cursor-pointer">Birthdate
+                                    <span class="text-red-500">*</span></label>
                                 <p id="m_birthdate_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             </div>
                             <button type="button" onclick="nextStep(2)"
@@ -776,13 +798,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="relative mb-6">
                                 <input type="text" id="m_contact_number" name="contact_number" required
                                     class="peer block w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 pb-2 pt-6 text-[15px] font-medium text-gray-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-all"
-                                    placeholder=" " value="<?= htmlspecialchars($contactNumber ?? '') ?>"
-                                    maxlength="11"
+                                    placeholder=" " value="<?= htmlspecialchars($contactNumber ?? '') ?>" maxlength="11"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                                 <label for="m_contact_number"
                                     class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Mobile
                                     number <span class="text-red-500">*</span></label>
-                                <p id="m_contact_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
+                                <p id="m_contact_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200">
+                                </p>
                             </div>
                             <button type="button" onclick="nextStep(5)"
                                 class="w-full rounded-full bg-red-600 py-3.5 text-[15px] font-bold text-white hover:bg-red-700 transition">Next</button>
@@ -806,7 +828,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if (!empty($branchId)) {
                                     foreach ($branches as $b) {
                                         if ($b['id'] == $branchId)
-                                             $selectedBranchName = $b['name'];
+                                            $selectedBranchName = $b['name'];
                                     }
                                 }
                                 ?>
@@ -877,7 +899,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     <?php endif; ?>
- 
+
     <script>
         function sendHeight() {
             if (window.self !== window.top) {
@@ -1027,7 +1049,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             setFieldStatus(inputEl, feedbackEl, 'success', data.message || 'Patient record found in clinic records.');
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             }, 400);
 
             return true;
@@ -1382,7 +1404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Iframe Modal Communication
         if (window.self !== window.top) {
             document.querySelectorAll('a[href*="patient-login"]').forEach(link => {
-                link.addEventListener('click', function(e) {
+                link.addEventListener('click', function (e) {
                     e.preventDefault();
                     window.parent.postMessage('openLoginModal', '*');
                 });
@@ -1390,7 +1412,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (window.self !== window.top) {
             // We are in an iframe
-            
+
             // Remove min-h-screen from mobile container so it can shrink to content
             const mobileContainer = document.getElementById('mobileFormContainer');
             if (mobileContainer) {
@@ -1404,14 +1426,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Observe DOM changes (e.g., step transitions) to recalculate height
             const observer = new MutationObserver(() => {
                 // slight delay to let transitions finish
-                setTimeout(sendHeight, 50); 
+                setTimeout(sendHeight, 50);
             });
             observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
 
             // Handle the back button to close signup and open login modal
             const backBtn = document.getElementById('backBtn');
             if (backBtn) {
-                backBtn.onclick = function(e) {
+                backBtn.onclick = function (e) {
                     if (currentStep === 1) {
                         e.preventDefault();
                         window.parent.postMessage('openLoginModal', '*');
