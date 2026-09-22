@@ -68,7 +68,6 @@ if ($backId) {
             <?php endif; ?>
         </div>
     </div>
-</div>
 
 <?php if ($successMsg): ?>
     <script>

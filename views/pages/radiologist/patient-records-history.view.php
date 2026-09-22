@@ -99,7 +99,6 @@ $backUrl   = url($backPage . $backQuery);
 
     </div>
 </div>
-</div>
 
 <!-- ══ Row 1: Info Cards (Patient + RadTech) ══ -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
