@@ -231,7 +231,7 @@ if (!$isMultiExam) {
     <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <style>
         /* ── Google Fonts ── */
-        @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 
         /* ── Reset & Base ── */
         *,
@@ -252,12 +252,12 @@ if (!$isMultiExam) {
         /* ── Watermark ── */
         .watermark {
             position: absolute;
-            top: 55%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 820px;
-            opacity: 0.12;
+            width: 100%;
+            /* max-width removed to allow larger scaling */
+            opacity: 0.15;
             z-index: 0;
             pointer-events: none;
             display: flex;
@@ -269,13 +269,13 @@ if (!$isMultiExam) {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            width: 100%;
+            gap: 24px;
+            width: max-content;
         }
 
         .watermark-logo {
-            width: 155px;
-            height: 155px;
+            width: 190px;
+            height: 190px;
             object-fit: contain;
             flex-shrink: 0;
         }
@@ -283,30 +283,33 @@ if (!$isMultiExam) {
         .watermark-text {
             display: flex;
             flex-direction: column;
-            font-family: 'Raleway', sans-serif;
-            color: #c0392b;
+            font-family: 'Century Gothic', 'Montserrat', 'Tw Cen MT', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #D00307;
             text-align: left;
             user-select: none;
+            flex-shrink: 0;
         }
 
         .watermark-title {
-            font-size: 68px;
-            font-weight: 800;
-            line-height: 0.95;
-            letter-spacing: 3px;
-            color: #c0392b;
+            font-size: 100px;
+            font-weight: 500;
+            line-height: 0.88;
+            letter-spacing: 3.5px;
+            color: #D00307;
             text-transform: uppercase;
+            white-space: nowrap;
         }
 
         .watermark-sub {
-            font-size: 23px;
-            font-weight: 700;
-            letter-spacing: 3.5px;
-            color: #c0392b;
-            margin-top: 6px;
-            margin-left: 3px;
+            font-size: 28px;
+            font-weight: 500;
+            letter-spacing: 5.5px;
+            color: #D00307;
+            margin-top: 8px;
+            margin-left: 2px;
             text-transform: uppercase;
             line-height: 1;
+            white-space: nowrap;
         }
 
         /* ── Page Shell ── */
@@ -473,6 +476,7 @@ if (!$isMultiExam) {
             padding: 20px;
             padding-bottom: 50px;
             margin-bottom: 60px;
+            min-height: 400px;
         }
 
         /* ── Patient Info Box ── */
