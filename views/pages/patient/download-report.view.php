@@ -255,8 +255,8 @@ if (!$isMultiExam) {
             top: 55%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 95%;
-            max-width: 900px;
+            width: 90%;
+            max-width: 820px;
             opacity: 0.12;
             z-index: 0;
             pointer-events: none;
@@ -265,10 +265,48 @@ if (!$isMultiExam) {
             align-items: center;
         }
 
-        .watermark img {
+        .watermark-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
             width: 100%;
-            height: auto;
+        }
+
+        .watermark-logo {
+            width: 155px;
+            height: 155px;
             object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .watermark-text {
+            display: flex;
+            flex-direction: column;
+            font-family: 'Raleway', sans-serif;
+            color: #c0392b;
+            text-align: left;
+            user-select: none;
+        }
+
+        .watermark-title {
+            font-size: 68px;
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: 3px;
+            color: #c0392b;
+            text-transform: uppercase;
+        }
+
+        .watermark-sub {
+            font-size: 23px;
+            font-weight: 700;
+            letter-spacing: 3.5px;
+            color: #c0392b;
+            margin-top: 6px;
+            margin-left: 3px;
+            text-transform: uppercase;
+            line-height: 1;
         }
 
         /* ── Page Shell ── */
@@ -772,7 +810,21 @@ if (!$isMultiExam) {
     <div class="page">
         <!-- Watermark -->
         <div class="watermark">
-            <img src="<?= getSystemLogoUrl() ?>" alt="Watermark">
+            <div class="watermark-content">
+                <img src="<?= getSystemLogoUrl() ?>" alt="Watermark" class="watermark-logo">
+                <div class="watermark-text">
+                    <?php 
+                        $wmSysName = getSystemName();
+                        $wmParts = explode(' ', $wmSysName, 2);
+                        $wmMain = strtoupper($wmParts[0] ?? '');
+                        $wmSub = isset($wmParts[1]) ? strtoupper($wmParts[1]) : '';
+                    ?>
+                    <div class="watermark-title"><?= htmlspecialchars($wmMain) ?></div>
+                    <?php if (!empty($wmSub)): ?>
+                        <div class="watermark-sub"><?= htmlspecialchars($wmSub) ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
 
         <!-- Header -->
