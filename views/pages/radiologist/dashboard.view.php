@@ -28,7 +28,7 @@ $inProgress = $globalStats['inProgress'];
 $forRevision = $globalStats['forRevision'];
 
 // 2. Fetch Aggregated Chart Data (Backend logic)
-$branchesList = $branchModel->getAllBranches();
+$branchesList = $branchModel->getActiveBranches();
 $branchPriorityRows = $caseModel->getBranchPriorityStats($dateCondition, $radiologistId, 'all');
 
 // Process for Chart.js (Frontend-specific formatting)

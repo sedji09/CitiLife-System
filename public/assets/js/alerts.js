@@ -82,7 +82,12 @@ const alerts = {
    * Helper to handle form submission with confirmation
    */
   confirmFormAction: async function (btn, actionValue, title, message, inputName = 'action', event = null) {
-    if (event) event.preventDefault();
+    if (event) {
+        event.preventDefault();
+        if (event.currentTarget && typeof event.currentTarget.blur === 'function') {
+            event.currentTarget.blur();
+        }
+    }
     const result = await alerts.confirm(title, message);
     if (result.isConfirmed) {
       const form = btn.form || btn.closest('form');
@@ -116,7 +121,12 @@ const alerts = {
    * Show a professional confirmation dialog for generic actions (navigation, callbacks)
    */
   confirmAction: async function (title, message, callback = null, confirmText = 'Yes, Proceed', newTab = false, event = null) {
-    if (event) event.preventDefault();
+    if (event) {
+        event.preventDefault();
+        if (event.currentTarget && typeof event.currentTarget.blur === 'function') {
+            event.currentTarget.blur();
+        }
+    }
     const result = await alerts.confirm(title, message, confirmText);
     if (result.isConfirmed) {
       if (typeof callback === 'function') {

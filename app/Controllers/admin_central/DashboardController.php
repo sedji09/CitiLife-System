@@ -40,7 +40,7 @@ if ($filter === 'today') {
 
 // 1. Get Overall Stats based on filter
 $allTimeStats = $caseModel->getReportStats($startDate, $endDate);
-$allBranchesList = $branchModel->getAllBranches();
+$allBranchesList = $branchModel->getActiveBranches();
 
 $totalPatients = 0;
 $totalEmergency = 0;
