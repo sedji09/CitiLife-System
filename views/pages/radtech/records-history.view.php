@@ -53,8 +53,8 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 }
 ?>
 
-<!-- Header -->
-<div class="flex items-center gap-4 py-2">
+<!-- Sticky Header Wrapper -->
+<div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex items-center gap-4">
     <a href="<?= $backLink ?>" data-back-btn data-fallback="<?= $backLink ?>" aria-label="Go back to records" title="Back"
         class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
         <i data-lucide="chevron-left" class="w-5 h-5"></i>

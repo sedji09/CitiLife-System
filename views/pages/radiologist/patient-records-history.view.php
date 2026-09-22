@@ -47,17 +47,19 @@ $backQuery = $backId ? ('?id=' . urlencode($backId)) : '';
 $backUrl   = url($backPage . $backQuery);
 ?>
 
-<!-- Header nav -->
-<div class="mb-4">
-    <a href="<?= htmlspecialchars($backUrl) ?>" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
-        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-    </a>
-</div>
+<!-- Sticky Header Wrapper -->
+<div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6">
+    <!-- Header nav -->
+    <div class="mb-4">
+        <a href="<?= htmlspecialchars($backUrl) ?>" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+    </div>
 
-<!-- Title Section -->
-<div class="flex items-start justify-between mb-6">
-    <div>
+    <!-- Title Section -->
+    <div class="flex items-start justify-between">
+        <div>
         <h2 class="text-2xl font-black text-gray-900 tracking-tight">
             <?= htmlspecialchars($caseDetails['case_number'] ?? 'N/A') ?>
         </h2>
@@ -94,6 +96,7 @@ $backUrl   = url($backPage . $backQuery);
 
 
     </div>
+</div>
 </div>
 
 <!-- ══ Row 1: Info Cards (Patient + RadTech) ══ -->

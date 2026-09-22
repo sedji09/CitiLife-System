@@ -7,7 +7,8 @@
 
 <div class="container mx-auto px-4 py-8 max-w-6xl">
 
-    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Sticky Header Wrapper -->
+    <div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-4">
             <a href="<?= url('record-request') ?>" data-back-btn data-fallback="<?= url('record-request') ?>" title="Back"
                 class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
@@ -26,7 +27,7 @@
                 </p>
             </div>
         </div>
-
+        <!-- Actions -->
         <?php if ($request['status'] === 'Denied' && !empty($request['rejection_reason'])): ?>
             <div class="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 max-w-md shadow-xs">
                 <div class="h-6 w-6 rounded-md bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">

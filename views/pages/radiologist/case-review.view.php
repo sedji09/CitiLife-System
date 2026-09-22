@@ -30,36 +30,39 @@ if ($backId) {
 
 
 
-<!-- Title row -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-    <div class="flex items-center gap-4">
-        <a href="<?= htmlspecialchars($backUrl) ?>" id="back-to-worklist-btn" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
-            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
-            <i data-lucide="chevron-left" class="w-5 h-5"></i>
-        </a>
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">
-                Case Review
-            </h2>
-            <p class="text-gray-500 text-sm mt-0.5">Review patient case and submit diagnostic findings</p>
+<!-- Sticky Header Wrapper -->
+<div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6">
+    <!-- Title row -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="<?= htmlspecialchars($backUrl) ?>" id="back-to-worklist-btn" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
+                class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">
+                    Case Review
+                </h2>
+                <p class="text-gray-500 text-sm mt-0.5">Review patient case and submit diagnostic findings</p>
+            </div>
         </div>
-    </div>
-    <div class="flex items-center flex-wrap gap-1.5">
-        <?php
-        $pColor = match ($caseDetails['priority']) { 'STAT' => 'red', 'Urgent' => 'yellow', 'Priority' => 'orange', default => 'blue'};
-        $sColor = ($isSubmitted || $caseDetails['status'] === 'Report Ready') ? 'indigo' : ($caseDetails['status'] === 'Completed' ? 'green' : ($caseDetails['status'] === 'Under Reading' ? 'blue' : 'yellow'));
-        $statusDisplay = $isSubmitted ? 'Report Ready' : $caseDetails['status'];
-        ?>
-        <span
-            class="inline-flex items-center rounded-full border border-<?= $pColor ?>-400 bg-<?= $pColor ?>-50 px-3 py-1 text-xs font-bold text-<?= $pColor ?>-700 shadow-sm"><?= htmlspecialchars($caseDetails['priority']) ?></span>
-        <span
-            class="inline-flex items-center rounded-full border border-<?= $sColor ?>-400 bg-<?= $sColor ?>-50 px-3 py-1 text-xs font-bold text-<?= $sColor ?>-700 shadow-sm"><?= htmlspecialchars($statusDisplay) ?></span>
-        <?php if (count($examTypes) > 1): ?>
+        <div class="flex items-center flex-wrap gap-1.5">
+            <?php
+            $pColor = match ($caseDetails['priority']) { 'STAT' => 'red', 'Urgent' => 'yellow', 'Priority' => 'orange', default => 'blue'};
+            $sColor = ($isSubmitted || $caseDetails['status'] === 'Report Ready') ? 'indigo' : ($caseDetails['status'] === 'Completed' ? 'green' : ($caseDetails['status'] === 'Under Reading' ? 'blue' : 'yellow'));
+            $statusDisplay = $isSubmitted ? 'Report Ready' : $caseDetails['status'];
+            ?>
             <span
-                class="inline-flex items-center rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
-                <i data-lucide="layers" class="w-3 h-3 mr-1"></i><?= count($examTypes) ?> Exams
-            </span>
-        <?php endif; ?>
+                class="inline-flex items-center rounded-full border border-<?= $pColor ?>-400 bg-<?= $pColor ?>-50 px-3 py-1 text-xs font-bold text-<?= $pColor ?>-700 shadow-sm"><?= htmlspecialchars($caseDetails['priority']) ?></span>
+            <span
+                class="inline-flex items-center rounded-full border border-<?= $sColor ?>-400 bg-<?= $sColor ?>-50 px-3 py-1 text-xs font-bold text-<?= $sColor ?>-700 shadow-sm"><?= htmlspecialchars($statusDisplay) ?></span>
+            <?php if (count($examTypes) > 1): ?>
+                <span
+                    class="inline-flex items-center rounded-full border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+                    <i data-lucide="layers" class="w-3 h-3 mr-1"></i><?= count($examTypes) ?> Exams
+                </span>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 

@@ -7,8 +7,8 @@
 
 <main class="flex-1 overflow-y-auto p-4 lg:p-6">
     <div class="mx-auto max-w-4xl space-y-6">
-        <!-- Breadcrumbs & Actions -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <!-- Sticky Header Wrapper -->
+        <div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <a href="<?= url('patient-records') ?>" data-back-btn data-fallback="<?= url('patient-records') ?>" title="Back"
                     class="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-500/50 transition-all shadow-sm">
