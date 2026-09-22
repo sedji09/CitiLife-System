@@ -1267,6 +1267,57 @@ $catBadgeLabel = match ($dCategory) {
                                     if (chevron) chevron.style.display = 'none';
                                 }
                             }
+
+                            // Real-time Radiologists Polling
+                            setInterval(async () => {
+                                try {
+                                    const response = await fetch('<?= url("app/api/radiologists_status.php") ?>');
+                                    if (!response.ok) return;
+                                    const result = await response.json();
+                                    if (result.success && result.data) {
+                                        const radOptionsUl = document.getElementById('rad-options');
+                                        const currentSelectedId = document.getElementById('radiologist_id').value;
+                                        
+                                        let html = '';
+                                        result.data.forEach(rad => {
+                                            const isAvailable = rad.is_available == 1;
+                                            const caseCount = parseInt(rad.active_case_count) || 0;
+                                            const radName = rad.radiologist_name ? rad.radiologist_name.replace(/^Dr\.?\s*/i, '').trim() : '';
+                                            const displayName = 'Dr. ' + radName;
+                                            
+                                            // Handle text for selected state
+                                            const selectedHTML = displayName + (!isAvailable ? " <span class=\\'text-gray-500 text-xs ml-1 font-normal\\\'>(Unavailable)</span>" : "");
+                                            
+                                            html += `<li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-pointer hover:bg-gray-100 ${!isAvailable ? 'opacity-60 bg-gray-50' : ''}"
+                                                onclick="
+                                                document.getElementById('radiologist_id').value = '${rad.id}';
+                                                document.getElementById('rad-selected-text').innerHTML = '${selectedHTML}';
+                                                document.getElementById('rad-options').classList.add('hidden');
+                                                document.getElementById('rad-selection-error').classList.add('hidden');
+                                                ">
+                                                <span class="font-medium ${isAvailable ? 'text-gray-800' : 'text-gray-600'}">${displayName}</span>`;
+                                                
+                                            if (isAvailable) {
+                                                html += `<span class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2" title="${caseCount} pending cases">${caseCount}</span>`;
+                                            } else {
+                                                html += `<span class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 shadow-sm ml-2" title="Unavailable">Unavailable</span>`;
+                                            }
+                                            
+                                            html += `</li>`;
+                                            
+                                            // Auto-update the selected text if the currently selected radiologist changes availability
+                                            if (currentSelectedId == rad.id) {
+                                                const currentTextHTML = displayName + (!isAvailable ? " <span class='text-gray-500 text-xs ml-1 font-normal'>(Unavailable)</span>" : "");
+                                                document.getElementById('rad-selected-text').innerHTML = currentTextHTML;
+                                            }
+                                        });
+                                        
+                                        radOptionsUl.innerHTML = html;
+                                    }
+                                } catch (e) {
+                                    console.error('Error polling radiologist status:', e);
+                                }
+                            }, 5000); // Poll every 5 seconds
                         });
 
                         document.addEventListener('click', function (event) {

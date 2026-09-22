@@ -194,6 +194,7 @@ $router->post('/app/api/case_activity.php', 'app/Api/case_activity.php');
 $router->get('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
 $router->post('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
 $router->get('/app/api/active_users_count.php', 'app/Api/active_users_count.php');
+$router->get('/app/api/radiologists_status.php', 'app/Api/radiologists_status.php');
 
 $router->get('/migrate', 'app/Api/migrate.php');
 $router->get('/app/api/migrate', 'app/Api/migrate.php');
