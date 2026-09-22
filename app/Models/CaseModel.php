@@ -656,7 +656,7 @@ class CaseModel
             
             ORDER BY 
                 CASE 
-                    WHEN status IS NOT NULL AND status NOT IN ('Released', 'Completed', 'Cancelled', 'Rejected') THEN 0 
+                    WHEN status IS NOT NULL AND status NOT IN ('Released', 'Completed', 'Cancelled', 'Rejected', 'Approved') THEN 0 
                     ELSE 1 
                 END ASC,
                 created_at DESC

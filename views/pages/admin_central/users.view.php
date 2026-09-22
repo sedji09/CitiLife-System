@@ -515,17 +515,19 @@
         if (roleSelect) {
             roleSelect.value = ''; // Reset to default
             if (user.role) {
-                const normalizedRole = String(user.role).trim().toLowerCase();
+                const dbRole = String(user.role).trim().toLowerCase();
+                const normalizedDbRole = dbRole.replace(/\s+/g, '_');
                 let found = false;
                 for (let i = 0; i < roleSelect.options.length; i++) {
-                    if (roleSelect.options[i].value.toLowerCase() === normalizedRole) {
+                    const optVal = roleSelect.options[i].value.toLowerCase();
+                    const optText = roleSelect.options[i].text.toLowerCase();
+                    if (optVal === dbRole || optVal === normalizedDbRole || optText === dbRole) {
                         roleSelect.selectedIndex = i;
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    // If completely invalid role in DB, it stays as '' (Select Role)
                     console.warn('Invalid role in DB for user:', user.role);
                 }
             }

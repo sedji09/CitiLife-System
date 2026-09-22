@@ -2023,3 +2023,5 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         });
     </script>
 <?php endif; ?>
+
+<script src="<?= url('views/pages/patient/dispute-modal.js?v=' . time()) ?>"></script>

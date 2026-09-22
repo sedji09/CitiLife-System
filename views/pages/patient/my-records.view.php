@@ -1179,5 +1179,6 @@ $statusBadge = [
             });
         });
     </script>
+    <script src="<?= url('views/pages/patient/dispute-modal.js?v=' . time()) ?>"></script>
     <script src="<?= url('views/pages/patient/my-records.js?v=' . time()) ?>"></script>
 </div>
