@@ -231,7 +231,7 @@ class CaseModel
 
         $stmt = $this->pdo->prepare("SELECT branch_id, priority, COUNT(*) as count 
                                FROM cases 
-                               WHERE status IN ('Pending', 'Under Reading', 'Completed') AND image_status = 'Uploaded' AND $dateCondition $radFilter $prioFilter
+                               WHERE status IN ('Pending', 'Under Reading', 'For Revision') AND image_status = 'Uploaded' AND $dateCondition $radFilter $prioFilter
                                GROUP BY branch_id, priority");
         $stmt->execute();
         return $stmt->fetchAll();
