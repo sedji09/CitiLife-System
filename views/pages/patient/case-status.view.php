@@ -152,17 +152,23 @@ $statusDescriptions = [
     $fromTab = in_array($_GET['from'] ?? '', ['completed', 'pending', 'rejected', 'cancelled', 'disputes']) ? $_GET['from'] : '';
     $backFallback = $fromTab ? url('my-records?tab=' . $fromTab) : url('my-records');
     ?>
-    <!-- Page Header -->
-    <div class="flex items-center gap-4">
-        <a href="<?= $backFallback ?>" data-back-btn data-fallback="<?= $backFallback ?>" title="Back to Records"
-            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
-            <i data-lucide="chevron-left" class="w-5 h-5"></i>
-        </a>
-        <div>
-            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">X-ray Status</h1>
-            <p class="text-xs sm:text-sm text-gray-500 mt-1">Track your latest examination in real time.</p>
+    <!-- Sticky Layout Wrapper -->
+    <div class="flex flex-col md:flex-row items-start gap-4">
+        <!-- Sticky Back Button -->
+        <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+            <a href="<?= $backFallback ?>" data-back-btn data-fallback="<?= $backFallback ?>" title="Back to Records"
+                class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </a>
         </div>
-    </div>
+        
+        <!-- Main Content Area -->
+        <div class="flex-1 min-w-0 w-full">
+            <!-- Page Header -->
+            <div class="mb-5">
+                <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">X-ray Status</h1>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">Track your latest examination in real time.</p>
+            </div>
 
     <?php if (!$caseRow): ?>
         <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-6 sm:p-10 text-center">
@@ -534,6 +540,8 @@ $statusDescriptions = [
             </div>
         </div>
     <?php endif; ?>
+        </div> <!-- End Main Content Area -->
+    </div> <!-- End Sticky Layout Wrapper -->
 </div>
 
 <!-- Custom Expiry Alert Modal -->

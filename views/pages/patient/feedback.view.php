@@ -1,14 +1,20 @@
 <div class="max-w-4xl mx-auto space-y-6 p-4 md:p-6 pb-24">
-    <!-- Header with Back Button -->
-    <div class="flex items-center gap-3">
-        <a href="<?= url('my-records') ?>" data-back-btn data-fallback="<?= url('my-records') ?>" title="Back" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-red-600 transition shadow-sm">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+<!-- Sticky Layout Wrapper -->
+<div class="flex items-start gap-4">
+    <!-- Sticky Back Button -->
+    <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <a href="<?= url('my-records') ?>" data-back-btn data-fallback="<?= url('my-records') ?>" title="Back" class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 transition">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
-        <div>
-            <h1 class="text-2xl font-black text-gray-900 tracking-tight">Ratings & Feedback</h1>
-            <p class="text-sm text-gray-500 font-medium">We value your feedback to improve our services.</p>
-        </div>
     </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 min-w-0">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-black text-gray-900 tracking-tight">Ratings & Feedback</h1>
+            <p class="text-sm text-gray-500 font-medium mt-1">We value your feedback to improve our services.</p>
+        </div>
 
     <?php if ($successMsg): ?>
         <div class="bg-green-50 text-green-800 p-4 rounded-xl border border-green-200 flex items-start gap-3">
@@ -85,6 +91,8 @@
     </div>
 
     <!-- End Feedback Form Card -->
+    </div> <!-- End Main Content Area -->
+</div> <!-- End Sticky Layout Wrapper -->
 </div>
 
 <script>

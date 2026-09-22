@@ -32,17 +32,23 @@ $fullName = htmlspecialchars(formatFullName($caseDetails));
 $philHealthLabel = ($caseDetails['philhealth_status'] === 'With PhilHealth Card') ? 'With PhilHealth ID' : 'Without PhilHealth ID';
 ?>
 
-<!-- Header -->
-<div class="flex items-center gap-4 py-2">
-    <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('branch-xray-cases?tab=records') ?>" title="Back"
-        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
-        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-    </a>
-    <div>
-        <h2 class="text-2xl font-semibold text-gray-900">Patient Records History</h2>
-        <p class="text-sm text-gray-400 mt-0.5">Historical patient database and examination archive</p>
+<!-- Sticky Layout Wrapper -->
+<div class="flex items-start gap-4">
+    <!-- Sticky Back Button -->
+    <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('branch-xray-cases?tab=records') ?>" title="Back"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
     </div>
-</div>
+
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0">
+        <!-- Header -->
+        <div class="py-2 mb-4">
+            <h2 class="text-2xl font-semibold text-gray-900">Patient Records History</h2>
+            <p class="text-sm text-gray-400 mt-0.5">Historical patient database and examination archive</p>
+        </div>
 
 <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
     <!-- Top Details Section -->

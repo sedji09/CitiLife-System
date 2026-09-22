@@ -5,27 +5,31 @@
  */
 ?>
 
-<main class="flex-1 overflow-y-auto p-4 lg:p-6">
-    <div class="mx-auto max-w-4xl space-y-6">
-        <!-- Sticky Header Wrapper -->
-        <div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <a href="<?= url('patient-records') ?>" data-back-btn data-fallback="<?= url('patient-records') ?>" title="Back"
-                    class="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-500/50 transition-all shadow-sm">
-                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                </a>
+<div class="p-4 lg:p-6">
+    <div class="mx-auto max-w-4xl flex items-start gap-4">
+        <!-- Sticky Back Button -->
+        <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+            <a href="<?= url('patient-records') ?>" data-back-btn data-fallback="<?= url('patient-records') ?>" title="Back"
+                class="flex w-10 h-10 items-center justify-center rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-500/50 transition-all shadow-sm">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </a>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 min-w-0 space-y-6">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Patient Profile</h1>
                 </div>
+                <div class="flex items-center gap-2">
+                    <a href="<?= url('records-history?patient_number=' . urlencode($patient['patient_number']) . '&source=profile') ?>"
+                        class="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-all">
+                        <i data-lucide="history" class="w-4 h-4 text-blue-500"></i>
+                        View Clinical History
+                    </a>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <a href="<?= url('records-history?patient_number=' . urlencode($patient['patient_number']) . '&source=profile') ?>"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-all">
-                    <i data-lucide="history" class="w-4 h-4 text-blue-500"></i>
-                    View Clinical History
-                </a>
-            </div>
-        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Column: Primary Info -->
@@ -151,9 +155,9 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> <!-- End Main Content Area -->
     </div>
-</main>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

@@ -9,17 +9,23 @@ if (isset($caseNotFound) && $caseNotFound) {
 }
 ?>
 
-<!-- Sticky Header Wrapper -->
-<div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex items-center gap-4">
-    <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('branch-xray-cases') ?>" title="Back"
-        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors mt-1">
-        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-    </a>
-    <div>
-        <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
-        <p class="text-sm text-gray-500 mt-1">View patient examination and clinical information</p>
+<!-- Sticky Layout Wrapper -->
+<div class="flex items-start gap-4">
+    <!-- Sticky Back Button -->
+    <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <a href="javascript:void(0)" data-back-btn data-fallback="<?= url('branch-xray-cases') ?>" title="Back"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
     </div>
-</div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 min-w-0">
+        <!-- Header -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
+            <p class="text-sm text-gray-500 mt-1">View patient examination and clinical information</p>
+        </div>
 
 <?php if ($errorMsg): ?>
     <div class="mt-5 rounded-lg bg-red-50 border border-red-300 p-4 flex items-center gap-3">
@@ -355,6 +361,35 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
                     </div>
                 <?php endif; ?>
             </div>
+
+            <!-- Logs -->
+            <div class="mt-6 rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
+                <div class="mb-4 flex items-center gap-2">
+                    <i data-lucide="activity" class="h-5 w-5 text-indigo-600"></i>
+                    <h3 class="text-lg font-semibold text-gray-800">Case Timeline</h3>
+                </div>
+                <div class="space-y-4">
+                    <?php if (empty($caseLogs)): ?>
+                        <p class="text-sm text-gray-500 italic px-2">No timeline activities recorded.</p>
+                    <?php else: ?>
+                        <?php foreach ($caseLogs as $log): ?>
+                            <div class="flex items-start gap-3 rounded-lg bg-gray-50 p-3 border border-gray-100">
+                                <i data-lucide="info" class="w-4 h-4 text-gray-400 mt-0.5 shrink-0"></i>
+                                <div>
+                                    <p class="text-sm text-gray-800">
+                                        <span class="font-medium text-gray-900"><?= htmlspecialchars($log['action']) ?></span>:
+                                        <?= htmlspecialchars($log['details']) ?>
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <?= date('F j, Y, h:i A', strtotime($log['created_at'])) ?> &middot;
+                                        <?= htmlspecialchars($log['user_name'] ?? 'System') ?>
+                                    </p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
         <?php else: ?>
             <!-- Waiting for Report Empty State -->
             <div
@@ -369,7 +404,8 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
             </div>
         <?php endif; ?>
     </div>
-</div> <!-- End of Grid -->
+    </div> <!-- End Main Content Area -->
+</div> <!-- End Sticky Layout Wrapper -->
 
 <!-- Image Lightbox Modal with Blurred Gray Background & Right-Side Close Button -->
 <div id="xray-lightbox-modal" v-pre

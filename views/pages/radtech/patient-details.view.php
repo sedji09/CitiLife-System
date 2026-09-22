@@ -72,19 +72,25 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 }
 ?>
 
-<!-- Sticky Header Wrapper -->
-<div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex items-center gap-4">
-    <a href="<?= htmlspecialchars($backLink) ?>" id="patient-details-back-btn" data-back-btn data-fallback="<?= htmlspecialchars($backLink) ?>" title="Back"
-        class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-    </a>
-    <div>
-        <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
-        <p class="text-sm text-gray-500 mt-1">
-            <?= $userRole === 'branch_admin' ? 'View patient diagnostic examination details' : 'Diagnostic image upload and case management' ?>
-        </p>
+<!-- Sticky Layout Wrapper -->
+<div class="flex items-start gap-4">
+    <!-- Sticky Back Button -->
+    <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <a href="<?= htmlspecialchars($backLink) ?>" id="patient-details-back-btn" data-back-btn data-fallback="<?= htmlspecialchars($backLink) ?>" title="Back"
+            class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
     </div>
-</div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 min-w-0">
+        <!-- Header -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
+            <p class="text-sm text-gray-500 mt-1">
+                <?= $userRole === 'branch_admin' ? 'View patient diagnostic examination details' : 'Diagnostic image upload and case management' ?>
+            </p>
+        </div>
 
 <?php
 // Determine amendment type based on reported issue
@@ -1336,8 +1342,12 @@ $catBadgeLabel = match ($dCategory) {
                 <?php endif; ?>
             <?php endif; ?>
         </div>
+        </div>
     </form>
 <?php endif; ?>
+
+    </div> <!-- End Main Content Area -->
+</div> <!-- End Sticky Layout Wrapper -->
 
 <!-- Edit Patient Information Modal (RadTech) -->
 <div id="edit-patient-info-modal"

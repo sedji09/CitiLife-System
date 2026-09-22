@@ -7,13 +7,20 @@
 
 <div class="container mx-auto px-4 py-8 max-w-6xl">
 
-    <!-- Sticky Header Wrapper -->
-    <div class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md pb-4 pt-4 -mx-4 px-4 lg:-mx-6 lg:px-6 border-b border-gray-200/50 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-            <a href="<?= url('record-request') ?>" data-back-btn data-fallback="<?= url('record-request') ?>" title="Back"
-                class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
-                <i data-lucide="chevron-left" class="w-5 h-5"></i>
-            </a>
+<!-- Sticky Layout Wrapper -->
+<div class="flex flex-col md:flex-row items-start gap-4 mb-6">
+    <!-- Sticky Back Button -->
+    <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <a href="<?= url('record-request') ?>" data-back-btn data-fallback="<?= url('record-request') ?>" title="Back"
+            class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors shrink-0">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 min-w-0 w-full">
+        <!-- Title and Actions Row -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900 flex items-center gap-3">
                     Record Request Details
@@ -26,8 +33,6 @@
                     <?= date('F j, Y, h:i A', strtotime($request['created_at'])) ?>
                 </p>
             </div>
-        </div>
-        <!-- Actions -->
         <?php if ($request['status'] === 'Denied' && !empty($request['rejection_reason'])): ?>
             <div class="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 max-w-md shadow-xs">
                 <div class="h-6 w-6 rounded-md bg-red-100 flex items-center justify-center shrink-0 text-red-600 mt-0.5">
@@ -590,7 +595,8 @@
             <p class="text-sm text-gray-600 mt-2 max-w-md">This record request was denied by the target branch (<?= htmlspecialchars($request['request_branch'] ?? 'Target Branch') ?>). You do not have authorization to view the records.</p>
         </div>
     <?php endif; ?>
-</div>
+    </div> <!-- End Main Content Area -->
+</div> <!-- End Sticky Layout Wrapper -->
 </div>
 
 <script>
