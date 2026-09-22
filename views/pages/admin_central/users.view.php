@@ -369,7 +369,7 @@
     <div
         class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all animate-in zoom-in-95 duration-200">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
-            <h3 class="text-lg font-bold text-gray-900">Edit Staff Account</h3>
+            <h3 class="text-lg font-bold text-gray-900">Edit Staff Account (v2)</h3>
             <button type="button" onclick="closeEditUserModal()"
                 class="text-gray-400 hover:text-gray-600 transition p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
