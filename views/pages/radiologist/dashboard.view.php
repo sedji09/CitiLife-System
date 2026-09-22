@@ -421,8 +421,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </a>
 
         <!-- Card 5: Completed Today -->
-        <a href="<?= url('worklist?tab=release&status=completed_today&date=Today&priority=all&branch=') ?>"
-            class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
+        <div class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #bbf7d0;" onmouseenter="this.style.borderColor='#4ade80'"
             onmouseleave="this.style.borderColor='#bbf7d0'">
             <div class="flex items-center justify-between">
@@ -439,7 +438,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <p id="completed-label" class="text-xs font-semibold text-gray-800">Completed <?= htmlspecialchars($periodLabel) ?></p>
                 <p class="text-[10px] text-gray-400">Reports submitted</p>
             </div>
-        </a>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
