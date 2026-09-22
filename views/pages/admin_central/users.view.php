@@ -507,8 +507,37 @@
         const editNameEl = document.getElementById('edit_name');
         if (editNameEl) editNameEl.value = user.name || '';
         document.getElementById('edit_email').value = user.email;
-        document.getElementById('edit_role').value = user.role;
-        document.getElementById('edit_branch_id').value = user.branch_id || '';
+        
+        const roleSelect = document.getElementById('edit_role');
+        if (roleSelect && user.role) {
+            // Robust selection
+            let found = false;
+            for (let i = 0; i < roleSelect.options.length; i++) {
+                if (roleSelect.options[i].value === user.role) {
+                    roleSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) roleSelect.value = user.role; // fallback
+        }
+
+        const branchSelect = document.getElementById('edit_branch_id');
+        if (branchSelect) {
+            if (user.branch_id) {
+                let found = false;
+                for (let i = 0; i < branchSelect.options.length; i++) {
+                    if (branchSelect.options[i].value == user.branch_id) {
+                        branchSelect.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) branchSelect.value = user.branch_id;
+            } else {
+                branchSelect.value = '';
+            }
+        }
 
         toggleEditBranchSelect();
         document.getElementById('editUserModal').classList.remove('hidden');

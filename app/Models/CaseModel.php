@@ -1376,7 +1376,7 @@ class CaseModel
 
                 $patientUserId = $this->getPatientUserIdByPatientId($requestData['patient_id']);
                 if ($patientUserId) {
-                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), url("dashboard?highlight=" . urlencode($requestData['request_number'])), $patientUserId, 'patient');
+                    $notificationModel->add("Request Rejected", "Your X-ray request ({$requestData['request_number']}) has been rejected. Reason: " . ($rejectionReason ?: 'See portal for details'), url("my-records?tab=rejected&highlight=" . urlencode($requestData['request_number'])), $patientUserId, 'patient');
                 }
 
                 $pdo->commit();
