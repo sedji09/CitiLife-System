@@ -176,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['name'] ?? '');
         $inputRole = $_POST['role'] ?? '';
         $branchId = $_POST['branch_id'] ?? null;
+        $password = $_POST['password'] ?? '';
 
         if (in_array($inputRole, ['it_admin', 'admin_central', 'radiologist'])) {
             $branchId = null;
