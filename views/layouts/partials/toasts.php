@@ -1,6 +1,6 @@
     <!-- FLOATING TOAST NOTIFICATIONS (System Alerts) -->
     <div id="toast-container"
-      style="position: fixed; top: 80px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; max-width: 380px; width: calc(100% - 48px); pointer-events: none;">
+      style="position: fixed; top: 80px; right: 24px; z-index: 10001; display: flex; flex-direction: column; gap: 12px; max-width: 380px; width: calc(100% - 48px); pointer-events: none;">
       <div v-for="toast in toasts" :key="toast.id" @click="handleToastClick(toast)"
         style="pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; border-radius: 14px; padding: 14px 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;"
         :class="['toast-item group hover:shadow-xl hover:scale-[1.01]', 'toast-card-' + getNotificationCategory(toast)]">

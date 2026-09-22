@@ -1722,10 +1722,56 @@
                 }
               }
 
+              this.autoMarkViewedNotifications();
+
               nextTick(() => this.renderIcons());
             }
           })
           .catch(err => console.error('Error fetching notifications:', err));
+      },
+      autoMarkViewedNotifications() {
+        if (!this.notifications || this.notifications.length === 0) return;
+        
+        const currentUrl = window.location.href;
+        let anyMarked = false;
+        
+        this.notifications.forEach(notif => {
+          if (notif.is_read == 0) {
+            const fullText = (notif.title || '') + ' ' + (notif.message || '');
+            const matchBranchCase = fullText.match(/\b([A-Za-z]{2,6}\d{4}-\d{4,6})\b/i);
+            const matchParen = fullText.match(/\(([A-Za-z0-9-]+)\)/i);
+            const matchReq = fullText.match(/\b(REQ-[A-Za-z0-9-]+)\b/i);
+            const matchCas = fullText.match(/\b(CAS-[A-Za-z0-9-]+)\b/i);
+            const matchPx = fullText.match(/\b(PX-[A-Za-z0-9-]+|PAT-[A-Za-z0-9-]+)\b/i);
+            const matchGeneric = fullText.match(/(?:case|request)\s*[:#(\s]*([A-Za-z0-9-]+)/i);
+            
+            let target = null;
+            if (matchBranchCase) target = matchBranchCase[1];
+            else if (matchParen) target = matchParen[1];
+            else if (matchReq) target = matchReq[1];
+            else if (matchCas) target = matchCas[1];
+            else if (matchPx) target = matchPx[1];
+            else if (matchGeneric) target = matchGeneric[1];
+            
+            // If the target identifier is found in the current URL (e.g. highlight=CAS-123), mark it as read
+            if (target && currentUrl.includes(target)) {
+               this.markAsReadSilently(notif.id);
+               notif.is_read = 1;
+               anyMarked = true;
+            }
+          }
+        });
+        
+        if (anyMarked) {
+          this.notificationCount = this.notifications.filter(n => n.is_read == 0).length;
+        }
+      },
+      markAsReadSilently(id) {
+        fetch('<?= url("app/Api/notifications.php") ?>', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'mark_read', notification_id: id })
+        }).catch(err => console.error(err));
       },
       showToast(title, message, type = null, link = '#', notificationId = null) {
         const id = Date.now() + Math.random();
