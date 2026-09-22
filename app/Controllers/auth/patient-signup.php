@@ -6,6 +6,10 @@ if (session_status() === PHP_SESSION_NONE) {
 global $pdo;
 
 if (isset($_SESSION['role'])) {
+    if (isset($_GET['iframe']) && $_GET['iframe'] == 1) {
+        echo "<script>window.parent.location.href = '" . url('dashboard') . "';</script>";
+        exit;
+    }
     redirect(url('dashboard'));
 }
 

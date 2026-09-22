@@ -27,11 +27,18 @@ class Authorize
         if ($role === 'guest' && $this->isAuthenticated()) {
             $userRole = Session::get('role') ?? ($_SESSION['role'] ?? null);
             $redirectTarget = $_GET['redirect'] ?? $_SESSION['redirect_url'] ?? null;
+            
+            $url = url('dashboard');
             if (!empty($redirectTarget) && $userRole === 'patient') {
                 unset($_SESSION['redirect_url']);
-                return redirect($redirectTarget);
+                $url = $redirectTarget;
             }
-            return redirect(url('dashboard'));
+            
+            if (isset($_GET['iframe']) && $_GET['iframe'] == 1) {
+                echo "<script>window.parent.location.href = '" . $url . "';</script>";
+                exit;
+            }
+            return redirect($url);
         } elseif ($role === 'auth' && !$this->isAuthenticated()) {
             $currentUri = $_SERVER['REQUEST_URI'] ?? '';
             // If accessing patient pages or patient view report, route to patient-login with redirect

@@ -13,11 +13,18 @@ if (!empty($redirectUrl)) {
 
 // If already logged in, redirect to intended target or dashboard
 if (isset($_SESSION['role'])) {
+    $target = url('dashboard');
     if ($_SESSION['role'] === 'patient' && !empty($redirectUrl)) {
         unset($_SESSION['redirect_url']);
-        redirect($redirectUrl);
+        $target = $redirectUrl;
     }
-    redirect(url('dashboard'));
+    
+    if (isset($_GET['iframe']) && $_GET['iframe'] == 1) {
+        echo "<script>window.parent.location.href = '" . $target . "';</script>";
+        exit;
+    }
+    
+    redirect($target);
 }
 
 $error = '';
