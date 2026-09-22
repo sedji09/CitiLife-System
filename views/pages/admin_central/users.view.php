@@ -503,27 +503,37 @@
     }
 
     function openEditModal(user) {
+        // Reset fields first to prevent retaining previous user's data on mismatch
         document.getElementById('edit_user_id').value = user.id;
+        
         const editNameEl = document.getElementById('edit_name');
         if (editNameEl) editNameEl.value = user.name || '';
-        document.getElementById('edit_email').value = user.email;
         
+        document.getElementById('edit_email').value = user.email || '';
+
         const roleSelect = document.getElementById('edit_role');
-        if (roleSelect && user.role) {
-            // Robust selection
-            let found = false;
-            for (let i = 0; i < roleSelect.options.length; i++) {
-                if (roleSelect.options[i].value === user.role) {
-                    roleSelect.selectedIndex = i;
-                    found = true;
-                    break;
+        if (roleSelect) {
+            roleSelect.value = ''; // Reset to default
+            if (user.role) {
+                const normalizedRole = String(user.role).trim().toLowerCase();
+                let found = false;
+                for (let i = 0; i < roleSelect.options.length; i++) {
+                    if (roleSelect.options[i].value.toLowerCase() === normalizedRole) {
+                        roleSelect.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // If completely invalid role in DB, it stays as '' (Select Role)
+                    console.warn('Invalid role in DB for user:', user.role);
                 }
             }
-            if (!found) roleSelect.value = user.role; // fallback
         }
 
         const branchSelect = document.getElementById('edit_branch_id');
         if (branchSelect) {
+            branchSelect.value = ''; // Reset to default
             if (user.branch_id) {
                 let found = false;
                 for (let i = 0; i < branchSelect.options.length; i++) {
@@ -533,12 +543,9 @@
                         break;
                     }
                 }
-                if (!found) branchSelect.value = user.branch_id;
-            } else {
-                branchSelect.value = '';
             }
         }
-
+        
         toggleEditBranchSelect();
         document.getElementById('editUserModal').classList.remove('hidden');
         applyUserModalTheme('editUserModal');
