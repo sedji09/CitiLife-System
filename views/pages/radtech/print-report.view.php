@@ -121,17 +121,17 @@ if (in_array($sessionRole, ['radtech', 'branch_admin'], true)) {
         try {
             // Check if there is an approved record request allowing this staff's branch to access this specific case
             $stmtReqAuth = $pdo->prepare("
-                SELECT r.status
+                SELECT 1
                 FROM record_requests r
                 LEFT JOIN cases c ON (LOWER(TRIM(r.patient_no)) = LOWER(TRIM(c.case_number)))
                 LEFT JOIN patients p ON (c.patient_id = p.id OR LOWER(TRIM(r.patient_no)) = LOWER(TRIM(p.patient_number)))
                 WHERE r.branch_id = ? 
+                  AND r.status = 'Approved'
                   AND (
                       LOWER(TRIM(r.patient_no)) = LOWER(TRIM(?))
                       OR c.id = ? 
                       OR (p.id IS NOT NULL AND p.id = ?)
                   )
-                ORDER BY r.id DESC
                 LIMIT 1
             ");
             $stmtReqAuth->execute([
@@ -140,8 +140,7 @@ if (in_array($sessionRole, ['radtech', 'branch_admin'], true)) {
                 $case['id'] ?? 0,
                 $case['patient_id'] ?? 0
             ]);
-            $latestReqStatus = $stmtReqAuth->fetchColumn();
-            if ($latestReqStatus === 'Approved') {
+            if ($stmtReqAuth->fetchColumn()) {
                 $isCrossBranchAuthorized = true;
             }
         } catch (\Throwable $e) {
