@@ -8,7 +8,7 @@
 <div class="p-4 lg:p-6">
     <div class="mx-auto max-w-4xl flex items-start gap-4">
         <!-- Sticky Back Button -->
-        <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <div class="lg:sticky lg:top-6 z-40 shrink-0">
             <a href="<?= url('patient-records') ?>" data-back-btn data-fallback="<?= url('patient-records') ?>" title="Back"
                 class="flex w-10 h-10 items-center justify-center rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-500/50 transition-all shadow-sm">
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>

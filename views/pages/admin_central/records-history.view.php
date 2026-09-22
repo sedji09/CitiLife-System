@@ -8,7 +8,7 @@
 <div class="p-4 lg:p-6">
     <div class="mx-auto max-w-5xl flex items-start gap-4">
         <!-- Sticky Back Button -->
-        <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+        <div class="lg:sticky lg:top-6 z-40 shrink-0">
             <?php 
             $backUrl = ($source === 'records') ? url('patient-records') : url('patient-details' . (!empty($patient['id']) ? '?id=' . $patient['id'] : '')); 
             ?>

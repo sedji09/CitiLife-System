@@ -33,7 +33,7 @@ if ($backId) {
 <!-- Sticky Layout Wrapper -->
 <div class="flex items-start gap-4">
     <!-- Sticky Back Button -->
-    <div class="sticky top-4 lg:top-6 z-40 shrink-0">
+    <div class="lg:sticky lg:top-6 z-40 shrink-0">
         <a href="<?= htmlspecialchars($backUrl) ?>" id="back-to-worklist-btn" data-back-btn data-fallback="<?= htmlspecialchars($backUrl) ?>" title="Back"
             class="flex w-10 h-10 items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
