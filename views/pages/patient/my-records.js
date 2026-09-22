@@ -1034,4 +1034,18 @@ window.submitDisputeForm = function (e) {
         });
 };
 
-
+    // Handle highlight from URL (e.g. from notifications)
+    const highlightId = urlParams.get('highlight');
+    if (highlightId) {
+        setTimeout(() => {
+            const card = document.querySelector(`[data-id="${highlightId}"]`);
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('ring-2', 'ring-red-500', 'ring-offset-2', 'animate-pulse');
+                setTimeout(() => {
+                    card.classList.remove('animate-pulse');
+                }, 3000);
+            }
+        }, 300);
+    }
+})();

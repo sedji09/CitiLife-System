@@ -24,7 +24,7 @@ class ServiceModel {
      * Get all services (active and inactive) ordered by category and exam_type.
      */
     public function getAllServices() {
-        $stmt = $this->pdo->prepare("SELECT * FROM xray_services ORDER BY category ASC, exam_type ASC");
+        $stmt = $this->pdo->prepare("SELECT * FROM xray_services ORDER BY exam_type ASC");
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -45,6 +45,20 @@ class ServiceModel {
         $stmt = $this->pdo->prepare("SELECT DISTINCT category FROM xray_services ORDER BY category ASC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Check if a service with the given exam type already exists.
+     */
+    public function serviceExists($examType, $excludeId = null) {
+        if ($excludeId) {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM xray_services WHERE LOWER(exam_type) = LOWER(?) AND id != ?");
+            $stmt->execute([$examType, $excludeId]);
+        } else {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM xray_services WHERE LOWER(exam_type) = LOWER(?)");
+            $stmt->execute([$examType]);
+        }
+        return $stmt->fetchColumn() > 0;
     }
 
     /**

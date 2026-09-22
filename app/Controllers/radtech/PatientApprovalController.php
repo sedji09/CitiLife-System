@@ -157,14 +157,14 @@ class PatientApprovalController
                     if ($patUser) {
                         $notificationModel->add(
                             "Request Rejected",
-                            "Your X-ray request ({$reqNum}) was rejected. Reason: \"{$reason}\". Please check your dashboard for details or submit a new request.",
-                            url('dashboard'),
+                            "Your X-ray request ({$reqNum}) was rejected. Reason: \"{$reason}\". Please check your records for details or submit a new request.",
+                            url('my-records?tab=rejected&highlight=' . urlencode($reqNum)),
                             $patUser['id'],
                             'patient'
                         );
 
                         if (!empty($patUser['email'])) {
-                            $portalUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('dashboard') : '/dashboard');
+                            $portalUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('my-records?tab=rejected&highlight=' . urlencode($reqNum)) : ('/my-records?tab=rejected&highlight=' . urlencode($reqNum)));
                             $patientName = $patUser['name'] ?: 'Patient';
                             $subject = "Update on Your X-ray Request ({$reqNum}) - Citilife System";
                             $emailBody = renderNotificationEmail(

@@ -45,6 +45,8 @@ class ServicePricingController
                     $error = "Please fill in all required fields with valid values.";
                 } elseif ($isPhilhealthCovered && $philhealthDiscount > $price) {
                     $error = "PhilHealth discount cannot exceed the procedure price.";
+                } elseif ($serviceModel->serviceExists($examType)) {
+                    $error = "An exam procedure with this name already exists.";
                 } else {
                     if ($serviceModel->createService($category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status)) {
                         $newId = $pdo->lastInsertId();
@@ -89,6 +91,8 @@ class ServicePricingController
                     $error = "Please provide valid information to update the service.";
                 } elseif ($isPhilhealthCovered && $philhealthDiscount > $price) {
                     $error = "PhilHealth discount cannot exceed the procedure price.";
+                } elseif ($serviceModel->serviceExists($examType, $id)) {
+                    $error = "An exam procedure with this name already exists.";
                 } else {
                     if ($serviceModel->updateService($id, $category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status)) {
                         $success = "Service '{$examType}' updated successfully!";
