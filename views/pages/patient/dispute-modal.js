@@ -446,7 +446,7 @@ window.submitDisputeForm = function (e) {
         .then(r => r.json())
         .then(data => {
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request';
+            btn.innerHTML = '<i data-lucide="send" class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"></i> <span>Submit <span class="hidden sm:inline">Correction </span>Request</span>';
             if (window.lucide) lucide.createIcons();
 
             if (data.success) {
@@ -466,7 +466,7 @@ window.submitDisputeForm = function (e) {
         })
         .catch(err => {
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request';
+            btn.innerHTML = '<i data-lucide="send" class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"></i> <span>Submit <span class="hidden sm:inline">Correction </span>Request</span>';
             console.error(err);
             Swal.fire({ icon: 'error', title: 'Error', text: 'Network connection error.' });
         });

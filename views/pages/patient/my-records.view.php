@@ -1154,14 +1154,14 @@ $statusBadge = [
                 </div>
 
                 <!-- Fixed Footer -->
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-shrink-0 justify-end gap-2">
+                <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
                     <button type="button" onclick="closeDisputeModal()"
-                        class="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition">
+                        class="px-3.5 sm:px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition flex-shrink-0">
                         Cancel
                     </button>
                     <button type="submit" id="dispute-submit-btn"
-                        class="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow transition flex items-center gap-1.5">
-                        <i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request
+                        class="px-3.5 sm:px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow transition flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0">
+                        <i data-lucide="send" class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"></i> <span>Submit <span class="hidden sm:inline">Correction </span>Request</span>
                     </button>
                 </div>
             </form>

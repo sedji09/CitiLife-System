@@ -1505,14 +1505,14 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                 </div>
             </div>
 
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 flex-shrink-0">
+            <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
                 <button type="button" onclick="closeDisputeModal()"
-                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl text-xs transition">
+                    class="px-3.5 sm:px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl text-xs transition flex-shrink-0">
                     Cancel
                 </button>
                 <button type="submit" id="dispute-submit-btn"
-                    class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5">
-                    <i data-lucide="send" class="w-4 h-4"></i> Submit Correction Request
+                    class="px-3.5 sm:px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0">
+                    <i data-lucide="send" class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"></i> <span>Submit <span class="hidden sm:inline">Correction </span>Request</span>
                 </button>
             </div>
         </form>

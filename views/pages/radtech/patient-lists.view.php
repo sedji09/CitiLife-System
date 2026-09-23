@@ -765,11 +765,14 @@ if ($hlTarget && empty($_GET['tab'])) {
         new window.URLSearchParams(window.location.search).get('case_id');
     let highlightHandled = false;
 
-    function initPatientQueue() {
+    function initPatientQueue(passedHighlightId = null) {
+        if (passedHighlightId) {
+            highlightHandled = false;
+        }
         const currentTabParam = (new window.URLSearchParams(window.location.search)).get('tab');
-        if (currentTabParam === 'disputes') return false;
+        if (!passedHighlightId && currentTabParam === 'disputes') return false;
 
-        const highlightId = pendingQueueHighlight ||
+        const highlightId = passedHighlightId || pendingQueueHighlight ||
             new window.URLSearchParams(window.location.search).get('highlight') ||
             new window.URLSearchParams(window.location.search).get('highlight_case') ||
             new window.URLSearchParams(window.location.search).get('case_id');
@@ -873,12 +876,13 @@ if ($hlTarget && empty($_GET['tab'])) {
                         window.__APP__.currentPath = cleanUrl.pathname + cleanUrl.search;
                     }
                 } catch (e) { }
-                return;
+                return true;
             }
         }
 
         restoreFiltersFromSession();
         applyFilters();
+        return false;
     }
 
     // Initialize cleanly
@@ -1498,6 +1502,12 @@ if ($hlTarget && empty($_GET['tab'])) {
 
 <script>
     // Disputes Pagination, Search, and Filter Logic
+    const initialDisputesUrlParams = new window.URLSearchParams(window.location.search);
+    const initialDisputesHighlight = initialDisputesUrlParams.get('highlight_case') ||
+        initialDisputesUrlParams.get('highlight') ||
+        initialDisputesUrlParams.get('case_number') ||
+        initialDisputesUrlParams.get('highlight_dispute_id') ||
+        initialDisputesUrlParams.get('dispute_id');
     let currentDisputesPage = 1;
     const disputesItemsPerPage = 7;
 
@@ -1696,12 +1706,16 @@ if ($hlTarget && empty($_GET['tab'])) {
     let disputesHighlightHandled = false;
 
     function handleDisputesHighlight(passedTarget = null) {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('tab') !== 'disputes') return false;
+        if (passedTarget) {
+            disputesHighlightHandled = false;
+        }
         if (disputesHighlightHandled) return true;
+
+        const params = new URLSearchParams(window.location.search);
 
         // Prioritize specific case number or explicit highlight first over generic numeric dispute ID
         const targetVal = passedTarget ||
+            initialDisputesHighlight ||
             params.get('highlight_case') ||
             params.get('highlight') ||
             params.get('case_number') ||
@@ -1709,6 +1723,19 @@ if ($hlTarget && empty($_GET['tab'])) {
             params.get('dispute_id');
 
         if (!targetVal) return false;
+
+        // Ensure active tab is switched to disputes
+        if (typeof switchTab === 'function') {
+            switchTab('disputes');
+        }
+
+        // Reset any search or filter criteria so the target row is not hidden
+        const searchInput = document.getElementById('disputes-search-input');
+        const filterCat = document.getElementById('disputes-filter-category');
+        const filterStatus = document.getElementById('disputes-filter-status');
+        if (searchInput && searchInput.value) searchInput.value = '';
+        if (filterCat && filterCat.value !== 'All') filterCat.value = 'All';
+        if (filterStatus && filterStatus.value !== 'All') filterStatus.value = 'All';
 
         // Ensure filters/sorting are active so matched rows are in expected order
         applyDisputesFilter();
@@ -1743,6 +1770,19 @@ if ($hlTarget && empty($_GET['tab'])) {
             for (const r of rows) {
                 const pNum = norm(r.dataset.patientNumber || '');
                 if (pNum === targetNorm) {
+                    targetRow = r;
+                    break;
+                }
+            }
+        }
+
+        // 4. Substring/prefix fallback if not found
+        if (!targetRow) {
+            for (const r of rows) {
+                const cCase = norm(r.dataset.case || r.dataset.id || '');
+                const pNum = norm(r.dataset.patientNumber || '');
+                if ((cCase && targetNorm.includes(cCase)) || (targetNorm && cCase.includes(targetNorm)) ||
+                    (pNum && targetNorm.includes(pNum)) || (targetNorm && pNum.includes(targetNorm))) {
                     targetRow = r;
                     break;
                 }
@@ -1852,43 +1892,62 @@ if ($hlTarget && empty($_GET['tab'])) {
     window.switchTab = switchTab;
 
     window.handlePageHighlight = function (targetId) {
-        const isDisputes = (new window.URLSearchParams(window.location.search)).get('tab') === 'disputes' ||
-            window.location.pathname.toLowerCase().includes('correction-request');
+        if (!targetId) return false;
         const norm = str => (str || '').toLowerCase().replace(/[\s\-_]/g, '');
         const tNorm = norm(targetId);
 
-        if (isDisputes) {
-            if (handleDisputesHighlight(targetId)) return true;
-            // Cross-tab fallback: check if target is in Patient Queue
-            const queueRows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
-            const matchQueue = queueRows.some(r => norm(r.dataset.id) === tNorm || norm(r.dataset.caseId) === tNorm || norm(r.dataset.patient) === tNorm);
-            if (matchQueue) {
-                switchTab('queue');
-                return initPatientQueue(targetId);
-            }
-            return false;
-        } else {
-            // Check if target is in Patient Queue first
-            if (initPatientQueue(targetId)) return true;
-            // Cross-tab fallback: check if target is in Correction Requests
-            const disputeRows = Array.from(document.querySelectorAll('#disputes-table-body tr.dispute-table-row'));
-            const matchDispute = disputeRows.some(r => norm(r.dataset.case) === tNorm || norm(r.dataset.id) === tNorm || norm(r.dataset.disputeId) === tNorm || norm(r.dataset.patientNumber) === tNorm);
-            if (matchDispute) {
-                switchTab('disputes');
-                return handleDisputesHighlight(targetId);
-            }
-            return false;
+        // Check if target is in Correction Requests (disputes)
+        const disputeRows = Array.from(document.querySelectorAll('#disputes-table-body tr.dispute-table-row'));
+        const matchDispute = disputeRows.find(r =>
+            norm(r.dataset.case) === tNorm ||
+            norm(r.dataset.id) === tNorm ||
+            norm(r.dataset.disputeId) === tNorm ||
+            norm(r.dataset.patientNumber) === tNorm ||
+            (norm(r.dataset.case) && tNorm.includes(norm(r.dataset.case))) ||
+            (norm(r.dataset.id) && tNorm.includes(norm(r.dataset.id)))
+        );
+
+        if (matchDispute) {
+            switchTab('disputes');
+            return handleDisputesHighlight(targetId);
         }
+
+        // Check if target is in Patient Queue
+        const queueRows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
+        const matchQueue = queueRows.find(r =>
+            norm(r.dataset.id) === tNorm ||
+            norm(r.dataset.caseId) === tNorm ||
+            norm(r.dataset.patient) === tNorm ||
+            (norm(r.dataset.id) && tNorm.includes(norm(r.dataset.id))) ||
+            (norm(r.dataset.caseId) && tNorm.includes(norm(r.dataset.caseId)))
+        );
+
+        if (matchQueue) {
+            switchTab('queue');
+            return initPatientQueue(targetId);
+        }
+
+        // Fallbacks
+        if (handleDisputesHighlight(targetId)) return true;
+        if (initPatientQueue(targetId)) return true;
+
+        return false;
+    };
+
+    window.locateAndHighlight = function (targetId) {
+        return window.handlePageHighlight(targetId);
     };
 
     document.addEventListener('DOMContentLoaded', () => {
+        let hasHighlight = false;
         try {
             sessionStorage.setItem('radtech_last_table_url', window.location.href);
             const isDisputesTab = (new URLSearchParams(window.location.search)).get('tab') === 'disputes' ||
                 window.location.pathname.toLowerCase().includes('correction-request');
-            const hasHighlight = (new URLSearchParams(window.location.search)).has('highlight') ||
+            hasHighlight = (new URLSearchParams(window.location.search)).has('highlight') ||
                 (new URLSearchParams(window.location.search)).has('highlight_case') ||
-                (new URLSearchParams(window.location.search)).has('dispute_id');
+                (new URLSearchParams(window.location.search)).has('dispute_id') ||
+                !!initialDisputesHighlight;
 
             if (isDisputesTab && !hasHighlight) {
                 const savedPage = parseInt(sessionStorage.getItem('radtech_disputes_page') || '1', 10);
@@ -1898,32 +1957,28 @@ if ($hlTarget && empty($_GET['tab'])) {
             } else if (hasHighlight) {
                 currentDisputesPage = 1;
             }
-
-            // Clean raw parameters like role, page, tab, etc. if present to maintain clean URLs
-            const urlObj = new URL(window.location.href);
-            let cleaned = false;
-            if (urlObj.searchParams.get('tab') === 'disputes') {
-                urlObj.searchParams.delete('tab');
-                // Rewrite pathname to /correction-requests cleanly
-                const targetPath = '<?= url("correction-requests") ?>';
-                const parsedTarget = new URL(targetPath, window.location.origin);
-                urlObj.pathname = parsedTarget.pathname;
-                cleaned = true;
-            }
-            ['role', 'page', 'tab', 'dispute_id', 'highlight_dispute_id', 'highlight_case', 'highlight', 'case_id', 'case_number', 'is_new'].forEach(p => {
-                if (urlObj.searchParams.has(p)) {
-                    urlObj.searchParams.delete(p);
-                    cleaned = true;
-                }
-            });
-            if (cleaned) {
-                window.history.replaceState({}, document.title, urlObj.pathname + (urlObj.search && urlObj.search !== '?' ? urlObj.search : ''));
-            }
         } catch (e) { }
 
         setTimeout(() => {
             paginateDisputes();
-            handleDisputesHighlight();
+            if (initialDisputesHighlight) {
+                handleDisputesHighlight(initialDisputesHighlight);
+            } else {
+                handleDisputesHighlight();
+            }
+
+            if (!hasHighlight) {
+                try {
+                    const urlObj = new URL(window.location.href);
+                    if (urlObj.searchParams.get('tab') === 'disputes') {
+                        urlObj.searchParams.delete('tab');
+                        const targetPath = '<?= url("correction-requests") ?>';
+                        const parsedTarget = new URL(targetPath, window.location.origin);
+                        urlObj.pathname = parsedTarget.pathname;
+                    }
+                    window.history.replaceState({}, document.title, urlObj.pathname + (urlObj.search && urlObj.search !== '?' ? urlObj.search : ''));
+                } catch (e) {}
+            }
         }, 100);
     });
 
