@@ -316,7 +316,12 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
                 <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>">
                   <?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>
                 </p>
-                <p class="text-xs text-gray-500 truncate">Radiologist</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-xs text-gray-500 truncate">Radiologist</p>
+                  <?php if (isset($rad['is_available']) && !$rad['is_available']): ?>
+                    <span class="inline-flex items-center rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Not Available</span>
+                  <?php endif; ?>
+                </div>
               </div>
             </div>
 

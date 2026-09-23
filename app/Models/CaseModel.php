@@ -201,6 +201,7 @@ class CaseModel
             SELECT 
                 u.id, 
                 u.avatar,
+                u.is_available,
                 COALESCE(NULLIF(u.full_name_report, ''), u.name) AS radiologist_name,
                 SUM(CASE WHEN c.branch_id = :branchId AND $cDateCondition THEN 1 ELSE 0 END) as total_assigned,
                 SUM(CASE WHEN c.status IN ('Pending', 'Under Reading') AND c.image_status = 'Uploaded' THEN 1 ELSE 0 END) as active_cases

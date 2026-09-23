@@ -41,8 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user) {
-            // Generate reset token
-            $token = bin2hex(random_bytes(32));
+            // Strict role validation based on the portal
+            if ($isStaffPortal && $user['role'] === 'patient') {
+                $error = "This email is registered as a patient account, not a staff account. Please use the Patient Forgot Password page.";
+            } elseif (!$isStaffPortal && $user['role'] !== 'patient') {
+                $error = "This email is registered as a staff account. Please use the Staff Forgot Password page.";
+            } else {
+                // Generate reset token
+                $token = bin2hex(random_bytes(32));
             $expiresAt = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
             // Save to database
@@ -79,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $error = "Failed to send the reset email. Please try again later.";
             }
+            } // Close the 'else' block for strict role validation
         } else {
             $error = "This email is not registered in our system. Please check your email and try again.";
         }
