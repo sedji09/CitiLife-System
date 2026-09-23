@@ -1138,16 +1138,13 @@ $catBadgeLabel = match ($dCategory) {
                                                 <div>
                                                     <span
                                                         class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                                                    <p class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed">
-                                                        <?= htmlspecialchars($reportData['findings'] ?? '—') ?></p>
+                                                    <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm"><?= htmlspecialchars(trim($reportData['findings'] ?? '—')) ?></div>
                                                 </div>
                                                 <?php if (!empty($reportData['impression'])): ?>
                                                     <div>
                                                         <span
                                                             class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                                        <p
-                                                            class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm">
-                                                            <?= htmlspecialchars($reportData['impression']) ?></p>
+                                                        <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm"><?= htmlspecialchars(trim($reportData['impression'])) ?></div>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>
@@ -1158,17 +1155,13 @@ $catBadgeLabel = match ($dCategory) {
                                         <div>
                                             <span
                                                 class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                                            <div
-                                                class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm">
-                                                <?= htmlspecialchars($findingsRaw ?: '—') ?></div>
+                                            <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm"><?= htmlspecialchars(trim($findingsRaw ?: '—')) ?></div>
                                         </div>
                                         <?php if (!empty($impressionRaw)): ?>
                                             <div>
                                                 <span
                                                     class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                                <div
-                                                    class="text-sm text-gray-855 whitespace-pre-wrap leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm">
-                                                    <?= htmlspecialchars($impressionRaw) ?></div>
+                                                <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm"><?= htmlspecialchars(trim($impressionRaw)) ?></div>
                                             </div>
                                         <?php endif; ?>
                                     </div>
