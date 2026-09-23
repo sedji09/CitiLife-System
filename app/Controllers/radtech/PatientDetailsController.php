@@ -594,37 +594,59 @@ class PatientDetailsController
         // 3. Handle Submit to Radiologist
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_radiologist'])) {
             try {
-                $correctionType      = $_POST['correction_type'] ?? 'reupload';
-                $radtechDisputeNotes = trim($_POST['radtech_dispute_notes'] ?? '');
-                $keepExistingImage   = in_array($correctionType, ['typo', 'reread']);
-
-                $submitData = [
-                    'exam_type'            => $_POST['exam_type'] ?? '',
-                    'priority'             => $_POST['priority'] ?? '',
-                    'clinical_information' => $_POST['clinical_information'] ?? '',
-                    'report_template'      => $_POST['exam_type'] ?? '',
-                    'files'                => $_FILES['xray_image'] ?? null,
-                    'keep_existing_image'  => $keepExistingImage,
-                    'radtech_id'           => $_SESSION['user_id'] ?? null,
-                    'radiologist_id'       => $_POST['radiologist_id'] ?? null
-                ];
-
-                $result = $caseModel->processRadTechSubmission($caseId, $submitData, $notificationModel);
-
-                if ($result['success']) {
-                    $_SESSION['flash_success'] = $result['message'];
-                    $fromParam = $_POST['from'] ?? $_GET['from'] ?? '';
-                    if ($fromParam === 'approval' || $fromParam === 'patient-approval') {
-                        redirect(url('patient-approval'));
-                    } elseif ($fromParam === 'disputes') {
-                        redirect(url('correction-requests'));
-                    } elseif ($fromParam === 'report-ready') {
-                        redirect(url('report-ready'));
-                    } else {
-                        redirect(url('patient-lists'));
-                    }
+                $selectedRadId = !empty($_POST['radiologist_id']) ? (int)$_POST['radiologist_id'] : 0;
+                if (!$selectedRadId) {
+                    $errorMsg = "Please select an available radiologist before submitting.";
                 } else {
-                    $errorMsg = $result['message'];
+                    $chkStmt = $pdo->prepare("
+                        SELECT id, is_available, status, 
+                               COALESCE(NULLIF(full_name_report, ''), NULLIF(name, ''), SUBSTRING_INDEX(email, '@', 1)) AS rad_name 
+                        FROM users 
+                        WHERE id = ? AND role = 'radiologist'
+                    ");
+                    $chkStmt->execute([$selectedRadId]);
+                    $chkRad = $chkStmt->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$chkRad || $chkRad['status'] !== 'Active') {
+                        $errorMsg = "The selected radiologist account is inactive or not found.";
+                    } elseif ((int)$chkRad['is_available'] !== 1) {
+                        $errorMsg = "Dr. " . htmlspecialchars($chkRad['rad_name']) . " is currently marked as Unavailable. Case cannot be submitted to an unavailable radiologist.";
+                    }
+                }
+
+                if (empty($errorMsg)) {
+                    $correctionType      = $_POST['correction_type'] ?? 'reupload';
+                    $radtechDisputeNotes = trim($_POST['radtech_dispute_notes'] ?? '');
+                    $keepExistingImage   = in_array($correctionType, ['typo', 'reread']);
+
+                    $submitData = [
+                        'exam_type'            => $_POST['exam_type'] ?? '',
+                        'priority'             => $_POST['priority'] ?? '',
+                        'clinical_information' => $_POST['clinical_information'] ?? '',
+                        'report_template'      => $_POST['exam_type'] ?? '',
+                        'files'                => $_FILES['xray_image'] ?? null,
+                        'keep_existing_image'  => $keepExistingImage,
+                        'radtech_id'           => $_SESSION['user_id'] ?? null,
+                        'radiologist_id'       => $selectedRadId
+                    ];
+
+                    $result = $caseModel->processRadTechSubmission($caseId, $submitData, $notificationModel);
+
+                    if ($result['success']) {
+                        $_SESSION['flash_success'] = $result['message'];
+                        $fromParam = $_POST['from'] ?? $_GET['from'] ?? '';
+                        if ($fromParam === 'approval' || $fromParam === 'patient-approval') {
+                            redirect(url('patient-approval'));
+                        } elseif ($fromParam === 'disputes') {
+                            redirect(url('correction-requests'));
+                        } elseif ($fromParam === 'report-ready') {
+                            redirect(url('report-ready'));
+                        } else {
+                            redirect(url('patient-lists'));
+                        }
+                    } else {
+                        $errorMsg = $result['message'];
+                    }
                 }
             } catch (Exception $e) {
                 $errorMsg = "Error: " . $e->getMessage();

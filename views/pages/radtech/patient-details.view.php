@@ -1195,14 +1195,33 @@ $catBadgeLabel = match ($dCategory) {
     <?php endif; ?>
 
     <?php if (empty($activeDispute) && !($isAmendMode ?? false)): ?>
-        <!-- Validation Error Banner -->
+        <?php
+        $hasAnyAvailableRad = false;
+        foreach ($radiologistsList ?? [] as $r) {
+            if (isset($r['is_available']) && (int) $r['is_available'] === 1) {
+                $hasAnyAvailableRad = true;
+                break;
+            }
+        }
+        ?>
+
         <div id="rad-selection-error"
             class="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mt-6 hidden flex items-start gap-3 shadow-sm transition-opacity duration-300"
             role="alert">
             <i data-lucide="info" class="w-5 h-5 text-orange-500 mt-0.5 shrink-0"></i>
             <div>
                 <strong class="font-semibold text-sm mr-1.5">Selection Required:</strong>
-                <span class="text-sm opacity-90">Please select a radiologist from the dropdown before submitting the case.</span>
+                <span class="text-sm opacity-90">Please select an available radiologist from the dropdown before submitting the case.</span>
+            </div>
+        </div>
+
+        <div id="all-rads-unavailable-banner"
+            class="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl mt-6 <?= $hasAnyAvailableRad ? 'hidden' : 'flex' ?> items-start gap-3 shadow-sm"
+            role="alert">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 mt-0.5 shrink-0"></i>
+            <div>
+                <strong class="font-bold text-sm mr-1">No Radiologists Available:</strong>
+                <span class="text-sm leading-relaxed">All radiologists are currently marked as <strong>Unavailable</strong>. You cannot assign or submit this case until a radiologist becomes available.</span>
             </div>
         </div>
 
@@ -1214,10 +1233,10 @@ $catBadgeLabel = match ($dCategory) {
                             data-lucide="user-check" class="w-4 h-4 inline mr-1 text-red-500"></i>Send to:</label>
                     <div class="relative inline-block" id="custom-radiologist-select" style="min-width: 260px;">
                         <input type="hidden" name="radiologist_id" id="radiologist_id" required>
-                        <button type="button"
-                            class="w-full text-left text-sm border border-gray-300 rounded-md py-1.5 px-3 bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm"
+                        <button type="button" id="rad-dropdown-btn"
+                            class="w-full text-left text-sm border rounded-md py-1.5 px-3 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-shadow shadow-sm <?= $hasAnyAvailableRad ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-300' ?>"
                             onclick="document.getElementById('rad-options').classList.toggle('hidden')">
-                            <span id="rad-selected-text" class="text-gray-700">-- Select Radiologist --</span>
+                            <span id="rad-selected-text" class="text-gray-700 truncate"><?= $hasAnyAvailableRad ? '-- Select Radiologist --' : '-- All Radiologists Unavailable --' ?></span>
                             <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 pointer-events-none shrink-0 ml-2"></i>
                         </button>
                         <ul id="rad-options"
@@ -1225,48 +1244,153 @@ $catBadgeLabel = match ($dCategory) {
                             <?php foreach ($radiologistsList ?? [] as $rad): ?>
                                 <?php
                                 $caseCount = isset($rad['active_case_count']) ? (int) $rad['active_case_count'] : 0;
-                                $isAvailable = isset($rad['is_available']) ? (int) $rad['is_available'] === 1 : true;
+                                $isAvailable = isset($rad['is_available']) ? (int) $rad['is_available'] === 1 : false;
+                                $cleanRadName = trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name'] ?? ''));
+                                $displayName = 'Dr. ' . htmlspecialchars($cleanRadName);
                                 ?>
-                                <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-pointer hover:bg-gray-100 <?= !$isAvailable ? 'opacity-60 bg-gray-50' : '' ?>"
-                                    onclick="
-                                    document.getElementById('radiologist_id').value = '<?= $rad['id'] ?>';
-                                    document.getElementById('rad-selected-text').innerHTML = 'Dr. <?= addslashes(htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name'])))) ?> <?= !$isAvailable ? "<span class=\'text-gray-500 text-xs ml-1 font-normal\'>(Unavailable)</span>" : '' ?>';
-                                    document.getElementById('rad-options').classList.add('hidden');
-                                    document.getElementById('rad-selection-error').classList.add('hidden');
-                                    ">
-                                    <span class="font-medium <?= $isAvailable ? 'text-gray-800' : 'text-gray-600' ?>">Dr.
-                                        <?= htmlspecialchars(trim(preg_replace('/^Dr\.?\s*/i', '', $rad['radiologist_name']))) ?></span>
-                                    <?php if ($isAvailable): ?>
+                                <?php if ($isAvailable): ?>
+                                    <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-pointer hover:bg-gray-100"
+                                        onclick="selectRadiologist('<?= $rad['id'] ?>', '<?= addslashes($displayName) ?>', true)">
+                                        <span class="font-medium text-gray-800"><?= $displayName ?></span>
                                         <span
                                             class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2"
                                             title="<?= $caseCount ?> pending cases">
                                             <?= $caseCount ?>
                                         </span>
-                                    <?php else: ?>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-not-allowed bg-gray-50/90 text-gray-400 opacity-60 select-none"
+                                        onclick="selectRadiologist('<?= $rad['id'] ?>', '<?= addslashes($displayName) ?>', false)"
+                                        title="<?= $displayName ?> is currently unavailable">
+                                        <span class="font-medium text-gray-500"><?= $displayName ?></span>
                                         <span
-                                            class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 shadow-sm ml-2"
+                                            class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-500 shadow-sm ml-2"
                                             title="Unavailable">
                                             Unavailable
                                         </span>
-                                    <?php endif; ?>
-                                </li>
+                                    </li>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </ul>
                     </div>
 
                     <script>
+                        window.currentRadiologistsData = <?= json_encode($radiologistsList ?? []) ?>;
+
+                        function selectRadiologist(id, name, isAvailable) {
+                            const err = document.getElementById('rad-selection-error');
+                            if (!isAvailable) {
+                                if (err) {
+                                    err.querySelector('div strong').textContent = 'Radiologist Unavailable:';
+                                    err.querySelector('div span').textContent = 'This radiologist is currently marked as Unavailable and cannot be selected. Please choose an active, available radiologist.';
+                                    err.classList.remove('hidden');
+                                    setTimeout(() => err.classList.add('hidden'), 5000);
+                                    if (window.lucide) lucide.createIcons();
+                                }
+                                return false;
+                            }
+                            document.getElementById('radiologist_id').value = id;
+                            document.getElementById('rad-selected-text').innerHTML = name;
+                            document.getElementById('rad-options').classList.add('hidden');
+                            if (err) err.classList.add('hidden');
+                            updateSubmitButtonState();
+                            return true;
+                        }
+
+                        function updateSubmitButtonState() {
+                            const submitBtn = document.getElementById('btn-submit-radiologist');
+                            const banner = document.getElementById('all-rads-unavailable-banner');
+                            
+                            const anyAvailable = window.currentRadiologistsData 
+                                ? window.currentRadiologistsData.some(r => parseInt(r.is_available) === 1)
+                                : <?= $hasAnyAvailableRad ? 'true' : 'false' ?>;
+
+                            if (banner) {
+                                if (!anyAvailable) {
+                                    banner.classList.remove('hidden');
+                                    banner.classList.add('flex');
+                                } else {
+                                    banner.classList.add('hidden');
+                                    banner.classList.remove('flex');
+                                }
+                            }
+
+                            if (submitBtn) {
+                                if (!anyAvailable) {
+                                    submitBtn.disabled = true;
+                                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400', 'hover:bg-gray-400');
+                                    submitBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                                    submitBtn.title = "Cannot submit: All radiologists are currently unavailable";
+                                } else {
+                                    submitBtn.disabled = false;
+                                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400', 'hover:bg-gray-400');
+                                    submitBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                                    submitBtn.title = "";
+                                }
+                            }
+                        }
+
+                        function handleRadiologistSubmission(btn, event) {
+                            if (window.syncPatientXrayFiles) window.syncPatientXrayFiles();
+
+                            const anyAvailable = window.currentRadiologistsData 
+                                ? window.currentRadiologistsData.some(r => parseInt(r.is_available) === 1)
+                                : <?= $hasAnyAvailableRad ? 'true' : 'false' ?>;
+
+                            const err = document.getElementById('rad-selection-error');
+
+                            if (!anyAvailable) {
+                                if (err) {
+                                    err.querySelector('div strong').textContent = 'Submission Blocked:';
+                                    err.querySelector('div span').textContent = 'All radiologists are currently unavailable. You cannot submit this case until a radiologist becomes available.';
+                                    err.classList.remove('hidden');
+                                    setTimeout(() => err.classList.add('hidden'), 5000);
+                                    if (window.lucide) lucide.createIcons();
+                                }
+                                return;
+                            }
+
+                            const radId = document.getElementById('radiologist_id') ? document.getElementById('radiologist_id').value : '';
+                            if (!radId) {
+                                if (err) {
+                                    err.querySelector('div strong').textContent = 'Selection Required:';
+                                    err.querySelector('div span').textContent = 'Please select an available radiologist from the dropdown before submitting the case.';
+                                    err.classList.remove('hidden');
+                                    setTimeout(() => err.classList.add('hidden'), 5000);
+                                    if (window.lucide) lucide.createIcons();
+                                }
+                                return;
+                            }
+
+                            if (window.currentRadiologistsData) {
+                                const selected = window.currentRadiologistsData.find(r => r.id == radId);
+                                if (selected && parseInt(selected.is_available) !== 1) {
+                                    if (err) {
+                                        err.querySelector('div strong').textContent = 'Radiologist Unavailable:';
+                                        err.querySelector('div span').textContent = 'The selected radiologist is currently unavailable. Please select an available radiologist.';
+                                        err.classList.remove('hidden');
+                                        setTimeout(() => err.classList.add('hidden'), 5000);
+                                        if (window.lucide) lucide.createIcons();
+                                    }
+                                    document.getElementById('radiologist_id').value = '';
+                                    document.getElementById('rad-selected-text').innerHTML = '-- Select Radiologist --';
+                                    return;
+                                }
+                            }
+
+                            confirmFormAction(btn, '1', 'Confirm Submission', 'Would you like to confirm submitting this case to the selected radiologist?', 'submit_radiologist', event);
+                        }
+
                         document.addEventListener('DOMContentLoaded', function () {
-                            const allOptions = document.querySelectorAll('#rad-options li');
-                            if (allOptions.length === 1) {
-                                allOptions[0].click();
-                                // Disable dropdown button to make it look like a static selection
-                                const btn = document.querySelector('#custom-radiologist-select button');
-                                if (btn) {
-                                    btn.removeAttribute('onclick');
-                                    btn.classList.add('bg-gray-50', 'cursor-default');
-                                    btn.classList.remove('bg-white');
-                                    const chevron = btn.querySelector('.lucide-chevron-down');
-                                    if (chevron) chevron.style.display = 'none';
+                            updateSubmitButtonState();
+
+                            // Auto-select ONLY IF there is exactly one available radiologist
+                            if (window.currentRadiologistsData) {
+                                const availableOptions = window.currentRadiologistsData.filter(r => parseInt(r.is_available) === 1);
+                                if (availableOptions.length === 1 && window.currentRadiologistsData.length === 1) {
+                                    const onlyRad = availableOptions[0];
+                                    const dName = 'Dr. ' + onlyRad.radiologist_name.replace(/^Dr\.?\s*/i, '').trim();
+                                    selectRadiologist(onlyRad.id, dName, true);
                                 }
                             }
 
@@ -1276,45 +1400,57 @@ $catBadgeLabel = match ($dCategory) {
                                     const response = await fetch('<?= url("app/api/radiologists_status.php") ?>');
                                     if (!response.ok) return;
                                     const result = await response.json();
-                                    if (result.success && result.data) {
+                                    if (result.success && Array.isArray(result.data)) {
+                                        window.currentRadiologistsData = result.data;
                                         const radOptionsUl = document.getElementById('rad-options');
-                                        const currentSelectedId = document.getElementById('radiologist_id').value;
-                                        
+                                        const radIdInput = document.getElementById('radiologist_id');
+                                        const currentSelectedId = radIdInput ? radIdInput.value : '';
+                                        const anyAvailable = result.data.some(r => parseInt(r.is_available) === 1);
+
                                         let html = '';
                                         result.data.forEach(rad => {
-                                            const isAvailable = rad.is_available == 1;
+                                            const isAvailable = parseInt(rad.is_available) === 1;
                                             const caseCount = parseInt(rad.active_case_count) || 0;
                                             const radName = rad.radiologist_name ? rad.radiologist_name.replace(/^Dr\.?\s*/i, '').trim() : '';
                                             const displayName = 'Dr. ' + radName;
                                             
-                                            // Handle text for selected state
-                                            const selectedHTML = displayName + (!isAvailable ? " <span class=\\'text-gray-500 text-xs ml-1 font-normal\\\'>(Unavailable)</span>" : "");
-                                            
-                                            html += `<li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-pointer hover:bg-gray-100 ${!isAvailable ? 'opacity-60 bg-gray-50' : ''}"
-                                                onclick="
-                                                document.getElementById('radiologist_id').value = '${rad.id}';
-                                                document.getElementById('rad-selected-text').innerHTML = '${selectedHTML}';
-                                                document.getElementById('rad-options').classList.add('hidden');
-                                                document.getElementById('rad-selection-error').classList.add('hidden');
-                                                ">
-                                                <span class="font-medium ${isAvailable ? 'text-gray-800' : 'text-gray-600'}">${displayName}</span>`;
-                                                
                                             if (isAvailable) {
-                                                html += `<span class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2" title="${caseCount} pending cases">${caseCount}</span>`;
+                                                html += `<li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-pointer hover:bg-gray-100"
+                                                    onclick="selectRadiologist('${rad.id}', '${displayName.replace(/'/g, "\\'")}', true)">
+                                                    <span class="font-medium text-gray-800">${displayName}</span>
+                                                    <span class="inline-flex items-center rounded-full border border-yellow-400 bg-yellow-50 px-2 py-0.5 text-xs font-semibold text-yellow-700 shadow-sm ml-2" title="${caseCount} pending cases">${caseCount}</span>
+                                                </li>`;
                                             } else {
-                                                html += `<span class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 shadow-sm ml-2" title="Unavailable">Unavailable</span>`;
+                                                html += `<li class="px-3 py-2 text-sm flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors cursor-not-allowed bg-gray-50/90 text-gray-400 opacity-60 select-none"
+                                                    onclick="selectRadiologist('${rad.id}', '${displayName.replace(/'/g, "\\'")}', false)"
+                                                    title="${displayName} is currently unavailable">
+                                                    <span class="font-medium text-gray-500">${displayName}</span>
+                                                    <span class="inline-flex items-center rounded-full border border-gray-300 bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-500 shadow-sm ml-2" title="Unavailable">Unavailable</span>
+                                                </li>`;
                                             }
-                                            
-                                            html += `</li>`;
-                                            
-                                            // Auto-update the selected text if the currently selected radiologist changes availability
-                                            if (currentSelectedId == rad.id) {
-                                                const currentTextHTML = displayName + (!isAvailable ? " <span class='text-gray-500 text-xs ml-1 font-normal'>(Unavailable)</span>" : "");
-                                                document.getElementById('rad-selected-text').innerHTML = currentTextHTML;
+
+                                            // If currently selected radiologist transitioned to unavailable
+                                            if (currentSelectedId == rad.id && !isAvailable) {
+                                                radIdInput.value = '';
+                                                document.getElementById('rad-selected-text').innerHTML = anyAvailable ? '-- Select Radiologist --' : '-- All Radiologists Unavailable --';
+                                                const err = document.getElementById('rad-selection-error');
+                                                if (err) {
+                                                    err.querySelector('div strong').textContent = 'Radiologist Unavailable:';
+                                                    err.querySelector('div span').textContent = `${displayName} just became Unavailable. Please select an available radiologist.`;
+                                                    err.classList.remove('hidden');
+                                                    setTimeout(() => err.classList.add('hidden'), 5000);
+                                                    if (window.lucide) lucide.createIcons();
+                                                }
                                             }
                                         });
-                                        
-                                        radOptionsUl.innerHTML = html;
+
+                                        if (radOptionsUl) radOptionsUl.innerHTML = html;
+
+                                        if (!radIdInput.value) {
+                                            document.getElementById('rad-selected-text').innerHTML = anyAvailable ? '-- Select Radiologist --' : '-- All Radiologists Unavailable --';
+                                        }
+
+                                        updateSubmitButtonState();
                                     }
                                 } catch (e) {
                                     console.error('Error polling radiologist status:', e);
@@ -1331,9 +1467,9 @@ $catBadgeLabel = match ($dCategory) {
                         });
                     </script>
                 </div>
-                <button type="button"
-                    onclick="if(window.syncPatientXrayFiles) window.syncPatientXrayFiles(); if(!document.getElementById('radiologist_id').value){ const err = document.getElementById('rad-selection-error'); err.classList.remove('hidden'); setTimeout(() => err.classList.add('hidden'), 5000); lucide.createIcons(); return; } confirmFormAction(this, '1', 'Confirm Submission', 'Would you like to confirm submitting this case?', 'submit_radiologist', event)"
-                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm h-full">
+                <button type="button" id="btn-submit-radiologist"
+                    onclick="handleRadiologistSubmission(this, event)"
+                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition shadow-sm h-full cursor-pointer">
                     <i data-lucide="send" class="w-4 h-4"></i>
                     Submit to Radiologist
                 </button>

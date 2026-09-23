@@ -1196,6 +1196,22 @@ class CaseModel
         if (empty($data['report_template']))
             return ['success' => false, 'message' => "Please select a Report Template before submitting."];
 
+        $radId = !empty($data['radiologist_id']) ? (int)$data['radiologist_id'] : 0;
+        if (!$radId) {
+            return ['success' => false, 'message' => "Please select an available radiologist before submitting."];
+        }
+
+        $stmtChkRad = $this->pdo->prepare("SELECT id, is_available, status FROM users WHERE id = ? AND role = 'radiologist'");
+        $stmtChkRad->execute([$radId]);
+        $targetRad = $stmtChkRad->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$targetRad || $targetRad['status'] !== 'Active') {
+            return ['success' => false, 'message' => "The selected radiologist is inactive or does not exist."];
+        }
+        if ((int)$targetRad['is_available'] !== 1) {
+            return ['success' => false, 'message' => "Selected radiologist is currently unavailable. Case submission cancelled."];
+        }
+
         $oldCase = $this->getCaseById($caseId);
         $keepExisting = !empty($data['keep_existing_image']);
 
