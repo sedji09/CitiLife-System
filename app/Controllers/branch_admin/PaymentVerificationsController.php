@@ -122,7 +122,7 @@ class PaymentVerificationsController
                             $notifModel->add(
                                 "New Patient in Queue",
                                 "Case #{$caseNumber} ({$reqData['exam_type']}) payment verified and approved. Ready for X-ray examination.",
-                                url("patient-lists?highlight=" . urlencode($caseNumber)),
+                                url("patient-lists?highlight=" . urlencode($caseNumber) . "&filterDate=Today"),
                                 null,
                                 'radtech',
                                 $reqBranchId

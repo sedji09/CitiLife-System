@@ -56,6 +56,10 @@ class RegistrationController
             if (!empty($uRow['patient_id'])) {
                 $linkedPatientId = (int)$uRow['patient_id'];
                 $linkedPatient = $patientModel->getPatientById($linkedPatientId);
+                if (!$linkedPatient) {
+                    $linkedPatientId = null;
+                    $pdo->prepare("UPDATE users SET patient_id = NULL WHERE id = ?")->execute([$userId]);
+                }
             } elseif (!empty($uRow['email'])) {
                 $stmtPatEmail = $pdo->prepare("SELECT id FROM patients WHERE email = ? LIMIT 1");
                 $stmtPatEmail->execute([$uRow['email']]);
