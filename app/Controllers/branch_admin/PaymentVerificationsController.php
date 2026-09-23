@@ -133,8 +133,7 @@ class PaymentVerificationsController
                             // Send Email to Patient if available (outside transaction)
                             if ($patUser && !empty($patUser['email'])) {
                                 require_once __DIR__ . '/../../Helpers/mailer_helper.php';
-                                $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                                $portalUrl = $baseUrl . (defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '') . '/index.php?role=patient&page=dashboard';
+                                $portalUrl = $baseUrl . url("dashboard");
                                 $patientName = $patUser['name'] ?: 'Patient';
                                 $subject = "Your X-ray Request ({$caseNumber}) is Approved - Citilife System";
                                 $emailBody = renderNotificationEmail(

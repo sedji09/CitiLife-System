@@ -352,12 +352,12 @@ class CaseModel
 
                     // Auto-dismiss the pending radiologist revision notification for this case
                     try {
-                        $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title IN ('Case Returned for Revision', 'Correction Request', 'New Correction Request') AND link LIKE ? AND is_read = 0");
-                        $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
+                        $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title IN ('Case Returned for Revision', 'Correction Request', 'New Correction Request') AND (link LIKE ? OR link LIKE ?) AND is_read = 0");
+                        $stmtDismiss->execute(["%case-review&id={$caseId}%", "%case-review?id={$caseId}%"]);
                     } catch (\Exception $e) {
                     }
                 } elseif ($wasForRevision) {
-                    $link = url("patient-lists?highlight=" . urlencode($cData['case_number']));
+                    $link = url("patient-lists?tab=queue&highlight=" . urlencode($cData['case_number']));
 
                     // Notify RadTech that revised report has been submitted back
                     $notificationModel->add(
@@ -381,15 +381,15 @@ class CaseModel
 
                     // Auto-dismiss the pending radiologist revision notification for this case
                     try {
-                        $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title = 'Case Returned for Revision' AND link LIKE ? AND is_read = 0");
-                        $stmtDismiss->execute(["%case-review&id={$caseId}%"]);
+                        $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE title = 'Case Returned for Revision' AND (link LIKE ? OR link LIKE ?) AND is_read = 0");
+                        $stmtDismiss->execute(["%case-review&id={$caseId}%", "%case-review?id={$caseId}%"]);
                     } catch (\Exception $e) {
                     }
                 } elseif ($wasAlreadySubmitted) {
                     if (in_array($cData['status'], ['Released', 'Completed'])) {
                         $link = url("xray-patient-records?highlight=" . urlencode($cData['case_number']));
                     } else {
-                        $link = url("patient-lists?highlight=" . urlencode($cData['case_number']));
+                        $link = url("patient-lists?tab=queue&highlight=" . urlencode($cData['case_number']));
                     }
 
                     // Notify RadTech about findings change
@@ -416,7 +416,7 @@ class CaseModel
                     $notificationModel->add(
                         "Report Ready",
                         "Radiology report ready for Case {$cData['case_number']} ({$branchLabel}). Awaiting release.",
-                        url("patient-lists?highlight=" . urlencode($cData['case_number'])),
+                        url("patient-lists?tab=queue&highlight=" . urlencode($cData['case_number'])),
                         null,
                         'radtech',
                         $cData['branch_id']

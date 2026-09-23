@@ -347,7 +347,7 @@ class PatientModel
                 $branchSuffix = !empty($branchName) ? " ({$branchName})" : "";
                 $approvalLink = function_exists('url') 
                     ? url('patient-approval?highlight=' . urlencode($finalNumber) . '&branch_id=' . urlencode($branchId))
-                    : "/index.php?role=radtech&page=patient-approval&highlight=" . urlencode($finalNumber);
+                    : ('/patient-approval?highlight=' . urlencode($finalNumber) . '&branch_id=' . urlencode($branchId));
 
                 // Notify RadTech of the new request
                 $notificationModel->add(

@@ -132,7 +132,7 @@ class RecordRequestModel {
                 $notificationModel->add(
                     $notifTitle, 
                     $notifMsg, 
-                    $projectBase . "/index.php?role=radtech&page=view-record-request&id=" . urlencode($requestId), 
+                    url("view-record-request?id=" . urlencode($requestId)), 
                     null, 
                     'radtech', 
                     $requestData['branch_id']
@@ -166,7 +166,7 @@ class RecordRequestModel {
                 $notificationModel->add(
                     "New Record Request", 
                     $notifMsg, 
-                    "/" . PROJECT_DIR . "/index.php?role=branch_admin&page=record-requests&highlight=" . urlencode($data['patient_no'] ?? $data['patient_name']), 
+                    url("record-requests?highlight=" . urlencode($data['patient_no'] ?? $data['patient_name'])), 
                     null, 
                     'branch_admin', 
                     $targetBranch['id']

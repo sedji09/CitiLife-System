@@ -1741,10 +1741,12 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
 
         if (!targetVal) return false;
 
-        // Ensure active tab is switched to disputes
-        if (typeof switchTab === 'function') {
-            switchTab('disputes');
-        }
+        const urlParamsDis = new URLSearchParams(window.location.search);
+        const explicitTabDis = urlParamsDis.get('tab');
+        const isDisputesUrl = explicitTabDis === 'disputes' || window.location.pathname.toLowerCase().includes('correction-request');
+
+        // If explicitly requested queue and no passedTarget, never process as dispute
+        if (explicitTabDis === 'queue' && !passedTarget) return false;
 
         // Reset any search or filter criteria so the target row is not hidden
         const searchInput = document.getElementById('disputes-search-input');
@@ -1808,6 +1810,9 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
 
         if (targetRow) {
             disputesHighlightHandled = true;
+            if (typeof switchTab === 'function') {
+                switchTab('disputes');
+            }
 
             // Clear any lingering highlights on ALL rows so only 1 row is ever highlighted
             rows.forEach(r => {
@@ -1991,10 +1996,20 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
 
         setTimeout(() => {
             paginateDisputes();
-            if (initialDisputesHighlight) {
-                handleDisputesHighlight(initialDisputesHighlight);
-            } else {
-                handleDisputesHighlight();
+            const urlParamsInit = new URLSearchParams(window.location.search);
+            const reqTabInit = urlParamsInit.get('tab');
+            const isDisputesTabInit = reqTabInit === 'disputes' || window.location.pathname.toLowerCase().includes('correction-request');
+
+            if (isDisputesTabInit || urlParamsInit.has('dispute_id') || urlParamsInit.has('highlight_dispute_id')) {
+                if (initialDisputesHighlight) {
+                    handleDisputesHighlight(initialDisputesHighlight);
+                } else {
+                    handleDisputesHighlight();
+                }
+            } else if (reqTabInit === 'queue' || hasHighlight) {
+                if (typeof initPatientQueue === 'function') {
+                    initPatientQueue(initialDisputesHighlight);
+                }
             }
 
             if (!hasHighlight) {

@@ -88,8 +88,7 @@ class ReEditController
             );
 
             // Notify Radiologist (assigned or all radiologists)
-            $projectPrefix = defined('PROJECT_DIR') && PROJECT_DIR ? '/' . PROJECT_DIR : '';
-            $link = "{$projectPrefix}/index.php?role=radiologist&page=worklist&highlight=" . urlencode($caseNumber);
+            $link = url("worklist?highlight=" . urlencode($caseNumber));
             $assignedRadId = !empty($case['radiologist_id']) ? (int) $case['radiologist_id'] : null;
 
             $notificationModel->add(

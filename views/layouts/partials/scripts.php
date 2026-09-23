@@ -1738,18 +1738,18 @@
         this.notifications.forEach(notif => {
           if (notif.is_read == 0) {
             const fullText = (notif.title || '') + ' ' + (notif.message || '');
-            const matchBranchCase = fullText.match(/\b([A-Za-z]{2,6}\d{4}-\d{4,6})\b/i);
-            const matchParen = fullText.match(/\(([A-Za-z0-9-]+)\)/i);
             const matchReq = fullText.match(/\b(REQ-[A-Za-z0-9-]+)\b/i);
             const matchCas = fullText.match(/\b(CAS-[A-Za-z0-9-]+)\b/i);
+            const matchBranchCase = fullText.match(/\b([A-Za-z]{2,6}\d{4}-\d{4,6})\b/i);
             const matchPx = fullText.match(/\b(PX-[A-Za-z0-9-]+|PAT-[A-Za-z0-9-]+)\b/i);
             const matchGeneric = fullText.match(/(?:case|request)\s*[:#(\s]*([A-Za-z0-9-]+)/i);
+            const matchCodeInParen = fullText.match(/\(([A-Za-z]{2,6}\d{4}-\d{4,6}|REQ-[A-Za-z0-9-]+|CAS-[A-Za-z0-9-]+|\d{4,})\)/i);
             
             let target = null;
-            if (matchBranchCase) target = matchBranchCase[1];
-            else if (matchParen) target = matchParen[1];
-            else if (matchReq) target = matchReq[1];
+            if (matchReq) target = matchReq[1];
             else if (matchCas) target = matchCas[1];
+            else if (matchBranchCase) target = matchBranchCase[1];
+            else if (matchCodeInParen) target = matchCodeInParen[1];
             else if (matchPx) target = matchPx[1];
             else if (matchGeneric) target = matchGeneric[1];
             
@@ -2095,17 +2095,17 @@
           // Smartly extract identifier from notification title or message if available
           if (notif) {
             const fullText = (notif.title || '') + ' ' + (notif.message || '');
-            const matchBranchCase = fullText.match(/\b([A-Za-z]{2,6}\d{4}-\d{4,6})\b/i);
-            const matchParen = fullText.match(/\(([A-Za-z0-9-]+)\)/i);
             const matchReq = fullText.match(/\b(REQ-[A-Za-z0-9-]+)\b/i);
             const matchCas = fullText.match(/\b(CAS-[A-Za-z0-9-]+)\b/i);
+            const matchBranchCase = fullText.match(/\b([A-Za-z]{2,6}\d{4}-\d{4,6})\b/i);
             const matchPx = fullText.match(/\b(PX-[A-Za-z0-9-]+|PAT-[A-Za-z0-9-]+)\b/i);
             const matchGeneric = fullText.match(/(?:case|request)\s*[:#(\s]*([A-Za-z0-9-]+)/i);
+            const matchCodeInParen = fullText.match(/\(([A-Za-z]{2,6}\d{4}-\d{4,6}|REQ-[A-Za-z0-9-]+|CAS-[A-Za-z0-9-]+|\d{4,})\)/i);
 
-            if (matchBranchCase) targetHighlight = matchBranchCase[1];
-            else if (matchParen) targetHighlight = matchParen[1];
-            else if (matchReq) targetHighlight = matchReq[1];
+            if (matchReq) targetHighlight = matchReq[1];
             else if (matchCas) targetHighlight = matchCas[1];
+            else if (matchBranchCase) targetHighlight = matchBranchCase[1];
+            else if (matchCodeInParen) targetHighlight = matchCodeInParen[1];
             else if (matchPx) targetHighlight = matchPx[1];
             else if (matchGeneric) targetHighlight = matchGeneric[1];
           }
@@ -2122,13 +2122,37 @@
             finalUrl = new URL(link, window.location.origin);
           }
 
-          // Smartly ensure tab param exists for queue or dispute notifications
+          // Automatically convert any legacy index.php?role=...&page=... links into clean routes
+          if (finalUrl.searchParams.has('page')) {
+            const pageParam = finalUrl.searchParams.get('page');
+            const basePathNoSlash = ('<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' : '');
+            finalUrl.pathname = (basePathNoSlash ? basePathNoSlash : '') + '/' + pageParam;
+            finalUrl.searchParams.delete('page');
+            finalUrl.searchParams.delete('role');
+          }
+
+          const currentRole = (window.__APP__ && window.__APP__.role) || '<?= $_SESSION['role'] ?? '' ?>';
+
+          // Smartly route notifications to appropriate module & tabs
           if (notif) {
             const fullText = ((notif.title || '') + ' ' + (notif.message || '')).toLowerCase();
-            if ((fullText.includes('patient in queue') || fullText.includes('ready for x-ray') || fullText.includes('in queue')) && !finalUrl.searchParams.has('tab')) {
-              finalUrl.searchParams.set('tab', 'queue');
-            } else if ((fullText.includes('correction') || fullText.includes('dispute') || fullText.includes('amendment')) && !finalUrl.searchParams.has('tab')) {
-              finalUrl.searchParams.set('tab', 'disputes');
+
+            // 1. RadTech Patient Requests (Online Registration awaiting approval)
+            if (currentRole === 'radtech' && (fullText.includes('patient request') || fullText.includes('awaits approval') || fullText.includes('request awaits'))) {
+              const basePathNoSlash = ('<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' : '');
+              finalUrl.pathname = (basePathNoSlash ? basePathNoSlash : '') + '/patient-approval';
+            }
+            // 2. Patient Queue (Payment Verified, Patient in Queue, Report Ready, Revision)
+            else if (fullText.includes('patient in queue') || fullText.includes('ready for x-ray') || fullText.includes('in queue') || fullText.includes('report ready') || fullText.includes('revised report') || fullText.includes('payment verified')) {
+              if (finalUrl.pathname.includes('patient-lists') && !finalUrl.searchParams.has('tab')) {
+                finalUrl.searchParams.set('tab', 'queue');
+              }
+            }
+            // 3. Correction Requests / Disputes
+            else if (fullText.includes('correction') || fullText.includes('dispute') || fullText.includes('amendment') || fullText.includes('amended report')) {
+              if (finalUrl.pathname.includes('patient-lists') && !finalUrl.searchParams.has('tab')) {
+                finalUrl.searchParams.set('tab', 'disputes');
+              }
             }
           }
 
@@ -2159,8 +2183,8 @@
             const currentUrl = new URL(window.location.href);
             const targetPageParam = finalUrl.searchParams.get('page');
             const currentPageParam = currentUrl.searchParams.get('page');
-            const targetPath = finalUrl.pathname.replace(/\/$/, '').split('/').pop() || 'index.php';
-            const currentPath = currentUrl.pathname.replace(/\/$/, '').split('/').pop() || 'index.php';
+            const targetPath = finalUrl.pathname.replace(/\/$/, '').split('/').pop() || 'dashboard';
+            const currentPath = currentUrl.pathname.replace(/\/$/, '').split('/').pop() || 'dashboard';
 
             const targetTab = finalUrl.searchParams.get('tab');
             const currentTab = currentUrl.searchParams.get('tab');
@@ -2169,9 +2193,7 @@
             const isPatientListPage = ['patient-lists', 'correction-requests', 'correction-request'].includes(targetPath) &&
                                       ['patient-lists', 'correction-requests', 'correction-request'].includes(currentPath);
 
-            const isSamePage = (targetPath === currentPath && (targetPageParam || '') === (currentPageParam || '')) ||
-                               (finalUrl.pathname === currentUrl.pathname && (targetPageParam || '') === (currentPageParam || '')) ||
-                               isPatientListPage;
+            const isSamePage = (targetPath === currentPath) || isPatientListPage;
 
             if (isSamePage) {
               this.notificationMenuOpen = false;

@@ -12,10 +12,45 @@ class NotificationModel {
             if (strpos($link, '//') === 0 && strpos($link, '://') === false) {
                 $link = '/' . ltrim($link, '/');
             }
-            if (stripos($title, 'Queue') !== false && strpos($link, 'patient-lists') !== false && strpos($link, 'tab=') === false) {
+
+            // Convert legacy index.php?role=...&page=... into clean router path
+            if (strpos($link, 'index.php?') !== false) {
+                $parsed = parse_url($link);
+                $query = $parsed['query'] ?? '';
+                parse_str($query, $params);
+                if (!empty($params['page'])) {
+                    $targetPage = $params['page'];
+                    unset($params['page']);
+                    unset($params['role']);
+                    $queryString = !empty($params) ? '?' . http_build_query($params) : '';
+                    $link = function_exists('url') ? url($targetPage . $queryString) : ('/' . $targetPage . $queryString);
+                }
+            }
+
+            // RadTech Online Registration patient request notifications must route to patient-approval
+            if ($role === 'radtech' && (stripos($title, 'Patient Request') !== false || stripos($message, 'awaits approval') !== false)) {
+                if (strpos($link, 'patient-approval') === false) {
+                    $parsed = parse_url($link);
+                    $query = !empty($parsed['query']) ? '?' . $parsed['query'] : '';
+                    $link = function_exists('url') ? url('patient-approval' . $query) : ('/patient-approval' . $query);
+                }
+            }
+
+            // Queue notifications pointing to patient-lists must have tab=queue
+            if ((stripos($title, 'Queue') !== false || stripos($title, 'Report Ready') !== false || stripos($title, 'Revised Report') !== false) 
+                && strpos($link, 'patient-lists') !== false && strpos($link, 'tab=') === false) {
                 $link = str_replace('patient-lists?', 'patient-lists?tab=queue&', $link);
                 if (strpos($link, 'tab=queue') === false) {
                     $link .= (strpos($link, '?') !== false ? '&' : '?') . 'tab=queue';
+                }
+            }
+
+            // Correction / dispute notifications pointing to patient-lists must have tab=disputes
+            if ((stripos($title, 'Correction') !== false || stripos($title, 'Dispute') !== false || stripos($title, 'Amended') !== false) 
+                && strpos($link, 'patient-lists') !== false && strpos($link, 'tab=') === false) {
+                $link = str_replace('patient-lists?', 'patient-lists?tab=disputes&', $link);
+                if (strpos($link, 'tab=disputes') === false) {
+                    $link .= (strpos($link, '?') !== false ? '&' : '?') . 'tab=disputes';
                 }
             }
         }

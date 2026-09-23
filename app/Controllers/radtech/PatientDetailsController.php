@@ -25,13 +25,24 @@ class PatientDetailsController
         $caseModel->ensureSchema();
 
         $refToken = $_GET['ref'] ?? $_GET['token'] ?? '';
-        $rawId = (int)($_GET['id'] ?? 0);
+        $rawId = (int)($_GET['id'] ?? $_GET['case_id'] ?? 0);
         $caseId = 0;
         if (!empty($refToken) && function_exists('verifyReportToken')) {
             $caseId = verifyReportToken($refToken);
         }
         if (!$caseId && $rawId) {
             $caseId = $rawId;
+        }
+        if (!$caseId) {
+            $caseNumParam = $_GET['case_number'] ?? $_GET['highlight'] ?? $_GET['highlight_case'] ?? '';
+            if (!empty($caseNumParam)) {
+                $stmtCaseLookup = $pdo->prepare("SELECT id FROM cases WHERE case_number = ? LIMIT 1");
+                $stmtCaseLookup->execute([$caseNumParam]);
+                $foundCaseId = (int)$stmtCaseLookup->fetchColumn();
+                if ($foundCaseId > 0) {
+                    $caseId = $foundCaseId;
+                }
+            }
         }
 
         $fromParam = $_GET['from'] ?? '';

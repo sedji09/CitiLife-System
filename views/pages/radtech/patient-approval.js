@@ -1472,12 +1472,124 @@ function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         applyFilters();
-    }, 100);
+        handlePageHighlight();
+    }, 150);
 });
 
 // Re-apply filters when real-time polling updates the table content
 document.addEventListener('realtime:updated', () => {
     applyFilters();
 });
+
+function handlePageHighlight(targetId) {
+    if (!targetId) {
+        const params = new URLSearchParams(window.location.search);
+        targetId = params.get('highlight') || params.get('highlight_case') || params.get('highlight_req') || params.get('id');
+    }
+    if (!targetId) return false;
+
+    const hlNorm = String(targetId).trim().toLowerCase().replace(/[\s\-_]/g, '');
+    const tbody = document.getElementById('table-body');
+    if (!tbody) return false;
+
+    // Reset filters so the row isn't hidden
+    const searchInput = document.getElementById('search-input');
+    const filterStatus = document.getElementById('filter-status');
+    if (searchInput && searchInput.value) searchInput.value = '';
+    if (filterStatus && filterStatus.value !== 'All') filterStatus.value = 'All';
+
+    applyFilters();
+
+    const allRows = Array.from(tbody.querySelectorAll('tr.record-row'));
+    let targetRow = null;
+
+    // 1. Strict exact match
+    for (const r of allRows) {
+        const id = (r.dataset.id || '').toLowerCase().replace(/[\s\-_]/g, '');
+        const reqNum = (r.dataset.request || '').toLowerCase().replace(/[\s\-_]/g, '');
+        const reqId = (r.dataset.requestId || '').toLowerCase().replace(/[\s\-_]/g, '');
+        if (id === hlNorm || reqNum === hlNorm || reqId === hlNorm) {
+            targetRow = r;
+            break;
+        }
+    }
+
+    // 2. Substring fallback
+    if (!targetRow) {
+        for (const r of allRows) {
+            const id = (r.dataset.id || '').toLowerCase().replace(/[\s\-_]/g, '');
+            const name = (r.dataset.name || '').toLowerCase().replace(/[\s\-_]/g, '');
+            if ((id && hlNorm.includes(id)) || (hlNorm && id.includes(hlNorm)) || (name && hlNorm.includes(name))) {
+                targetRow = r;
+                break;
+            }
+        }
+    }
+
+    if (!targetRow) return false;
+
+    // Re-filter according to active filters
+    const matched = allRows.filter(r => {
+        const status = (r.dataset.status || '').trim();
+        return (filterStatus?.value || 'All') === 'All' || status === filterStatus?.value;
+    });
+
+    const targetIdx = matched.indexOf(targetRow);
+    const itemsPerPage = 7;
+    if (targetIdx !== -1) {
+        window.currentApprovalPage = Math.floor(targetIdx / itemsPerPage) + 1;
+        applyFilters();
+    }
+
+    setTimeout(() => {
+        targetRow.style.display = '';
+        const tableContainer = document.querySelector('.max-h-\\[400px\\]') || targetRow.closest('.overflow-x-auto') || targetRow.closest('.overflow-y-auto');
+        if (tableContainer) {
+            const rowTop = targetRow.offsetTop - tableContainer.offsetTop;
+            tableContainer.scrollTo({ top: Math.max(0, rowTop - 40), behavior: 'smooth' });
+        } else {
+            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Flash highlight animation
+        targetRow.classList.add('transition-all', 'duration-300', 'ring-2', 'ring-amber-400', 'ring-offset-1');
+        targetRow.style.transition = 'background-color 0.4s ease';
+        targetRow.style.backgroundColor = '#fef08a';
+        setTimeout(() => {
+            targetRow.style.backgroundColor = '#fde047';
+            setTimeout(() => {
+                targetRow.style.backgroundColor = '#fef08a';
+                setTimeout(() => {
+                    targetRow.style.backgroundColor = '#fde047';
+                    setTimeout(() => {
+                        targetRow.style.transition = 'background-color 1.5s ease';
+                        targetRow.style.backgroundColor = '';
+                        targetRow.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-1');
+                    }, 400);
+                }, 300);
+            }, 300);
+        }, 200);
+
+        // Show highlight banner
+        if (typeof window.showHighlightBanner === 'function') {
+            const friendlyLabel = targetRow.dataset.request || targetRow.dataset.id || targetId;
+            window.showHighlightBanner(targetId, friendlyLabel);
+        }
+
+        // Clean up URL parameter cleanly
+        try {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('highlight');
+            cleanUrl.searchParams.delete('highlight_case');
+            cleanUrl.searchParams.delete('highlight_req');
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+        } catch (e) {}
+    }, 150);
+
+    return true;
+}
+
+window.handlePageHighlight = handlePageHighlight;
+window.locateAndHighlight = handlePageHighlight;
 
 

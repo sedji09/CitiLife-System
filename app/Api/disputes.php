@@ -76,7 +76,7 @@ try {
         ");
         $notifTitle = "New Correction Request (" . $case['case_number'] . ")";
         $notifMsg = "A new patient correction request requires RadTech review.";
-        $notifLink = "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId . "&highlight_case=" . urlencode($case['case_number']);
+        $notifLink = url("patient-lists?tab=disputes&dispute_id=" . $disputeId . "&highlight=" . urlencode($case['case_number']));
         $notifStmt->execute([$case['branch_id'], $notifTitle, $notifMsg, $notifLink]);
 
         $auditLog->addLog($userId, 'Dispute Submitted', 'Patient Portal', 'Case', $caseId, "Submitted result dispute (ID: {$disputeId}, Category: {$category})", $case['branch_id']);
@@ -325,7 +325,7 @@ try {
         if ($disputeInfo && !empty($disputeInfo['patient_user_id'])) {
             $notifTitle = "Correction Request Resolved";
             $notifMsg = "Your correction request for Case " . $disputeInfo['case_number'] . " has been successfully resolved.";
-            $notifLink = "index.php?role=patient&page=my-records&tab=disputes&highlight_dispute_id=" . $disputeId;
+            $notifLink = url("my-records?tab=disputes&highlight_dispute_id=" . $disputeId);
             $pdo->prepare("INSERT INTO notifications (user_id, role, title, message, link, created_at) VALUES (?, 'patient', ?, ?, ?, NOW())")
                 ->execute([$disputeInfo['patient_user_id'], $notifTitle, $notifMsg, $notifLink]);
         }
@@ -402,16 +402,18 @@ try {
             $cData = $stmtDisData->fetch(PDO::FETCH_ASSOC);
 
             if ($cData) {
+                $notifRadLink = url("patient-lists?tab=disputes&dispute_id=" . $disputeId . "&highlight=" . urlencode($cData['case_number']));
                 $pdo->prepare("
                     INSERT INTO notifications (role, branch_id, title, message, link, created_at)
                     VALUES ('radtech', ?, ?, ?, ?, NOW())
                 ")->execute([
                     $cData['branch_id'],
                     "Amended Report Issued (" . $cData['case_number'] . ")",
-                    "Radiologist issued an amended report. Verification required.",
-                    "index.php?role=radtech&page=patient-lists&tab=disputes&dispute_id=" . $disputeId
+                    "Radiologist issued an amended report. Verification required in Correction Requests.",
+                    $notifRadLink
                 ]);
 
+                $notifAdminLink = url("branch-xray-cases?tab=queue&highlight=" . urlencode($cData['case_number']));
                 $pdo->prepare("
                     INSERT INTO notifications (role, branch_id, title, message, link, created_at)
                     VALUES ('branch_admin', ?, ?, ?, ?, NOW())
@@ -419,7 +421,7 @@ try {
                     $cData['branch_id'],
                     "Amended Report Issued (" . $cData['case_number'] . ")",
                     "Radiologist issued an amended report for Case {$cData['case_number']}.",
-                    "/" . (defined('PROJECT_DIR') && PROJECT_DIR ? PROJECT_DIR . '/' : '') . "index.php?page=branch-xray-cases&tab=queue&highlight=" . urlencode($cData['case_number'])
+                    $notifAdminLink
                 ]);
             }
         }
@@ -658,7 +660,7 @@ try {
             if (!empty($currentCase['patient_user_id'])) {
                 $notifTitle = "X-ray Report Amended & Released";
                 $notifMsg = "Your correction request for Case {$currentCase['case_number']} has been resolved and the updated report is now released.";
-                $notifLink = "case-status?case_id={$caseId}";
+                $notifLink = url("case-status?case_id={$caseId}");
                 $pdo->prepare("INSERT INTO notifications (user_id, role, title, message, link, created_at) VALUES (?, 'patient', ?, ?, ?, NOW())")
                     ->execute([$currentCase['patient_user_id'], $notifTitle, $notifMsg, $notifLink]);
             }

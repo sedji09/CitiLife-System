@@ -27,6 +27,21 @@ $branches = $branchModel->getAllBranches();
 $userBranchId = $_SESSION['branch_id'] ?? null;
 $selectedBranchId = $_GET['branch_id'] ?? 'all';
 $pendingPatients = $caseModel->getPendingCases($selectedBranchId);
+
+$hlTargetApproval = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['highlight_req'] ?? '';
+if (!empty($hlTargetApproval)) {
+    $foundHl = false;
+    foreach ($pendingPatients as $p) {
+        if (($p['request_number'] ?? '') === $hlTargetApproval || (string)($p['id'] ?? '') === $hlTargetApproval) {
+            $foundHl = true;
+            break;
+        }
+    }
+    if (!$foundHl) {
+        $selectedBranchId = 'all';
+        $pendingPatients = $caseModel->getPendingCases('all');
+    }
+}
 $pendingApprovalCount = count($caseModel->getPendingCases($branchId));
 
 $disputeModel = new \ResultDisputeModel($pdo);
@@ -201,6 +216,9 @@ foreach ($allServices as $service) {
                     ?>
                         <tr class="border-b hover:bg-gray-50 transition-colors record-row" <?= $initialDisplay ?>
                             data-id="<?= htmlspecialchars($patient['request_number']) ?>"
+                            data-request="<?= htmlspecialchars($patient['request_number']) ?>"
+                            data-request-id="<?= (int)$patient['id'] ?>"
+                            data-patient-id="<?= (int)$patient['patient_id'] ?>"
                             data-name="<?= htmlspecialchars($patFullName) ?>"
                             data-priority="<?= htmlspecialchars($patient['priority']) ?>"
                             data-exam="<?= htmlspecialchars($patient['exam_type']) ?>"

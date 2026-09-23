@@ -379,7 +379,7 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
             </tr>
           <?php else: ?>
             <?php foreach ($recentCases as $case): ?>
-              <tr class="hover:bg-gray-50 transition-colors">
+              <tr class="hover:bg-gray-50 transition-colors record-row" data-id="<?= htmlspecialchars($case['case_number']) ?>" data-case="<?= htmlspecialchars($case['case_number']) ?>" data-case-id="<?= $case['id'] ?>" data-patient="<?= htmlspecialchars($case['patient_number'] ?? '') ?>">
                 <td class="py-3 px-6 font-medium whitespace-nowrap"><?= htmlspecialchars($case['case_number']) ?></td>
                 <td class="py-3 px-6 font-medium whitespace-nowrap">
                   <?= htmlspecialchars($case['patient_number'] ?? 'N/A') ?>

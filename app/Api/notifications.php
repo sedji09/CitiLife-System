@@ -35,7 +35,7 @@ if (in_array($_SESSION['role'] ?? '', ['radiologist', 'admin_central'])) {
                     NULL AS branch_id,
                     'Overdue Case Alert' AS title,
                     CONCAT('Case ', c.case_number, ' has been pending/under reading for over 3 hours.') AS message,
-                    CONCAT('/', :projectDir, '/index.php?role=radiologist&page=case-review&id=', c.id, '&branch_id=', IFNULL(c.branch_id, '')) AS link,
+                    CONCAT('/', :projectDir, '/case-review?id=', c.id, '&branch_id=', IFNULL(c.branch_id, '')) AS link,
                     0 AS is_read,
                     NOW() AS created_at
                 FROM cases c
@@ -50,7 +50,7 @@ if (in_array($_SESSION['role'] ?? '', ['radiologist', 'admin_central'])) {
                   AND NOT EXISTS (
                       SELECT 1 FROM notifications n
                       WHERE n.title = 'Overdue Case Alert'
-                        AND n.link LIKE CONCAT('%page=case-review&id=', c.id, '%')
+                        AND (n.link LIKE CONCAT('%page=case-review&id=', c.id, '%') OR n.link LIKE CONCAT('%case-review?id=', c.id, '%'))
                   )
             ";
             $stmtInsert = $pdo->prepare($insertQuery);
@@ -63,7 +63,7 @@ if (in_array($_SESSION['role'] ?? '', ['radiologist', 'admin_central'])) {
                 $caseIds = [];
                 $notifMap = [];
                 foreach ($overdueNotifs as $on) {
-                    if (preg_match('/page=case-review&id=(\d+)/', $on['link'], $m)) {
+                    if (preg_match('/(?:page=case-review&id=|case-review\?id=)(\d+)/', $on['link'], $m)) {
                         $cid = (int)$m[1];
                         $caseIds[] = $cid;
                         $notifMap[$cid][] = (int)$on['id'];
