@@ -288,67 +288,104 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
 
     <!-- Radiologist Report Findings Card -->
     <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm flex flex-col justify-between h-full">
-        <div class="mb-4">
-            <div class="flex items-center gap-2">
-                <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
-                <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-700' ?>">Radiologist
-                    Report Findings</h3>
+        <?php
+        $findingsRaw = trim($caseDetails['findings'] ?? '');
+        $impressionRaw = trim($caseDetails['impression'] ?? '');
+        $isMultiExam = false;
+        $parsedFindings = [];
+
+        if (!empty($findingsRaw) && (str_starts_with($findingsRaw, '{') || str_starts_with($findingsRaw, '['))) {
+            $decoded = json_decode($findingsRaw, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $isMultiExam = true;
+                $parsedFindings = $decoded;
+            }
+        }
+        $multiExamCount = count($parsedFindings);
+        ?>
+
+        <div class="mb-4 flex items-center justify-between gap-2">
+            <div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="file-text" class="h-5 w-5 <?= $isReportReady ? 'text-red-500' : 'text-gray-400' ?>"></i>
+                    <h3 class="text-lg font-semibold <?= $isReportReady ? 'text-gray-800' : 'text-gray-700' ?>">Radiologist
+                        Report Findings</h3>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Official radiological interpretation and clinical impression</p>
             </div>
-            <p class="text-xs text-gray-500 mt-1">Official radiological interpretation and clinical impression</p>
+
+            <?php if ($isReportReady && $isMultiExam && $multiExamCount > 1): ?>
+                <div class="flex items-center gap-2">
+                    <span id="exam-findings-counter" class="text-xs font-semibold text-gray-500 select-none">1 of <?= $multiExamCount ?></span>
+                    <!-- Capsule Pill Navigation (< | >) -->
+                    <div class="inline-flex items-center bg-gray-100 hover:bg-gray-150/80 border border-gray-200 rounded-full p-0.5 shadow-2xs text-gray-600 transition-colors">
+                        <button type="button" 
+                            id="prev-exam-findings-btn" 
+                            onclick="switchExamFindingsSlide(-1)" 
+                            class="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-900 hover:bg-white active:bg-gray-200 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed cursor-pointer" 
+                            title="Previous Exam" 
+                            disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <span class="w-[1px] h-3.5 bg-gray-300 mx-0.5"></span>
+                        <button type="button" 
+                            id="next-exam-findings-btn" 
+                            onclick="switchExamFindingsSlide(1)" 
+                            class="w-7 h-7 flex items-center justify-center rounded-full text-gray-700 hover:text-gray-900 hover:bg-white active:bg-gray-200 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed cursor-pointer" 
+                            title="Next Exam">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php if ($isReportReady): ?>
 
             <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
-                <?php
-                $findingsRaw = trim($caseDetails['findings'] ?? '');
-                $impressionRaw = trim($caseDetails['impression'] ?? '');
-                $isMultiExam = false;
-                $parsedFindings = [];
-
-                if (!empty($findingsRaw) && (str_starts_with($findingsRaw, '{') || str_starts_with($findingsRaw, '['))) {
-                    $decoded = json_decode($findingsRaw, true);
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        $isMultiExam = true;
-                        $parsedFindings = $decoded;
-                    }
-                }
-                ?>
-
                 <?php if ($isMultiExam): ?>
+                    <?php $slideIdx = 0; ?>
                     <?php foreach ($parsedFindings as $examName => $reportData): ?>
-                        <div class="mb-4 last:mb-0 border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                            <h5 class="text-xs font-bold text-red-600 mb-2 uppercase tracking-wide flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-                                <?= htmlspecialchars($examName) ?>
-                            </h5>
+                        <div class="exam-findings-slide <?= $slideIdx > 0 ? 'hidden' : '' ?>" data-slide-index="<?= $slideIdx ?>">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="text-xs font-bold text-red-600 uppercase tracking-wide flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                    <?= htmlspecialchars($examName) ?>
+                                </h5>
+                                <?php if ($multiExamCount > 1): ?>
+                                    <span class="text-[10px] font-semibold text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded-full shadow-2xs">
+                                        Exam <?= ($slideIdx + 1) ?> of <?= $multiExamCount ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                             <div class="space-y-3 pl-3">
                                 <div>
                                     <span
                                         class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                                    <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm"><?= htmlspecialchars(trim($reportData['findings'] ?? '—')) ?></div>
+                                    <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($reportData['findings'] ?? '—')) ?></div>
                                 </div>
                                 <?php if (!empty($reportData['impression'])): ?>
                                     <div>
                                         <span
                                             class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                        <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm"><?= htmlspecialchars(trim($reportData['impression'])) ?></div>
+                                        <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($reportData['impression'])) ?></div>
                                     </div>
                                 <?php endif; ?>
                             </div>
                         </div>
+                        <?php $slideIdx++; ?>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="space-y-3">
                         <div>
                             <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                            <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm"><?= htmlspecialchars(trim($findingsRaw ?: '—')) ?></div>
+                            <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($findingsRaw ?: '—')) ?></div>
                         </div>
                         <?php if (!empty($impressionRaw)): ?>
                             <div>
                                 <span
                                     class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm"><?= htmlspecialchars(trim($impressionRaw)) ?></div>
+                                <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($impressionRaw)) ?></div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -491,5 +528,31 @@ $isReportReady = in_array($caseDetails['status'], ['Report Ready', 'Completed', 
                 window.history.replaceState(null, document.title, window.location.pathname);
             }
         } catch (e) { }
+
+        window.switchExamFindingsSlide = function(direction) {
+            const slides = Array.from(document.querySelectorAll('.exam-findings-slide'));
+            if (!slides.length) return;
+
+            let currentIndex = slides.findIndex(s => !s.classList.contains('hidden'));
+            if (currentIndex === -1) currentIndex = 0;
+
+            let nextIndex = currentIndex + direction;
+            if (nextIndex < 0) nextIndex = 0;
+            if (nextIndex >= slides.length) nextIndex = slides.length - 1;
+            if (nextIndex === currentIndex) return;
+
+            slides[currentIndex].classList.add('hidden');
+            slides[nextIndex].classList.remove('hidden');
+
+            const counter = document.getElementById('exam-findings-counter');
+            if (counter) {
+                counter.textContent = `${nextIndex + 1} of ${slides.length}`;
+            }
+
+            const prevBtn = document.getElementById('prev-exam-findings-btn');
+            const nextBtn = document.getElementById('next-exam-findings-btn');
+            if (prevBtn) prevBtn.disabled = (nextIndex === 0);
+            if (nextBtn) nextBtn.disabled = (nextIndex === slides.length - 1);
+        };
     })();
 </script>

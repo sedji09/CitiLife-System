@@ -406,8 +406,7 @@
                 }
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.viewDate.setMonth(idx);
-                    this.setView('days');
+                    this.setMonth(idx);
                 });
                 this.monthsView.appendChild(btn);
             });
@@ -428,11 +427,98 @@
                 }
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.viewDate.setFullYear(y);
-                    this.setView('days');
+                    this.setYear(y);
                 });
                 this.yearsView.appendChild(btn);
             }
+        }
+
+        setMonth(monthIdx) {
+            this.monthChangedInSession = true;
+            const y = this.viewDate.getFullYear();
+            this.viewDate.setMonth(monthIdx);
+
+            if (this.selectedDate) {
+                const maxDays = new Date(y, monthIdx + 1, 0).getDate();
+                const d = Math.min(this.selectedDate.getDate(), maxDays);
+                let newDate = new Date(y, monthIdx, d);
+
+                if (this.options.maxDate) {
+                    const max = new Date(this.options.maxDate);
+                    max.setHours(23, 59, 59, 999);
+                    if (newDate > max) {
+                        newDate = new Date(max.getFullYear(), max.getMonth(), max.getDate());
+                    }
+                }
+                if (this.options.minDate) {
+                    const min = new Date(this.options.minDate);
+                    min.setHours(0, 0, 0, 0);
+                    if (newDate < min) {
+                        newDate = new Date(min.getFullYear(), min.getMonth(), min.getDate());
+                    }
+                }
+
+                this.selectedDate = newDate;
+                this.viewDate = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
+                const dateString = formatDateISO(newDate);
+                this.input.value = dateString;
+
+                this.input.dispatchEvent(new Event('input', { bubbles: true }));
+                this.input.dispatchEvent(new Event('change', { bubbles: true }));
+                this.input.dispatchEvent(new CustomEvent('changeDate', {
+                    bubbles: true,
+                    detail: { date: newDate, dateString }
+                }));
+                if (typeof this.options.onSelect === 'function') {
+                    this.options.onSelect(dateString, newDate);
+                }
+            }
+
+            this.setView('days');
+        }
+
+        setYear(year) {
+            this.yearChangedInSession = true;
+            this.viewDate.setFullYear(year);
+
+            if (this.selectedDate) {
+                const m = this.viewDate.getMonth();
+                const maxDays = new Date(year, m + 1, 0).getDate();
+                const d = Math.min(this.selectedDate.getDate(), maxDays);
+                let newDate = new Date(year, m, d);
+
+                if (this.options.maxDate) {
+                    const max = new Date(this.options.maxDate);
+                    max.setHours(23, 59, 59, 999);
+                    if (newDate > max) {
+                        newDate = new Date(max.getFullYear(), max.getMonth(), max.getDate());
+                    }
+                }
+                if (this.options.minDate) {
+                    const min = new Date(this.options.minDate);
+                    min.setHours(0, 0, 0, 0);
+                    if (newDate < min) {
+                        newDate = new Date(min.getFullYear(), min.getMonth(), min.getDate());
+                    }
+                }
+
+                this.selectedDate = newDate;
+                this.viewDate = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
+                const dateString = formatDateISO(newDate);
+                this.input.value = dateString;
+
+                this.input.dispatchEvent(new Event('input', { bubbles: true }));
+                this.input.dispatchEvent(new Event('change', { bubbles: true }));
+                this.input.dispatchEvent(new CustomEvent('changeDate', {
+                    bubbles: true,
+                    detail: { date: newDate, dateString }
+                }));
+                if (typeof this.options.onSelect === 'function') {
+                    this.options.onSelect(dateString, newDate);
+                }
+            }
+
+            this.setView('days');
         }
 
         setDate(dateOrString, triggerEvents = true) {
@@ -466,6 +552,7 @@
 
         selectDate(date) {
             this.selectedDate = date;
+            this.viewDate = new Date(date.getFullYear(), date.getMonth(), 1);
             const dateString = formatDateISO(date);
             this.input.value = dateString;
 
@@ -481,7 +568,13 @@
                 this.options.onSelect(dateString, date);
             }
 
-            this.close();
+            this.render();
+
+            if (this.monthChangedInSession || this.yearChangedInSession || this.dayClickedInSession || this.options.autoClose) {
+                this.close();
+            } else {
+                this.dayClickedInSession = true;
+            }
         }
 
         position() {
@@ -513,6 +606,10 @@
 
         open() {
             if (this.isOpen) return;
+
+            this.monthChangedInSession = false;
+            this.yearChangedInSession = false;
+            this.dayClickedInSession = false;
 
             // Sync with current input value
             if (this.input.value.trim()) {

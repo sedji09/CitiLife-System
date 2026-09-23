@@ -458,7 +458,18 @@ window.submitDisputeForm = function (e) {
                     confirmButtonColor: '#dc2626',
                     customClass: { popup: 'rounded-2xl' }
                 }).then(() => {
-                    window.location.href = window.__APP__.basePath + '/my-records?tab=disputes';
+                    const basePath = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+                    const dashboardUrl = basePath + '/dashboard';
+                    const isAlreadyOnDashboard = window.location.pathname.endsWith('/dashboard')
+                        || window.location.pathname.includes('/dashboard')
+                        || window.location.search.includes('page=dashboard');
+
+                    if (isAlreadyOnDashboard) {
+                        window.location.href = dashboardUrl;
+                        window.location.reload();
+                    } else {
+                        window.location.href = dashboardUrl;
+                    }
                 });
             } else {
                 Swal.fire({ icon: 'error', title: 'Error', text: data.message });

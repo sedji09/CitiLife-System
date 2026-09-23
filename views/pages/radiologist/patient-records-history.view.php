@@ -498,11 +498,11 @@ $backUrl   = url($backPage . $backQuery);
                             <h4 class="font-bold text-red-600 text-xs mb-2 uppercase"><?= htmlspecialchars($examName) ?></h4>
                             <div class="mb-3">
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
-                                <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 whitespace-pre-line"><?= htmlspecialchars(trim($data['findings'] ?: 'None')) ?></div>
+                                <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($data['findings'] ?: 'None')) ?></div>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
-                                <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line"><?= htmlspecialchars(trim($data['impression'] ?: 'None')) ?></div>
+                                <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($data['impression'] ?: 'None')) ?></div>
                             </div>
                         </div>
                         <?php
@@ -512,13 +512,13 @@ $backUrl   = url($backPage . $backQuery);
                     <!-- Findings -->
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
-                        <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line"><?= htmlspecialchars(trim($caseDetails['findings'] ?: 'None')) ?></div>
+                        <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($caseDetails['findings'] ?: 'None')) ?></div>
                     </div>
 
                     <!-- Impression -->
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
-                        <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line"><?= htmlspecialchars(trim($caseDetails['impression'] ?: 'None')) ?></div>
+                        <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($caseDetails['impression'] ?: 'None')) ?></div>
                     </div>
                 <?php endif; ?>
             </div>

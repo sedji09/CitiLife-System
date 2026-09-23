@@ -533,23 +533,27 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+<!-- Release Loading Overlay -->
 <div id="release-loading-overlay"
-    class="fixed inset-0 z-[9999] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
-    <div id="release-spinner-container">
-        <div class="animate-spin rounded-full h-16 w-16 border-4 border-red-600 border-t-transparent mb-4"></div>
-    </div>
-    <div id="release-success-icon" class="hidden mb-4">
-        <div
-            class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 stroke-[3]" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+    class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center max-w-xs w-full mx-4 border border-gray-100 dark:border-gray-700 transition-all">
+        <div id="release-spinner-container">
+            <div class="animate-spin rounded-full h-14 w-14 border-4 border-red-600 border-t-transparent mb-4"></div>
         </div>
+        <div id="release-success-icon" class="hidden mb-4">
+            <div
+                class="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center shadow-lg shadow-green-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 stroke-[3]" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+        </div>
+        <h3 id="release-title-text" class="text-base font-bold text-gray-800 dark:text-gray-100">Processing Release</h3>
+        <p id="release-status-text" class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">
+            Preparing the results...</p>
     </div>
-    <h3 id="release-title-text" class="text-xl font-bold text-gray-800 dark:text-white">Releasing Result</h3>
-    <p id="release-status-text" class="text-gray-500 dark:text-gray-400 mt-2 text-center font-medium">Preparing the
-        results...</p>
 </div>
 
 <script>
@@ -725,11 +729,15 @@
             iframe.onload = async () => {
                 try {
                     const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    await new Promise(r => setTimeout(r, 1000));
+                    if (doc.fonts && doc.fonts.ready) {
+                        await Promise.race([doc.fonts.ready, new Promise(r => setTimeout(r, 350))]);
+                    } else {
+                        await new Promise(r => setTimeout(r, 250));
+                    }
                     const pages = doc.querySelectorAll('.report-page');
                     if (!pages.length) throw new Error("No pages found to render.");
                     iframe.style.height = (doc.documentElement.scrollHeight + 200) + 'px';
-                    await new Promise(r => setTimeout(r, 500));
+                    await new Promise(r => setTimeout(r, 120));
 
                     let base64Images = [];
                     for (let i = 0; i < pages.length; i++) {
@@ -737,8 +745,9 @@
                         if (statusText) statusText.textContent = `Processing page ${i + 1} of ${pages.length}...`;
 
                         const canvas = await html2canvas(page, {
-                            scale: pages.length > 5 ? 1.5 : 2,
+                            scale: 1.6,
                             useCORS: true,
+                            logging: false,
                             backgroundColor: '#ffffff',
                             width: page.scrollWidth,
                             height: page.scrollHeight,
@@ -753,7 +762,7 @@
                                 });
                             }
                         });
-                        const imgData = canvas.toDataURL('image/jpeg', pages.length > 5 ? 0.8 : 0.9);
+                        const imgData = canvas.toDataURL('image/jpeg', 0.85);
                         base64Images.push(imgData);
                     }
 
@@ -787,14 +796,14 @@
                         if (successIcon) successIcon.classList.remove('hidden');
                         if (titleEl) {
                             titleEl.textContent = 'Result Released!';
-                            titleEl.className = 'text-xl font-bold text-green-600 dark:text-green-400';
+                            titleEl.className = 'text-base font-bold text-green-600 dark:text-green-400';
                         }
                         if (statusTextEl) {
-                            statusTextEl.textContent = 'Case moved to X-ray Patient Records.';
-                            statusTextEl.className = 'text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
+                            statusTextEl.textContent = 'Case moved to X-ray Patient Records. Returning to Patient Queue...';
+                            statusTextEl.className = 'text-xs text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
                         }
 
-                        await new Promise(r => setTimeout(r, 1200));
+                        await new Promise(r => setTimeout(r, 700));
                         window.location.reload();
                     } else {
                         throw new Error(result.message || 'Server rejected the upload.');

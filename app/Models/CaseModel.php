@@ -536,6 +536,8 @@ class CaseModel
 
     /**
      * Get case by ID with patient and branch details.
+     * @param int $id
+     * @return array|false
      */
     public function getCaseById($id)
     {

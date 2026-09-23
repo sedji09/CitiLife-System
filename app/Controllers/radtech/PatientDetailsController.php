@@ -219,7 +219,7 @@ class PatientDetailsController
                                     if (function_exists('sendEmail')) {
                                         sendEmail($patientUser['email'], $patientName, $subject, $body);
                                     }
-                                } catch (\Throwable $mailErr) {
+                                } catch (Throwable $mailErr) {
                                     error_log("Notice: Failed to send release email: " . $mailErr->getMessage());
                                 }
                             }
@@ -343,7 +343,7 @@ class PatientDetailsController
                             if ($newFirstName || $newLastName) {
                                 $stmtCurName = $pdo->prepare("SELECT first_name, last_name FROM patients WHERE id = ?");
                                 $stmtCurName->execute([$pId]);
-                                $curPat = $stmtCurName->fetch(\PDO::FETCH_ASSOC);
+                                $curPat = $stmtCurName->fetch(PDO::FETCH_ASSOC);
                                 $fullName = trim(($curPat['first_name'] ?? '') . ' ' . ($curPat['last_name'] ?? ''));
                                 if ($fullName !== '') {
                                     $stmtU = $pdo->prepare("UPDATE users SET name = ? WHERE patient_id = ? AND role = 'patient'");
@@ -377,7 +377,7 @@ class PatientDetailsController
                                 'impression_after' => $newImpression ?? null,
                                 'notes'            => $auditNote,
                             ]);
-                        } catch (\Throwable $logErr) {
+                        } catch (Throwable $logErr) {
                             error_log("Notice: Failed to log amendment: " . $logErr->getMessage());
                         }
                     }
@@ -387,7 +387,7 @@ class PatientDetailsController
                 if ($dId) {
                     $stmtDispCheck = $pdo->prepare("SELECT * FROM result_disputes WHERE id = ?");
                     $stmtDispCheck->execute([$dId]);
-                    $disputeData = $stmtDispCheck->fetch(\PDO::FETCH_ASSOC);
+                    $disputeData = $stmtDispCheck->fetch(PDO::FETCH_ASSOC);
 
                     $cat = $disputeData['dispute_category'] ?? '';
                     $fullDesc = $disputeData['description'] ?? '';
@@ -441,7 +441,7 @@ class PatientDetailsController
                         redirect(url("patient-lists"));
                     }
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $errorMsg = "Error saving amendment: " . $e->getMessage();
             }
         }
@@ -471,7 +471,7 @@ class PatientDetailsController
                 // PhilHealth details are locked from Assign Exam
                 $stmtCurCase = $pdo->prepare("SELECT philhealth_status, philhealth_id, philhealth_relation FROM cases WHERE id = ?");
                 $stmtCurCase->execute([$caseId]);
-                $curCasePh = $stmtCurCase->fetch(\PDO::FETCH_ASSOC);
+                $curCasePh = $stmtCurCase->fetch(PDO::FETCH_ASSOC);
 
                 $philhealthStatus = $curCasePh['philhealth_status'] ?? trim($_POST['philhealth_status'] ?? 'Without PhilHealth Card');
                 $philhealthIdToSave = ($philhealthStatus === 'With PhilHealth Card') 
@@ -515,7 +515,7 @@ class PatientDetailsController
                 // If this case has an active dispute, sync demographics_fixed
                 $stmtCheckDisp = $pdo->prepare("SELECT * FROM result_disputes WHERE case_id = ? AND status NOT IN ('Resolved', 'Rejected') ORDER BY id DESC LIMIT 1");
                 $stmtCheckDisp->execute([$caseId]);
-                $linkedDispute = $stmtCheckDisp->fetch(\PDO::FETCH_ASSOC);
+                $linkedDispute = $stmtCheckDisp->fetch(PDO::FETCH_ASSOC);
                 if ($linkedDispute) {
                     $pdo->prepare("UPDATE result_disputes SET demographics_fixed = 1, resolution_notes = CONCAT(COALESCE(resolution_notes, ''), ' Patient demographics updated.') WHERE id = ?")
                         ->execute([$linkedDispute['id']]);
@@ -583,7 +583,7 @@ class PatientDetailsController
                 $fromParam = $_GET['from'] ?? '';
                 $qs = "role=radtech&id=" . $caseId . ($fromParam ? "&from=" . urlencode($fromParam) : "");
                 redirect(url("patient-details?" . $qs));
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                     header('Content-Type: application/json');
                     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -607,7 +607,7 @@ class PatientDetailsController
                         WHERE id = ? AND role = 'radiologist'
                     ");
                     $chkStmt->execute([$selectedRadId]);
-                    $chkRad = $chkStmt->fetch(\PDO::FETCH_ASSOC);
+                    $chkRad = $chkStmt->fetch(PDO::FETCH_ASSOC);
 
                     if (!$chkRad || $chkRad['status'] !== 'Active') {
                         $errorMsg = "The selected radiologist account is inactive or not found.";
@@ -650,7 +650,7 @@ class PatientDetailsController
                         $errorMsg = $result['message'];
                     }
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $errorMsg = "Error: " . $e->getMessage();
             }
         }
