@@ -73,9 +73,8 @@
                 </div>
             </div>
 
-            <form id="patientRequestForm" method="POST"
-                action="<?= url('registration') ?>"
-                class="space-y-4" enctype="multipart/form-data">
+            <form id="patientRequestForm" method="POST" action="<?= url('registration') ?>" class="space-y-4"
+                enctype="multipart/form-data">
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>
@@ -94,7 +93,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Body Part to Examine</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Body Part to Examine <span
+                            class="text-gray-500 font-normal">(Optional)</span></label>
                     <?php
                     // Retrieve dynamic categories from DB and standard anatomical parts
                     $dbCategories = !empty($groupedServices) ? array_keys($groupedServices) : [];
@@ -153,125 +153,125 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('patientRequestForm');
-    if (!form) return;
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('patientRequestForm');
+        if (!form) return;
 
-    let isConfirmed = false;
+        let isConfirmed = false;
 
-    form.addEventListener('submit', async function (e) {
-        if (isConfirmed) return; // Allow form to submit once confirmed
+        form.addEventListener('submit', async function (e) {
+            if (isConfirmed) return; // Allow form to submit once confirmed
 
-        e.preventDefault();
+            e.preventDefault();
 
-        const branchSelect = form.querySelector('select[name="branch_id"]');
-        if (!branchSelect || !branchSelect.value) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Branch Required',
-                    text: 'Please select your preferred clinic branch first.',
-                    confirmButtonColor: '#dc2626',
-                    customClass: {
-                        popup: 'rounded-2xl',
-                        confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
-                    }
-                });
-            } else {
-                alert('Please select your preferred clinic branch first.');
-            }
-            branchSelect?.focus();
-            return;
-        }
-
-        const selectedBranchText = branchSelect.options[branchSelect.selectedIndex]?.text?.replace(/\s+/g, ' ').trim() || '';
-        const examInput = form.querySelector('input[name="exam_type"]');
-        const selectedExams = (examInput && examInput.value.trim()) ? examInput.value.trim() : 'To be determined by Radiologic Technologist';
-
-        // Check for active ongoing duplicate exam
-        const activeExams = <?= json_encode($activePatientExams ?? []) ?>;
-        if (activeExams && activeExams.length > 0) {
-            const rawChosen = (examInput && examInput.value.trim()) ? examInput.value.trim().toLowerCase() : 'to be determined';
-            const chosenParts = rawChosen.split(',').map(s => s.trim()).filter(Boolean);
-
-            let duplicateFound = null;
-            for (const act of activeExams) {
-                const actExamRaw = (act.exam_type || '').toLowerCase();
-                const actParts = actExamRaw.split(',').map(s => s.trim()).filter(Boolean);
-
-                for (const cp of chosenParts) {
-                    if (cp === 'to be determined' && (actExamRaw === 'to be determined' || actParts.includes('to be determined'))) {
-                        duplicateFound = act;
-                        break;
-                    }
-                    for (const ap of actParts) {
-                        if (ap !== 'to be determined' && (cp === ap || ap.includes(cp) || cp.includes(ap))) {
-                            duplicateFound = act;
-                            break;
-                        }
-                    }
-                    if (duplicateFound) break;
-                }
-                if (duplicateFound) break;
-            }
-
-            if (duplicateFound) {
+            const branchSelect = form.querySelector('select[name="branch_id"]');
+            if (!branchSelect || !branchSelect.value) {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Active Request in Progress',
-                        html: `You currently have an ongoing request for <b>${duplicateFound.exam_type}</b> (<b>${duplicateFound.ref}</b>).<br><br>To prevent duplicate requests and unintentional double payments, submitting the same examination is restricted while one is still in progress.<br><br><span class="text-xs text-gray-500">You may still request other body parts if you have a separate prescription (e.g., Spine, Skull, Extremities).</span>`,
+                        title: 'Branch Required',
+                        text: 'Please select your preferred clinic branch first.',
                         confirmButtonColor: '#dc2626',
-                        confirmButtonText: 'I Understand',
                         customClass: {
                             popup: 'rounded-2xl',
                             confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
                         }
                     });
                 } else {
-                    alert(`You currently have an active request for ${duplicateFound.exam_type} (${duplicateFound.ref}). Duplicate requests for the same examination are not permitted while in progress.`);
+                    alert('Please select your preferred clinic branch first.');
                 }
+                branchSelect?.focus();
                 return;
             }
-        }
 
-        if (typeof Swal !== 'undefined') {
-            const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: 'Are you sure you want to submit this X-ray examination request?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, Submit Request',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true,
-                customClass: {
-                    popup: 'rounded-2xl',
-                    confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm',
-                    cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+            const selectedBranchText = branchSelect.options[branchSelect.selectedIndex]?.text?.replace(/\s+/g, ' ').trim() || '';
+            const examInput = form.querySelector('input[name="exam_type"]');
+            const selectedExams = (examInput && examInput.value.trim()) ? examInput.value.trim() : 'To be determined by Radiologic Technologist';
+
+            // Check for active ongoing duplicate exam
+            const activeExams = <?= json_encode($activePatientExams ?? []) ?>;
+            if (activeExams && activeExams.length > 0) {
+                const rawChosen = (examInput && examInput.value.trim()) ? examInput.value.trim().toLowerCase() : 'to be determined';
+                const chosenParts = rawChosen.split(',').map(s => s.trim()).filter(Boolean);
+
+                let duplicateFound = null;
+                for (const act of activeExams) {
+                    const actExamRaw = (act.exam_type || '').toLowerCase();
+                    const actParts = actExamRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+                    for (const cp of chosenParts) {
+                        if (cp === 'to be determined' && (actExamRaw === 'to be determined' || actParts.includes('to be determined'))) {
+                            duplicateFound = act;
+                            break;
+                        }
+                        for (const ap of actParts) {
+                            if (ap !== 'to be determined' && (cp === ap || ap.includes(cp) || cp.includes(ap))) {
+                                duplicateFound = act;
+                                break;
+                            }
+                        }
+                        if (duplicateFound) break;
+                    }
+                    if (duplicateFound) break;
                 }
-            });
 
-            if (!result.isConfirmed) {
-                return;
+                if (duplicateFound) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Active Request in Progress',
+                            html: `You currently have an ongoing request for <b>${duplicateFound.exam_type}</b> (<b>${duplicateFound.ref}</b>).<br><br>To prevent duplicate requests and unintentional double payments, submitting the same examination is restricted while one is still in progress.<br><br><span class="text-xs text-gray-500">You may still request other body parts if you have a separate prescription (e.g., Spine, Skull, Extremities).</span>`,
+                            confirmButtonColor: '#dc2626',
+                            confirmButtonText: 'I Understand',
+                            customClass: {
+                                popup: 'rounded-2xl',
+                                confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                            }
+                        });
+                    } else {
+                        alert(`You currently have an active request for ${duplicateFound.exam_type} (${duplicateFound.ref}). Duplicate requests for the same examination are not permitted while in progress.`);
+                    }
+                    return;
+                }
             }
-        } else {
-            if (!confirm('Are you sure you want to submit this X-ray request?')) {
-                return;
+
+            if (typeof Swal !== 'undefined') {
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Are you sure you want to submit this X-ray examination request?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, Submit Request',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm',
+                        cancelButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                    }
+                });
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+            } else {
+                if (!confirm('Are you sure you want to submit this X-ray request?')) {
+                    return;
+                }
             }
-        }
 
-        isConfirmed = true;
+            isConfirmed = true;
 
-        const submitBtn = document.getElementById('submit_btn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Submitting...';
-            if (window.lucide) lucide.createIcons();
-        }
+            const submitBtn = document.getElementById('submit_btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Submitting...';
+                if (window.lucide) lucide.createIcons();
+            }
 
-        form.submit();
+            form.submit();
+        });
     });
-});
 </script>
