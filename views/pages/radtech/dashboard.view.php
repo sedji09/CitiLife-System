@@ -241,7 +241,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
 
   <!-- Stats -->
   <div id="radtech-dashboard-stats" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6 realtime-update">
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition flex flex-col h-full">
+    <div
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <div>
           <p class="text-sm text-gray-500 font-medium">Total Patients</p>
@@ -252,7 +253,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($totalPatients) ?></p>
     </div>
 
-    <a href="<?= url('patient-lists?status=Pending&filterDate=All') ?>" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+    <a href="<?= url('patient-lists?status=Pending&filterDate=All') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">Pending</p>
         <i data-lucide="clock-3" class="w-5 h-5 text-orange-400 shrink-0"></i>
@@ -260,7 +262,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($pendingApprovals) ?></p>
     </a>
 
-    <a href="<?= url('patient-lists?filterPriority=Urgent&filterDate=All') ?>" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+    <a href="<?= url('patient-lists?filterPriority=Urgent&filterDate=All') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">Urgent Cases</p>
         <i data-lucide="chart-spline" class="w-5 h-5 text-yellow-400 shrink-0"></i>
@@ -268,7 +271,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($priorityCases) ?></p>
     </a>
 
-    <a href="<?= url('patient-lists?filterPriority=STAT&filterDate=All') ?>" class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
+    <a href="<?= url('patient-lists?filterPriority=STAT&filterDate=All') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">STAT</p>
         <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400 shrink-0"></i>
@@ -276,7 +280,8 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
       <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($emergencyCases) ?></p>
     </a>
 
-    <div class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition flex flex-col h-full">
+    <div
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition flex flex-col h-full">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm text-gray-500 font-medium">Completed</p>
         <i data-lucide="check-circle" class="w-5 h-5 text-green-400 shrink-0"></i>
@@ -306,20 +311,25 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
             <div class="flex items-center gap-3 mb-3">
               <?php $radAvatarUrl = function_exists('getAvatarUrl') ? getAvatarUrl($rad['avatar']) : $rad['avatar']; ?>
               <?php if (!empty($radAvatarUrl)): ?>
-                <img src="<?= htmlspecialchars($radAvatarUrl) ?>" alt="Profile" class="h-10 w-10 rounded-full object-cover shrink-0 border border-gray-200">
+                <img src="<?= htmlspecialchars($radAvatarUrl) ?>" alt="Profile"
+                  class="h-10 w-10 rounded-full object-cover shrink-0 border border-gray-200">
               <?php else: ?>
-                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                <div
+                  class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
                   <?= htmlspecialchars(strtoupper(substr($rad['radiologist_name'] ?? 'R', 0, 1))) ?>
                 </div>
               <?php endif; ?>
               <div class="min-w-0">
-                <p class="font-semibold text-gray-900 truncate" title="<?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>">
+                <p class="font-semibold text-gray-900 truncate"
+                  title="<?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>">
                   <?= htmlspecialchars($rad['radiologist_name'] ?? '') ?>
                 </p>
                 <div class="flex items-center gap-2">
                   <p class="text-xs text-gray-500 truncate">Radiologist</p>
                   <?php if (isset($rad['is_available']) && !$rad['is_available']): ?>
-                    <span class="inline-flex items-center rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Not Available</span>
+                    <span
+                      class="inline-flex items-center rounded-full bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 ring-1 ring-inset ring-gray-600/10">Not
+                      Available</span>
                   <?php endif; ?>
                 </div>
               </div>

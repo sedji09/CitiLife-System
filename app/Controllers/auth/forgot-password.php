@@ -43,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user) {
             // Strict role validation based on the portal
             if ($isStaffPortal && $user['role'] === 'patient') {
-                $error = "This email is registered as a patient account, not a staff account. Please use the Patient Forgot Password page.";
+                $error = "This email is not registered in our system. Please check your email and try again.";
             } elseif (!$isStaffPortal && $user['role'] !== 'patient') {
-                $error = "This email is registered as a staff account. Please use the Staff Forgot Password page.";
+                $error = "This email is not registered in our system. Please check your email and try again.";
             } else {
                 // Generate reset token
                 $token = bin2hex(random_bytes(32));
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $error = "Failed to send the reset email. Please try again later.";
             }
-            } // Close the 'else' block for strict role validation
+            }
         } else {
             $error = "This email is not registered in our system. Please check your email and try again.";
         }

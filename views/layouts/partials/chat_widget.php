@@ -157,7 +157,7 @@
 
                   <!-- Text Message Bubble or Like Icon -->
                   <div class="relative group/bubble w-fit">
-                    <div v-if="msg.message === '👍'"
+                    <div v-if="msg.message === '__LIKE_ICON__'"
                          class="px-1 py-1"
                          :class="msg.sender_id == userId ? 'text-red-600' : 'text-gray-400'">
                          <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
@@ -242,7 +242,7 @@
             <i data-lucide="send" class="w-4 h-4"></i>
           </button>
           <button v-else
-            type="button" @click="chat.newMessage = '👍'; sendMessage(chat)"
+            type="button" @click="chat.newMessage = '__LIKE_ICON__'; sendMessage(chat)"
             class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
             title="Send a Like">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -269,7 +269,8 @@
             <div v-if="chat.messages && chat.messages.length > 0" class="text-gray-500 truncate mt-0.5 leading-snug"
               style="font-size: 13px;">
               <span>{{ chat.messages[chat.messages.length - 1].sender_id == userId ? 'You: ' : '' }}</span>
-              <span v-if="chat.messages[chat.messages.length - 1].message">{{ chat.messages[chat.messages.length - 1].message }}</span>
+              <span v-if="chat.messages[chat.messages.length - 1].message === '__LIKE_ICON__'" class="italic">sent a like</span>
+              <span v-else-if="chat.messages[chat.messages.length - 1].message">{{ chat.messages[chat.messages.length - 1].message }}</span>
               <span v-else-if="chat.messages[chat.messages.length - 1].attachment" class="italic">
                 {{ isImageAttachment(chat.messages[chat.messages.length - 1].attachment) ? 'sent a photo' : 'sent a file' }}
               </span>

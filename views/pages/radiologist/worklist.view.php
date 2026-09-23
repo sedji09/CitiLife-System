@@ -1375,10 +1375,11 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
         if (filterDate) filterDate.addEventListener('change', onFilterSortChange);
         if (sortOption) sortOption.addEventListener('change', onFilterSortChange);
 
-        function handleHighlight() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const highlightCase = urlParams.get('highlight_case') || urlParams.get('highlight') || urlParams.get('case_id');
-            if (!highlightCase) return;
+        // Read URL params before they get wiped by switchRadTab during initialization
+        const initialUrlParams = new URLSearchParams(window.location.search);
+        window.locateAndHighlight = function(highlightCaseId) {
+            const highlightCase = highlightCaseId || initialUrlParams.get('highlight_case') || initialUrlParams.get('highlight') || initialUrlParams.get('case_id');
+            if (!highlightCase) return false;
 
             // Search in Pending Worklist
             const mainRows = document.querySelectorAll('.record-row');
@@ -1478,19 +1479,23 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                         banner.style.transition = 'opacity 0.5s';
                         banner.style.opacity = '0';
                         setTimeout(() => banner.remove(), 500);
-                    }, 6000);
+                    }, 8000);
 
                     try {
                         window.history.replaceState(null, document.title, window.location.pathname);
                     } catch (e) {}
                 }, 200);
+
+                return true;
             }
-        }
+
+            return false;
+        };
 
         // Restore saved filters, page, and active tab from session or URL
         restoreWorklistState();
 
-        handleHighlight();
+        window.locateAndHighlight();
 
         // Clean URL address bar so ?branch=... &highlight_case=... are never left exposed
         try {
