@@ -3,6 +3,8 @@
 namespace App\Controllers\radtech;
 
 use Exception;
+use Throwable;
+use PDO;
 use DateTime;
 use CaseModel;
 use NotificationModel;
@@ -605,7 +607,7 @@ class PatientDetailsController
                         WHERE id = ? AND role = 'radiologist'
                     ");
                     $chkStmt->execute([$selectedRadId]);
-                    $chkRad = $chkStmt->fetch(PDO::FETCH_ASSOC);
+                    $chkRad = $chkStmt->fetch(\PDO::FETCH_ASSOC);
 
                     if (!$chkRad || $chkRad['status'] !== 'Active') {
                         $errorMsg = "The selected radiologist account is inactive or not found.";
@@ -648,7 +650,7 @@ class PatientDetailsController
                         $errorMsg = $result['message'];
                     }
                 }
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $errorMsg = "Error: " . $e->getMessage();
             }
         }
