@@ -318,8 +318,8 @@ foreach ($allServices as $service) {
 </div>
 
 <!-- Assign Exam Modal -->
-<div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-    <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 border shadow-2xl rounded-2xl bg-white">
+<div id="assignModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-start justify-center z-50 hidden p-4 overflow-y-auto">
+    <div class="w-full max-w-lg p-6 border shadow-2xl rounded-2xl bg-white overflow-visible my-10 relative">
         <div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
             <div id="assignModalHeaderIcon" class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg border border-indigo-200">
                 <i data-lucide="clipboard-list" class="w-6 h-6"></i>
