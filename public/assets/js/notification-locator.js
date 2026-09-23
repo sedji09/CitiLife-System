@@ -126,14 +126,14 @@
         } catch (e) {}
     }
 
-    function universalLocate(targetId) {
+    function universalLocate(targetId, requestedTab = null) {
         if (!targetId) return false;
         const normalized = cleanTargetString(targetId);
 
         // 1. Try page-specific highlight function first if registered
         if (typeof window.handlePageHighlight === 'function') {
             try {
-                if (window.handlePageHighlight(targetId)) {
+                if (window.handlePageHighlight(targetId, requestedTab)) {
                     cleanUrlParams();
                     return true;
                 }
@@ -227,24 +227,28 @@
     }
 
     // Expose global locator
-    window.locateAndHighlight = function (targetId) {
+    window.locateAndHighlight = function (targetId, requestedTab = null) {
         if (!targetId) {
             const params = new URLSearchParams(window.location.search);
             targetId = params.get('highlight') || params.get('highlight_case') || params.get('highlight_req') || params.get('case_number') || params.get('case_id');
+            if (!requestedTab) {
+                requestedTab = params.get('tab');
+            }
         }
         if (!targetId) return false;
 
-        return universalLocate(targetId);
+        return universalLocate(targetId, requestedTab);
     };
 
     // Auto-execute on page load
     function initAutoHighlight() {
         const params = new URLSearchParams(window.location.search);
         const targetId = params.get('highlight') || params.get('highlight_case') || params.get('highlight_req');
+        const requestedTab = params.get('tab');
         if (targetId) {
             // Slight delay allows Vue/dynamic tables to mount and render first page
             setTimeout(() => {
-                window.locateAndHighlight(targetId);
+                window.locateAndHighlight(targetId, requestedTab);
             }, 300);
         }
     }

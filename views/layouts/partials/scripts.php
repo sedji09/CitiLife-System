@@ -2122,6 +2122,16 @@
             finalUrl = new URL(link, window.location.origin);
           }
 
+          // Smartly ensure tab param exists for queue or dispute notifications
+          if (notif) {
+            const fullText = ((notif.title || '') + ' ' + (notif.message || '')).toLowerCase();
+            if ((fullText.includes('patient in queue') || fullText.includes('ready for x-ray') || fullText.includes('in queue')) && !finalUrl.searchParams.has('tab')) {
+              finalUrl.searchParams.set('tab', 'queue');
+            } else if ((fullText.includes('correction') || fullText.includes('dispute') || fullText.includes('amendment')) && !finalUrl.searchParams.has('tab')) {
+              finalUrl.searchParams.set('tab', 'disputes');
+            }
+          }
+
           // Ensure highlight param exists in URL
           if (!finalUrl.searchParams.has('highlight') && !finalUrl.searchParams.has('highlight_case') && targetHighlight) {
             finalUrl.searchParams.set('highlight', targetHighlight);
@@ -2152,8 +2162,16 @@
             const targetPath = finalUrl.pathname.replace(/\/$/, '').split('/').pop() || 'index.php';
             const currentPath = currentUrl.pathname.replace(/\/$/, '').split('/').pop() || 'index.php';
 
+            const targetTab = finalUrl.searchParams.get('tab');
+            const currentTab = currentUrl.searchParams.get('tab');
+
+            // Handle cross-tab or same-page routing for unified patient-lists / correction-requests
+            const isPatientListPage = ['patient-lists', 'correction-requests', 'correction-request'].includes(targetPath) &&
+                                      ['patient-lists', 'correction-requests', 'correction-request'].includes(currentPath);
+
             const isSamePage = (targetPath === currentPath && (targetPageParam || '') === (currentPageParam || '')) ||
-                               (finalUrl.pathname === currentUrl.pathname && (targetPageParam || '') === (currentPageParam || ''));
+                               (finalUrl.pathname === currentUrl.pathname && (targetPageParam || '') === (currentPageParam || '')) ||
+                               isPatientListPage;
 
             if (isSamePage) {
               this.notificationMenuOpen = false;
@@ -2162,8 +2180,13 @@
                 window.__APP__.currentPath = finalUrl.pathname + finalUrl.search;
               }
               const highlightTarget = finalUrl.searchParams.get('highlight') || finalUrl.searchParams.get('highlight_case') || targetHighlight;
+
+              if (targetTab && typeof window.switchTab === 'function') {
+                window.switchTab(targetTab);
+              }
+
               if (typeof window.locateAndHighlight === 'function') {
-                const located = window.locateAndHighlight(highlightTarget);
+                const located = window.locateAndHighlight(highlightTarget, targetTab);
                 if (located) return;
               }
             }

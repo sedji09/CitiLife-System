@@ -125,13 +125,13 @@
                                      <form method="POST" action="" class="flex items-center justify-center gap-1.5">
                                          <input type="hidden" name="request_id" value="<?= $req['id'] ?>">
                                           <button type="button"
-                                              class="p-1.5 rounded-md border border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                              class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                               onclick="promptApproveRecordRequest(<?= (int)$req['id'] ?>)"
                                               title="Approve Request">
                                               <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                                           </button>
                                           <button type="button"
-                                              class="p-1.5 rounded-md border border-red-300 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-400 hover:text-red-700 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                              class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                               onclick="promptDenyRecordRequest(<?= (int)$req['id'] ?>, '<?= htmlspecialchars($req['patient_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['patient_no'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['requester_branch_name'] ?? 'Requesting Branch', ENT_QUOTES) ?>')"
                                               title="Deny Request">
                                               <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>

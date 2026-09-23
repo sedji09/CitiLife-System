@@ -12,7 +12,7 @@ if (!isset($caseModel)) {
     $caseModel = new \CaseModel($pdo);
 }
 $pendingApprovalCount = count($caseModel->getPendingCases($branchId));
-$currentTab = $_GET['tab'] ?? 'completed';
+$currentTab = $_GET['tab'] ?? 'queue';
 if (isset($page) && in_array($page, ['correction-requests', 'correction-request'], true)) {
     $currentTab = 'disputes';
 }
@@ -20,16 +20,32 @@ if (!empty($_GET['dispute_id']) || !empty($_GET['highlight_dispute_id'])) {
     $currentTab = 'disputes';
 }
 $hlTarget = $_GET['highlight'] ?? $_GET['highlight_case'] ?? $_GET['case_number'] ?? $_GET['case_id'] ?? '';
-if ($hlTarget && empty($_GET['tab'])) {
+if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['correction-requests', 'correction-request'], true))) {
     $normTarget = strtolower(str_replace([' ', '-', '_'], '', $hlTarget));
-    foreach ($disputes as $d) {
-        $cNorm = strtolower(str_replace([' ', '-', '_'], '', $d['case_number'] ?? ''));
-        $dIdNorm = (string) ($d['id'] ?? '');
-        $cIdNorm = (string) ($d['case_id'] ?? '');
-        $pNorm = strtolower(str_replace([' ', '-', '_'], '', $d['patient_number'] ?? ''));
-        if ($normTarget === $cNorm || $normTarget === $dIdNorm || $normTarget === $cIdNorm || $normTarget === $pNorm) {
-            $currentTab = 'disputes';
-            break;
+    $inQueue = false;
+    if (isset($patients) && is_array($patients)) {
+        foreach ($patients as $p) {
+            $pCaseNorm = strtolower(str_replace([' ', '-', '_'], '', $p['case_number'] ?? ''));
+            $pIdNorm = (string)($p['id'] ?? '');
+            if ($normTarget === $pCaseNorm || $normTarget === $pIdNorm) {
+                $inQueue = true;
+                break;
+            }
+        }
+    }
+    if ($inQueue) {
+        $currentTab = 'queue';
+    } else {
+        foreach ($disputes as $d) {
+            if (in_array($d['status'] ?? '', ['Resolved', 'Rejected'], true)) continue;
+            $cNorm = strtolower(str_replace([' ', '-', '_'], '', $d['case_number'] ?? ''));
+            $dIdNorm = (string) ($d['id'] ?? '');
+            $cIdNorm = (string) ($d['case_id'] ?? '');
+            $pNorm = strtolower(str_replace([' ', '-', '_'], '', $d['patient_number'] ?? ''));
+            if ($normTarget === $cNorm || $normTarget === $dIdNorm || $normTarget === $cIdNorm || $normTarget === $pNorm) {
+                $currentTab = 'disputes';
+                break;
+            }
         }
     }
 }
@@ -1892,12 +1908,40 @@ if ($hlTarget && empty($_GET['tab'])) {
     }
     window.switchTab = switchTab;
 
-    window.handlePageHighlight = function (targetId) {
+    window.handlePageHighlight = function (targetId, requestedTab = null) {
         if (!targetId) return false;
         const norm = str => (str || '').toLowerCase().replace(/[\s\-_]/g, '');
         const tNorm = norm(targetId);
 
-        // Check if target is in Correction Requests (disputes)
+        // 1. Explicit tab requested via param or URL search param
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetTab = requestedTab || urlParams.get('tab');
+
+        if (targetTab === 'queue') {
+            switchTab('queue');
+            return initPatientQueue(targetId);
+        }
+        if (targetTab === 'disputes') {
+            switchTab('disputes');
+            return handleDisputesHighlight(targetId);
+        }
+
+        // 2. Check if target is in Patient Queue
+        const queueRows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
+        const matchQueue = queueRows.find(r =>
+            norm(r.dataset.id) === tNorm ||
+            norm(r.dataset.caseId) === tNorm ||
+            norm(r.dataset.patient) === tNorm ||
+            (norm(r.dataset.id) && tNorm.includes(norm(r.dataset.id))) ||
+            (norm(r.dataset.caseId) && tNorm.includes(norm(r.dataset.caseId)))
+        );
+
+        if (matchQueue) {
+            switchTab('queue');
+            return initPatientQueue(targetId);
+        }
+
+        // 3. Check if target is in Correction Requests (disputes)
         const disputeRows = Array.from(document.querySelectorAll('#disputes-table-body tr.dispute-table-row'));
         const matchDispute = disputeRows.find(r =>
             norm(r.dataset.case) === tNorm ||
@@ -1913,30 +1957,15 @@ if ($hlTarget && empty($_GET['tab'])) {
             return handleDisputesHighlight(targetId);
         }
 
-        // Check if target is in Patient Queue
-        const queueRows = Array.from(document.querySelectorAll('#table-body tr.record-row'));
-        const matchQueue = queueRows.find(r =>
-            norm(r.dataset.id) === tNorm ||
-            norm(r.dataset.caseId) === tNorm ||
-            norm(r.dataset.patient) === tNorm ||
-            (norm(r.dataset.id) && tNorm.includes(norm(r.dataset.id))) ||
-            (norm(r.dataset.caseId) && tNorm.includes(norm(r.dataset.caseId)))
-        );
-
-        if (matchQueue) {
-            switchTab('queue');
-            return initPatientQueue(targetId);
-        }
-
         // Fallbacks
-        if (handleDisputesHighlight(targetId)) return true;
         if (initPatientQueue(targetId)) return true;
+        if (handleDisputesHighlight(targetId)) return true;
 
         return false;
     };
 
-    window.locateAndHighlight = function (targetId) {
-        return window.handlePageHighlight(targetId);
+    window.locateAndHighlight = function (targetId, requestedTab = null) {
+        return window.handlePageHighlight(targetId, requestedTab);
     };
 
     document.addEventListener('DOMContentLoaded', () => {

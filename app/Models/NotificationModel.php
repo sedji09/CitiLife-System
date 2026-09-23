@@ -12,6 +12,12 @@ class NotificationModel {
             if (strpos($link, '//') === 0 && strpos($link, '://') === false) {
                 $link = '/' . ltrim($link, '/');
             }
+            if (stripos($title, 'Queue') !== false && strpos($link, 'patient-lists') !== false && strpos($link, 'tab=') === false) {
+                $link = str_replace('patient-lists?', 'patient-lists?tab=queue&', $link);
+                if (strpos($link, 'tab=queue') === false) {
+                    $link .= (strpos($link, '?') !== false ? '&' : '?') . 'tab=queue';
+                }
+            }
         }
         $stmt = $this->pdo->prepare("INSERT INTO notifications (user_id, role, branch_id, title, message, link) VALUES (?, ?, ?, ?, ?, ?)");
         return $stmt->execute([$userId, $role, $branchId, $title, $message, $link]);

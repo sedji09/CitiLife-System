@@ -157,7 +157,7 @@
                                                 <input type="hidden" name="action" value="verify">
                                                 <button type="button" title="Verify Payment"
                                                     onclick="confirmAction(this.form, 'verify')"
-                                                    class="inline-flex items-center justify-center p-1.5 rounded-md bg-green-500 border border-green-500 text-white hover:bg-green-600 hover:border-green-600 transition shadow-sm">
+                                                    class="inline-flex items-center justify-center p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm cursor-pointer">
                                                     <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -166,7 +166,7 @@
                                                 <input type="hidden" name="action" value="reject">
                                                 <button type="button" title="Reject Payment"
                                                     onclick="confirmAction(this.form, 'reject')"
-                                                    class="inline-flex items-center justify-center p-1.5 rounded-md bg-red-50 border border-red-300 text-red-600 hover:bg-red-100 hover:border-red-400 hover:text-red-700 transition shadow-sm">
+                                                    class="inline-flex items-center justify-center p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm cursor-pointer">
                                                     <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
                                                 </button>
                                             </form>
@@ -477,14 +477,14 @@
                     <form method="POST" class="inline-block m-0">
                         <input type="hidden" name="payment_id" value="${payment.id}">
                         <input type="hidden" name="action" value="verify">
-                        <button type="button" title="Verify Payment" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-500 border border-green-500 text-white hover:bg-green-600 hover:border-green-600 transition">
+                        <button type="button" title="Verify Payment" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition cursor-pointer">
                             <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                         </button>
                     </form>
                     <form method="POST" class="inline-block m-0">
                         <input type="hidden" name="payment_id" value="${payment.id}">
                         <input type="hidden" name="action" value="reject">
-                        <button type="button" title="Reject Payment" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 border border-red-400 text-red-600 hover:bg-red-100 hover:border-red-500 hover:text-red-700 transition">
+                        <button type="button" title="Reject Payment" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition cursor-pointer">
                             <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
                         </button>
                     </form>
