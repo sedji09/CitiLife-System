@@ -581,6 +581,14 @@ $xrayCategories = array_keys($groupedRates);
         </div>
     </div>
     <script>
+        <?php if (!isset($_SESSION['role'])): ?>
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('citilife_active_chats_')) {
+                localStorage.removeItem(key);
+            }
+        });
+        <?php endif; ?>
+
         <?php if (isset($_GET['login']) || isset($_GET['error']) || isset($_GET['locked'])): ?>
             document.addEventListener("DOMContentLoaded", () => {
                 // Ensure the function exists before calling

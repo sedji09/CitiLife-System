@@ -653,6 +653,14 @@
             }
         });
 
+        // Auto-refresh the page every 30 seconds if the user is not actively searching
+        setInterval(() => {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput && searchInput.value.trim() === '') {
+                window.location.reload();
+            }
+        }, 30000);
+
         // Refresh Icons
         if (window.lucide) {
             window.lucide.createIcons();

@@ -543,7 +543,7 @@
 
         // ── Restore active chat windows from last session ──
         try {
-          const saved = JSON.parse(localStorage.getItem('citilife_active_chats') || '[]');
+          const saved = JSON.parse(localStorage.getItem('citilife_active_chats_' + this.userId) || '[]');
           if (Array.isArray(saved) && saved.length > 0) {
             saved.forEach(meta => {
               this.activeChats.push({
@@ -1118,7 +1118,7 @@
             role: c.role,
             minimized: c.minimized
           }));
-          localStorage.setItem('citilife_active_chats', JSON.stringify(toSave));
+          localStorage.setItem('citilife_active_chats_' + this.userId, JSON.stringify(toSave));
         } catch (e) { console.warn('Could not save chats:', e); }
       },
       scrollToBottom(chat) {

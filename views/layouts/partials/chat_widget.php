@@ -155,15 +155,21 @@
                     </div>
                   </a>
 
-                  <!-- Text Message Bubble (font: 13px, limit ~22 characters/spaces per line before auto-wrap) -->
+                  <!-- Text Message Bubble or Like Icon -->
                   <div class="relative group/bubble w-fit">
-                    <div v-if="msg.message"
+                    <div v-if="msg.message === '👍'"
+                         class="px-1 py-1"
+                         :class="msg.sender_id == userId ? 'text-red-600' : 'text-gray-400'">
+                         <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+                           <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.77-.7-1.28-.56L10.5 4.3 6.8 8.01C6.29 8.52 6 9.22 6 9.94V19c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-.12z"/>
+                         </svg>
+                    </div>
+                    <div v-else-if="msg.message"
                       class="px-3 py-1.5 text-[13px] leading-[18px] select-text shadow-xs transition-all w-fit"
                       :style="(msg.sender_id != userId ? 'background-color: #f0f2f5; color: #050505;' : 'background-color: #dc2626; color: #ffffff;') + ' max-width: 205px; overflow-wrap: anywhere; word-break: normal; ' + getBubbleRadius(chat, msg, msgIndex)"
                       :class="msg.sender_id == userId ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-900'">
                       {{ msg.message }}
                     </div>
-
                   </div>
 
                   <!-- Seen indicator: Miniature recipient avatar for Seen or 'Sent' text -->

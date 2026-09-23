@@ -516,6 +516,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
     <script>
         sessionStorage.clear();
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('citilife_active_chats_')) {
+                localStorage.removeItem(key);
+            }
+        });
 
         function toggleModalPassword(inputId, btn) {
             const input = document.getElementById(inputId);
