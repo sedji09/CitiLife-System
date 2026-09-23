@@ -1173,13 +1173,13 @@ $catBadgeLabel = match ($dCategory) {
                                                 <div>
                                                     <span
                                                         class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                                                    <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($reportData['findings'] ?? '—')) ?></div>
+                                                    <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($reportData['findings'] ?? '—')) ?></div>
                                                 </div>
                                                 <?php if (!empty($reportData['impression'])): ?>
                                                     <div>
                                                         <span
                                                             class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                                        <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($reportData['impression'])) ?></div>
+                                                        <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-100 rounded-lg p-2.5 shadow-sm custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($reportData['impression'])) ?></div>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>
@@ -1191,13 +1191,13 @@ $catBadgeLabel = match ($dCategory) {
                                         <div>
                                             <span
                                                 class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Findings</span>
-                                            <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($findingsRaw ?: '—')) ?></div>
+                                            <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-white border border-gray-150 rounded-lg p-3 shadow-sm custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($findingsRaw ?: '—')) ?></div>
                                         </div>
                                         <?php if (!empty($impressionRaw)): ?>
                                             <div>
                                                 <span
                                                     class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Impression</span>
-                                                <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($impressionRaw)) ?></div>
+                                                <div class="text-sm text-gray-855 whitespace-pre-line leading-relaxed bg-red-50/50 border border-red-100 rounded-lg p-3 shadow-sm custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($impressionRaw)) ?></div>
                                             </div>
                                         <?php endif; ?>
                                     </div>

@@ -467,58 +467,96 @@ $backUrl   = url($backPage . $backQuery);
     <!-- RIGHT SIDE: Findings Report — Read + Inline Edit -->
     <div class="bg-white border text-sm border-gray-200 shadow-sm rounded-xl flex flex-col p-3 border-t-gray-100">
 
-        <div class="bg-red-600 px-5 h-14 flex items-center gap-3 text-white shadow-lg z-10 w-full rounded-t-xl">
-            <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
-                <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+        <?php
+        // Parse multi-exam json if present
+        $rawF    = $caseDetails['findings'] ?? '';
+        $isMulti = false;
+        $reports = [];
+        if (!empty($rawF) && ($rawF[0] === '{' || $rawF[0] === '[')) {
+            $decoded = json_decode($rawF, true);
+            if (is_array($decoded)) {
+                $isMulti = true;
+                $reports = $decoded;
+            }
+        }
+        $multiExamCount = count($reports);
+        ?>
+
+        <div class="bg-red-600 px-5 h-14 flex items-center justify-between text-white shadow-lg z-10 w-full rounded-t-xl select-none">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 shadow-inner">
+                    <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
             </div>
-            <span class="font-black text-xs uppercase tracking-widest">Findings Report</span>
+
+            <?php if ($isMulti && $multiExamCount > 1): ?>
+                <div class="flex items-center gap-2">
+                    <span id="rad-findings-counter" class="text-xs font-bold text-white/90 select-none">1 of <?= $multiExamCount ?></span>
+                    <!-- Central Navigation Pill (< | >) -->
+                    <div class="flex items-center bg-black/20 rounded-xl p-1 gap-1 border border-white/5 shadow-inner">
+                        <button type="button" 
+                            id="prev-rad-findings-btn" 
+                            onclick="switchRadFindingsSlide(-1)" 
+                            class="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer" 
+                            title="Previous Exam" 
+                            disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <div class="w-px h-3.5 bg-white/20 mx-0.5"></div>
+                        <button type="button" 
+                            id="next-rad-findings-btn" 
+                            onclick="switchRadFindingsSlide(1)" 
+                            class="w-7 h-7 flex items-center justify-center hover:bg-white/10 rounded-lg transition-all active:scale-95 disabled:opacity-20 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer" 
+                            title="Next Exam">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="flex-1 flex flex-col px-3 pb-2 mt-4">
 
             <!-- ── READ-ONLY DISPLAY ─────────────────────────────────────── -->
             <div id="findings-readonly" class="space-y-4 flex-1">
-                <?php
-                // Parse multi-exam json if present
-                $rawF    = $caseDetails['findings'] ?? '';
-                $isMulti = false;
-                $reports = [];
-                if (!empty($rawF) && $rawF[0] === '{') {
-                    $decoded = json_decode($rawF, true);
-                    if (is_array($decoded)) {
-                        $isMulti = true;
-                        $reports = $decoded;
-                    }
-                }
-
-                if ($isMulti):
-                    foreach ($reports as $examName => $data):
-                        ?>
-                        <div class="mb-4">
-                            <h4 class="font-bold text-red-600 text-xs mb-2 uppercase"><?= htmlspecialchars($examName) ?></h4>
+                <?php if ($isMulti): ?>
+                    <?php $slideIdx = 0; ?>
+                    <?php foreach ($reports as $examName => $data): ?>
+                        <div class="rad-findings-slide <?= $slideIdx > 0 ? 'hidden' : '' ?>" data-slide-index="<?= $slideIdx ?>">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-bold text-red-600 text-xs uppercase flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                                    <?= htmlspecialchars($examName) ?>
+                                </h4>
+                                <?php if ($multiExamCount > 1): ?>
+                                    <span class="text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full shadow-2xs">
+                                        Exam <?= ($slideIdx + 1) ?> of <?= $multiExamCount ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                             <div class="mb-3">
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
-                                <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($data['findings'] ?: 'None')) ?></div>
+                                <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-white px-4 py-3 text-sm text-gray-800 whitespace-pre-line custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($data['findings'] ?: 'None')) ?></div>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
-                                <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($data['impression'] ?: 'None')) ?></div>
+                                <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($data['impression'] ?: 'None')) ?></div>
                             </div>
                         </div>
-                        <?php
-                    endforeach;
-                else:
-                    ?>
+                        <?php $slideIdx++; ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <!-- Findings -->
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Findings</label>
-                        <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($caseDetails['findings'] ?: 'None')) ?></div>
+                        <div class="ro-findings w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($caseDetails['findings'] ?: 'None')) ?></div>
                     </div>
 
                     <!-- Impression -->
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Impression</label>
-                        <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line max-h-40 overflow-y-auto custom-scrollbar break-words"><?= htmlspecialchars(trim($caseDetails['impression'] ?: 'None')) ?></div>
+                        <div class="ro-impression w-full rounded-lg border border-gray-100 border-l-4 border-l-red-500 bg-gray-50 px-4 py-3 text-sm text-gray-800 whitespace-pre-line custom-scrollbar break-words" style="max-height: 160px; overflow-y: auto;"><?= htmlspecialchars(trim($caseDetails['impression'] ?: 'None')) ?></div>
                     </div>
                 <?php endif; ?>
             </div>
@@ -538,6 +576,32 @@ $backUrl   = url($backPage . $backQuery);
 </div>
 
 <script>
+    function switchRadFindingsSlide(direction) {
+        const slides = Array.from(document.querySelectorAll('.rad-findings-slide'));
+        if (!slides.length) return;
+
+        let currentIndex = slides.findIndex(s => !s.classList.contains('hidden'));
+        if (currentIndex === -1) currentIndex = 0;
+
+        let nextIndex = currentIndex + direction;
+        if (nextIndex < 0) nextIndex = 0;
+        if (nextIndex >= slides.length) nextIndex = slides.length - 1;
+        if (nextIndex === currentIndex) return;
+
+        slides[currentIndex].classList.add('hidden');
+        slides[nextIndex].classList.remove('hidden');
+
+        const counter = document.getElementById('rad-findings-counter');
+        if (counter) {
+            counter.textContent = `${nextIndex + 1} of ${slides.length}`;
+        }
+
+        const prevBtn = document.getElementById('prev-rad-findings-btn');
+        const nextBtn = document.getElementById('next-rad-findings-btn');
+        if (prevBtn) prevBtn.disabled = (nextIndex === 0);
+        if (nextBtn) nextBtn.disabled = (nextIndex === slides.length - 1);
+    }
+
     if (window.history && window.history.replaceState) {
         try {
             const cleanUrl = window.location.pathname;
