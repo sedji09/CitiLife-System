@@ -170,9 +170,6 @@
                             <i data-lucide="trash-2" class="w-3.5 h-3.5 text-gray-400"></i>
                             Trash Bin (<?= count($trashBackups) ?>)
                         </button>
-                        <span class="px-2.5 py-1 bg-white border border-gray-200 rounded-md text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-none hidden sm:inline-block">
-                            Local Storage
-                        </span>
                     </div>
                 </div>
 
