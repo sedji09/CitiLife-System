@@ -1409,12 +1409,13 @@ if ($hlTarget && empty($_GET['tab'])) {
                                 $isResolved = ($currStatus === 'Resolved');
                                 $isDemoFixed = !empty($d['demographics_fixed']);
                                 $isPendingVerify = in_array($currStatus, ['Correction Completed', 'Pending RadTech Verification']);
+                                $isReportAmended = !empty($d['is_amended']) || !empty($d['radiologist_amended']);
 
                                 $hasPatientInfo = ($cat === 'demographic_error' || $cat === 'both_error' || $cat === 'both_template_error' || $catLabel === 'Patient Info Error' || $catLabel === 'Typo & Info' || $catLabel === 'Info & Rename' || stripos($fullText, 'First Name:') !== false || stripos($fullText, 'Last Name:') !== false || stripos($fullText, 'Wrong Patient Info') !== false);
                                 $hasFindingsOrTypo = ($cat === 'findings_error' || $cat === 'both_error' || $cat === 'template_error' || $cat === 'both_template_error' || $cat === 'other' || $cat === 'other_error' || $catLabel === 'Typo & Info' || $catLabel === 'Typographical Error' || $catLabel === 'Template Rename' || $catLabel === 'Info & Rename' || $catLabel === 'Other Concern' || stripos($fullText, 'Typographical Error') !== false || stripos($fullText, 'Findings') !== false || stripos($fullText, 'Template Rename') !== false || stripos($fullText, 'Other Concern') !== false);
 
                                 $showDemoBtn = $hasPatientInfo && !$isDemoFixed && !$isResolved && !$isPendingVerify;
-                                $showAmendBtn = ($hasFindingsOrTypo || !$hasPatientInfo) && !$isResolved && ($cat !== 'demographic_error') && !$isPendingVerify;
+                                $showAmendBtn = ($hasFindingsOrTypo || !$hasPatientInfo) && !$isResolved && ($cat !== 'demographic_error') && !$isPendingVerify && !$isReportAmended;
 
                                 $amendBtnTitle = ($cat === 'template_error') ? 'Rename X-ray Template' : (($cat === 'both_template_error') ? 'Patient Info & Rename X-ray Template' : 'Edit / Amend Findings Report');
 

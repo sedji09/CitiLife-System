@@ -387,6 +387,10 @@ class PatientDetailsController
                     $isDemoFixed = !empty($disputeData['demographics_fixed']);
                     $demographicsPending = $hasDemoChanges && !$isDemoFixed;
 
+                    // Always mark radiologist_amended = 1 on the dispute record
+                    $pdo->prepare("UPDATE result_disputes SET radiologist_amended = 1 WHERE id = ?")
+                        ->execute([$dId]);
+
                     if ($demographicsPending) {
                         // Demographics still pending: keep dispute in progress and DO NOT release case yet
                         $disputeMdl->advanceStatus($dId, 'Correction in Progress');
@@ -395,6 +399,7 @@ class PatientDetailsController
                             ->execute([$caseId]);
 
                         $_SESSION['flash_success'] = 'Report amendments saved. Please proceed to Fix & Resolve the patient information to fully resolve this request.';
+                        redirect(url("correction-requests?highlight_dispute_id=" . $dId));
                     } else {
                         // Demographics already fixed or not required: resolve dispute and release case
                         if ($action === 'save_and_release' || $action === 'submit') {
@@ -408,16 +413,21 @@ class PatientDetailsController
                             redirect(url("correction-requests"));
                         } else {
                             $disputeMdl->advanceStatus($dId, 'Correction Completed');
+                            $pdo->prepare("UPDATE cases SET is_amended = 1, status_timestamp = NOW(), rad_activity_status = 'inactive', rad_last_active = '1970-01-01 00:00:00' WHERE id = ?")
+                                ->execute([$caseId]);
                             $_SESSION['flash_success'] = 'Amendment saved. Dispute marked as Correction Completed.';
+                            redirect(url("correction-requests"));
                         }
                     }
                 } else {
                     $_SESSION['flash_success'] = 'Report amendments successfully saved.';
+                    $fromParam = $_GET['from'] ?? 'queue';
+                    if ($fromParam === 'branch-xray-cases') {
+                        redirect(url("branch-xray-cases"));
+                    } else {
+                        redirect(url("patient-lists"));
+                    }
                 }
-
-                $fromParam = $_GET['from'] ?? ($dId ? 'disputes' : 'queue');
-                $qs = "role=radtech&id=" . $caseId . "&from=" . urlencode($fromParam) . ($dId ? "&dispute_id=" . $dId : "") . "&saved=1";
-                redirect(url("patient-details?" . $qs));
             } catch (\Throwable $e) {
                 $errorMsg = "Error saving amendment: " . $e->getMessage();
             }
@@ -655,8 +665,25 @@ class PatientDetailsController
                 }
             }
 
+            // If report amendment was already completed for this dispute and demographics are pending, redirect to correction-requests
+            $isReportAmended = !empty($activeDispute['radiologist_amended']) || !empty($caseDetails['is_amended']);
+            if ($activeDispute && $isReportAmended) {
+                $dCat = $activeDispute['dispute_category'] ?? '';
+                $dDesc = $activeDispute['description'] ?? '';
+                $hasDemoChanges = in_array($dCat, ['both_error', 'both_template_error', 'demographic_error'])
+                    || (stripos($dDesc, 'First Name:') !== false)
+                    || (stripos($dDesc, 'Last Name:') !== false)
+                    || (stripos($dDesc, 'Wrong Patient Info') !== false)
+                    || (stripos($dDesc, 'Demographics Note:') !== false);
+                $isDemoFixed = !empty($activeDispute['demographics_fixed']);
+                if ($hasDemoChanges && !$isDemoFixed) {
+                    $_SESSION['flash_info'] = 'Report amendment has already been saved for this request. Please fix patient information.';
+                    redirect(url("correction-requests?highlight_dispute_id=" . (int)$activeDispute['id']));
+                }
+            }
+
             // 5. Amend Mode: Error report resolution is strictly between Patient & RadTech
-            $isAmendMode = !empty($activeDispute);
+            $isAmendMode = !empty($activeDispute) && !$isReportAmended;
 
             // When RadTech opens the case in amend mode and dispute is still 'Issue Reported', advance to 'For RadTech Review'
             $currentRole = $_SESSION['role'] ?? 'radtech';

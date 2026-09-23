@@ -484,7 +484,9 @@ $catBadgeLabel = match ($dCategory) {
                      ═════════════════════════════════════════════════════════════════ -->
             <?php
             $isEdited = (isset($_GET['saved']) && $_GET['saved'] == '1')
-                || in_array($activeDispute['status'] ?? '', ['Resolved', 'Correction Completed', 'Pending RadTech Verification']);
+                || in_array($activeDispute['status'] ?? '', ['Resolved', 'Correction Completed', 'Pending RadTech Verification'])
+                || !empty($activeDispute['radiologist_amended'])
+                || !empty($caseDetails['is_amended']);
             ?>
             <div class="rounded-xl border border-amber-300 bg-white shadow-sm flex flex-col h-full overflow-hidden">
                 <!-- Header -->
