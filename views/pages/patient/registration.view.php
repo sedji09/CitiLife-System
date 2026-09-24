@@ -50,15 +50,16 @@
         </div>
     <?php endif; ?>
 
-    <?php if ($systemStatus === 'closed'): ?>
-        <div class="rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3 mb-5 shadow-sm">
-            <i data-lucide="info" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
-            <div class="text-sm text-red-800 leading-relaxed whitespace-pre-wrap">
-                <strong class="block mb-1 text-red-900 flex items-center gap-2">Service Advisory</strong>
-                <?= htmlspecialchars($closedMessage) ?>
-            </div>
+    <?php
+    $showAdvisoryInitially = ($systemStatus === 'closed' && in_array('all', $closedBranchesArr));
+    ?>
+    <div id="serviceAdvisoryBox" class="rounded-xl bg-red-50 border border-red-200 p-4 flex items-start gap-3 mb-5 shadow-sm transition-all duration-200 <?= $showAdvisoryInitially ? '' : 'hidden' ?>">
+        <i data-lucide="info" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
+        <div class="text-sm text-red-800 leading-relaxed whitespace-pre-wrap">
+            <strong class="block mb-1 text-red-900 flex items-center gap-2">Service Advisory</strong>
+            <span id="serviceAdvisoryMessage"><?= htmlspecialchars($closedMessage) ?></span>
         </div>
-    <?php endif; ?>
+    </div>
 
     <div class="flex flex-col sm:flex-row gap-5">
         <!-- Request form -->
@@ -80,13 +81,13 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Branch <span
                             class="text-red-500">*</span></label>
-                    <select name="branch_id" id="branch_select" required
-                        class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400">
-                        <option value="" disabled selected>Select branch</option>
+                    <select name="branch_id" id="branch_select" required <?= !$isClinicOpen ? 'disabled' : '' ?>
+                        class="w-full rounded-xl border border-gray-200 <?= !$isClinicOpen ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-50 text-gray-900' ?> px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-400 focus:border-red-400">
+                        <option value="" disabled selected><?= !$isClinicOpen ? 'Clinic is currently closed' : 'Select branch' ?></option>
                         <?php foreach ($branches as $b): ?>
-                            <?php $disabled = $isBranchClosed($b['id']) ? 'disabled' : ''; ?>
-                            <option value="<?= $b['id'] ?>" <?= $disabled ?>>
-                                <?= htmlspecialchars($b['name']) ?>     <?= $disabled ? '(Temporarily Closed)' : '' ?>
+                            <?php $isClosed = $isBranchClosed($b['id']); ?>
+                            <option value="<?= $b['id'] ?>" data-closed="<?= $isClosed ? '1' : '0' ?>">
+                                <?= htmlspecialchars($b['name']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -95,6 +96,7 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Body Part to Examine <span
                             class="text-gray-500 font-normal">(Optional)</span></label>
+                    <div id="examSelectorContainer" class="transition-all duration-200">
                     <?php
                     // Retrieve dynamic categories from DB and standard anatomical parts
                     $dbCategories = !empty($groupedServices) ? array_keys($groupedServices) : [];
@@ -127,25 +129,30 @@
                     $examInputName = 'exam_type';
                     $placeholderText = 'Select body parts (e.g. Chest, Skull)...';
                     $isRequired = false;
+                    $isReadOnly = !$isClinicOpen;
+                    $readOnlyPlaceholder = 'Clinic is currently closed';
                     include basePath('views/components/exam-selector.php');
                     ?>
-                    <p class="text-xs text-gray-500 mt-2">
+                    </div>
+                    <p id="examNoteText" class="text-xs text-gray-500 mt-2 <?= (!$isClinicOpen || ($systemStatus === 'closed' && in_array('all', $closedBranchesArr))) ? 'hidden' : '' ?>">
                         Note: The Radiologic Technologist will determine the exact examination type and corresponding
                         fee upon reviewing your request. You will be able to make a payment afterward.
                     </p>
                 </div>
 
-                <?php if ($isClinicOpen && (!in_array('all', $closedBranchesArr) || $systemStatus !== 'closed')): ?>
-                    <button type="submit" id="submit_btn"
-                        class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-5 transition shadow-sm mt-4">
-                        <i data-lucide="send" class="w-4 h-4"></i> Submit Request
-                    </button>
-                <?php else: ?>
-                    <button type="button" disabled
-                        class="flex items-center justify-center gap-2 w-full rounded-xl bg-gray-400 text-white font-bold text-sm py-3 px-5 transition shadow-sm cursor-not-allowed mt-4">
-                        <i data-lucide="clock" class="w-4 h-4"></i> Clinic Closed
-                    </button>
-                <?php endif; ?>
+                <div id="submitButtonContainer">
+                    <?php if ($isClinicOpen && (!in_array('all', $closedBranchesArr) || $systemStatus !== 'closed')): ?>
+                        <button type="submit" id="submit_btn"
+                            class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-5 transition shadow-sm mt-4">
+                            <i data-lucide="send" class="w-4 h-4"></i> Submit Request
+                        </button>
+                    <?php else: ?>
+                        <button type="button" id="submit_btn" disabled
+                            class="flex items-center justify-center gap-2 w-full rounded-xl bg-gray-400 text-white font-bold text-sm py-3 px-5 transition shadow-sm cursor-not-allowed mt-4">
+                            <i data-lucide="clock" class="w-4 h-4"></i> Clinic Closed
+                        </button>
+                    <?php endif; ?>
+                </div>
             </form>
         </div>
 
@@ -157,12 +164,145 @@
         const form = document.getElementById('patientRequestForm');
         if (!form) return;
 
+        const branchSelect = document.getElementById('branch_select');
+        const advisoryBox = document.getElementById('serviceAdvisoryBox');
+        const submitContainer = document.getElementById('submitButtonContainer');
+        const examContainer = document.getElementById('examSelectorContainer');
+        const examNote = document.getElementById('examNoteText');
+
+        const isClinicOpen = <?= json_encode((bool) $isClinicOpen) ?>;
+        const systemStatus = <?= json_encode($systemStatus) ?>;
+        const isAllClosed = <?= json_encode($systemStatus === 'closed' && in_array('all', $closedBranchesArr)) ?>;
+        const closedMessage = <?= json_encode($closedMessage) ?>;
+
+        function updateBranchStatus() {
+            if (!branchSelect) return;
+
+            if (!isClinicOpen) {
+                branchSelect.disabled = true;
+            }
+
+            const selectedOption = branchSelect.options[branchSelect.selectedIndex];
+            const isOptionClosed = selectedOption && selectedOption.dataset.closed === '1';
+            const isBranchSpecificClosed = isOptionClosed && selectedOption.value !== '';
+            const shouldDisableForm = !isClinicOpen || isAllClosed || (systemStatus === 'closed' && isBranchSpecificClosed);
+
+            // Toggle Announcement / Service Advisory visibility
+            if (isAllClosed || (systemStatus === 'closed' && isBranchSpecificClosed)) {
+                if (advisoryBox) advisoryBox.classList.remove('hidden');
+            } else {
+                if (advisoryBox) advisoryBox.classList.add('hidden');
+            }
+
+            // Toggle Note visibility below exam selector (show only when open)
+            if (examNote) {
+                if (shouldDisableForm) {
+                    examNote.classList.add('hidden');
+                } else {
+                    examNote.classList.remove('hidden');
+                }
+            }
+
+            // Lock / Unlock Exam Selector Component
+            const examComponent = document.querySelector('.exam-ms-component');
+            if (examComponent) {
+                const msBox = examComponent.querySelector('.exam-ms-box');
+                const searchInput = examComponent.querySelector('.exam-ms-input');
+                const dropdown = examComponent.querySelector('.exam-ms-dropdown');
+                const hiddenInput = examComponent.querySelector('.exam-ms-hidden-input');
+
+                if (shouldDisableForm) {
+                    examComponent.setAttribute('data-readonly', 'true');
+                    if (dropdown) dropdown.classList.add('hidden');
+                    if (msBox) {
+                        msBox.classList.add('bg-gray-100', 'cursor-not-allowed', 'pointer-events-none');
+                        msBox.classList.remove('bg-white', 'cursor-text');
+                    }
+                    if (searchInput) {
+                        searchInput.disabled = true;
+                        if (!searchInput.getAttribute('data-orig-placeholder')) {
+                            searchInput.setAttribute('data-orig-placeholder', searchInput.getAttribute('data-placeholder') || searchInput.placeholder);
+                        }
+                        searchInput.placeholder = 'Clinic is currently closed';
+                    }
+                    if (hiddenInput) {
+                        hiddenInput.disabled = true;
+                    }
+                    if (examContainer) {
+                        examContainer.classList.add('opacity-60', 'pointer-events-none', 'cursor-not-allowed');
+                    }
+                } else {
+                    examComponent.removeAttribute('data-readonly');
+                    if (msBox) {
+                        msBox.classList.remove('bg-gray-100', 'cursor-not-allowed', 'pointer-events-none');
+                        msBox.classList.add('bg-white', 'cursor-text');
+                    }
+                    if (searchInput) {
+                        searchInput.disabled = false;
+                        const orig = searchInput.getAttribute('data-orig-placeholder') || searchInput.getAttribute('data-placeholder') || 'Select body parts (e.g. Chest, Skull)...';
+                        searchInput.placeholder = orig;
+                    }
+                    if (hiddenInput) {
+                        hiddenInput.disabled = false;
+                    }
+                    if (examContainer) {
+                        examContainer.classList.remove('opacity-60', 'pointer-events-none', 'cursor-not-allowed');
+                    }
+                }
+            }
+
+            // Update Submit / Clinic Closed Button
+            if (submitContainer) {
+                if (shouldDisableForm) {
+                    submitContainer.innerHTML = `
+                        <button type="button" id="submit_btn" disabled
+                            class="flex items-center justify-center gap-2 w-full rounded-xl bg-gray-400 text-white font-bold text-sm py-3 px-5 transition shadow-sm cursor-not-allowed mt-4">
+                            <i data-lucide="clock" class="w-4 h-4"></i> Clinic Closed
+                        </button>
+                    `;
+                } else {
+                    submitContainer.innerHTML = `
+                        <button type="submit" id="submit_btn"
+                            class="flex items-center justify-center gap-2 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3 px-5 transition shadow-sm mt-4">
+                            <i data-lucide="send" class="w-4 h-4"></i> Submit Request
+                        </button>
+                    `;
+                }
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        if (branchSelect) {
+            branchSelect.addEventListener('change', updateBranchStatus);
+            updateBranchStatus();
+        }
+
         let isConfirmed = false;
 
         form.addEventListener('submit', async function (e) {
             if (isConfirmed) return; // Allow form to submit once confirmed
 
             e.preventDefault();
+
+            if (!isClinicOpen) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Clinic Closed',
+                        text: 'Online requests are only accepted during clinic operating hours.',
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-2xl',
+                            confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                        }
+                    });
+                } else {
+                    alert('Online requests are only accepted during clinic operating hours.');
+                }
+                return;
+            }
 
             const branchSelect = form.querySelector('select[name="branch_id"]');
             if (!branchSelect || !branchSelect.value) {
@@ -181,6 +321,25 @@
                     alert('Please select your preferred clinic branch first.');
                 }
                 branchSelect?.focus();
+                return;
+            }
+
+            const selectedOption = branchSelect.options[branchSelect.selectedIndex];
+            if (selectedOption && (selectedOption.dataset.closed === '1' || isAllClosed)) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Clinic Closed',
+                        text: closedMessage || 'This clinic branch is temporarily closed for online requests.',
+                        confirmButtonColor: '#dc2626',
+                        customClass: {
+                            popup: 'rounded-2xl',
+                            confirmButton: 'rounded-xl px-6 py-2.5 font-bold text-sm'
+                        }
+                    });
+                } else {
+                    alert(closedMessage || 'This clinic branch is temporarily closed for online requests.');
+                }
                 return;
             }
 

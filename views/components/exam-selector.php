@@ -83,7 +83,7 @@ $uuid = uniqid('es_');
             <div
                 class="w-full rounded border border-gray-300 bg-gray-100 px-3 py-2 text-sm flex flex-wrap gap-1 items-center min-h-[42px] cursor-not-allowed opacity-90">
                 <?php if (empty($processedSelectedExams)): ?>
-                        <span class="text-gray-500 italic">No exams selected</span>
+                        <span class="text-gray-500 italic"><?= !empty($readOnlyPlaceholder) ? htmlspecialchars($readOnlyPlaceholder) : 'No exams selected' ?></span>
                 <?php else: ?>
                         <?php foreach ($processedSelectedExams as $ex): ?>
                                 <span
@@ -308,12 +308,17 @@ $uuid = uniqid('es_');
                     // Click on an option to select it
                     const option = e.target.closest('.exam-ms-option');
                     if (option) {
+                        const container = option.closest('.exam-ms-component');
+                        if (container && container.getAttribute('data-readonly') === 'true') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                        }
                         if (option.getAttribute('data-allowed') === 'false') {
                             e.preventDefault();
                             e.stopPropagation();
                             return;
                         }
-                        const container = option.closest('.exam-ms-component');
                         const val = option.getAttribute('data-value');
                         const hiddenInput = container.querySelector('.exam-ms-hidden-input');
                         const searchInput = container.querySelector('.exam-ms-input');
