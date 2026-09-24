@@ -11,9 +11,9 @@ $activeServices = $serviceModel->getActiveServices();
 $xrayRates = [];
 foreach ($activeServices as $service) {
     $xrayRates[] = [
-        'name'     => $service['exam_type'],
+        'name' => $service['exam_type'],
         'category' => $service['category'],
-        'price'    => (float)$service['price']
+        'price' => (float) $service['price']
     ];
 }
 
@@ -39,7 +39,8 @@ $xrayCategories = array_keys($groupedRates);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/landing-page-styles.css">
+    <link rel="stylesheet"
+        href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/landing-page-styles.css">
 
 </head>
 
@@ -73,13 +74,15 @@ $xrayCategories = array_keys($groupedRates);
     <!-- ===== HERO ===== -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo" class="hero-logo" onerror="this.style.display='none'">
+            <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo" class="hero-logo"
+                onerror="this.style.display='none'">
             <h1>
                 <?= htmlspecialchars(getSystemName()) ?><br>
                 <span>Radiology Patient Portal</span>
             </h1>
             <p class="hero-desc">
-                Check your examination status, receive updates, and securely access your available radiology reports through the <?= htmlspecialchars(getSystemName()) ?>
+                Check your examination status, receive updates, and securely access your available radiology reports
+                through the <?= htmlspecialchars(getSystemName()) ?>
                 Patient Portal.
             </p>
             <div class="hero-actions">
@@ -222,14 +225,14 @@ $xrayCategories = array_keys($groupedRates);
                 <h2>Services & Rates</h2>
                 <p>Transparent pricing for all our diagnostic procedures. No hidden fees.</p>
             </div>
-            
+
             <div class="pricing-carousel-container">
                 <div class="pricing-carousel-track" id="pricingTrack">
-                    <?php foreach($groupedRates as $category => $rates): ?>
+                    <?php foreach ($groupedRates as $category => $rates): ?>
                         <div class="pricing-slide">
                             <div class="list-group">
                                 <div class="list-group-header"><?= htmlspecialchars($category) ?> X-Rays</div>
-                                <?php foreach($rates as $rate): ?>
+                                <?php foreach ($rates as $rate): ?>
                                     <div class="list-group-item">
                                         <span class="exam-type"><?= htmlspecialchars($rate['name']) ?></span>
                                         <strong class="exam-price">₱ <?= number_format($rate['price']) ?></strong>
@@ -239,18 +242,23 @@ $xrayCategories = array_keys($groupedRates);
                         </div>
                     <?php endforeach; ?>
                 </div>
-                
+
                 <div class="carousel-indicators" id="pricingIndicators">
-                    <?php foreach($xrayCategories as $index => $cat): ?>
-                        <button class="indicator-dot <?= $index === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $index ?>)" aria-label="Go to slide <?= $index + 1 ?>"></button>
+                    <?php foreach ($xrayCategories as $index => $cat): ?>
+                        <button class="indicator-dot <?= $index === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $index ?>)"
+                            aria-label="Go to slide <?= $index + 1 ?>"></button>
                     <?php endforeach; ?>
                 </div>
 
                 <button class="carousel-nav-btn prev" onclick="moveCarousel(-1)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
                 </button>
                 <button class="carousel-nav-btn next" onclick="moveCarousel(1)">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -335,7 +343,7 @@ $xrayCategories = array_keys($groupedRates);
             const input = document.getElementById(inputId);
             const svgPath = btn.querySelector('svg path.eye-path');
             const svgPathStrikethrough = btn.querySelector('svg path.eye-slash-path');
-            
+
             if (input.type === 'password') {
                 input.type = 'text';
                 // Eye slash icon (hide)
@@ -350,10 +358,10 @@ $xrayCategories = array_keys($groupedRates);
         }
 
         // Close on outside click for both modals
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const loginModal = document.getElementById('loginModal');
             const signupModal = document.getElementById('signupModal');
-            
+
             if (event.target == loginModal) {
                 closeLoginModal();
             }
@@ -363,7 +371,7 @@ $xrayCategories = array_keys($groupedRates);
         }
 
         // Listen for messages from the iframe (e.g., to open login modal)
-        window.addEventListener('message', function(event) {
+        window.addEventListener('message', function (event) {
             if (event.data === 'openLoginModal') {
                 closeSignupModal();
                 openLoginModal();
@@ -403,15 +411,30 @@ $xrayCategories = array_keys($groupedRates);
         }
 
         function updateCarousel() {
-            const { track, dots } = getCarouselElements();
-            if (!track) return;
+            const { track, dots, totalSlides } = getCarouselElements();
+            if (!track || totalSlides === 0) return;
+
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+
             // Move track
             track.style.transform = `translateX(-${currentSlide * 100}%)`;
-            
+
             // Update dots
             dots.forEach((dot, index) => {
                 dot.classList.toggle('active', index === currentSlide);
             });
+
+            // Smoothly keep the active line centered within the indicators container if there are many categories
+            const indicatorsContainer = document.getElementById('pricingIndicators');
+            if (indicatorsContainer && dots[currentSlide]) {
+                const activeDot = dots[currentSlide];
+                const targetScroll = activeDot.offsetLeft - (indicatorsContainer.clientWidth / 2) + (activeDot.clientWidth / 2);
+                indicatorsContainer.scrollTo({
+                    left: targetScroll,
+                    behavior: 'smooth'
+                });
+            }
         }
 
         function moveCarousel(direction) {
@@ -428,36 +451,40 @@ $xrayCategories = array_keys($groupedRates);
             updateCarousel();
         }
 
-        // Swipe Support for Carousel (Mobile)
+        // Swipe Support for Carousel (Mobile Friendly with Vertical Scroll Isolation)
         let startX = 0;
+        let startY = 0;
         let isDragging = false;
-        
+
         const carouselContainer = document.querySelector('.pricing-carousel-container');
         if (carouselContainer) {
             carouselContainer.addEventListener('touchstart', (e) => {
-                // Ensure touch is within the track area if needed, but container is fine
+                if (!e.touches || e.touches.length === 0) return;
                 startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
                 isDragging = true;
-            }, {passive: true});
+            }, { passive: true });
 
             carouselContainer.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
-            }, {passive: true});
+            }, { passive: true });
 
             carouselContainer.addEventListener('touchend', (e) => {
                 if (!isDragging) return;
                 isDragging = false;
-                
-                const endX = e.changedTouches[0].clientX;
-                const diffX = startX - endX;
 
-                // If swiped left (next)
-                if (diffX > 50) {
-                    moveCarousel(1);
-                } 
-                // If swiped right (prev)
-                else if (diffX < -50) {
-                    moveCarousel(-1);
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const diffX = startX - endX;
+                const diffY = startY - endY;
+
+                // Only trigger if horizontal swipe is intentional and exceeds vertical scroll
+                if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
+                    if (diffX > 0) {
+                        moveCarousel(1);
+                    } else {
+                        moveCarousel(-1);
+                    }
                 }
             });
         }
@@ -473,21 +500,21 @@ $xrayCategories = array_keys($groupedRates);
                 const response = await fetch(url.toString());
                 if (!response.ok) throw new Error('Network error');
                 const html = await response.text();
-                
+
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                
+
                 const newTrack = doc.getElementById('pricingTrack');
                 const currentTrack = document.getElementById('pricingTrack');
-                
+
                 if (newTrack && currentTrack && newTrack.innerHTML !== currentTrack.innerHTML) {
                     currentTrack.innerHTML = newTrack.innerHTML;
-                    
+
                     const newInd = doc.getElementById('pricingIndicators');
                     const currentInd = document.getElementById('pricingIndicators');
                     if (newInd && currentInd && newInd.innerHTML !== currentInd.innerHTML) {
                         currentInd.innerHTML = newInd.innerHTML;
-                        
+
                         const { totalSlides } = getCarouselElements();
                         if (currentSlide >= totalSlides) currentSlide = 0;
                     }
@@ -508,29 +535,34 @@ $xrayCategories = array_keys($groupedRates);
             <button class="modal-close" onclick="closeLoginModal()">&times;</button>
             <div class="modal-header">
                 <div class="modal-logo-wrapper">
-                    <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo" class="modal-logo" onerror="this.style.display='none'">
+                    <img src="<?= getSystemLogoUrl() ?>" alt="<?= htmlspecialchars(getSystemName()) ?> Logo"
+                        class="modal-logo" onerror="this.style.display='none'">
                 </div>
                 <h2>Patient Portal</h2>
                 <p>Welcome! Access your X-ray records.</p>
             </div>
-            
+
             <form action="<?= url('patient-login') ?>" method="POST" class="modal-form">
                 <?php if (!empty($_GET['redirect']) || !empty($_SESSION['redirect_url'])): ?>
-                    <input type="hidden" name="redirect" value="<?= htmlspecialchars($_GET['redirect'] ?? $_SESSION['redirect_url']) ?>">
+                    <input type="hidden" name="redirect"
+                        value="<?= htmlspecialchars($_GET['redirect'] ?? $_SESSION['redirect_url']) ?>">
                 <?php endif; ?>
                 <?php if (isset($_GET['error'])): ?>
-                    <div style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
+                    <div
+                        style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
                         <?= htmlspecialchars($_GET['error']) ?>
                     </div>
                 <?php endif; ?>
                 <?php if (isset($_GET['locked'])): ?>
-                    <div style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
+                    <div
+                        style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
                         <strong>Access Locked</strong><br>
                         <?= htmlspecialchars($_GET['locked']) ?>
                     </div>
                 <?php endif; ?>
                 <?php if (isset($_GET['warning'])): ?>
-                    <div style="background: #fffbeb; color: #92400e; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fde68a;">
+                    <div
+                        style="background: #fffbeb; color: #92400e; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fde68a;">
                         <?= htmlspecialchars($_GET['warning']) ?>
                     </div>
                 <?php endif; ?>
@@ -538,9 +570,11 @@ $xrayCategories = array_keys($groupedRates);
                     <label for="modal-email">Email Address</label>
                     <div class="input-wrapper">
                         <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                         </svg>
-                        <input type="email" id="modal-email" name="email" required placeholder="Please enter your email">
+                        <input type="email" id="modal-email" name="email" required
+                            placeholder="Please enter your email">
                     </div>
                 </div>
 
@@ -548,13 +582,20 @@ $xrayCategories = array_keys($groupedRates);
                     <label for="modal-password">Password</label>
                     <div class="input-wrapper" style="position: relative;">
                         <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
-                        <input type="password" id="modal-password" name="password" required placeholder="••••••••" style="padding-right: 40px;">
-                        <button type="button" onclick="toggleModalPassword('modal-password', this)" tabindex="-1" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 0; cursor: pointer; color: #9ca3af;">
-                            <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path class="eye-slash-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <input type="password" id="modal-password" name="password" required placeholder="••••••••"
+                            style="padding-right: 40px;">
+                        <button type="button" onclick="toggleModalPassword('modal-password', this)" tabindex="-1"
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 0; cursor: pointer; color: #9ca3af;">
+                            <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path class="eye-path" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path class="eye-slash-path" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </button>
                     </div>
@@ -565,7 +606,7 @@ $xrayCategories = array_keys($groupedRates);
                 </div>
 
                 <button type="submit" class="modal-submit-btn">Log in</button>
-                
+
                 <div class="modal-signup">
                     Don't have an account? <a href="#" onclick="openSignupModal(event)">Sign up here</a>
                 </div>
@@ -575,18 +616,21 @@ $xrayCategories = array_keys($groupedRates);
 
     <!-- ===== SIGNUP MODAL (IFRAME) ===== -->
     <div id="signupModal" class="modal-overlay">
-        <div class="modal-card modal-card-large" style="max-width: 750px; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow-y: auto;">
-            <button class="modal-close" onclick="closeSignupModal()" style="position: absolute; top: 16px; right: 16px; z-index: 100; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">&times;</button>
-            <iframe id="signupIframe" src="<?= url('patient-signup?iframe=1') ?>" style="width: 100%; height: 500px; border: none; border-radius: 24px; transition: height 0.3s ease;"></iframe>
+        <div class="modal-card modal-card-large"
+            style="max-width: 750px; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow-y: auto;">
+            <button class="modal-close" onclick="closeSignupModal()"
+                style="position: absolute; top: 16px; right: 16px; z-index: 100; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">&times;</button>
+            <iframe id="signupIframe" src="<?= url('patient-signup?iframe=1') ?>"
+                style="width: 100%; height: 500px; border: none; border-radius: 24px; transition: height 0.3s ease;"></iframe>
         </div>
     </div>
     <script>
         <?php if (!isset($_SESSION['role'])): ?>
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('citilife_active_chats_')) {
-                localStorage.removeItem(key);
-            }
-        });
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('citilife_active_chats_')) {
+                    localStorage.removeItem(key);
+                }
+            });
         <?php endif; ?>
 
         <?php if (isset($_GET['login']) || isset($_GET['error']) || isset($_GET['locked'])): ?>
