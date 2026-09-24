@@ -850,63 +850,40 @@ img {
 
 @media (max-width: 768px) {
     .pricing-slide {
-        padding: 24px 52px;
-        /* Comfortable side padding so centered nav buttons don't overlap list items */
+        padding: 20px 16px;
+        /* Reduce padding on mobile */
     }
 
     .pricing-carousel-container {
-        padding-bottom: 50px;
+        padding-bottom: 56px;
     }
 
-    /* On mobile, center nav buttons vertically on left and right sides just like desktop */
+    /* On mobile, place nav buttons at bottom corners beside the line indicators */
     .carousel-nav-btn {
-        top: 50%;
-        bottom: auto;
-        transform: translateY(-50%);
-        width: 36px;
-        height: 36px;
+        top: auto;
+        bottom: 12px;
+        transform: none;
+        width: 34px;
+        height: 34px;
         display: flex;
     }
 
     .carousel-nav-btn.prev {
-        left: 10px;
+        left: 14px;
     }
 
     .carousel-nav-btn.next {
-        right: 10px;
+        right: 14px;
     }
 
     .carousel-nav-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
     }
 
     .carousel-indicators {
-        bottom: 20px;
-        max-width: 160px;
-    }
-}
-
-@media (max-width: 380px) {
-    .pricing-slide {
-        padding: 20px 46px;
-    }
-
-    .carousel-nav-btn {
-        width: 32px;
-        height: 32px;
-    }
-
-    .carousel-nav-btn.prev {
-        left: 7px;
-    }
-
-    .carousel-nav-btn.next {
-        right: 7px;
-    }
-
-    .carousel-indicators {
-        max-width: 130px;
+        bottom: 18px;
+        max-width: 150px;
     }
 }
 
