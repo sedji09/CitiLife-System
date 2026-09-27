@@ -10,6 +10,13 @@ $router->post('/', 'App\Controllers\LandingController@index', []);
 $router->get('/index.php', 'App\Controllers\LandingController@index', []);
 $router->post('/index.php', 'App\Controllers\LandingController@index', []);
 
+// Google Search Console Site Verification File
+$router->get('/google210f5a5117fa0e42.html', function () {
+    header('Content-Type: text/html; charset=UTF-8');
+    echo "google-site-verification: google210f5a5117fa0e42.html\n";
+    exit;
+}, []);
+
 // Authentication Routes (Guest Only)
 $router->get('/login', 'App\Controllers\AuthController@login', ['guest']);
 $router->post('/login', 'App\Controllers\AuthController@login', ['guest']);

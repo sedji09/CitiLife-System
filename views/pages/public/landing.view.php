@@ -33,7 +33,7 @@ $xrayCategories = array_keys($groupedRates);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="Citilife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports through the Patient Portal.">
-    <meta name="google-site-verification" content="PASTE_MY_GOOGLE_VERIFICATION_CODE_HERE">
+    <meta name="google-site-verification" content="google210f5a5117fa0e42">
     <title><?= htmlspecialchars(getSystemName()) ?> — Radiology Patient Portal</title>
     <link rel="icon" type="image/png" href="<?= getSystemLogoUrl() ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
