@@ -161,13 +161,12 @@
                                 </div>
 
                                 <!-- Banner Action Footer -->
-                                <div class="mt-3 pt-2.5 border-t border-amber-200/80 flex items-center justify-between flex-wrap gap-2">
-                                    <span class="text-[11px] text-amber-800">
+                                <div class="mt-3 pt-2 border-t border-amber-200/70 flex items-center justify-between flex-wrap gap-2 text-xs">
+                                    <span class="text-amber-800">
                                         Different patient? Enter their middle name above to register as a new record.
                                     </span>
-                                    <button type="button" onclick="dismissNamesakeWarning()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-900 bg-amber-200/70 hover:bg-amber-200 active:bg-amber-300/80 transition shadow-2xs">
-                                        <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
-                                        Not This Patient (Continue as New)
+                                    <button type="button" onclick="dismissNamesakeWarning()" class="font-semibold text-amber-900 hover:text-amber-950 hover:underline transition-colors cursor-pointer">
+                                        Not this patient (Continue as new)
                                     </button>
                                 </div>
                             </div>
