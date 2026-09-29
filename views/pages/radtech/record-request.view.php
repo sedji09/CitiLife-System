@@ -144,7 +144,14 @@
                                 <td class="px-6 py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($req['patient_no']) ?>
                                 </td>
                                 <td class="px-6 py-4 font-medium whitespace-nowrap">
-                                    <?= htmlspecialchars($req['patient_name']) ?></td>
+                                    <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($req['patient_name']) ?></div>
+                                    <?php if (!empty($req['birthdate'])): ?>
+                                        <div class="text-[11px] text-gray-500 font-medium flex items-center gap-1 mt-0.5">
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
+                                            <span><?= date('M d, Y', strtotime($req['birthdate'])) ?><?= !empty($req['age']) ? ' (' . $req['age'] . ' yrs)' : '' ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-6 py-4">
                                     <?php
                                     $exams = array_filter(array_map('trim', explode(',', $req['exam_type'])));
@@ -244,7 +251,7 @@
                 <p class="text-sm text-gray-600 mb-5 text-center px-4">Search for an existing patient case to pull up
                     their records before submitting a formal request to another branch.</p>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                     <div>
                         <label for="search_patient_name"
                             class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
@@ -254,6 +261,15 @@
                         <input type="text" id="search_patient_name" name="search_patient_name" required
                             placeholder="e.g. Juan Dela Cruz"
                             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm placeholder:text-gray-400">
+                    </div>
+                    <div>
+                        <label for="search_patient_birthdate"
+                            class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i> Birthdate <span
+                                class="text-gray-400 text-xs font-normal">(Optional)</span>
+                        </label>
+                        <input type="date" id="search_patient_birthdate" name="search_patient_birthdate"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none transition shadow-sm text-gray-700">
                     </div>
                     <div>
                         <label for="search_request_branch"
@@ -304,6 +320,7 @@
                 <!-- Hidden inputs for actual form submission -->
                 <input type="hidden" name="patient_no" id="modal_patient_no">
                 <input type="hidden" name="patient_name" id="modal_patient_name">
+                <input type="hidden" name="birthdate" id="modal_birthdate">
                 <input type="hidden" name="exam_type" id="modal_exam_type">
                 <input type="hidden" name="request_branch" id="modal_request_branch">
                 <input type="hidden" name="submit_request" value="1">
@@ -315,10 +332,12 @@
                         Request</p>
                     <p class="font-bold text-blue-900 text-lg mb-1" id="display_selected_name"></p>
                     <div
-                        class="flex items-center gap-3 text-xs font-medium text-blue-800 bg-blue-100/50 inline-flex px-2 py-1 rounded">
+                        class="flex flex-wrap items-center gap-2 text-xs font-medium text-blue-800 bg-blue-100/50 inline-flex px-2.5 py-1 rounded">
                         <span>Patient No: <span id="display_selected_patientno" class="font-bold"></span></span>
                         <span class="w-1 h-1 rounded-full bg-blue-300"></span>
                         <span>Case No: <span id="display_selected_caseno" class="font-bold"></span></span>
+                        <span class="w-1 h-1 rounded-full bg-blue-300"></span>
+                        <span>Birthdate: <span id="display_selected_dob" class="font-bold"></span></span>
                     </div>
                     <p class="text-xs font-semibold text-blue-700 mt-2 flex items-center gap-1.5">
                         <i data-lucide="file-scan" class="w-3.5 h-3.5"></i> <span id="display_selected_exam"></span>

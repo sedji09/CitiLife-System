@@ -42,6 +42,16 @@ $caseStats = $caseModel->getDashboardStats($branchId, $dateCondition);
 $pendingApprovalsCount = $patientModel->countPendingPatientsByBranch($branchId);
 $pendingRequestsCount = $recordRequestModel->countPendingRequestsForBranch($branchName);
 
+// Count pending GCash payment verifications for this branch
+$pendingPaymentsStmt = $pdo->prepare("
+    SELECT COUNT(*) 
+    FROM payments p
+    JOIN requests r ON p.request_id = r.id
+    WHERE r.branch_id = ? AND p.status = 'Pending Verification'
+");
+$pendingPaymentsStmt->execute([$branchId]);
+$pendingPaymentsCount = (int)$pendingPaymentsStmt->fetchColumn();
+
 // 3. New Dashboard Metrics (for Branch Admin)
 $casesFilteredCount = $caseModel->getDashboardStats($branchId, $dateCondition)['total'];
 

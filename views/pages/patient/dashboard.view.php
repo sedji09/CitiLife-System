@@ -652,14 +652,13 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         <!-- No patient linked – show registration CTA -->
         <div class="mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
             <div class="mx-auto h-16 w-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                <i data-lucide="user-plus" class="w-8 h-8 text-red-600"></i>
+                <i data-lucide="clipboard-plus" class="w-8 h-8 text-red-600"></i>
             </div>
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Get Started</h3>
-            <p class="text-sm text-gray-500 mb-5">Register as a patient to request X-ray examinations and track your
-                results.</p>
+            <p class="text-sm text-gray-500 mb-5">Request an X-ray examination and track your results online.</p>
             <a href="<?= url('registration') ?>"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
-                <i data-lucide="plus-circle" class="w-4 h-4"></i> Register as Patient
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Request Examination
             </a>
         </div>
     <?php endif; ?>

@@ -15,6 +15,7 @@ if ($role !== 'radtech' && $role !== 'admin' && $role !== 'radiologist') {
 
 $patientName = trim($_GET['patient_name'] ?? '');
 $branch = trim($_GET['branch'] ?? '');
+$birthdate = trim($_GET['birthdate'] ?? '');
 
 if (empty($patientName) || empty($branch)) {
     echo json_encode(['success' => false, 'error' => 'Missing search parameters']);
@@ -22,32 +23,44 @@ if (empty($patientName) || empty($branch)) {
 }
 
 try {
+    $whereConditions = [
+        "b.name = :branch",
+        "c.released = 1",
+        "c.status IN ('Completed', 'Released')",
+        "c.exam_type != 'To be determined'",
+        "(REPLACE(REPLACE(CONCAT(p.first_name, ' ', p.last_name), '-', ''), ' ', '') LIKE :name_clean
+         OR REPLACE(p.first_name, '-', '') LIKE :name_clean
+         OR REPLACE(p.last_name, '-', '') LIKE :name_clean)"
+    ];
+
+    $params = [
+        'branch' => $branch,
+        'name_clean' => '%' . str_replace([' ', '-'], '', $patientName) . '%'
+    ];
+
+    if (!empty($birthdate)) {
+        $whereConditions[] = "p.birthdate = :birthdate";
+        $params['birthdate'] = $birthdate;
+    }
+
+    $whereSql = implode(' AND ', $whereConditions);
+
     $stmt = $pdo->prepare("
         SELECT 
             c.id, p.patient_number, c.case_number, 
-            p.first_name, p.last_name, c.exam_type, b.name as branch_name,
+            p.first_name, p.last_name, p.birthdate,
+            TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age,
+            c.exam_type, b.name as branch_name,
             c.created_at 
         FROM cases c
         INNER JOIN patients p ON c.patient_id = p.id
         LEFT JOIN branches b ON c.branch_id = b.id
-        WHERE 
-            b.name = :branch AND
-            c.released = 1 AND
-            c.status IN ('Completed', 'Released') AND
-            c.exam_type != 'To be determined' AND
-            (REPLACE(REPLACE(CONCAT(p.first_name, ' ', p.last_name), '-', ''), ' ', '') LIKE :name_clean
-             OR REPLACE(p.first_name, '-', '') LIKE :name_clean
-             OR REPLACE(p.last_name, '-', '') LIKE :name_clean)
+        WHERE {$whereSql}
         ORDER BY c.created_at DESC
         LIMIT 50
     ");
     
-    $searchClean = '%' . str_replace([' ', '-'], '', $patientName) . '%';
-    
-    $stmt->execute([
-        'branch' => $branch,
-        'name_clean' => $searchClean
-    ]);
+    $stmt->execute($params);
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

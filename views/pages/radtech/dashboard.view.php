@@ -20,7 +20,8 @@ $periodLabel = $dateInfo['label'];
 // Fetch Stats
 $stats = $caseModel->getDashboardStats($branchId, $dateCondition);
 $totalPatients = $stats['total'];
-$pendingApprovals = $stats['pending'];
+$pendingQueueCases = $stats['pending'];
+$pendingRequests = count($caseModel->getPendingCases($branchId));
 $priorityCases = $stats['priority'];
 $emergencyCases = $stats['stat'];
 $completedCases = $stats['completed'];
@@ -240,63 +241,82 @@ $radiologistsWorkload = $caseModel->getRadiologistsWorkload($dateCondition, $bra
   </div>
 
   <!-- Stats -->
-  <div id="radtech-dashboard-stats" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6 realtime-update">
-    <div
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition flex flex-col h-full">
-      <div class="flex items-start justify-between gap-2">
-        <div>
-          <p class="text-sm text-gray-500 font-medium">Total Patients</p>
-          <p class="text-xs text-gray-400 mt-0.5"><?= htmlspecialchars($periodLabel) ?></p>
-        </div>
-        <i data-lucide="users" class="w-5 h-5 text-blue-400 shrink-0"></i>
+  <div id="radtech-dashboard-stats" class="grid gap-3 realtime-update" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
+    <!-- 1. Patient Requests -->
+    <a href="<?= url('patient-approval') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <p class="text-xs text-gray-500 font-medium truncate" title="Patient Requests">Patient Requests</p>
+        <i data-lucide="user-plus" class="w-4 h-4 text-indigo-500 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($totalPatients) ?></p>
-    </div>
-
-    <a href="<?= url('patient-lists?status=Pending&filterDate=All') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
-      <div class="flex items-start justify-between gap-2">
-        <p class="text-sm text-gray-500 font-medium">Pending</p>
-        <i data-lucide="clock-3" class="w-5 h-5 text-orange-400 shrink-0"></i>
-      </div>
-      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($pendingApprovals) ?></p>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($pendingRequests) ?></p>
     </a>
 
-    <a href="<?= url('patient-lists?filterPriority=Urgent&filterDate=All') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
-      <div class="flex items-start justify-between gap-2">
-        <p class="text-sm text-gray-500 font-medium">Urgent Cases</p>
-        <i data-lucide="chart-spline" class="w-5 h-5 text-yellow-400 shrink-0"></i>
+    <!-- 2. Pending -->
+    <a href="<?= url('patient-lists?filterStatus=Pending&filterDate=All') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <p class="text-xs text-gray-500 font-medium truncate" title="Pending Cases">Pending Cases</p>
+        <i data-lucide="clock-3" class="w-4 h-4 text-orange-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($priorityCases) ?></p>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($pendingQueueCases) ?></p>
     </a>
 
+    <!-- 3. STAT -->
     <a href="<?= url('patient-lists?filterPriority=STAT&filterDate=All') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
-      <div class="flex items-start justify-between gap-2">
-        <p class="text-sm text-gray-500 font-medium">STAT</p>
-        <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400 shrink-0"></i>
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <p class="text-xs text-gray-500 font-medium truncate" title="STAT Cases">STAT Cases</p>
+        <i data-lucide="triangle-alert" class="w-4 h-4 text-red-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($emergencyCases) ?></p>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($emergencyCases) ?></p>
     </a>
 
-    <div
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition flex flex-col h-full">
-      <div class="flex items-start justify-between gap-2">
-        <p class="text-sm text-gray-500 font-medium">Completed</p>
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-400 shrink-0"></i>
+    <!-- 4. Urgent Cases -->
+    <a href="<?= url('patient-lists?filterPriority=Urgent&filterDate=All') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <p class="text-xs text-gray-500 font-medium truncate" title="Urgent Cases">Urgent Cases</p>
+        <i data-lucide="chart-spline" class="w-4 h-4 text-yellow-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-auto pt-2"><?= htmlspecialchars($completedCases) ?></p>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($priorityCases) ?></p>
+    </a>
+
+    <!-- 5. Backlog -->
+    <a href="<?= url('patient-lists?filterDate=Backlog') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <p class="text-xs text-gray-500 font-medium truncate">Backlog</p>
+        <i data-lucide="archive" class="w-4 h-4 text-purple-400 shrink-0"></i>
+      </div>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($backlogCases) ?></p>
+    </a>
+
+    <!-- 6. Completed -->
+    <div
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500 font-medium truncate">Completed</p>
+          <p class="text-[10px] text-gray-400 leading-tight truncate"><?= htmlspecialchars($periodLabel) ?></p>
+        </div>
+        <i data-lucide="check-circle" class="w-4 h-4 text-green-400 shrink-0"></i>
+      </div>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($completedCases) ?></p>
     </div>
 
-    <a href="<?= url('patient-lists?filterDate=Backlog') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-red-300 transition cursor-pointer flex flex-col h-full">
-      <div class="flex items-start justify-between gap-2">
-        <p class="text-sm text-gray-500 font-medium">Backlog</p>
-        <i data-lucide="archive" class="w-5 h-5 text-purple-400 shrink-0"></i>
+    <!-- 7. Total Patients -->
+    <div
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-3.5 hover:shadow-md hover:border-red-300 transition flex flex-col justify-between h-full min-h-[88px]">
+      <div class="flex items-start justify-between gap-1">
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500 font-medium truncate">Total Patients</p>
+          <p class="text-[10px] text-gray-400 leading-tight truncate"><?= htmlspecialchars($periodLabel) ?></p>
+        </div>
+        <i data-lucide="users" class="w-4 h-4 text-blue-400 shrink-0"></i>
       </div>
-      <p class="text-3xl font-bold mt-auto pt-2 text-purple-600"><?= htmlspecialchars($backlogCases) ?></p>
-    </a>
+      <p class="text-2xl font-bold mt-auto pt-1.5"><?= htmlspecialchars($totalPatients) ?></p>
+    </div>
   </div>
 
   <!-- Radiologists Status -->

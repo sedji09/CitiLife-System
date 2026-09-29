@@ -141,6 +141,7 @@ $uuid = uniqid('es_');
 
                 // Render chips
                 function renderChips(container) {
+                    if (!container) return;
                     const isComponentReadOnly = container.getAttribute('data-readonly') === 'true';
                     const hiddenInput = container.querySelector('.exam-ms-hidden-input');
                     const chipsContainer = container.querySelector('.exam-ms-chips-container');
@@ -212,6 +213,23 @@ $uuid = uniqid('es_');
 
                     filterOptions(container, '');
                 }
+                window.renderExamChips = renderChips;
+                window.setExamSelectorValue = function(container, valStr) {
+                    if (!container) return;
+                    const hiddenInput = container.querySelector('.exam-ms-hidden-input');
+                    const reqCheck = container.querySelector('.exam-ms-required-check');
+                    if (hiddenInput) hiddenInput.value = valStr;
+                    if (reqCheck) {
+                        reqCheck.value = valStr;
+                        if (valStr) reqCheck.setCustomValidity('');
+                    }
+                    renderChips(container);
+                    const count = valStr ? valStr.split(',').map(s => s.trim()).filter(Boolean).length : 0;
+                    container.dispatchEvent(new CustomEvent('exam-ms:change', {
+                        detail: { value: valStr, count: count },
+                        bubbles: true
+                    }));
+                };
 
                 function filterOptions(container, query) {
                     const dropdown = container.querySelector('.exam-ms-dropdown');

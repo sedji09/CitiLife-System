@@ -283,15 +283,16 @@ class PatientModel
                     $stmtEmailUp->execute([$data['email'], $patientId]);
                 }
             } else {
-                // Check if patient has a namesake and middle_name is missing
+                // Check if patient has a duplicate record (matching first name, last name, and birthdate) and middle_name is missing
                 $fn = trim((string)($data['first_name'] ?? ''));
                 $ln = trim((string)($data['last_name'] ?? ''));
                 $mn = trim((string)($data['middle_name'] ?? ''));
+                $bd = trim((string)($data['birthdate'] ?? ''));
 
-                if (empty($mn) && !empty($fn) && !empty($ln)) {
-                    $namesakes = $this->findNamesakes($fn, $ln);
+                if (empty($mn) && !empty($fn) && !empty($ln) && !empty($bd)) {
+                    $namesakes = $this->findNamesakes($fn, $ln, $bd);
                     if (!empty($namesakes)) {
-                        throw new \Exception("A patient named '{$fn} {$ln}' already exists in the system. Middle Name is required to avoid duplicate records.");
+                        throw new \Exception("A patient record with the same Name ('{$fn} {$ln}') and Birthdate already exists. Please select the existing profile or provide a Middle Name.");
                     }
                 }
 
@@ -421,12 +422,13 @@ class PatientModel
     }
 
     /**
-     * Find existing patients with matching first and last name (namesake check).
+     * Find existing patients with matching first name, last name, and birthdate (namesake check).
      */
-    public function findNamesakes($firstName, $lastName, $excludeId = null)
+    public function findNamesakes($firstName, $lastName, $birthdate = null, $excludeId = null)
     {
         $firstName = trim((string) $firstName);
         $lastName  = trim((string) $lastName);
+        $birthdate = !empty($birthdate) ? trim((string)$birthdate) : null;
         if ($firstName === '' || $lastName === '') {
             return [];
         }
@@ -438,6 +440,15 @@ class PatientModel
                 WHERE LOWER(TRIM(p.first_name)) = LOWER(TRIM(?))
                   AND LOWER(TRIM(p.last_name)) = LOWER(TRIM(?))";
         $params = [$firstName, $lastName];
+
+        if ($birthdate) {
+            $formattedBd = date('Y-m-d', strtotime($birthdate));
+            $sql .= " AND p.birthdate = ?";
+            $params[] = $formattedBd;
+        } else {
+            // Duplicate check strictly requires First Name, Last Name, and same Birthdate
+            return [];
+        }
 
         if ($excludeId) {
             $sql .= " AND p.id != ?";

@@ -85,11 +85,19 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
     <!-- Main Content Area -->
     <div class="flex-1 min-w-0">
         <!-- Header -->
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
-            <p class="text-sm text-gray-500 mt-1">
-                <?= $userRole === 'branch_admin' ? 'View patient diagnostic examination details' : 'Diagnostic image upload and case management' ?>
-            </p>
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900">Patient Details</h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    <?= $userRole === 'branch_admin' ? 'View patient diagnostic examination details' : 'Diagnostic image upload and case management' ?>
+                </p>
+            </div>
+            <?php if (!$isReadOnly): ?>
+                <div id="radtech-draft-indicator" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 opacity-0 pointer-events-none self-start sm:self-center" title="Changes auto-saved in this browser">
+                    <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
+                    <span id="radtech-draft-indicator-text">Draft saved</span>
+                </div>
+            <?php endif; ?>
         </div>
 
 <?php
@@ -225,6 +233,9 @@ $catBadgeLabel = match ($dCategory) {
 <?php if ($successMsg ?? false): ?>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            if (typeof window.deleteCaseDraftFromIDB === 'function') {
+                window.deleteCaseDraftFromIDB();
+            }
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
@@ -312,7 +323,9 @@ $catBadgeLabel = match ($dCategory) {
 
         <!-- Examination Details -->
         <div class="rounded-xl border border-gray-300 bg-white p-6 shadow-sm">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Examination Details</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Examination Details</h3>
+            </div>
             <div class="space-y-4">
                 <div>
                     <label class="block text-gray-600 text-sm font-medium mb-1.5">Exam Types</label>
@@ -1351,6 +1364,9 @@ $catBadgeLabel = match ($dCategory) {
                             document.getElementById('rad-options').classList.add('hidden');
                             if (err) err.classList.add('hidden');
                             updateSubmitButtonState();
+                            if (typeof window.scheduleDraftSave === 'function') {
+                                window.scheduleDraftSave();
+                            }
                             return true;
                         }
 
@@ -2053,6 +2069,78 @@ $catBadgeLabel = match ($dCategory) {
 
 <?php if (!$isReadOnly): ?>
     <script>
+        // ==========================================
+        // RADTECH CASE DRAFT SYSTEM (IndexedDB)
+        // Auto-saves Clinical Info, Priority, Exams, Radiologist, and Uploaded Images
+        // ==========================================
+        const DRAFT_CASE_ID = '<?= (int) ($caseId ?? ($caseDetails['id'] ?? 0)) ?>';
+        const DB_NAME = 'CitilifeRadTechDraftsDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'case_drafts';
+
+        function openDraftDB() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) return resolve(null);
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = function (e) {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'caseId' });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function saveCaseDraftToIDB(data) {
+            if (!DRAFT_CASE_ID || DRAFT_CASE_ID === '0') return false;
+            try {
+                const db = await openDraftDB();
+                if (!db) return false;
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                store.put({ caseId: String(DRAFT_CASE_ID), ...data, updatedAt: Date.now() });
+                return new Promise((res) => {
+                    tx.oncomplete = () => res(true);
+                    tx.onerror = () => res(false);
+                });
+            } catch (e) {
+                console.warn('Draft save error:', e);
+                return false;
+            }
+        }
+
+        async function getCaseDraftFromIDB() {
+            if (!DRAFT_CASE_ID || DRAFT_CASE_ID === '0') return null;
+            try {
+                const db = await openDraftDB();
+                if (!db) return null;
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.get(String(DRAFT_CASE_ID));
+                return new Promise((res) => {
+                    req.onsuccess = () => res(req.result || null);
+                    req.onerror = () => res(null);
+                });
+            } catch (e) {
+                console.warn('Draft get error:', e);
+                return null;
+            }
+        }
+
+        async function deleteCaseDraftFromIDB() {
+            if (!DRAFT_CASE_ID || DRAFT_CASE_ID === '0') return;
+            try {
+                const db = await openDraftDB();
+                if (!db) return;
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                store.delete(String(DRAFT_CASE_ID));
+            } catch (e) { }
+        }
+        window.deleteCaseDraftFromIDB = deleteCaseDraftFromIDB;
+
         document.addEventListener('DOMContentLoaded', function () {
             var MAX_BYTES = 15 * 1024 * 1024; // 15 MB per file
             var fileQueue = []; // DataTransfer-backed list of File objects
@@ -2070,6 +2158,8 @@ $catBadgeLabel = match ($dCategory) {
             var errNoImg = document.getElementById('no-image-error');
             var examHidden = document.querySelector('.exam-ms-hidden-input');
             var examContainer = document.querySelector('.exam-ms-component');
+            var clinicalTextarea = document.querySelector('textarea[name="clinical_information"]');
+            var prioritySelect = document.querySelector('select[name="priority"]');
 
             if (!input || !dropZone) return;
 
@@ -2131,7 +2221,7 @@ $catBadgeLabel = match ($dCategory) {
                     var thumbWrap = document.createElement('div');
                     thumbWrap.className = "w-11 h-11 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 shrink-0 flex items-center justify-center";
 
-                    if (file.type.startsWith('image/')) {
+                    if (file.type && file.type.startsWith('image/')) {
                         var img = document.createElement('img');
                         img.alt = 'Preview';
                         img.className = "w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform";
@@ -2175,7 +2265,6 @@ $catBadgeLabel = match ($dCategory) {
                     rmBtn.title = 'Remove';
                     rmBtn.className = "shrink-0 bg-transparent border-none cursor-pointer text-gray-300 hover:text-red-500 p-1 leading-none transition-colors";
                     rmBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                    // Hover effects are now handled by Tailwind.
 
                     rmBtn.addEventListener('click', function () { removeFile(idx); });
 
@@ -2187,7 +2276,6 @@ $catBadgeLabel = match ($dCategory) {
                 });
 
                 updateCounter();
-                // Do NOT sync here — the change handler clears input.value after this call
             }
 
             function syncInputFiles() {
@@ -2204,6 +2292,7 @@ $catBadgeLabel = match ($dCategory) {
                 if (errLimit) errLimit.style.display = 'none';
                 syncInputFiles();
                 renderPreviews();
+                scheduleDraftSave();
             }
 
             function addFiles(newFiles) {
@@ -2253,6 +2342,145 @@ $catBadgeLabel = match ($dCategory) {
                 });
 
                 renderPreviews();
+                scheduleDraftSave();
+            }
+
+            // ── Auto-save Draft Handling ──────────────────────────
+            let draftIndicatorTimer = null;
+            function updateDraftIndicator(state, message) {
+                const indicator = document.getElementById('radtech-draft-indicator');
+                if (!indicator) return;
+
+                clearTimeout(draftIndicatorTimer);
+                indicator.style.opacity = '1';
+
+                if (state === 'saving') {
+                    indicator.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-sm transition-all duration-300 opacity-100 self-start sm:self-center';
+                    indicator.innerHTML = '<svg class="animate-spin w-4 h-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span id="radtech-draft-indicator-text">Saving draft...</span>';
+                } else if (state === 'saved') {
+                    indicator.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm transition-all duration-300 opacity-100 self-start sm:self-center';
+                    indicator.innerHTML = '<svg class="w-4 h-4 text-emerald-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span id="radtech-draft-indicator-text">' + (message || 'Draft saved') + '</span>';
+                    draftIndicatorTimer = setTimeout(() => {
+                        indicator.style.opacity = '0';
+                    }, 3000);
+                } else if (state === 'restored') {
+                    indicator.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold bg-blue-50 text-blue-800 border border-blue-300 shadow-sm transition-all duration-300 opacity-100 self-start sm:self-center';
+                    indicator.innerHTML = '<svg class="w-4 h-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg><span id="radtech-draft-indicator-text">' + (message || 'Draft restored') + '</span>';
+                    draftIndicatorTimer = setTimeout(() => {
+                        indicator.style.opacity = '0';
+                    }, 4000);
+                }
+            }
+
+            let autoSaveDebounce = null;
+            function scheduleDraftSave() {
+                updateDraftIndicator('saving');
+                clearTimeout(autoSaveDebounce);
+                autoSaveDebounce = setTimeout(async () => {
+                    const clinicalVal = clinicalTextarea ? clinicalTextarea.value : '';
+                    const priorityVal = prioritySelect ? prioritySelect.value : '';
+                    const examVal = examHidden ? examHidden.value : '';
+                    const radIdEl = document.getElementById('radiologist_id');
+                    const radTextEl = document.getElementById('rad-selected-text');
+
+                    const draftData = {
+                        clinical_information: clinicalVal,
+                        priority: priorityVal,
+                        exam_type: examVal,
+                        radiologist_id: radIdEl ? radIdEl.value : '',
+                        radiologist_name: radTextEl ? radTextEl.textContent.trim() : '',
+                        files: fileQueue.map(f => ({
+                            name: f.name,
+                            size: f.size,
+                            type: f.type,
+                            lastModified: f.lastModified,
+                            blob: f
+                        }))
+                    };
+
+                    const ok = await saveCaseDraftToIDB(draftData);
+                    if (ok) {
+                        updateDraftIndicator('saved', 'Draft saved');
+                    }
+                }, 450);
+            }
+            window.scheduleDraftSave = scheduleDraftSave;
+
+            async function restoreCaseDraft() {
+                const draft = await getCaseDraftFromIDB();
+                if (!draft) return;
+
+                let hasRestoredAny = false;
+
+                // 1. Clinical info
+                if (clinicalTextarea && draft.clinical_information !== undefined && draft.clinical_information !== '') {
+                    if (!clinicalTextarea.value || clinicalTextarea.value.trim() !== draft.clinical_information.trim()) {
+                        clinicalTextarea.value = draft.clinical_information;
+                        hasRestoredAny = true;
+                    }
+                }
+
+                // 2. Priority
+                if (prioritySelect && draft.priority && draft.priority !== prioritySelect.value) {
+                    prioritySelect.value = draft.priority;
+                    hasRestoredAny = true;
+                }
+
+                // 3. Exam Type
+                if (examContainer && draft.exam_type && typeof window.setExamSelectorValue === 'function') {
+                    const curExam = (examHidden?.value || '').trim();
+                    if (curExam !== draft.exam_type.trim()) {
+                        window.setExamSelectorValue(examContainer, draft.exam_type);
+                        hasRestoredAny = true;
+                    }
+                }
+
+                // 4. Radiologist
+                if (draft.radiologist_id && typeof selectRadiologist === 'function') {
+                    const radAvailable = window.currentRadiologistsData
+                        ? window.currentRadiologistsData.find(r => r.id == draft.radiologist_id && parseInt(r.is_available) === 1)
+                        : true;
+                    if (radAvailable) {
+                        const radName = draft.radiologist_name || '-- Select Radiologist --';
+                        selectRadiologist(draft.radiologist_id, radName, true);
+                        hasRestoredAny = true;
+                    }
+                }
+
+                // 5. Files
+                if (draft.files && Array.isArray(draft.files) && draft.files.length > 0 && fileQueue.length === 0) {
+                    const restoredFiles = [];
+                    for (const item of draft.files) {
+                        if (item && item.blob) {
+                            try {
+                                const f = new File([item.blob], item.name, {
+                                    type: item.type || 'image/jpeg',
+                                    lastModified: item.lastModified || Date.now()
+                                });
+                                restoredFiles.push(f);
+                            } catch (e) {
+                                console.warn('Could not restore file object:', e);
+                            }
+                        }
+                    }
+                    if (restoredFiles.length > 0) {
+                        addFiles(restoredFiles);
+                        syncInputFiles();
+                        hasRestoredAny = true;
+                    }
+                }
+
+                if (hasRestoredAny) {
+                    updateDraftIndicator('restored', 'Draft restored from previous session');
+                }
+            }
+
+            // Bind listeners for inputs
+            if (clinicalTextarea) {
+                clinicalTextarea.addEventListener('input', scheduleDraftSave);
+            }
+            if (prioritySelect) {
+                prioritySelect.addEventListener('change', scheduleDraftSave);
             }
 
             // Form submit guard
@@ -2287,6 +2515,8 @@ $catBadgeLabel = match ($dCategory) {
                     } else {
                         if (errNoImg) errNoImg.style.display = 'none';
                         if (errLimit) errLimit.style.display = 'none';
+                        // Clear draft on successful submit start
+                        deleteCaseDraftFromIDB();
                     }
                 });
             }
@@ -2317,7 +2547,6 @@ $catBadgeLabel = match ($dCategory) {
 
                     // If exams reduced below current files, trim or warn
                     if (fileQueue.length > newCount) {
-                        // For now we just warn and show the limit error
                         if (errLimitMsg) errLimitMsg.textContent = 'Please remove excess images. You have ' + fileQueue.length + ' images but only ' + newCount + ' exams selected.';
                         if (errLimit) errLimit.style.display = 'flex';
                     } else if (errLimit) {
@@ -2326,12 +2555,14 @@ $catBadgeLabel = match ($dCategory) {
 
                     updateCounter();
                     renderPreviews();
+                    scheduleDraftSave();
                 });
             }
 
-            // Sync on load
+            // Sync on load & restore draft
             updateCounter();
             renderPreviews();
+            restoreCaseDraft();
         });
     </script>
 <?php endif; ?>

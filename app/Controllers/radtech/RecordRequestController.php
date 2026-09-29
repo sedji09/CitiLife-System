@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_request'])) {
         $data = [
             'patient_no'     => trim($_POST['patient_no'] ?? ''),
             'patient_name'   => trim($_POST['patient_name'] ?? ''),
+            'birthdate'      => trim($_POST['birthdate'] ?? ''),
             'exam_type'      => trim($_POST['exam_type'] ?? ''),
             'request_branch' => $_POST['request_branch'] ?? '',
             'reason'         => trim($_POST['reason'] ?? ''),

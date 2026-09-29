@@ -53,7 +53,7 @@ return [
     ["label" => "Dashboard", "icon" => "layout-dashboard", "href" => "/dashboard", "perm_key" => "dashboard"],
     ["label" => "Services & Rates", "icon" => "tag", "href" => "/services-pricing", "perm_key" => "dashboard"],
     ["label" => "My Records", "icon" => "folder-open", "href" => "/my-records", "perm_key" => "my_records"],
-    ["label" => "Registration", "icon" => "user-plus", "href" => "/registration", "perm_key" => "patient_reg"],
+    ["label" => "Request Examination", "icon" => "clipboard-plus", "href" => "/registration", "perm_key" => "patient_reg"],
   ],
 
   // Canonical dictionary of features for Dynamic RBAC.

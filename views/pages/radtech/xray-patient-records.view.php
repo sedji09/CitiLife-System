@@ -47,13 +47,13 @@ $records = $caseModel->getReleasedRecords($branchId);
                 <?php if (count($records) === 0): ?>
                     <tr>
                         <td colspan="7" class="text-center py-8 text-gray-500">
-                            No completed records found. Click 'Send Results' in the patient queue to move cases here.
+                            No completed records found.
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($records as $row): 
+                    <?php foreach ($records as $row):
                         $patFullName = formatFullName($row);
-                    ?>
+                        ?>
                         <tr class="hover:bg-gray-50 transition-colors record-row"
                             data-id="<?= htmlspecialchars($row['case_number']) ?>"
                             data-patient="<?= htmlspecialchars($row['patient_number'] ?? '') ?>"
@@ -66,8 +66,7 @@ $records = $caseModel->getReleasedRecords($branchId);
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <div class="font-medium"><?= htmlspecialchars($row['patient_number'] ?? 'N/A') ?></div>
                             </td>
-                            <td class="py-3 px-3 truncate max-w-[200px]"
-                                title="<?= htmlspecialchars($patFullName) ?>">
+                            <td class="py-3 px-3 truncate max-w-[200px]" title="<?= htmlspecialchars($patFullName) ?>">
                                 <div class="font-medium truncate">
                                     <?= htmlspecialchars($patFullName) ?>
                                 </div>
@@ -90,11 +89,14 @@ $records = $caseModel->getReleasedRecords($branchId);
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <?php if (!empty($row['is_amended']) && (int) $row['is_amended'] === 1): ?>
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300" title="This record has been edited">
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300"
+                                        title="This record has been edited">
                                         <i data-lucide="edit-3" class="w-3 h-3"></i> Edited
                                     </span>
                                 <?php else: ?>
-                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span
+                                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         Released
                                     </span>
                                 <?php endif; ?>
@@ -112,8 +114,8 @@ $records = $caseModel->getReleasedRecords($branchId);
                                     </a>
 
                                     <?php
-                                    $isReverted = !empty($row['re_edit_reason']) 
-                                        || ($row['report_status'] ?? '') === 'Draft' 
+                                    $isReverted = !empty($row['re_edit_reason'])
+                                        || ($row['report_status'] ?? '') === 'Draft'
                                         || in_array($row['status'], ['Under Reading', 'Pending', 'For Revision', 'Rejected', 'Cancelled']);
                                     $isReportAvailable = in_array($row['status'], ['Report Ready', 'Completed', 'Released']) && !$isReverted;
                                     ?>
@@ -122,20 +124,24 @@ $records = $caseModel->getReleasedRecords($branchId);
                                         <!-- Print -->
                                         <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Print', 'Would you like to confirm printing this report?', '<?= url('print-report?ref=' . generateReportToken($row['id'])) ?>', 'Yes, Print', true, event)"
-                                            class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Print Report">
+                                            class="p-1.5 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                            title="Print Report">
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </a>
 
                                         <!-- Download PDF -->
                                         <a href="javascript:void(0)"
                                             onclick="confirmAction('Confirm Download', 'Would you like to save this report as PDF?', '<?= url('print-report?ref=' . generateReportToken($row['id']) . '&download=true') ?>', 'Yes, Download', true, event)"
-                                            class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer" title="Download PDF">
+                                            class="p-1.5 rounded-md border border-purple-500 bg-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
+                                            title="Download PDF">
                                             <i data-lucide="download" class="w-4 h-4"></i>
                                         </a>
                                     <?php else: ?>
                                         <!-- Disabled Print -->
-                                        <button class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
-                                            title="Print Report (Disabled: <?= !empty($row['re_edit_reason']) ? 'Report returned to Radiologist for re-edit' : 'Available after Radiologist submits report' ?>)" disabled>
+                                        <button
+                                            class="p-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 shadow-sm inline-flex items-center justify-center"
+                                            title="Print Report (Disabled: <?= !empty($row['re_edit_reason']) ? 'Report returned to Radiologist for re-edit' : 'Available after Radiologist submits report' ?>)"
+                                            disabled>
                                             <i data-lucide="printer" class="w-4 h-4"></i>
                                         </button>
                                     <?php endif; ?>
@@ -161,4 +167,5 @@ $records = $caseModel->getReleasedRecords($branchId);
     </div>
 </div>
 
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/xray-patient-records.js?v=<?= time() ?>"></script>
+<script
+    src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>views/pages/radtech/xray-patient-records.js?v=<?= time() ?>"></script>

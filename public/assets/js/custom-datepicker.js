@@ -169,8 +169,34 @@
                 this.open();
             });
 
-            // Allow manual typing and sync live with calendar
+            // Allow manual typing with automatic dash formatting (YYYY-MM-DD) and live calendar sync
+            let isDeleting = false;
+            this.input.addEventListener('keydown', (e) => {
+                isDeleting = (e.key === 'Backspace' || e.key === 'Delete');
+            });
+
             this.input.addEventListener('input', () => {
+                const rawVal = this.input.value;
+                const digits = rawVal.replace(/\D/g, '');
+
+                if (digits.length > 0) {
+                    let formatted = '';
+                    if (isDeleting && rawVal.endsWith('-')) {
+                        formatted = rawVal;
+                    } else if (digits.length <= 4) {
+                        formatted = digits;
+                    } else if (digits.length <= 6) {
+                        formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+                    } else {
+                        formatted = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+                    }
+
+                    if (this.input.value !== formatted) {
+                        const cursorPos = this.input.selectionStart;
+                        this.input.value = formatted;
+                    }
+                }
+
                 const val = this.input.value.trim();
                 const parsed = parseDateISO(val);
                 if (parsed) {
@@ -179,6 +205,13 @@
                     this.render();
                     if (typeof this.options.onSelect === 'function') {
                         this.options.onSelect(formatDateISO(parsed), parsed);
+                    }
+                } else if (digits.length >= 4) {
+                    const y = parseInt(digits.slice(0, 4), 10);
+                    if (!isNaN(y) && y >= 1900 && y <= 2100) {
+                        const m = digits.length >= 6 ? Math.min(11, Math.max(0, parseInt(digits.slice(4, 6), 10) - 1)) : this.viewDate.getMonth();
+                        this.viewDate = new Date(y, m, 1);
+                        this.render();
                     }
                 }
             });

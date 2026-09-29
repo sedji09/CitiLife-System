@@ -66,20 +66,22 @@
     <div id="record-requests-table"
         class="rounded-xl border border-gray-300 bg-white shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table id="incoming-requests-table" class="w-full text-sm realtime-update">
                 <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-gray-600">
-                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient Details</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Case No.</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Patient Name</th>
+                        <th class="text-left font-semibold px-3 py-3 whitespace-nowrap">Birthdate</th>
                         <th class="text-left font-semibold px-3 py-3">Exam Type / Reason</th>
                         <th class="text-left font-semibold px-3 py-3">Requested By</th>
                         <th class="text-left font-semibold px-3 py-3">Date Requested</th>
                         <th class="text-center font-semibold px-3 py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100 realtime-update">
+                <tbody id="table-body" class="text-gray-800 divide-y divide-gray-100">
                     <?php if (empty($pendingRequests)): ?>
                         <tr>
-                            <td colspan="5" class="py-24">
+                            <td colspan="7" class="py-24">
                                 <div class="flex flex-col items-center justify-center text-center text-gray-500">
                                     <i data-lucide="file-text" class="w-12 h-12 mb-3 opacity-20"></i>
                                     <p class="text-base font-medium text-gray-900">No pending requests</p>
@@ -95,11 +97,21 @@
                                 data-case="<?= htmlspecialchars($req['patient_no']) ?>"
                                 data-branch="<?= htmlspecialchars($req['requester_branch_name']) ?>"
                                 data-date="<?= htmlspecialchars($req['created_at']) ?>">
-                                <td class="py-3 px-3">
-                                    <div class="text-sm font-bold text-gray-900"><?= htmlspecialchars($req['patient_name']) ?>
-                                    </div>
-                                    <div class="text-[11px] text-gray-500">Case No: <?= htmlspecialchars($req['patient_no']) ?>
-                                    </div>
+                                <td class="py-3 px-3 font-semibold text-gray-900 whitespace-nowrap">
+                                    <?= htmlspecialchars($req['patient_no']) ?>
+                                </td>
+                                <td class="py-3 px-3 font-bold text-gray-900 whitespace-nowrap">
+                                    <?= htmlspecialchars($req['patient_name']) ?>
+                                </td>
+                                <td class="py-3 px-3 whitespace-nowrap text-gray-600 text-xs">
+                                    <?php if (!empty($req['birthdate'])): ?>
+                                        <div class="flex items-center gap-1.5 font-medium">
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
+                                            <span><?= date('M d, Y', strtotime($req['birthdate'])) ?><?= !empty($req['age']) ? ' (' . $req['age'] . ' yrs)' : '' ?></span>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-gray-400">—</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="py-3 px-3">
                                     <div class="text-[13px] text-gray-900 font-bold"><?= htmlspecialchars($req['exam_type']) ?>
@@ -132,7 +144,7 @@
                                           </button>
                                           <button type="button"
                                               class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                              onclick="promptDenyRecordRequest(<?= (int)$req['id'] ?>, '<?= htmlspecialchars($req['patient_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['patient_no'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['requester_branch_name'] ?? 'Requesting Branch', ENT_QUOTES) ?>')"
+                                              onclick="promptDenyRecordRequest(<?= (int)$req['id'] ?>, '<?= htmlspecialchars($req['patient_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['patient_no'], ENT_QUOTES) ?>', '<?= htmlspecialchars($req['requester_branch_name'] ?? 'Requesting Branch', ENT_QUOTES) ?>', '<?= !empty($req['birthdate']) ? date('M d, Y', strtotime($req['birthdate'])) . (!empty($req['age']) ? ' (' . $req['age'] . ' yrs)' : '') : '' ?>')"
                                               title="Deny Request">
                                               <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
                                           </button>
@@ -169,10 +181,13 @@
         const tableBody = document.getElementById('table-body');
 
         function getFilteredRows() {
+            const currentTbody = document.getElementById('table-body');
+            if (!currentTbody) return [];
+
             const searchTerm = searchInput.value.toLowerCase();
             const branchFilter = filterBranch.value;
             const sortOrder = sortDate.value;
-            const rows = Array.from(tableBody.querySelectorAll('tr.record-row'));
+            const rows = Array.from(currentTbody.querySelectorAll('tr.record-row'));
 
             // Sorting
             rows.sort((a, b) => {
@@ -182,7 +197,7 @@
             });
 
             // Re-append to DOM
-            rows.forEach(row => tableBody.appendChild(row));
+            rows.forEach(row => currentTbody.appendChild(row));
 
             // Filtering
             return rows.filter(row => {
@@ -287,8 +302,11 @@
         }
 
         function renderPage() {
+            const currentTbody = document.getElementById('table-body');
+            if (!currentTbody) return;
+
             const filteredRows = getFilteredRows();
-            const rows = Array.from(tableBody.querySelectorAll('tr.record-row'));
+            const rows = Array.from(currentTbody.querySelectorAll('tr.record-row'));
             const totalFiltered = filteredRows.length;
             const totalPages = Math.max(1, Math.ceil(totalFiltered / ROWS_PER_PAGE));
 
@@ -310,14 +328,14 @@
                     emptyState = document.createElement('tr');
                     emptyState.id = 'filtered-empty-state';
                     emptyState.innerHTML = `
-                    <td colspan="5" class="py-24">
+                    <td colspan="7" class="py-24">
                         <div class="flex flex-col items-center justify-center text-center text-gray-500">
                             <i data-lucide="search-x" class="w-12 h-12 mb-3 opacity-20"></i>
                             <p class="text-base font-medium text-gray-900">No requests match your filters</p>
                             <p class="text-sm">Try adjusting your keywords or branch filter.</p>
                         </div>
                     </td>`;
-                    tableBody.appendChild(emptyState);
+                    currentTbody.appendChild(emptyState);
                     if (window.lucide) window.lucide.createIcons();
                 }
                 emptyState.style.display = '';
@@ -493,7 +511,7 @@
         return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    window.promptDenyRecordRequest = function(requestId, patientName, caseNo, requesterBranch) {
+    window.promptDenyRecordRequest = function(requestId, patientName, caseNo, requesterBranch, birthdate = '') {
         if (typeof Swal === 'undefined') {
             if (confirm(`Deny record request for ${patientName} (${caseNo}) from ${requesterBranch}?`)) {
                 const reason = prompt('Please enter the reason for denial:');
@@ -504,13 +522,15 @@
             return;
         }
 
+        const dobInfo = birthdate ? ` • DOB: ${escapeHtmlRecord(birthdate)}` : '';
+
         Swal.fire({
             icon: 'warning',
             title: 'Deny Record Request',
             html: `
                 <div class="text-left">
                     <p class="text-sm text-gray-600 mb-3 leading-relaxed">
-                        Are you sure you want to deny the record request for <strong class="text-gray-900">${escapeHtmlRecord(patientName)}</strong> (Case #${escapeHtmlRecord(caseNo)}) from <strong class="text-gray-900">${escapeHtmlRecord(requesterBranch)}</strong>? The requesting RadTech will be notified along with your reason.
+                        Are you sure you want to deny the record request for <strong class="text-gray-900">${escapeHtmlRecord(patientName)}</strong> (Case #${escapeHtmlRecord(caseNo)}${dobInfo}) from <strong class="text-gray-900">${escapeHtmlRecord(requesterBranch)}</strong>? The requesting RadTech will be notified along with your reason.
                     </p>
                     <div class="mb-3">
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Quick Select Reason:</label>

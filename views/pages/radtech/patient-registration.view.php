@@ -149,10 +149,10 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="text-sm font-bold text-gray-900">
-                                    Existing Patient Record Found
+                                    Matching Patient Found
                                 </h4>
                                 <p class="mt-1 text-xs text-gray-600 leading-relaxed">
-                                    A matching record was found. Verify the details below. If this is the same patient, select <strong>"Use This Profile"</strong>. If this is a different person (namesake), click <strong>"Not This Patient"</strong> and provide their middle name above.
+                                    A patient with the same name and birthdate exists. Click <strong>"Use This Profile"</strong> if it's the same patient, or enter their middle name above if registering a new patient.
                                 </p>
 
                                 <!-- Existing Matching Patient Cards -->
@@ -163,10 +163,10 @@
                                 <!-- Banner Action Footer -->
                                 <div class="mt-3 pt-2 border-t border-amber-200/70 flex items-center justify-between flex-wrap gap-2 text-xs">
                                     <span class="text-amber-800">
-                                        Different patient? Enter their middle name above to register as a new record.
+                                        Not this patient? Enter middle name above.
                                     </span>
                                     <button type="button" onclick="dismissNamesakeWarning()" class="font-semibold text-amber-900 hover:text-amber-950 hover:underline transition-colors cursor-pointer">
-                                        Not this patient (Continue as new)
+                                        Not this patient
                                     </button>
                                 </div>
                             </div>
@@ -177,7 +177,7 @@
                     <div id="namesake-dismissed-notice" class="hidden rounded-lg border border-blue-200 bg-blue-50/80 px-3.5 py-2 text-xs text-blue-800 flex items-center justify-between gap-2 transition-all duration-200">
                         <div class="flex items-center gap-2">
                             <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0"></i>
-                            <span>Registering as <strong>New Patient (Namesake)</strong>. Middle name is required.</span>
+                            <span>Registering new patient. Middle name is required.</span>
                         </div>
                         <button type="button" onclick="reopenNamesakeWarning()" class="text-xs font-semibold text-blue-700 hover:text-blue-900 underline shrink-0">
                             View Matches
@@ -191,7 +191,7 @@
                             <?php $birthdateValue = $_POST['birthdate'] ?? ''; ?>
                             <div class="relative">
                                 <input type="text" id="birthdate" name="birthdate" required
-                                    placeholder="YYYY-MM-DD"
+                                    placeholder="YYYY-MM-DD" maxlength="10" autocomplete="off"
                                     value="<?= htmlspecialchars($birthdateValue) ?>"
                                     class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 pl-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 req-new transition-all cursor-pointer shadow-sm">
                                 <i data-lucide="calendar" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"></i>
@@ -592,9 +592,21 @@
                 feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200 text-amber-700 font-medium';
                 feedbackEl.innerHTML = message;
                 feedbackEl.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+            }
+        } else if (state === 'success' && message) {
+            if (window.FormValidator) {
+                window.FormValidator.clearError(inputEl);
+            }
+            inputEl.classList.add('border-emerald-400');
+            if (feedbackEl) {
+                feedbackEl.className = 'text-xs mt-1.5 transition-all duration-200 text-emerald-700 font-medium';
+                feedbackEl.innerHTML = message;
+                feedbackEl.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
             }
         } else {
-            // Normal or Valid/Success: Walang message sa ilalim, malinis na normal input lang
+            // Normal or Valid/Success without message: malinis na normal input
             if (window.FormValidator) {
                 window.FormValidator.clearError(inputEl);
             }
@@ -687,7 +699,7 @@
             if (optBadge) optBadge.classList.add('hidden');
 
             if (!val) {
-                setFieldStatus(input, feedback, 'error', 'Middle name is required because a matching patient record exists.');
+                setFieldStatus(input, feedback, 'error', 'Middle name is required.');
                 return false;
             }
 
@@ -703,11 +715,12 @@
             });
 
             if (exactMatch) {
-                setFieldStatus(input, feedback, 'warning', '⚠ An existing record has this exact middle name. Verify patient profile above.');
+                setFieldStatus(input, feedback, 'warning', '<span class="inline-flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5 shrink-0 text-amber-600"></i> Patient already exists. Check profile above.</span>');
+                if (window.lucide) lucide.createIcons();
                 return true;
             }
 
-            setFieldStatus(input, feedback, 'success', '✓ Middle name differentiates patient from existing records.');
+            setFieldStatus(input, feedback, 'success', '');
             return true;
         } else {
             if (reqAsterisk) reqAsterisk.classList.add('hidden');
@@ -743,13 +756,39 @@
             return false;
         }
 
-        const bdate = new Date(val);
+        // Strict YYYY-MM-DD pattern match (10 characters)
+        const datePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+        const match = val.match(datePattern);
+
+        if (!match) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Please enter a valid birthdate (YYYY-MM-DD).');
+                return false;
+            }
+            // While actively typing an incomplete date, do not show age or error
+            setFieldStatus(input, feedback, 'normal', '');
+            return false;
+        }
+
+        const year = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1;
+        const day = parseInt(match[3], 10);
+
+        const bdate = new Date(year, month, day);
         const today = new Date();
-        bdate.setHours(0, 0, 0, 0);
         today.setHours(0, 0, 0, 0);
 
-        if (isNaN(bdate.getTime())) {
-            setFieldStatus(input, feedback, 'error', 'Please enter a valid birthdate.');
+        if (
+            bdate.getFullYear() !== year ||
+            bdate.getMonth() !== month ||
+            bdate.getDate() !== day ||
+            year < 1900
+        ) {
+            if (isSubmitted) {
+                setFieldStatus(input, feedback, 'error', 'Please enter a valid birthdate.');
+                return false;
+            }
+            setFieldStatus(input, feedback, 'normal', '');
             return false;
         }
 
@@ -758,14 +797,7 @@
             return false;
         }
 
-        let age = today.getFullYear() - bdate.getFullYear();
-        const mDiff = today.getMonth() - bdate.getMonth();
-        if (mDiff < 0 || (mDiff === 0 && today.getDate() < bdate.getDate())) {
-            age--;
-        }
-        if (age < 0) age = 0;
-
-        setFieldStatus(input, feedback, 'success', `✓ Age: ${age} year${age === 1 ? '' : 's'} old`);
+        setFieldStatus(input, feedback, 'success', '');
         return true;
     }
 
@@ -878,18 +910,33 @@
                 maxDate: new Date(),
                 onSelect: () => {
                     validateBirthdate(true);
+                    scheduleNamesakeCheck();
                 }
             });
         }
 
         // Datepicker event listeners
         if (bdateInput) {
-            bdateInput.addEventListener('changeDate', () => validateBirthdate(true));
-            bdateInput.addEventListener('change', () => validateBirthdate(true));
-            bdateInput.addEventListener('input', () => validateBirthdate(false));
-            // Trigger initial age calculate if birthdate prefilled
+            bdateInput.addEventListener('changeDate', () => {
+                validateBirthdate(true);
+                scheduleNamesakeCheck();
+            });
+            bdateInput.addEventListener('change', () => {
+                validateBirthdate(true);
+                scheduleNamesakeCheck();
+            });
+            bdateInput.addEventListener('input', () => {
+                validateBirthdate(false);
+                scheduleNamesakeCheck();
+            });
+            bdateInput.addEventListener('blur', () => {
+                validateBirthdate(true);
+                checkNamesake();
+            });
+            // Trigger initial age calculate and duplicate check if birthdate prefilled
             if (bdateInput.value.trim()) {
                 validateBirthdate(false);
+                scheduleNamesakeCheck();
             }
         }
 
@@ -1080,11 +1127,13 @@
     function dismissNamesakeWarning() {
         const fnInput = document.getElementById('first-name');
         const lnInput = document.getElementById('last-name');
+        const bdInput = document.getElementById('birthdate');
         const fn = fnInput?.value.trim() || '';
         const ln = lnInput?.value.trim() || '';
+        const bd = bdInput?.value.trim() || '';
 
         window.__namesakeDismissed = true;
-        window.__namesakeDismissedKey = `${fn.toLowerCase()}_${ln.toLowerCase()}`;
+        window.__namesakeDismissedKey = `${fn.toLowerCase()}_${ln.toLowerCase()}_${bd}`;
 
         const warningBox = document.getElementById('namesake-warning');
         const noticeBox = document.getElementById('namesake-dismissed-notice');
@@ -1124,6 +1173,7 @@
 
         const fnInput = document.getElementById('first-name');
         const lnInput = document.getElementById('last-name');
+        const bdInput = document.getElementById('birthdate');
         const warningBox = document.getElementById('namesake-warning');
         const namesakeList = document.getElementById('namesake-list');
         const noticeBox = document.getElementById('namesake-dismissed-notice');
@@ -1132,9 +1182,11 @@
 
         const fn = fnInput.value.trim();
         const ln = lnInput.value.trim();
-        const currentNameKey = `${fn.toLowerCase()}_${ln.toLowerCase()}`;
+        const bd = bdInput?.value.trim() || '';
+        const currentNameKey = `${fn.toLowerCase()}_${ln.toLowerCase()}_${bd}`;
 
-        if (fn.length < 2 || ln.length < 2) {
+        // Only trigger duplicate verification when First Name, Last Name, AND complete Birthdate (YYYY-MM-DD) are all provided
+        if (fn.length < 2 || ln.length < 2 || !/^\d{4}-\d{2}-\d{2}$/.test(bd)) {
             window.__hasNamesake = false;
             window.__namesakeMatches = [];
             window.__namesakeDismissed = false;
@@ -1145,13 +1197,13 @@
             return Promise.resolve(false);
         }
 
-        // If user changed the name after dismissing, reset dismissal
+        // If user changed the name or birthdate after dismissing, reset dismissal
         if (window.__namesakeDismissed && window.__namesakeDismissedKey !== currentNameKey) {
             window.__namesakeDismissed = false;
             window.__namesakeDismissedKey = '';
         }
 
-        return fetch(`index.php?role=radtech&page=patient-registration&check_duplicate_name=1&first_name=${encodeURIComponent(fn)}&last_name=${encodeURIComponent(ln)}`)
+        return fetch(`index.php?role=radtech&page=patient-registration&check_duplicate_name=1&first_name=${encodeURIComponent(fn)}&last_name=${encodeURIComponent(ln)}&birthdate=${encodeURIComponent(bd)}`)
             .then(res => {
                 if (!res.ok) throw new window.Error("Network response was not ok");
                 return res.json();

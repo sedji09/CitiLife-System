@@ -25,13 +25,14 @@ if (isset($_GET['check_duplicate_name'])) {
     header('Content-Type: application/json');
     $fn = trim($_GET['first_name'] ?? '');
     $ln = trim($_GET['last_name'] ?? '');
+    $bd = trim($_GET['birthdate'] ?? '');
     $excludeId = !empty($_GET['exclude_id']) ? (int)$_GET['exclude_id'] : null;
 
-    if (strlen($fn) < 2 || strlen($ln) < 2) {
+    if (strlen($fn) < 2 || strlen($ln) < 2 || empty($bd)) {
         echo json_encode(['has_duplicate' => false, 'count' => 0, 'matches' => []]);
     } else {
         try {
-            $matches = $patientModel->findNamesakes($fn, $ln, $excludeId);
+            $matches = $patientModel->findNamesakes($fn, $ln, $bd, $excludeId);
             echo json_encode([
                 'has_duplicate' => !empty($matches),
                 'count'         => count($matches),

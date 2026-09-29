@@ -235,6 +235,7 @@ function initRequestModal() {
 
     btnSearch?.addEventListener('click', async () => {
         const pName = searchName.value.trim();
+        const pDob = document.getElementById('search_patient_birthdate')?.value || '';
         const branch = searchBranch.value;
 
         if (window.FormValidator) {
@@ -252,7 +253,11 @@ function initRequestModal() {
         btnSearch.innerHTML = `<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Search Records`;
 
         try {
-            const res = await fetch(`${window.__APP__.basePath}/app/Api/search_branch_cases.php?patient_name=${encodeURIComponent(pName)}&branch=${encodeURIComponent(branch)}`);
+            let searchUrl = `${window.__APP__.basePath}/app/Api/search_branch_cases.php?patient_name=${encodeURIComponent(pName)}&branch=${encodeURIComponent(branch)}`;
+            if (pDob) {
+                searchUrl += `&birthdate=${encodeURIComponent(pDob)}`;
+            }
+            const res = await fetch(searchUrl);
             const data = await res.json();
 
             btnSearch.disabled = false;
@@ -283,15 +288,22 @@ function initRequestModal() {
             const div = document.createElement('div');
             div.className = "flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 cursor-pointer transition group";
 
+            const dobText = rn.birthdate ? formatDate(rn.birthdate) + (rn.age ? ` (${rn.age} yrs)` : '') : '';
+
             div.innerHTML = `
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-bold text-gray-900 group-hover:text-red-700 transition">${escapeHtml(rn.full_name)}</p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs font-medium text-gray-500">Case No: <span class="text-gray-700">${escapeHtml(rn.case_number)}</span></span>
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <span class="text-xs font-medium text-gray-500">Case No: <span class="text-gray-700 font-semibold">${escapeHtml(rn.case_number)}</span></span>
+                        ${dobText ? `
                         <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                        <span class="text-xs font-semibold text-gray-600 truncate flex items-center gap-1"><i data-lucide="file-scan" class="w-3 h-3 text-gray-400"></i> ${escapeHtml(rn.exam_type)}</span>
+                        <span class="text-xs font-semibold text-gray-600 flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i> ${escapeHtml(dobText)}</span>
+                        ` : ''}
                         <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                        <span class="text-[10px] font-bold text-gray-400 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> ${formatDate(rn.created_at)}</span>
+                        <span class="text-xs font-semibold text-gray-600 truncate flex items-center gap-1"><i data-lucide="file-scan" class="w-3.5 h-3.5 text-gray-400"></i> ${escapeHtml(rn.exam_type)}</span>
+                    </div>
+                    <div class="text-[11px] text-gray-500 font-medium mt-1">
+                        <span>Date: <span class="text-gray-700 font-medium">${formatDate(rn.created_at)}</span></span>
                     </div>
                 </div>
                 <div class="flex-shrink-0 ml-4">
@@ -314,6 +326,7 @@ function initRequestModal() {
         // Populate Hidden form elements for submission
         document.getElementById('modal_patient_no').value = record.case_number; // The old system uses case_number inside patient_no logic occasionally, but case_number is the tracking ID
         document.getElementById('modal_patient_name').value = record.full_name;
+        document.getElementById('modal_birthdate').value = record.birthdate || '';
         document.getElementById('modal_exam_type').value = record.exam_type;
         document.getElementById('modal_request_branch').value = branchName;
 
@@ -321,6 +334,7 @@ function initRequestModal() {
         document.getElementById('display_selected_name').textContent = record.full_name;
         document.getElementById('display_selected_patientno').textContent = record.patient_number || record.patient_no || 'N/A';
         document.getElementById('display_selected_caseno').textContent = record.case_number;
+        document.getElementById('display_selected_dob').textContent = record.birthdate ? `${formatDate(record.birthdate)}${record.age ? ` (${record.age} yrs)` : ''}` : 'N/A';
         document.getElementById('display_selected_exam').textContent = record.exam_type;
         document.getElementById('display_selected_date').textContent = formatDate(record.created_at);
 

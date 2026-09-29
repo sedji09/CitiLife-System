@@ -197,7 +197,7 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
             <option <?= $defaultPriorityFilter === 'Urgent' ? 'selected' : '' ?>>Urgent</option>
             <option <?= $defaultPriorityFilter === 'STAT' ? 'selected' : '' ?>>STAT</option>
         </select>
-        <?php $defaultStatusFilter = $_GET['filterStatus'] ?? 'All'; ?>
+        <?php $defaultStatusFilter = $_GET['filterStatus'] ?? $_GET['status'] ?? 'All'; ?>
         <select id="filter-status"
             class="w-40 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">
             <option value="All" <?= $defaultStatusFilter === 'All' ? 'selected' : '' ?>>All Statuses</option>
@@ -287,8 +287,15 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
                                 $initialDisplay = 'display: none;';
                             if ($defaultPriorityFilter !== 'All' && $defaultPriorityFilter !== $row['priority'])
                                 $initialDisplay = 'display: none;';
-                            if ($defaultStatusFilter !== 'All' && $defaultStatusFilter !== $displayStatus)
-                                $initialDisplay = 'display: none;';
+                            if ($defaultStatusFilter !== 'All') {
+                                if (strcasecmp($defaultStatusFilter, 'Pending') === 0) {
+                                    if (!in_array($displayStatus, ['Pending', 'Overdue'], true)) {
+                                        $initialDisplay = 'display: none;';
+                                    }
+                                } elseif ($defaultStatusFilter !== $displayStatus) {
+                                    $initialDisplay = 'display: none;';
+                                }
+                            }
 
                             $sLower = strtolower($defaultSearch);
                             if ($sLower !== '') {
@@ -643,7 +650,7 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
 
             const matchSearch = !search || name.includes(search) || id.includes(search) || patient.includes(search) || rowPriority.toLowerCase().includes(search) || rowStatus.includes(search);
             const matchPriority = priority === 'Filter by Priority' || priority === 'All' || priority === rowPriority;
-            const matchStatus = status === 'Filter by Status' || status === 'All' || rowStatus === status.toLowerCase();
+            const matchStatus = status === 'Filter by Status' || status === 'All' || rowStatus === status.toLowerCase() || (status.toLowerCase() === 'pending' && rowStatus === 'overdue');
 
             let matchDate = true;
             if (dateFilter === 'Today') matchDate = isToday;

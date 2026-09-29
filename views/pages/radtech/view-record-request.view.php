@@ -61,15 +61,19 @@
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Patient No.</dt>
+                    <dt class="text-sm font-medium text-gray-500">Date of Birth</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900">
-                        <?= htmlspecialchars($request['patient_number'] ?? 'N/A') ?>
+                        <?php if (!empty($request['birthdate'])): ?>
+                            <span><?= date('F j, Y', strtotime($request['birthdate'])) ?><?= !empty($request['age']) ? ' (' . $request['age'] . ' yrs)' : '' ?></span>
+                        <?php else: ?>
+                            <span class="text-gray-400 font-normal">N/A</span>
+                        <?php endif; ?>
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Case No.</dt>
+                    <dt class="text-sm font-medium text-gray-500">Patient No.</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900">
-                        <?= htmlspecialchars($request['patient_no']) ?>
+                        <?= htmlspecialchars($request['patient_number'] ?? 'N/A') ?>
                     </dd>
                 </div>
             </dl>
@@ -79,7 +83,13 @@
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Request Details</h3>
         </div>
         <div class="p-6">
-            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+            <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Case No.</dt>
+                    <dd class="mt-1 text-base font-semibold text-gray-900">
+                        <?= htmlspecialchars($request['patient_no']) ?>
+                    </dd>
+                </div>
                 <div>
                     <dt class="text-sm font-medium text-gray-500">Exam Type</dt>
                     <dd class="mt-1 text-base font-semibold text-gray-900">
@@ -96,7 +106,7 @@
                         </span>
                     </dd>
                 </div>
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-3">
                     <dt class="text-sm font-medium text-gray-500">Reason for Request</dt>
                     <dd
                         class="mt-2 text-sm text-gray-800 bg-gray-50 rounded-lg p-4 border border-gray-100 leading-relaxed">

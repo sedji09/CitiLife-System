@@ -52,8 +52,13 @@ class CaseModel
         $stmt->execute([$branchId]);
         $total = $stmt->fetchColumn();
 
-        // Pending (Global for the branch, regardless of date filter)
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases WHERE (status = 'Pending' OR status = '' OR status IS NULL) AND released = 0 AND branch_id = ?");
+        // Pending (Global for the branch, regardless of date filter - active unreleased cases in patient queue)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM cases 
+            WHERE (status = 'Pending' OR status = '' OR status IS NULL) 
+            AND (status != 'Rejected' OR status IS NULL)
+            AND (released = 0 OR released IS NULL) 
+            AND branch_id = ?
+            AND id NOT IN (SELECT DISTINCT case_id FROM result_disputes WHERE status NOT IN ('Resolved', 'Rejected'))");
         $stmt->execute([$branchId]);
         $pending = $stmt->fetchColumn();
 

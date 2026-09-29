@@ -319,7 +319,7 @@ $errorWorkflowStatuses = [
 ];
 
 // Filter logic: Show all unreleased and active cases (includes backlogs), strictly excluding error report cases
-$statusFilter = $_GET['status'] ?? null;
+$statusFilter = $_GET['filterStatus'] ?? $_GET['status'] ?? null;
 $patients = array_filter($allPatients, function ($p) use ($statusFilter, $activeDisputeCaseIds, $errorWorkflowStatuses) {
     if ($p['released'] != 0 || $p['status'] === 'Rejected') {
         return false;
@@ -333,8 +333,14 @@ $patients = array_filter($allPatients, function ($p) use ($statusFilter, $active
         return false;
     }
     $pStatus = $p['status'] ?: 'Pending';
-    if ($statusFilter && $pStatus !== $statusFilter) {
-        return false;
+    if ($statusFilter && $statusFilter !== 'All') {
+        if (strcasecmp($statusFilter, 'Pending') === 0) {
+            if (!in_array($pStatus, ['Pending', 'Overdue', ''], true)) {
+                return false;
+            }
+        } elseif (strcasecmp($pStatus, $statusFilter) !== 0) {
+            return false;
+        }
     }
     return true;
 });

@@ -93,6 +93,17 @@
     color: #cbd5e1 !important;
     background-color: rgba(100, 116, 139, 0.1) !important;
   }
+
+  /* KPI Cards Hover Effects */
+  .kpi-card-amber:hover .kpi-label {
+    color: #f59e0b !important;
+  }
+  .kpi-card-emerald:hover .kpi-label {
+    color: #10b981 !important;
+  }
+  .kpi-card-red:hover .kpi-label {
+    color: #ef4444 !important;
+  }
 </style>
 
 <div class="space-y-6">
@@ -305,77 +316,60 @@
 
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
 
-    <!-- Total Patients of Branch Card -->
-    <a href="<?= url('branch-xray-cases?tab=records') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
-      <div class="flex items-center justify-between">
-        <p class="text-xs font-semibold text-gray-500 group-hover:text-blue-600 transition">Total Patients
-        </p>
-        <div class="p-1.5 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition">
-          <i data-lucide="users" class="w-4 h-4 text-blue-600"></i>
-        </div>
-      </div>
-      <p id="branch-total-patients" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
-      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?></p>
-    </a>
-
-    <!-- X-ray Cases Today Card -->
-    <a href="<?= url('branch-xray-cases?tab=queue') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
-      <div class="flex items-center justify-between">
-        <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">X-ray Cases
-        </p>
-        <div class="p-1.5 bg-red-50 rounded-lg group-hover:bg-red-100 transition">
-          <i data-lucide="scan-eye" class="w-4 h-4 text-red-600"></i>
-        </div>
-      </div>
-      <p id="branch-cases-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($casesFilteredCount ?? 0) ?></p>
-      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?>
-      </p>
-    </a>
-
-    <!-- Pending Cases Card -->
+    <!-- 1. Pending Cases Card -->
     <a href="<?= url('branch-xray-cases?status=Pending&date=All') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group kpi-card-amber">
       <div class="flex items-center justify-between">
-        <p class="text-xs font-semibold text-gray-500 group-hover:text-yellow-600 transition">Pending</p>
-        <div class="p-1.5 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition">
-          <i data-lucide="hourglass" class="w-4 h-4 text-yellow-600"></i>
-        </div>
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-amber-500 transition kpi-label">Pending Cases</p>
+        <i data-lucide="hourglass" class="w-4 h-4 text-amber-500 shrink-0"></i>
       </div>
       <p id="branch-pending-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['pending'] ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1">Waiting for action</p>
     </a>
 
-    <!-- Backlog Cases Card -->
-    <a href="<?= url('branch-xray-cases?date=Backlog') ?>"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
+    <!-- 2. Payment Verifications Card -->
+    <a href="<?= url('payment-verifications') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group kpi-card-emerald">
       <div class="flex items-center justify-between">
-        <p class="text-xs font-semibold text-gray-500 group-hover:text-red-600 transition">Backlogs</p>
-        <div class="p-1.5 bg-red-50 rounded-lg group-hover:bg-red-100 transition">
-          <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
-        </div>
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-emerald-500 transition kpi-label">Payment Verifications</p>
+        <i data-lucide="banknote" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+      </div>
+      <p id="branch-payments-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingPaymentsCount ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1">Pending payments</p>
+    </a>
+
+    <!-- 3. Backlog Cases Card -->
+    <a href="<?= url('branch-xray-cases?date=Backlog') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group kpi-card-red">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-red-500 transition kpi-label">Backlogs</p>
+        <i data-lucide="alert-circle" class="w-4 h-4 text-red-500 shrink-0"></i>
       </div>
       <p id="branch-backlog-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($caseStats['backlog'] ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1">Unreleased past cases</p>
     </a>
 
-    <!--Pending Record Requests Card -->
-    <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>record-requests"
-      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group">
+    <!-- 4. Pending Record Requests Card -->
+    <a href="<?= url('record-requests') ?>"
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 hover:shadow-md transition block group kpi-card-amber">
       <div class="flex items-center justify-between">
-        <p class="text-xs font-semibold text-gray-500 group-hover:text-amber-600 transition">
-          Record Requests</p>
-        <div class="p-1.5 bg-amber-50 rounded-lg group-hover:bg-amber-100 transition">
-          <i data-lucide="file-text" class="w-4 h-4 text-amber-600"></i>
-        </div>
+        <p class="text-xs font-semibold text-gray-500 group-hover:text-amber-500 transition kpi-label">Record Requests</p>
+        <i data-lucide="file-text" class="w-4 h-4 text-amber-500 shrink-0"></i>
       </div>
       <p id="branch-record-requests-count" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($pendingRequestsCount ?? 0) ?></p>
       <p class="text-[10px] text-gray-400 mt-1">From other branches</p>
     </a>
 
-
-
+    <!-- 5. Total Patients Card (Display Only / Non-clickable) -->
+    <div
+      class="rounded-xl bg-white border border-gray-200 shadow-sm p-4 block">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-gray-500">Total Patients</p>
+        <i data-lucide="users" class="w-4 h-4 text-blue-500 shrink-0"></i>
+      </div>
+      <p id="branch-total-patients" class="text-2xl font-bold mt-2 text-gray-900"><?= htmlspecialchars($branchTotalPatients ?? 0) ?></p>
+      <p class="text-[10px] text-gray-400 mt-1"><?= ($filter === 'today') ? date('M d, Y') : htmlspecialchars($periodLabel ?? 'Selected filter') ?></p>
+    </div>
 
   </div>
 

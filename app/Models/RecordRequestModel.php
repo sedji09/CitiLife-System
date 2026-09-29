@@ -12,15 +12,26 @@ class RecordRequestModel {
     }
 
     /**
+     * Ensure schema has birthdate column.
+     */
+    public function ensureSchema() {
+        try {
+            $this->pdo->exec("ALTER TABLE record_requests ADD COLUMN birthdate DATE NULL AFTER patient_name");
+        } catch (\Throwable $e) {}
+    }
+
+    /**
      * Create a new record request.
      */
     public function createRequest($data) {
+        $this->ensureSchema();
         $stmt = $this->pdo->prepare("
-            INSERT INTO record_requests (patient_name, patient_no, exam_type, reason, request_branch, branch_id, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'Pending')
+            INSERT INTO record_requests (patient_name, birthdate, patient_no, exam_type, reason, request_branch, branch_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')
         ");
         return $stmt->execute([
             $data['patient_name'],
+            !empty($data['birthdate']) ? $data['birthdate'] : null,
             $data['patient_no'],
             $data['exam_type'],
             $data['reason'],
@@ -30,10 +41,18 @@ class RecordRequestModel {
     }
 
     public function getPendingRequestsForBranch($branchName) {
+        $this->ensureSchema();
         $stmt = $this->pdo->prepare("
-            SELECT r.*, b.name as requester_branch_name 
+            SELECT r.*, 
+                   COALESCE(r.birthdate, p.birthdate) as birthdate,
+                   TIMESTAMPDIFF(YEAR, COALESCE(r.birthdate, p.birthdate), CURDATE()) AS age,
+                   p.patient_number, 
+                   c.created_at as exam_date,
+                   b.name as requester_branch_name 
             FROM record_requests r
             LEFT JOIN branches b ON r.branch_id = b.id
+            LEFT JOIN cases c ON (r.patient_no = c.case_number)
+            LEFT JOIN patients p ON (c.patient_id = p.id OR r.patient_no = p.patient_number)
             WHERE r.status = 'Pending' AND LOWER(r.request_branch) = LOWER(?)
             ORDER BY r.created_at DESC
         ");
@@ -74,11 +93,16 @@ class RecordRequestModel {
      * Get request details by ID.
      */
     public function getRequestById($id) {
+        $this->ensureSchema();
         $stmt = $this->pdo->prepare("
-            SELECT r.*, p.patient_number 
+            SELECT r.*, 
+                   COALESCE(r.birthdate, p.birthdate) as birthdate,
+                   TIMESTAMPDIFF(YEAR, COALESCE(r.birthdate, p.birthdate), CURDATE()) AS age,
+                   p.patient_number,
+                   c.created_at as exam_date 
             FROM record_requests r 
-            LEFT JOIN cases c ON r.patient_no = c.case_number 
-            LEFT JOIN patients p ON c.patient_id = p.id
+            LEFT JOIN cases c ON (r.patient_no = c.case_number) 
+            LEFT JOIN patients p ON (c.patient_id = p.id OR r.patient_no = p.patient_number)
             WHERE r.id = ?
         ");
         $stmt->execute([$id]);
@@ -89,11 +113,18 @@ class RecordRequestModel {
      * Get requests made by a specific branch.
      */
     public function getRequestsByBranch($branchId) {
+        $this->ensureSchema();
         $stmt = $this->pdo->prepare("
-            SELECT r.*, b.id as branch_id, c.created_at as exam_date
+            SELECT r.*, 
+                   COALESCE(r.birthdate, p.birthdate) as birthdate,
+                   TIMESTAMPDIFF(YEAR, COALESCE(r.birthdate, p.birthdate), CURDATE()) AS age,
+                   p.patient_number,
+                   b.id as branch_id, 
+                   COALESCE(c.created_at, r.created_at) as exam_date
             FROM record_requests r
             JOIN branches b ON r.request_branch = b.name
-            LEFT JOIN cases c ON r.patient_no = c.case_number
+            LEFT JOIN cases c ON (r.patient_no = c.case_number)
+            LEFT JOIN patients p ON (c.patient_id = p.id OR r.patient_no = p.patient_number)
             WHERE r.branch_id = ?
             ORDER BY r.created_at DESC
         ");

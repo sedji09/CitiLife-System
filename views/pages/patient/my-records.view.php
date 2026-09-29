@@ -209,7 +209,7 @@ $statusBadge = [
                     <p class="text-sm text-gray-500 mb-5">Your completed X-ray examination history will appear here.</p>
                     <a href="<?= url('registration') ?>"
                         class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Request Examination
                     </a>
                 </div>
             <?php else: ?>
@@ -380,7 +380,7 @@ $statusBadge = [
                     <p class="text-sm text-gray-500 mb-5">You currently have no ongoing or pending X-ray requests.</p>
                     <a href="<?= url('registration') ?>"
                         class="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm py-3 px-5 transition">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Register for X-ray
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Request Examination
                     </a>
                 </div>
             <?php else: ?>
