@@ -331,7 +331,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     </div>
 
     <!-- Stats Grid: 6 cards in 2 rows of 3 -->
-    <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 realtime-update">
+    <div id="radio-dashboard-top-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 
         <!-- Card 1: Pending STAT -->
         <a href="<?= url('worklist?priority=STAT&status=all&date=All&branch=&tab=worklist') ?>"
@@ -378,26 +378,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             </div>
         </a>
 
-        <!-- Card 3: Backlog -->
-        <a href="<?= url('worklist?date=Backlog&status=all&priority=all&branch=&tab=worklist') ?>"
-            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
-            <div class="flex items-center justify-between">
-                <div class="bg-red-100 p-2 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                </div>
-                <span id="backlog-count" class="text-2xl font-extrabold text-red-600"><?= $backlogCases ?></span>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-gray-800">Backlog</p>
-                <p class="text-[10px] text-gray-400">Previous days' cases</p>
-            </div>
-        </a>
-
-        <!-- Card 4: In Progress -->
+        <!-- Card 3: In Progress -->
         <a href="<?= url('worklist?status=Under+Reading&date=All&priority=all&branch=&tab=worklist') ?>"
             class="group flex flex-col gap-2 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all decoration-none"
             style="border: 1px solid #bfdbfe;" onmouseenter="this.style.borderColor='#60a5fa'"
@@ -417,6 +398,25 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <div>
                 <p class="text-xs font-semibold text-gray-800">In Progress</p>
                 <p class="text-[10px] text-gray-400">Under Reading Cases</p>
+            </div>
+        </a>
+
+        <!-- Card 4: Backlog -->
+        <a href="<?= url('worklist?date=Backlog&status=all&priority=all&branch=&tab=worklist') ?>"
+            class="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:shadow-md hover:border-red-400 transition-all decoration-none">
+            <div class="flex items-center justify-between">
+                <div class="bg-red-100 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                </div>
+                <span id="backlog-count" class="text-2xl font-extrabold text-red-600"><?= $backlogCases ?></span>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-800">Backlog</p>
+                <p class="text-[10px] text-gray-400">Previous days' cases</p>
             </div>
         </a>
 
@@ -539,6 +539,45 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     } catch (e) {}
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Restore filter if previously saved in session
+        try {
+            const savedFilter = sessionStorage.getItem('Citilife_radDashboard_filter');
+            if (savedFilter && ['today', 'weekly', 'monthly', 'yearly'].includes(savedFilter)) {
+                const filterEl = document.getElementById('filterSelect');
+                if (filterEl && (filterEl.value !== savedFilter || savedFilter !== 'today')) {
+                    filterEl.value = savedFilter;
+                    if (savedFilter === 'monthly') {
+                        const savedMonth = sessionStorage.getItem('Citilife_radDashboard_month');
+                        if (savedMonth && savedMonth.includes('-')) {
+                            const [sY, sM] = savedMonth.split('-');
+                            if (typeof _pickerYear !== 'undefined') _pickerYear = parseInt(sY, 10);
+                            if (typeof _pickerMonth !== 'undefined') _pickerMonth = parseInt(sM, 10);
+                            const mMonthEl = document.getElementById('monthPickerMonth');
+                            const mYearEl = document.getElementById('monthPickerYear');
+                            const mLabelEl = document.getElementById('monthPickerLabel');
+                            if (mMonthEl) mMonthEl.value = sM;
+                            if (mYearEl) mYearEl.value = sY;
+                            if (mLabelEl && typeof MONTH_FULL !== 'undefined') {
+                                mLabelEl.textContent = MONTH_FULL[parseInt(sM, 10) - 1] + ' ' + sY;
+                            }
+                        }
+                    } else if (savedFilter === 'yearly') {
+                        const savedYear = sessionStorage.getItem('Citilife_radDashboard_year');
+                        if (savedYear) {
+                            if (typeof _pickerYearValue !== 'undefined') _pickerYearValue = parseInt(savedYear, 10);
+                            const yValEl = document.getElementById('yearPickerValue');
+                            const yLabelEl = document.getElementById('yearPickerLabel');
+                            if (yValEl) yValEl.value = savedYear;
+                            if (yLabelEl) yLabelEl.textContent = savedYear;
+                        }
+                    }
+                    if (typeof handleFilterChange === 'function') {
+                        handleFilterChange();
+                    }
+                }
+            }
+        } catch (e) {}
+
         const ctx = document.getElementById('priorityChart').getContext('2d');
         window.priorityChart = new Chart(ctx, {
             type: 'bar',
