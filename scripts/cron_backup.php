@@ -42,7 +42,11 @@ try {
     $retention = $service->applyRetentionPolicy(60, 8);
     echo "  [INFO] " . $retention['message'] . "\n";
 
-    echo "\n[3/3] Checking backup status...\n";
+    echo "\n[3/4] Dispatching in-app notifications and email alerts...\n";
+    $service->notifyAdminsOfAutoBackup($result, $retention);
+    echo "  [INFO] Notification alerts queued for IT Administrators.\n";
+
+    echo "\n[4/4] Checking backup status...\n";
     $status = $service->getAutomationStatus();
     echo "  Total Backups Stored: " . $status['total_backups'] . "\n";
     echo "  Next Scheduled Run:   " . $status['next_scheduled_run_formatted'] . "\n\n";

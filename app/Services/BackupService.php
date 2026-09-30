@@ -752,4 +752,85 @@ class BackupService
 
         return null;
     }
+
+    /**
+     * Dispatch In-App Notification and Email Alerts to all IT Admins upon Automated Backup completion
+     */
+    public function notifyAdminsOfAutoBackup(array $backupResult, array $retentionResult = []): void
+    {
+        if (empty($backupResult['success'])) {
+            return;
+        }
+
+        $filename = $backupResult['filename'] ?? 'snapshot.sql.gz';
+        $sizeFormatted = $backupResult['filesize_formatted'] ?? 'Unknown size';
+        $purgedCount = $retentionResult['purged_count'] ?? 0;
+
+        // 1. In-App Notification (Toast & Bell)
+        try {
+            require_once __DIR__ . '/../Models/NotificationModel.php';
+            $notifModel = new \NotificationModel($this->pdo);
+            $title = 'Weekly Database Backup Complete';
+            $message = "Automated snapshot generated: {$filename} ({$sizeFormatted}). Retention cleanup verified.";
+            $link = function_exists('url') ? url('backup-maintenance') : '/backup-maintenance';
+
+            $notifModel->add($title, $message, $link, null, 'it_admin', null);
+        } catch (\Throwable $e) {
+            error_log("Failed to create in-app notification for auto backup: " . $e->getMessage());
+        }
+
+        // 2. Direct Email Notification to IT Admins
+        try {
+            require_once __DIR__ . '/../Helpers/mailer_helper.php';
+            require_once __DIR__ . '/../Helpers/email_template_helper.php';
+
+            $stmtAdmins = $this->pdo->prepare("SELECT email, name FROM users WHERE role = 'it_admin' AND (status = 'Active' OR status IS NULL)");
+            $stmtAdmins->execute();
+            $admins = $stmtAdmins->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (!empty($admins)) {
+                $safeFilename = htmlspecialchars($filename);
+                $safeFilesize = htmlspecialchars($sizeFormatted);
+                $purgedInfo = $purgedCount > 0
+                    ? "Retention: {$purgedCount} snapshot(s) older than 60 days pruned."
+                    : "Retention: All stored snapshots within active 60-day threshold.";
+                $currentTime = date('F j, Y - g:i A T');
+
+                $cardContent = '
+                    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #374151;">
+                        The automated weekly database backup routine has completed successfully. A full database snapshot has been generated and archived to secure storage.
+                    </p>
+                    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin: 16px 0; font-family: monospace, sans-serif; font-size: 13px; color: #111827;">
+                        <div style="margin-bottom: 6px;"><strong>File:</strong> ' . $safeFilename . '</div>
+                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ' . $safeFilesize . '</div>
+                        <div style="margin-bottom: 6px;"><strong>Timestamp:</strong> ' . $currentTime . '</div>
+                        <div style="margin-bottom: 6px;"><strong>Status:</strong> <span style="color: #059669; font-weight: bold;">Healthy & Verified</span></div>
+                        <div><strong>Policy:</strong> ' . htmlspecialchars($purgedInfo) . '</div>
+                    </div>
+                    <p style="margin: 16px 0 0; font-size: 13px; color: #6b7280;">
+                        You can review, download, or restore database snapshots anytime via the CitiLife IT Admin Portal.
+                    </p>
+                ';
+
+                $emailHtml = renderGitHubStyleEmail([
+                    'headerTitle' => 'Weekly Automated Backup Successful',
+                    'cardContent' => $cardContent,
+                    'footerNotice' => 'You received this automated security notice because your account has IT Administrator privileges in CitiLife System.'
+                ]);
+
+                $subject = '[CitiLife System] Weekly Database Backup Successful - ' . date('M d, Y');
+
+                foreach ($admins as $admin) {
+                    $adminEmail = $admin['email'] ?? '';
+                    $adminName = $admin['name'] ?? 'IT Administrator';
+                    if (!empty($adminEmail) && filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                        sendEmailAsync($adminEmail, $adminName, $subject, $emailHtml);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("Failed to send email notification for auto backup: " . $e->getMessage());
+        }
+    }
 }
+

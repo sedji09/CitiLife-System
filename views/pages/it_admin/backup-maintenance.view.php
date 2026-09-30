@@ -13,18 +13,6 @@
             <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">Backup & Maintenance</h1>
             <p class="text-sm text-gray-500 mt-1">Manage database snapshots, automated weekly schedules, selective exports, and restoration.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <form action="" method="POST" class="inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="trigger_auto_backup">
-                <button type="button"
-                    onclick="confirmFormAction(this, 'trigger_auto_backup', 'Run Automated Backup', 'Are you sure you want to trigger the automated backup routine now? This will dump the full database and apply retention cleanup.', 'action', event)"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm cursor-pointer">
-                    <i data-lucide="sparkles" class="w-4 h-4"></i>
-                    <span>Run Auto Backup</span>
-                </button>
-            </form>
-        </div>
     </div>
 
     <!-- Alert Messages -->

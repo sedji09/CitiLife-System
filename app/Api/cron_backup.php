@@ -66,7 +66,10 @@ try {
     // 2. Apply Retention Policy (keep last 8 backups, purge >60 days old)
     $retentionResult = $backupService->applyRetentionPolicy(60, 8);
 
-    // 3. Get updated automation status
+    // 3. Dispatch In-App Notification & Email Alerts to IT Admins
+    $backupService->notifyAdminsOfAutoBackup($backupResult, $retentionResult);
+
+    // 4. Get updated automation status
     $status = $backupService->getAutomationStatus();
 
     echo json_encode([
