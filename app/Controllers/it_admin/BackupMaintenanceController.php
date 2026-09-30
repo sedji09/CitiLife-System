@@ -167,7 +167,12 @@ class BackupMaintenanceController
         $trashBackups = $backupService->listTrash();
         $automationStatus = $backupService->getAutomationStatus();
 
-        $cronSecretKey = $_ENV['CRON_SECRET_KEY'] ?? $_SERVER['CRON_SECRET_KEY'] ?? getenv('CRON_SECRET_KEY') ?? 'citilife_secure_cron_2026';
+        $envCronKey = getenv('CRON_SECRET_KEY');
+        $cronSecretKey = !empty($_ENV['CRON_SECRET_KEY']) 
+            ? (string)$_ENV['CRON_SECRET_KEY'] 
+            : (!empty($_SERVER['CRON_SECRET_KEY']) 
+                ? (string)$_SERVER['CRON_SECRET_KEY'] 
+                : (($envCronKey !== false && $envCronKey !== '') ? (string)$envCronKey : 'citilife_secure_cron_2026'));
         $cronWebhookUrl = appBaseUrl() . url('api/cron/backup?key=' . urlencode($cronSecretKey));
 
         // Helper for view

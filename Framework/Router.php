@@ -81,7 +81,15 @@ class Router
             if (strcasecmp($routeUri, $path) === 0 && $route['method'] === $method) {
                 // Verify CSRF Token on all state-modifying HTTP methods (POST, PUT, DELETE, PATCH)
                 if (in_array(strtoupper($method), ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
-                    $exemptPaths = ['/system-health', '/test-email', '/test-env'];
+                    $exemptPaths = [
+                        '/system-health', 
+                        '/test-email', 
+                        '/test-env',
+                        '/api/cron/backup',
+                        '/api/cron-backup',
+                        '/app/api/cron_backup.php',
+                        '/app/Api/cron_backup.php'
+                    ];
                     if (!in_array($path, $exemptPaths, true)) {
                         if (function_exists('verify_csrf_token') && !verify_csrf_token()) {
                             $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')

@@ -146,10 +146,18 @@ class BackupService
 
             // Audit log
             try {
-                $auditLogModel = new \AuditLogModel($this->pdo);
-                $logAction = $isAutomated ? 'Generated Automated DB Backup' : 'Generated DB Backup';
-                $logDetails = "Filename: {$filename} ({$sizeFormatted}) | Table: {$tableFilter} | Year: {$yearFilter}";
-                $auditLogModel->addLog($userId, $logAction, 'System', 'Backup', 0, $logDetails);
+                if (!class_exists('AuditLogModel')) {
+                    $mFile = basePath('app/Models/AuditLogModel.php');
+                    if (file_exists($mFile)) {
+                        require_once $mFile;
+                    }
+                }
+                if (class_exists('AuditLogModel')) {
+                    $auditLogModel = new \AuditLogModel($this->pdo);
+                    $logAction = $isAutomated ? 'Generated Automated DB Backup' : 'Generated DB Backup';
+                    $logDetails = "Filename: {$filename} ({$sizeFormatted}) | Table: {$tableFilter} | Year: {$yearFilter}";
+                    $auditLogModel->addLog($userId, $logAction, 'System', 'Backup', 0, $logDetails);
+                }
             } catch (\Throwable $t) {
                 // Ignore audit log error if table busy
             }

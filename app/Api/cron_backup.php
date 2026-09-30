@@ -22,17 +22,19 @@ if (file_exists(__DIR__ . '/../../config/database.php')) {
 
 use App\Services\BackupService;
 
-// Determine authorized key
-$configuredKey = $_ENV['CRON_SECRET_KEY'] 
-    ?? $_SERVER['CRON_SECRET_KEY'] 
-    ?? getenv('CRON_SECRET_KEY') 
-    ?? 'citilife_secure_cron_2026';
+// Determine authorized key safely
+$envCronKey = getenv('CRON_SECRET_KEY');
+$configuredKey = !empty($_ENV['CRON_SECRET_KEY']) 
+    ? (string)$_ENV['CRON_SECRET_KEY'] 
+    : (!empty($_SERVER['CRON_SECRET_KEY']) 
+        ? (string)$_SERVER['CRON_SECRET_KEY'] 
+        : (($envCronKey !== false && $envCronKey !== '') ? (string)$envCronKey : 'citilife_secure_cron_2026'));
 
 // Read provided key from GET, POST, or X-Cron-Key header
-$providedKey = $_GET['key'] 
+$providedKey = (string)($_GET['key'] 
     ?? $_POST['key'] 
     ?? $_SERVER['HTTP_X_CRON_KEY'] 
-    ?? '';
+    ?? '');
 
 if (empty($providedKey) || !hash_equals($configuredKey, $providedKey)) {
     http_response_code(403);
@@ -84,6 +86,7 @@ try {
         'next_scheduled_run' => $status['next_scheduled_run_formatted'],
         'total_active_backups' => $status['total_backups']
     ], JSON_PRETTY_PRINT);
+    exit;
 
 } catch (\Throwable $e) {
     http_response_code(500);
@@ -92,4 +95,5 @@ try {
         'error' => $e->getMessage(),
         'timestamp' => date('Y-m-d H:i:s')
     ], JSON_PRETTY_PRINT);
+    exit;
 }
