@@ -79,7 +79,7 @@
             </div>
             <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
                 <span class="text-gray-400 font-medium">Latest Backup:</span>
-                <span class="font-bold text-gray-800"><?= !empty($backups) ? date('M d, H:i', $backups[0]['date']) : 'Never' ?></span>
+                <span class="font-bold text-gray-800"><?= !empty($backups) ? date('M d, g:i A', $backups[0]['date']) : 'Never' ?></span>
             </div>
         </div>
 
@@ -319,7 +319,13 @@
                                             <button onclick="confirmDatabaseRestore('<?= htmlspecialchars($backup['name']) ?>')"
                                                 class="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Restore Live Database (Rollback)">
-                                                <i data-lucide="database" class="w-4 h-4"></i>
+                                                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                                    <path d="M3 5v14a9 3 0 0 0 7 2.9"></path>
+                                                    <path d="M3 12a9 3 0 0 0 6.5 2.8"></path>
+                                                    <path d="M21 16a4 4 0 0 0-4-4h-5"></path>
+                                                    <polyline points="15 9 12 12 15 15"></polyline>
+                                                </svg>
                                             </button>
 
                                             <!-- Move to Trash -->

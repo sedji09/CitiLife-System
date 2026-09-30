@@ -48,9 +48,6 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                 <span class="text-[11px] font-bold uppercase tracking-wider font-mono <?= $statusTextClass ?>">SYSTEM:
                     <?= htmlspecialchars($systemStatus) ?></span>
             </div>
-            <div class="text-xs font-mono font-medium px-3 py-1.5 rounded-lg noc-card noc-text-muted">
-                <span id="server-clock-standard"><?= date('H:i:s') ?></span>
-            </div>
         </div>
     </div>
 
@@ -322,7 +319,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                             <?php foreach ($recentActivities as $log): ?>
                                 <tr class="transition-colors noc-hover noc-border-b">
                                     <td class="py-2.5 pl-4 pr-4 whitespace-nowrap noc-text-muted">
-                                        [<?= date('M d H:i', strtotime($log['created_at'])) ?>]
+                                        [<?= date('M d, g:i A', strtotime($log['created_at'])) ?>]
                                     </td>
                                     <td class="py-2.5 px-4 whitespace-nowrap noc-text-emerald">
                                         <?= htmlspecialchars($log['user_name'] ?? $log['user_email'] ?? 'System') ?>
@@ -438,7 +435,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                                     <?php endif; ?>
                                     <p class="text-[10px] font-mono noc-text-muted ml-5 mt-1">
                                         <?= htmlspecialchars($alert['meta']) ?><br>
-                                        <?= date('M d, Y H:i', strtotime($alert['time'])) ?>
+                                        <?= date('M d, Y g:i A', strtotime($alert['time'])) ?>
                                     </p>
                                 </div>
                             <?php endforeach; ?>
@@ -454,13 +451,6 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
 </div>
 
 <script>
-    setInterval(() => {
-        const clock = document.getElementById('server-clock-standard');
-        if (clock) {
-            const now = new Date();
-            clock.textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-    }, 1000);
     setInterval(async () => {
         if (document.hidden) return;
         try {
