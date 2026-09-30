@@ -29,7 +29,7 @@
                     <input type="hidden" name="filename" value="<?= htmlspecialchars($lastDeletedFile) ?>">
                     <button type="submit"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition cursor-pointer">
-                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
                         Restore to Table
                     </button>
                 </form>
@@ -315,11 +315,11 @@
                                                 <i data-lucide="download" class="w-4 h-4"></i>
                                             </a>
 
-                                            <!-- Restore Database -->
+                                            <!-- Restore Live Database (Rollback) -->
                                             <button onclick="confirmDatabaseRestore('<?= htmlspecialchars($backup['name']) ?>')"
                                                 class="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
-                                                title="Restore Database from this file">
-                                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                                title="Restore Live Database (Rollback)">
+                                                <i data-lucide="database" class="w-4 h-4"></i>
                                             </button>
 
                                             <!-- Move to Trash -->
@@ -392,7 +392,7 @@
                                     <button type="submit"
                                         class="px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-xs flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
                                         title="Restore to Backup History">
-                                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                        <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
                                         <span>Restore</span>
                                     </button>
                                 </form>
