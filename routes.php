@@ -114,13 +114,13 @@ foreach ($dashboardPages as $page) {
 }
 
 // Redirect legacy /patient-queue to unified /worklist
-$router->get('/patient-queue', function() {
+$router->get('/patient-queue', function () {
     require_once __DIR__ . '/config/database.php';
     $branchId = $_GET['branch_id'] ?? 0;
     $branchName = $_GET['branch'] ?? '';
     if (empty($branchName) && !empty($branchId)) {
         $bModel = new \BranchModel($pdo);
-        $b = $bModel->getBranchById((int)$branchId);
+        $b = $bModel->getBranchById((int) $branchId);
         if (!empty($b['name'])) {
             $branchName = $b['name'];
         }
@@ -138,7 +138,7 @@ $router->get('/patient-queue', function() {
 }, ['auth']);
 
 // Redirect legacy /xray-status to dashboard
-$router->get('/xray-status', function() {
+$router->get('/xray-status', function () {
     redirect(url('dashboard'));
 }, ['auth']);
 
@@ -153,7 +153,7 @@ $router->post('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.p
 $router->get('/branch-dashboard', 'auth/branch-dashboard.php');
 $router->get('/patient-dashboard', 'auth/patient-dashboard.php');
 $router->get('/image', 'App\Controllers\ImageController@view', ['auth']);
-$router->get('/test-env', function() {
+$router->get('/test-env', function () {
     $config_path = __DIR__ . '/config/smtp.php';
     $config = require $config_path;
     echo "SERVER: " . ($_SERVER['BREVO_API_KEY'] ?? 'NONE') . "<br>";
@@ -207,7 +207,7 @@ $router->get('/migrate', 'app/Api/migrate.php');
 $router->get('/app/api/migrate', 'app/Api/migrate.php');
 $router->get('/app/Api/migrate', 'app/Api/migrate.php');
 
-$router->get('/system-health', function() {
+$router->get('/system-health', function () {
     global $pdo;
     header('Content-Type: application/json');
     $status = ['status' => 'ok', 'tables' => []];
@@ -215,7 +215,7 @@ $router->get('/system-health', function() {
     foreach ($tables as $t) {
         try {
             $stmt = $pdo->query("SELECT COUNT(*) FROM `{$t}`");
-            $status['tables'][$t] = ['exists' => true, 'count' => (int)$stmt->fetchColumn()];
+            $status['tables'][$t] = ['exists' => true, 'count' => (int) $stmt->fetchColumn()];
         } catch (\Throwable $e) {
             $status['tables'][$t] = ['exists' => false, 'error' => $e->getMessage()];
         }
@@ -237,7 +237,7 @@ $router->get('/system-health', function() {
 });
 
 // Fallback route for Tailwind CSS on Railway where DocumentRoot is public
-$router->get('/debug-router', function() {
+$router->get('/debug-router', function () {
     echo "URI: " . $_SERVER['REQUEST_URI'] . "<br>";
     echo "PROJECT_DIR: " . PROJECT_DIR . "<br>";
     echo "SCRIPT_NAME: " . $_SERVER['SCRIPT_NAME'] . "<br>";
@@ -245,7 +245,7 @@ $router->get('/debug-router', function() {
     exit;
 });
 
-$router->get('/tailwind/src/output.css', function() {
+$router->get('/tailwind/src/output.css', function () {
     $file = basePath('tailwind/src/output.css');
     if (file_exists($file)) {
         header('Content-Type: text/css');
@@ -257,10 +257,14 @@ $router->get('/tailwind/src/output.css', function() {
 });
 
 // Test / Preview Error Pages
-$router->get('/test-error/403', function() use ($router) { $router->error(403); });
-$router->get('/test-error/404', function() use ($router) { $router->error(404); });
-$router->get('/test-error/500', function() use ($router) { $router->error(500); });
-$router->get('/test-error/503', function() use ($router) { $router->error(503); });
+$router->get('/test-error/403', function () use ($router) {
+    $router->error(403); });
+$router->get('/test-error/404', function () use ($router) {
+    $router->error(404); });
+$router->get('/test-error/500', function () use ($router) {
+    $router->error(500); });
+$router->get('/test-error/503', function () use ($router) {
+    $router->error(503); });
 
 
 
