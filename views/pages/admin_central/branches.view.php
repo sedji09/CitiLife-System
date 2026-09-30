@@ -174,6 +174,7 @@
                                         <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($b['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Inactive">
@@ -185,6 +186,7 @@
                                                 </form>
                                             <?php else: ?>
                                                 <form action="" method="POST" class="inline">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="branch_id" value="<?= $b['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Active">
@@ -247,6 +249,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="create">
             <div>
                 <label for="name" class="block text-sm font-semibold text-gray-700 mb-1.5">Branch Name</label>
@@ -337,6 +340,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="branch_id" id="edit_branch_id">
             <div>
@@ -657,6 +661,15 @@
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '';
+
+            const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (metaCsrf) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf_token';
+                csrfInput.value = metaCsrf;
+                form.appendChild(csrfInput);
+            }
 
             const actionInput = document.createElement('input');
             actionInput.type = 'hidden';

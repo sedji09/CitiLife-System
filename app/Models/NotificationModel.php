@@ -13,6 +13,15 @@ class NotificationModel {
                 $link = '/' . ltrim($link, '/');
             }
 
+            if (function_exists('url') && !preg_match('#^https?://#i', $link)) {
+                $baseDir = defined('PROJECT_DIR') ? PROJECT_DIR : '';
+                $clean = ltrim($link, '/');
+                if ($baseDir !== '' && stripos($clean, $baseDir . '/') === 0) {
+                    $clean = substr($clean, strlen($baseDir) + 1);
+                }
+                $link = url($clean);
+            }
+
             // Convert legacy index.php?role=...&page=... into clean router path
             if (strpos($link, 'index.php?') !== false) {
                 $parsed = parse_url($link);

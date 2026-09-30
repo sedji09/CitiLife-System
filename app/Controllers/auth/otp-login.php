@@ -72,10 +72,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->prepare("UPDATE users SET otp_code = NULL, token_expires_at = NULL, otp_resend_count = 0, last_otp_resend_at = NULL, otp_locked_until = NULL WHERE id = ?")->execute([$_SESSION['temp_user_id']]);
                     
                     // Convert temp session to real session
-                    $_SESSION['user_id'] = $_SESSION['temp_user_id'];
-                    $_SESSION['role'] = $_SESSION['temp_role'];
-                    $_SESSION['email'] = $_SESSION['temp_email'];
-                    $_SESSION['branch_id'] = $_SESSION['temp_branch_id'];
+                    $tempUserId = $_SESSION['temp_user_id'];
+                    $tempRole = $_SESSION['temp_role'];
+                    $tempEmail = $_SESSION['temp_email'];
+                    $tempBranchId = $_SESSION['temp_branch_id'];
+                    $tempPatientId = $_SESSION['temp_patient_id'] ?? null;
+                    $tempName = $_SESSION['temp_name'] ?? '';
+                    $tempAvatar = $_SESSION['temp_avatar'] ?? null;
+                    $tempPortal = $_SESSION['temp_portal'] ?? '';
+
+                    session_regenerate_id(true);
+                    $_SESSION['user_id'] = $tempUserId;
+                    $_SESSION['role'] = $tempRole;
+                    $_SESSION['email'] = $tempEmail;
+                    $_SESSION['branch_id'] = $tempBranchId;
+                    $_SESSION['LAST_ACTIVITY'] = time();
                     
                     if ($_SESSION['temp_portal'] === 'patient') {
                         $_SESSION['patient_id'] = $_SESSION['temp_patient_id'];
@@ -173,9 +184,11 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title>Login Security - Citilife System</title>
     <!-- Use generated Tailwind CSS -->
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
+    <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);

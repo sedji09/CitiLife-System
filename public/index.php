@@ -1,8 +1,20 @@
 <?php
 require_once __DIR__ . '/../config/session.php';
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Environment-Aware Error Handling (Production Safe)
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$isLocalhost = (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false);
+
+if ($isLocalhost) {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    // Production / Railway: Hide fatal code details from public and log safely to server log
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    ini_set('log_errors', '1');
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+}
 
 header('Content-Language: en');
 
@@ -57,6 +69,50 @@ try {
     // Update last activity for real-time tracking
     if (isset($_SESSION['user_id'])) {
         $pdo->prepare("UPDATE users SET last_activity = NOW() WHERE id = ?")->execute([$_SESSION['user_id']]);
+
+        // Enforce Session Inactivity Timeout
+        $currentUri = $_SERVER['REQUEST_URI'] ?? '';
+        $isLogoutRoute = (strpos($currentUri, 'logout') !== false);
+        $isPingRoute = (strpos($currentUri, 'session_ping') !== false || strpos($currentUri, 'session-ping') !== false);
+
+        if (!$isLogoutRoute) {
+            $timeoutMinutes = function_exists('getSystemSetting') ? (int) getSystemSetting('auto_logout_minutes', 30) : 30;
+            if ($timeoutMinutes <= 0) {
+                $timeoutMinutes = 30;
+            }
+            $timeoutSeconds = $timeoutMinutes * 60;
+
+            if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $timeoutSeconds)) {
+                $isPatient = (($_SESSION['role'] ?? '') === 'patient');
+                $_SESSION = [];
+                if (session_status() === PHP_SESSION_ACTIVE) {
+                    session_destroy();
+                }
+
+                $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                    || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false)
+                    || (strpos($currentUri, '/app/api/') !== false)
+                    || (strpos($currentUri, '/app/Api/') !== false);
+
+                $redirectUrl = url($isPatient ? 'patient-login?error=inactivity' : 'login?error=inactivity');
+
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    http_response_code(401);
+                    echo json_encode([
+                        'status' => 'session_expired',
+                        'message' => 'Session expired due to inactivity',
+                        'redirect' => $redirectUrl
+                    ]);
+                    exit;
+                }
+
+                redirect($redirectUrl);
+            }
+
+            // Only update LAST_ACTIVITY on non-background requests or when explicitly renewed
+            $_SESSION['LAST_ACTIVITY'] = time();
+        }
     }
 } catch (Exception $e) {
     error_log("Database initialization failed: " . $e->getMessage());
@@ -69,7 +125,20 @@ try {
     exit;
 }
 
-// 7. Load Router and routes
+// 7. Secure Authenticated File Streamer (Phase 5 - Medical PHI Security)
+$reqUri = $_SERVER['REQUEST_URI'] ?? '';
+if (
+    isset($_GET['secure_file']) || 
+    (isset($_GET['file']) && (strpos($_GET['file'], 'uploads/cases') !== false || strpos($_GET['file'], 'uploads/reports') !== false || strpos($_GET['file'], 'uploads/signatures') !== false)) ||
+    preg_match('#/uploads/(cases|reports|signatures|receipts)/#i', $reqUri)
+) {
+    require_once basePath('app/Controllers/ImageController.php');
+    $imageController = new \App\Controllers\ImageController();
+    $imageController->view();
+    exit;
+}
+
+// 8. Load Router and routes
 $router = new Router();
 require_once basePath('routes.php');
 

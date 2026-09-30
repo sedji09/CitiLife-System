@@ -8,6 +8,8 @@ global $pdo;
 $token = $_GET['token'] ?? ($_POST['token'] ?? '');
 $message = '';
 $is_success = false;
+$minPassLength = intval(getSystemSetting('min_password_length', 8));
+if ($minPassLength <= 0) $minPassLength = 8;
 
 if (empty($token)) {
     $message = "Invalid or missing verification token.";
@@ -27,12 +29,16 @@ if (empty($token)) {
             $password = $_POST['password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
 
+            $policyCheck = function_exists('validatePasswordPolicy') 
+                ? validatePasswordPolicy($password) 
+                : ['valid' => strlen($password) >= 8 && preg_match('/[A-Z]/', $password) && preg_match('/[0-9]/', $password) && preg_match('/[^A-Za-z0-9]/', $password), 'error' => 'Password must meet policy requirements.'];
+
             if (empty($password) || empty($confirmPassword)) {
                 $error = "Please fill in all fields.";
             } elseif ($password !== $confirmPassword) {
                 $error = "Passwords do not match.";
-            } elseif (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
-                $error = "Password must be at least 8 characters and include uppercase, number, and special character.";
+            } elseif (!$policyCheck['valid']) {
+                $error = $policyCheck['error'];
             } else {
                 try {
                     $pdo->beginTransaction();
@@ -110,8 +116,10 @@ if (empty($token)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title>Create Password - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
+    <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);
@@ -241,7 +249,7 @@ if (empty($token)) {
                         <ul class="space-y-1">
                             <li id="req-length" class="text-xs text-gray-400 flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                At least 8 characters
+                                At least <?= $minPassLength ?> characters
                             </li>
                             <li id="req-upper" class="text-xs text-gray-400 flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -260,8 +268,8 @@ if (empty($token)) {
 
                     <!-- Submit -->
                     <div class="pt-1 sm:pt-2">
-                        <button type="submit"
-                            class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                        <button type="submit" id="submitBtn" disabled
+                            class="w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-gray-400 opacity-50 cursor-not-allowed pointer-events-none transition-all duration-200">
                             Create Account
                         </button>
                     </div>
@@ -276,6 +284,8 @@ if (empty($token)) {
     </div>
 
     <script>
+        const minLength = <?= $minPassLength ?>;
+
         function togglePassword(inputId, btn) {
             const input = document.getElementById(inputId);
             const isPassword = input.getAttribute('type') === 'password';
@@ -288,44 +298,71 @@ if (empty($token)) {
         const pwd = document.getElementById('password');
         const confirmPwd = document.getElementById('confirm_password');
         const indicator = document.getElementById('match_indicator');
+        const submitBtn = document.getElementById('submitBtn');
 
         const reqs = {
-            length:  { el: document.getElementById('req-length'),  test: v => v.length >= 8 },
+            length:  { el: document.getElementById('req-length'),  test: v => v.length >= minLength },
             upper:   { el: document.getElementById('req-upper'),   test: v => /[A-Z]/.test(v) },
             number:  { el: document.getElementById('req-number'),  test: v => /[0-9]/.test(v) },
             special: { el: document.getElementById('req-special'), test: v => /[^A-Za-z0-9]/.test(v) },
         };
 
-        function updateRequirements(val) {
+        function validateForm() {
+            const val1 = (pwd && pwd.value) || '';
+            const val2 = (confirmPwd && confirmPwd.value) || '';
+            let passedCount = 0;
+
             Object.values(reqs).forEach(({ el, test }) => {
-                const passed = test(val);
+                if (!el) return;
+                const passed = test(val1);
+                if (passed) passedCount++;
                 el.classList.toggle('text-green-600', passed);
                 el.classList.toggle('text-gray-400', !passed);
             });
-        }
 
-        function checkMatch() {
-            if (!confirmPwd.value.length) { indicator.classList.add('hidden'); return; }
-            indicator.classList.remove('hidden');
-            const match = pwd.value === confirmPwd.value;
-            indicator.textContent = match ? 'Passwords match ✓' : 'Passwords do not match';
-            indicator.style.color = match ? '#16a34a' : '#ef4444';
+            let isMatch = false;
+            if (!val2.length) {
+                if (indicator) indicator.classList.add('hidden');
+            } else {
+                if (indicator) {
+                    indicator.classList.remove('hidden');
+                    if (val1 === val2) {
+                        isMatch = true;
+                        indicator.textContent = 'Passwords match ✓';
+                        indicator.style.color = '#16a34a';
+                    } else {
+                        isMatch = false;
+                        indicator.textContent = 'Passwords do not match';
+                        indicator.style.color = '#ef4444';
+                    }
+                }
+            }
+
+            const allPassed = (passedCount === 4) && isMatch && (val1.length >= minLength);
+            if (submitBtn) {
+                if (allPassed) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400', 'pointer-events-none');
+                    submitBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'cursor-pointer', 'active:scale-95');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400', 'pointer-events-none');
+                    submitBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'cursor-pointer', 'active:scale-95');
+                }
+            }
         }
 
         if (pwd) {
-            pwd.addEventListener('input', () => { updateRequirements(pwd.value); checkMatch(); });
-            confirmPwd.addEventListener('input', checkMatch);
+            pwd.addEventListener('input', validateForm);
         }
+        if (confirmPwd) {
+            confirmPwd.addEventListener('input', validateForm);
+        }
+        validateForm();
 
         function validatePasswords() {
             if (!pwd || !confirmPwd) return true;
             if (pwd.value !== confirmPwd.value) {
-                alert('Passwords do not match.');
-                return false;
-            }
-            const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-            if (!regex.test(pwd.value)) {
-                alert('Password must be at least 8 characters and include an uppercase letter, number, and special character.');
                 return false;
             }
             return true;

@@ -2,9 +2,12 @@ Options -Indexes
 
 RewriteEngine On
 
-# If the request is a real file or directory, serve it directly
+# 1. Route sensitive uploads through index.php for authentication verification
+RewriteRule ^uploads/(cases|reports|signatures|receipts)/(.*)$ index.php [L,NC]
+
+# 2. If the request is a real file or directory (and not sensitive uploads), serve it directly
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Otherwise, route everything to index.php
+# 3. Otherwise, route everything to index.php
 RewriteRule ^ index.php [L,QSA]

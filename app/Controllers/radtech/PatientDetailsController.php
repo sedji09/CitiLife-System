@@ -469,9 +469,15 @@ class PatientDetailsController
                 $patMdl = new \PatientModel($pdo);
 
                 // PhilHealth details are locked from Assign Exam
-                $stmtCurCase = $pdo->prepare("SELECT philhealth_status, philhealth_id, philhealth_relation FROM cases WHERE id = ?");
+                $stmtCurCase = $pdo->prepare("SELECT philhealth_status, philhealth_id, philhealth_relation, request_id FROM cases WHERE id = ?");
                 $stmtCurCase->execute([$caseId]);
                 $curCasePh = $stmtCurCase->fetch(PDO::FETCH_ASSOC);
+
+                if (empty($curCasePh['philhealth_relation']) && !empty($curCasePh['request_id'])) {
+                    $stmtReqPh = $pdo->prepare("SELECT philhealth_relation FROM requests WHERE id = ?");
+                    $stmtReqPh->execute([$curCasePh['request_id']]);
+                    $curCasePh['philhealth_relation'] = $stmtReqPh->fetchColumn() ?: null;
+                }
 
                 $philhealthStatus = $curCasePh['philhealth_status'] ?? trim($_POST['philhealth_status'] ?? 'Without PhilHealth Card');
                 $philhealthIdToSave = ($philhealthStatus === 'With PhilHealth Card') 

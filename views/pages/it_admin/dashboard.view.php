@@ -462,6 +462,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
         }
     }, 1000);
     setInterval(async () => {
+        if (document.hidden) return;
         try {
             const res = await fetch('<?= url('app/Api/active_users_count.php') ?>');
             if (res.ok) {
@@ -472,7 +473,7 @@ $dbStatusTone = ($dbProfile['status'] ?? '') === 'Online' ? 'emerald' : 'rose';
                 }
             }
         } catch (e) { }
-    }, 5000);
+    }, 12000);
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>

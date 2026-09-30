@@ -1,8 +1,10 @@
 <!-- âœ… Vue production local asset -->
-<script type="text/javascript" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/vue.global.prod.js"></script>
+<script type="text/javascript"
+  src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/vue.global.prod.js"></script>
 
 <!-- âœ… Lucide production local asset -->
-<script type="text/javascript" src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/lucide.min.js"></script>
+<script type="text/javascript"
+  src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/lucide.min.js"></script>
 
 <!-- âœ… Inject PHP data -->
 <script>
@@ -25,308 +27,309 @@
     userBirthdate: <?= json_encode($userBirthdate) ?>,
     userSex: <?= json_encode($userSex) ?>,
     userContactNumber: <?= json_encode($userContactNumber) ?>,
-    userHomeAddress: <?= json_encode($userHomeAddress ?? '') ?>
+    userHomeAddress: <?= json_encode($userHomeAddress ?? '') ?>,
+    autoLogoutMinutes: <?= json_encode($autoLogoutMinutes > 0 ? $autoLogoutMinutes : 30) ?>
   };
 </script>
 
 <!-- Universal URL & Filter Cleaner: Keep address bar clean from empty params and legacy role/page -->
 <script>
-(function () {
-  function cleanCurrentUrl() {
-    if (!window.history || !window.history.replaceState) return;
-    try {
-      const u = new URL(window.location.href);
-      if (!u.search) return;
+  (function () {
+    function cleanCurrentUrl() {
+      if (!window.history || !window.history.replaceState) return;
+      try {
+        const u = new URL(window.location.href);
+        if (!u.search) return;
 
-      const path = u.pathname.toLowerCase();
-      // On audit-logs and dashboard, hide all query parameters completely so URL stays clean as /audit-logs or /dashboard
-      if (path.includes('audit-logs') || path.includes('dashboard')) {
-        window.history.replaceState(null, document.title, u.pathname + u.hash);
-        return;
-      }
+        const path = u.pathname.toLowerCase();
+        // On audit-logs and dashboard, hide all query parameters completely so URL stays clean as /audit-logs or /dashboard
+        if (path.includes('audit-logs') || path.includes('dashboard')) {
+          window.history.replaceState(null, document.title, u.pathname + u.hash);
+          return;
+        }
 
-      let changed = false;
+        let changed = false;
 
-      // Strip legacy role and page query params
-      if (u.searchParams.has('role')) {
-        u.searchParams.delete('role');
-        changed = true;
-      }
-      if (u.searchParams.has('page')) {
-        u.searchParams.delete('page');
-        changed = true;
-      }
+        // Strip legacy role and page query params
+        if (u.searchParams.has('role')) {
+          u.searchParams.delete('role');
+          changed = true;
+        }
+        if (u.searchParams.has('page')) {
+          u.searchParams.delete('page');
+          changed = true;
+        }
 
-      // Strip any query parameter with empty value (e.g. search=&module=&rl=)
-      const toDelete = [];
-      u.searchParams.forEach((val, key) => {
-        if (val === '' || val === null || val === undefined) {
-          toDelete.push(key);
+        // Strip any query parameter with empty value (e.g. search=&module=&rl=)
+        const toDelete = [];
+        u.searchParams.forEach((val, key) => {
+          if (val === '' || val === null || val === undefined) {
+            toDelete.push(key);
+          }
+        });
+        if (toDelete.length > 0) {
+          toDelete.forEach(k => u.searchParams.delete(k));
+          changed = true;
+        }
+
+        if (changed) {
+          const query = u.searchParams.toString();
+          const cleanUrl = u.pathname + (query ? '?' + query : '') + u.hash;
+          window.history.replaceState(null, document.title, cleanUrl);
+        }
+      } catch (e) { }
+    }
+
+    // Run on page load
+    cleanCurrentUrl();
+
+    // Intercept all GET form submissions across the system so empty fields are not included in the URL
+    document.addEventListener('submit', function (e) {
+      const form = e.target;
+      if (!form || (form.method && form.method.toUpperCase() !== 'GET')) return;
+
+      const disabledInputs = [];
+      const elements = form.querySelectorAll('input, select, textarea');
+      elements.forEach(el => {
+        if (!el.name) return;
+        // Do not submit empty inputs (prevents ?search=&module=&rl=)
+        if (el.value === '' || el.value === null || el.value === undefined) {
+          el.disabled = true;
+          disabledInputs.push(el);
+        } else if (el.name === 'role' || (el.name === 'page' && form.action && !form.action.endsWith('index.php'))) {
+          // Do not submit redundant role/page hidden inputs
+          el.disabled = true;
+          disabledInputs.push(el);
         }
       });
-      if (toDelete.length > 0) {
-        toDelete.forEach(k => u.searchParams.delete(k));
-        changed = true;
-      }
 
-      if (changed) {
-        const query = u.searchParams.toString();
-        const cleanUrl = u.pathname + (query ? '?' + query : '') + u.hash;
-        window.history.replaceState(null, document.title, cleanUrl);
-      }
-    } catch (e) {}
-  }
-
-  // Run on page load
-  cleanCurrentUrl();
-
-  // Intercept all GET form submissions across the system so empty fields are not included in the URL
-  document.addEventListener('submit', function (e) {
-    const form = e.target;
-    if (!form || (form.method && form.method.toUpperCase() !== 'GET')) return;
-
-    const disabledInputs = [];
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-      if (!el.name) return;
-      // Do not submit empty inputs (prevents ?search=&module=&rl=)
-      if (el.value === '' || el.value === null || el.value === undefined) {
-        el.disabled = true;
-        disabledInputs.push(el);
-      } else if (el.name === 'role' || (el.name === 'page' && form.action && !form.action.endsWith('index.php'))) {
-        // Do not submit redundant role/page hidden inputs
-        el.disabled = true;
-        disabledInputs.push(el);
-      }
-    });
-
-    // Restore disabled state shortly after submission so browser history / back-forward cache isn't permanently disabled
-    setTimeout(() => {
-      disabledInputs.forEach(el => { el.disabled = false; });
-    }, 400);
-  }, true);
-})();
+      // Restore disabled state shortly after submission so browser history / back-forward cache isn't permanently disabled
+      setTimeout(() => {
+        disabledInputs.forEach(el => { el.disabled = false; });
+      }, 400);
+    }, true);
+  })();
 </script>
 
 <!-- Universal Navigation History Tracker & Smart Back Engine -->
 <script>
-(function () {
-  const STORAGE_KEY = 'citilife_nav_history';
-  const MAX_HISTORY = 35;
+  (function () {
+    const STORAGE_KEY = 'citilife_nav_history';
+    const MAX_HISTORY = 35;
 
-  function normalizeUrl(urlStr) {
-    try {
-      if (!urlStr) return '';
-      const u = new URL(urlStr, window.location.origin);
-      return u.origin + u.pathname + u.search;
-    } catch (e) {
-      return urlStr || '';
+    function normalizeUrl(urlStr) {
+      try {
+        if (!urlStr) return '';
+        const u = new URL(urlStr, window.location.origin);
+        return u.origin + u.pathname + u.search;
+      } catch (e) {
+        return urlStr || '';
+      }
     }
-  }
 
-  function isCleanPage(urlStr) {
-    try {
-      if (!urlStr) return false;
-      const u = new URL(urlStr, window.location.origin);
-      const path = u.pathname.toLowerCase();
-      if (path.includes('login') || path.includes('logout') || path.includes('api/') ||
+    function isCleanPage(urlStr) {
+      try {
+        if (!urlStr) return false;
+        const u = new URL(urlStr, window.location.origin);
+        const path = u.pathname.toLowerCase();
+        if (path.includes('login') || path.includes('logout') || path.includes('api/') ||
           path.includes('print-report') ||
           u.searchParams.has('ajax_polling') || u.searchParams.has('ajax')) {
+          return false;
+        }
+        return true;
+      } catch (e) {
         return false;
       }
-      return true;
-    } catch (e) {
-      return false;
     }
-  }
 
-  function trackNavHistory() {
-    try {
-      const currentHref = normalizeUrl(window.location.href);
-      if (!isCleanPage(currentHref)) return;
-
-      let stack = [];
+    function trackNavHistory() {
       try {
-        stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
-        if (!Array.isArray(stack)) stack = [];
-      } catch (e) {
-        stack = [];
-      }
+        const currentHref = normalizeUrl(window.location.href);
+        if (!isCleanPage(currentHref)) return;
 
-      // Check if we just navigated backwards via citilifeBack
-      const isNavigatingBack = sessionStorage.getItem('citilife_nav_is_back');
-      if (isNavigatingBack) {
-        sessionStorage.removeItem('citilife_nav_is_back');
+        let stack = [];
+        try {
+          stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+          if (!Array.isArray(stack)) stack = [];
+        } catch (e) {
+          stack = [];
+        }
+
+        // Check if we just navigated backwards via citilifeBack
+        const isNavigatingBack = sessionStorage.getItem('citilife_nav_is_back');
+        if (isNavigatingBack) {
+          sessionStorage.removeItem('citilife_nav_is_back');
+          const existingIdx = stack.lastIndexOf(currentHref);
+          if (existingIdx !== -1) {
+            stack = stack.slice(0, existingIdx + 1);
+          } else {
+            stack.push(currentHref);
+          }
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
+          return;
+        }
+
+        // If currentHref is already the top of the stack (e.g. reload or parameter sync)
+        if (stack.length > 0 && stack[stack.length - 1] === currentHref) {
+          return;
+        }
+
+        // If currentHref already exists earlier in the stack (e.g. user navigated back via browser button or link)
         const existingIdx = stack.lastIndexOf(currentHref);
         if (existingIdx !== -1) {
+          // Truncate the stack to this point, discarding all child pages that were visited after
           stack = stack.slice(0, existingIdx + 1);
         } else {
           stack.push(currentHref);
+          if (stack.length > MAX_HISTORY) {
+            stack.shift();
+          }
         }
+
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
-        return;
-      }
+      } catch (e) { }
+    }
 
-      // If currentHref is already the top of the stack (e.g. reload or parameter sync)
-      if (stack.length > 0 && stack[stack.length - 1] === currentHref) {
-        return;
-      }
+    trackNavHistory();
 
-      // If currentHref already exists earlier in the stack (e.g. user navigated back via browser button or link)
-      const existingIdx = stack.lastIndexOf(currentHref);
-      if (existingIdx !== -1) {
-        // Truncate the stack to this point, discarding all child pages that were visited after
-        stack = stack.slice(0, existingIdx + 1);
-      } else {
-        stack.push(currentHref);
-        if (stack.length > MAX_HISTORY) {
-          stack.shift();
-        }
-      }
-
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stack));
-    } catch (e) {}
-  }
-
-  trackNavHistory();
-
-  // Hook replaceState to sync route modifications (e.g. tabs or search)
-  try {
-    const _origReplaceState = window.history.replaceState;
-    window.history.replaceState = function () {
-      _origReplaceState.apply(this, arguments);
-      trackNavHistory();
-    };
-  } catch (e) {}
-
-  window.citilifeBack = function (fallbackUrl) {
+    // Hook replaceState to sync route modifications (e.g. tabs or search)
     try {
-      const currentHref = normalizeUrl(window.location.href);
-      const currentUrl = new URL(currentHref);
+      const _origReplaceState = window.history.replaceState;
+      window.history.replaceState = function () {
+        _origReplaceState.apply(this, arguments);
+        trackNavHistory();
+      };
+    } catch (e) { }
 
-      // 1. Explicit return parameters in URL (?return_url=... or ?back_url=...)
-      const explicitBack = currentUrl.searchParams.get('return_url') || currentUrl.searchParams.get('back_url');
-      if (explicitBack) {
-        try {
-          const parsed = new URL(explicitBack, window.location.origin);
-          if (parsed.origin === window.location.origin && isCleanPage(parsed.href)) {
-            sessionStorage.setItem('citilife_nav_is_back', '1');
-            window.location.href = parsed.href;
-            return;
-          }
-        } catch (e) {}
-      }
+    window.citilifeBack = function (fallbackUrl) {
+      try {
+        const currentHref = normalizeUrl(window.location.href);
+        const currentUrl = new URL(currentHref);
 
-      // Helper to check valid fallback URL
-      let validFallbackHref = null;
-      if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#' && isCleanPage(fallbackUrl)) {
+        // 1. Explicit return parameters in URL (?return_url=... or ?back_url=...)
+        const explicitBack = currentUrl.searchParams.get('return_url') || currentUrl.searchParams.get('back_url');
+        if (explicitBack) {
+          try {
+            const parsed = new URL(explicitBack, window.location.origin);
+            if (parsed.origin === window.location.origin && isCleanPage(parsed.href)) {
+              sessionStorage.setItem('citilife_nav_is_back', '1');
+              window.location.href = parsed.href;
+              return;
+            }
+          } catch (e) { }
+        }
+
+        // Helper to check valid fallback URL
+        let validFallbackHref = null;
+        if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#' && isCleanPage(fallbackUrl)) {
+          try {
+            const fbParsed = new URL(fallbackUrl, window.location.origin);
+            if (fbParsed.origin === window.location.origin) {
+              // Distinct URL or distinct page
+              if (fbParsed.pathname !== currentUrl.pathname || (fbParsed.search !== currentUrl.search && !currentUrl.search.includes('id='))) {
+                validFallbackHref = fbParsed.href;
+              }
+            }
+          } catch (e) { }
+        }
+
+        // 2. Scan sessionStorage history stack going backwards for a distinct previous page
+        let targetUrl = null;
+        let targetIndex = -1;
         try {
-          const fbParsed = new URL(fallbackUrl, window.location.origin);
-          if (fbParsed.origin === window.location.origin) {
-            // Distinct URL or distinct page
-            if (fbParsed.pathname !== currentUrl.pathname || (fbParsed.search !== currentUrl.search && !currentUrl.search.includes('id='))) {
-              validFallbackHref = fbParsed.href;
+          let stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+          if (Array.isArray(stack) && stack.length > 0) {
+            for (let i = stack.length - 1; i >= 0; i--) {
+              const item = stack[i];
+              if (item && item !== currentHref) {
+                try {
+                  const itemUrl = new URL(item);
+                  // Must be different pathname, or different query on a non-detail page
+                  const isDiff = (itemUrl.pathname !== currentUrl.pathname);
+                  if (itemUrl.origin === currentUrl.origin && isDiff && isCleanPage(item)) {
+                    targetUrl = item;
+                    targetIndex = i;
+                    break;
+                  }
+                } catch (err) { }
+              }
+            }
+
+            if (targetUrl && targetIndex !== -1) {
+              // Truncate the stack to the target page so subsequent backs go further up the chain
+              const newStack = stack.slice(0, targetIndex + 1);
+              sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newStack));
+              sessionStorage.setItem('citilife_nav_is_back', '1');
+              window.location.href = targetUrl;
+              return;
             }
           }
-        } catch (e) {}
-      }
+        } catch (e) { }
 
-      // 2. Scan sessionStorage history stack going backwards for a distinct previous page
-      let targetUrl = null;
-      let targetIndex = -1;
-      try {
-        let stack = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
-        if (Array.isArray(stack) && stack.length > 0) {
-          for (let i = stack.length - 1; i >= 0; i--) {
-            const item = stack[i];
-            if (item && item !== currentHref) {
-              try {
-                const itemUrl = new URL(item);
-                // Must be different pathname, or different query on a non-detail page
-                const isDiff = (itemUrl.pathname !== currentUrl.pathname);
-                if (itemUrl.origin === currentUrl.origin && isDiff && isCleanPage(item)) {
-                  targetUrl = item;
-                  targetIndex = i;
-                  break;
-                }
-              } catch (err) {}
-            }
-          }
-
-          if (targetUrl && targetIndex !== -1) {
-            // Truncate the stack to the target page so subsequent backs go further up the chain
-            const newStack = stack.slice(0, targetIndex + 1);
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newStack));
-            sessionStorage.setItem('citilife_nav_is_back', '1');
-            window.location.href = targetUrl;
-            return;
-          }
-        }
-      } catch (e) {}
-
-      // 3. Fallback to button's explicit fallbackUrl/href if provided
-      if (validFallbackHref) {
-        sessionStorage.setItem('citilife_nav_is_back', '1');
-        window.location.href = validFallbackHref;
-        return;
-      }
-
-      // 4. Role-specific last table/queue URL fallback
-      try {
-        const lastTable = sessionStorage.getItem('radtech_last_table_url') || sessionStorage.getItem('Citilife_last_worklist_url');
-        if (lastTable && lastTable !== currentHref && isCleanPage(lastTable)) {
-          const ltUrl = new URL(lastTable);
-          if (ltUrl.pathname !== currentUrl.pathname) {
-            sessionStorage.setItem('citilife_nav_is_back', '1');
-            window.location.href = lastTable;
-            return;
-          }
-        }
-      } catch (e) {}
-
-      // 5. Browser history back
-      if (window.history.length > 1) {
-        window.history.back();
+        // 3. Fallback to button's explicit fallbackUrl/href if provided
         if (validFallbackHref) {
-          setTimeout(() => {
-            window.location.href = validFallbackHref;
-          }, 350);
+          sessionStorage.setItem('citilife_nav_is_back', '1');
+          window.location.href = validFallbackHref;
+          return;
         }
-        return;
+
+        // 4. Role-specific last table/queue URL fallback
+        try {
+          const lastTable = sessionStorage.getItem('radtech_last_table_url') || sessionStorage.getItem('Citilife_last_worklist_url');
+          if (lastTable && lastTable !== currentHref && isCleanPage(lastTable)) {
+            const ltUrl = new URL(lastTable);
+            if (ltUrl.pathname !== currentUrl.pathname) {
+              sessionStorage.setItem('citilife_nav_is_back', '1');
+              window.location.href = lastTable;
+              return;
+            }
+          }
+        } catch (e) { }
+
+        // 5. Browser history back
+        if (window.history.length > 1) {
+          window.history.back();
+          if (validFallbackHref) {
+            setTimeout(() => {
+              window.location.href = validFallbackHref;
+            }, 350);
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('citilifeBack error:', err);
       }
-    } catch (err) {
-      console.error('citilifeBack error:', err);
-    }
 
-    // 6. Ultimate Fallback URL
-    if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#') {
-      window.location.href = fallbackUrl;
-    }
-  };
+      // 6. Ultimate Fallback URL
+      if (fallbackUrl && fallbackUrl !== 'javascript:void(0)' && fallbackUrl !== '#') {
+        window.location.href = fallbackUrl;
+      }
+    };
 
-  // Global back button click listener (capture phase ensures reliable execution)
-  document.addEventListener('click', function (e) {
-    const backBtn = e.target.closest(
-      '[data-back-btn], #back-to-worklist-btn, #patient-details-back-btn, ' +
-      'a[title="Back"], a[title="Back to Records"], a[aria-label*="back" i], a[href="javascript:history.back()"]'
-    );
-    if (!backBtn) return;
+    // Global back button click listener (capture phase ensures reliable execution)
+    document.addEventListener('click', function (e) {
+      const backBtn = e.target.closest(
+        '[data-back-btn], #back-to-worklist-btn, #patient-details-back-btn, ' +
+        'a[title="Back"], a[title="Back to Records"], a[aria-label*="back" i], a[href="javascript:history.back()"]'
+      );
+      if (!backBtn) return;
 
-    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
 
-    e.preventDefault();
+      e.preventDefault();
 
-    // Call inactive ping if present on page
-    if (typeof window.sendInactivePing === 'function') {
-      try { window.sendInactivePing(); } catch (err) {}
-    } else if (typeof sendInactivePing === 'function') {
-      try { sendInactivePing(); } catch (err) {}
-    }
+      // Call inactive ping if present on page
+      if (typeof window.sendInactivePing === 'function') {
+        try { window.sendInactivePing(); } catch (err) { }
+      } else if (typeof sendInactivePing === 'function') {
+        try { sendInactivePing(); } catch (err) { }
+      }
 
-    const fallback = backBtn.getAttribute('data-fallback') || backBtn.getAttribute('href') || '';
-    window.citilifeBack(fallback);
-  }, true);
-})();
+      const fallback = backBtn.getAttribute('data-fallback') || backBtn.getAttribute('href') || '';
+      window.citilifeBack(fallback);
+    }, true);
+  })();
 </script>
 
 <!-- âœ… Vue App -->
@@ -534,12 +537,24 @@
       window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; });
 
       this.fetchNotifications(true);
-      setInterval(() => this.fetchNotifications(false), 3000); // 3s real-time fetch interval
+      setInterval(() => {
+        if (!document.hidden) this.fetchNotifications(false);
+      }, 6000); // 6s smart fetch interval
 
       if (this.role !== 'patient') {
         this.pollMessages();
         this.searchStaff();
-        setInterval(() => this.pollMessages(), 3000); // 3s message polling
+        setInterval(() => {
+          if (!document.hidden) this.pollMessages();
+        }, 6000); // 6s smart chat polling
+
+        // Catch-up immediately when user switches back to this tab
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            this.fetchNotifications(false);
+            this.pollMessages();
+          }
+        });
 
         // ── Restore active chat windows from last session ──
         try {
@@ -600,7 +615,7 @@
         }
         if (this.chatMenuOpen) {
           const inDesktopChat = this.$refs.chatMenuRef && this.$refs.chatMenuRef.contains(e.target);
-          
+
           if (!inDesktopChat && !isChatButton && !isNotifButton) {
             this.chatMenuOpen = false;
           }
@@ -1731,10 +1746,10 @@
       },
       autoMarkViewedNotifications() {
         if (!this.notifications || this.notifications.length === 0) return;
-        
+
         const currentUrl = window.location.href;
         let anyMarked = false;
-        
+
         this.notifications.forEach(notif => {
           if (notif.is_read == 0) {
             const fullText = (notif.title || '') + ' ' + (notif.message || '');
@@ -1744,7 +1759,7 @@
             const matchPx = fullText.match(/\b(PX-[A-Za-z0-9-]+|PAT-[A-Za-z0-9-]+)\b/i);
             const matchGeneric = fullText.match(/(?:case|request)\s*[:#(\s]*([A-Za-z0-9-]+)/i);
             const matchCodeInParen = fullText.match(/\(([A-Za-z]{2,6}\d{4}-\d{4,6}|REQ-[A-Za-z0-9-]+|CAS-[A-Za-z0-9-]+|\d{4,})\)/i);
-            
+
             let target = null;
             if (matchReq) target = matchReq[1];
             else if (matchCas) target = matchCas[1];
@@ -1752,16 +1767,16 @@
             else if (matchCodeInParen) target = matchCodeInParen[1];
             else if (matchPx) target = matchPx[1];
             else if (matchGeneric) target = matchGeneric[1];
-            
+
             // If the target identifier is found in the current URL (e.g. highlight=CAS-123), mark it as read
             if (target && currentUrl.includes(target)) {
-               this.markAsReadSilently(notif.id);
-               notif.is_read = 1;
-               anyMarked = true;
+              this.markAsReadSilently(notif.id);
+              notif.is_read = 1;
+              anyMarked = true;
             }
           }
         });
-        
+
         if (anyMarked) {
           this.notificationCount = this.notifications.filter(n => n.is_read == 0).length;
         }
@@ -1988,7 +2003,7 @@
           let endY = e.changedTouches[0].screenY;
           let diffX = this.touchStartX - endX;
           let diffY = Math.abs(this.touchStartY - endY);
-          
+
           if (diffX > 40 && diffY < 30) {
             this.activeNotificationDropdown = id;
           }
@@ -2032,7 +2047,7 @@
           nextTick(() => {
             this.renderIcons();
             setTimeout(() => {
-                this.undoRingOffset = 62.83;
+              this.undoRingOffset = 62.83;
             }, 50);
           });
 
@@ -2112,12 +2127,22 @@
 
           let finalUrl;
           try {
-            const basePath = '<?= PROJECT_DIR ?>' ? '/' + '<?= PROJECT_DIR ?>' + '/' : '/';
-            let cleanLink = link;
-            if (!'<?= PROJECT_DIR ?>' && cleanLink && cleanLink.toLowerCase().startsWith('/citilife-system/')) {
-              cleanLink = cleanLink.replace(/^\/citilife-system\//i, '/');
+            const projectDir = '<?= PROJECT_DIR ?>';
+            let cleanLink = (link || '').trim();
+
+            if (cleanLink.startsWith('http://') || cleanLink.startsWith('https://')) {
+              finalUrl = new URL(cleanLink);
+            } else {
+              if (projectDir) {
+                if (!cleanLink.toLowerCase().startsWith('/' + projectDir.toLowerCase() + '/') &&
+                  !cleanLink.toLowerCase().startsWith(projectDir.toLowerCase() + '/')) {
+                  cleanLink = '/' + projectDir + '/' + cleanLink.replace(/^\//, '');
+                }
+              } else {
+                cleanLink = cleanLink.replace(/^\/citilife-system\//i, '/');
+              }
+              finalUrl = new URL(cleanLink, window.location.origin);
             }
-            finalUrl = new URL(cleanLink, window.location.origin + basePath);
           } catch (e) {
             finalUrl = new URL(link, window.location.origin);
           }
@@ -2191,7 +2216,7 @@
 
             // Handle cross-tab or same-page routing for unified patient-lists / correction-requests
             const isPatientListPage = ['patient-lists', 'correction-requests', 'correction-request'].includes(targetPath) &&
-                                      ['patient-lists', 'correction-requests', 'correction-request'].includes(currentPath);
+              ['patient-lists', 'correction-requests', 'correction-request'].includes(currentPath);
 
             const isSamePage = (targetPath === currentPath) || isPatientListPage;
 
@@ -2212,7 +2237,7 @@
                 if (located) return;
               }
             }
-          } catch (e) {}
+          } catch (e) { }
 
           // Navigate if on a different page or element not found immediately
           window.location.href = finalUrl.toString();
@@ -2328,10 +2353,10 @@
     console.error("Vue Mount Error:", e);
   }
 
-  window.openPatientSettings = function(e) {
+  window.openPatientSettings = function (e) {
     if (e) e.preventDefault();
     if (window.vm && window.vm.openSettings) {
-        window.vm.openSettings('profile');
+      window.vm.openSettings('profile');
     }
   };
   // Real-time date and time for topbar
@@ -2355,6 +2380,7 @@
   // AJAX Polling for Real-Time Updates
   if (document.querySelectorAll('.realtime-update').length > 0) {
     setInterval(() => {
+      if (document.hidden) return; // Pause polling when tab is not visible
       // Use the persistent currentPath from __APP__ instead of window.location.href 
       // to survive URL cleaning (Stealth Mode) used in Patient portal views.
       let baseUrl = window.location.origin + (window.__APP__.currentPath || window.location.pathname);
@@ -2369,8 +2395,8 @@
               const newEl = doc.getElementById(el.id);
               if (newEl) {
                 // Allow local scripts to modify newEl before it gets injected (e.g., hiding rows to prevent flicker)
-                document.dispatchEvent(new window.CustomEvent('realtime:beforeUpdate', { 
-                    detail: { newEl: newEl, el: el } 
+                document.dispatchEvent(new window.CustomEvent('realtime:beforeUpdate', {
+                  detail: { newEl: newEl, el: el }
                 }));
                 el.innerHTML = newEl.innerHTML;
               }
@@ -2382,11 +2408,12 @@
           document.dispatchEvent(new window.CustomEvent('realtime:updated'));
         })
         .catch(err => console.error('Polling error:', err));
-    }, 3000); // 3 seconds interval
+    }, 6000); // 6 seconds smart interval
   }
 
   // Global Radiologist Activity Polling (survives AJAX replacements)
   function checkRadStatusGlobal() {
+    if (document.hidden) return;
     const dot = document.getElementById('rad-activity-dot');
     if (!dot) return;
 
@@ -2412,21 +2439,20 @@
       }).catch(console.error);
   }
 
-  setInterval(checkRadStatusGlobal, 3000);
+  setInterval(checkRadStatusGlobal, 6000);
   checkRadStatusGlobal();
 
   // --- AUTO-LOGOUT SECURITY POLICY ---
   (function () {
-    const timeoutMinutes = <?= isset($autoLogoutMinutes) ? $autoLogoutMinutes : 0 ?>;
+    const timeoutMinutes = <?= isset($autoLogoutMinutes) && $autoLogoutMinutes > 0 ? (int) $autoLogoutMinutes : 30 ?>;
     if (timeoutMinutes <= 0) return;
-
-    console.log(`Security: Inactivity monitor active (${timeoutMinutes}m). [Robust Timestamp Mode]`);
 
     let lastActivity = Date.now();
     let isWarningOpen = false;
     const warningThreshold = 60; // 60 seconds before logout
+    let lastPingSent = Date.now();
 
-    // Timer tick every 1 second (even if throttled, calculation remains accurate)
+    // Timer tick every 1 second
     const tick = setInterval(() => {
       const now = Date.now();
       const idleSeconds = Math.floor((now - lastActivity) / 1000);
@@ -2440,6 +2466,9 @@
         if (modal) {
           modal.classList.remove('hidden');
           modal.classList.add('flex');
+          if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+          }
         }
       }
 
@@ -2451,17 +2480,27 @@
 
       // Forced logout
       if (remaining <= 0) {
+        clearInterval(tick);
         sessionStorage.clear();
-        window.location.href = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout?reason=timeout`;
+        const basePath = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+        window.location.href = basePath + '/logout?error=inactivity';
       }
     }, 1000);
 
     // Events that reset the timer (only if modal is not open)
-    const resetEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    const resetEvents = ['mousedown', 'mousemove', 'keypress', 'keydown', 'scroll', 'touchstart', 'click'];
     resetEvents.forEach(evt => {
       document.addEventListener(evt, () => {
-        if (!isWarningOpen) lastActivity = Date.now();
-      }, true);
+        if (!isWarningOpen) {
+          lastActivity = Date.now();
+          const now = Date.now();
+          if (now - lastPingSent > 120000) {
+            lastPingSent = now;
+            const basePath = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+            fetch(basePath + '/app/api/session_ping.php', { credentials: 'same-origin' }).catch(function () { });
+          }
+        }
+      }, { passive: true, capture: true });
     });
 
     // Robust Check mapping to window focus/visibility (Fix for Minimized/Background tabs)
@@ -2472,8 +2511,10 @@
         const totalTimeout = timeoutMinutes * 60;
 
         if (idleSeconds >= totalTimeout) {
+          clearInterval(tick);
           sessionStorage.clear();
-          window.location.href = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout?reason=timeout`;
+          const basePath = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+          window.location.href = basePath + '/logout?error=inactivity';
         }
       }
     });
@@ -2481,18 +2522,22 @@
     // Modal Action: Stay Logged In
     window.resumeSession = function () {
       isWarningOpen = false;
-      idleSeconds = 0;
+      lastActivity = Date.now();
+      lastPingSent = Date.now();
       const modal = document.getElementById('sessionTimeoutModal');
       if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
       }
+      const basePath = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+      fetch(basePath + '/app/api/session_ping.php', { credentials: 'same-origin' }).catch(function () { });
     };
 
     // Modal Action: Logout Now
     window.logoutNow = function () {
       sessionStorage.clear();
-      window.location.href = `<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout?reason=manual`;
+      const basePath = (window.__APP__ && window.__APP__.basePath) ? window.__APP__.basePath : '';
+      window.location.href = basePath + '/logout?error=inactivity';
     };
   })();
 </script>
@@ -2519,11 +2564,11 @@
 
     <div class="flex flex-col gap-3 w-full pt-2">
       <button onclick="resumeSession()"
-        class="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/20 transition transform active:scale-95">
+        class="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/20 transition transform active:scale-95 cursor-pointer">
         Stay Logged In
       </button>
       <button onclick="logoutNow()"
-        class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest transition">
+        class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest transition cursor-pointer">
         Logout Now
       </button>
     </div>
@@ -2532,7 +2577,7 @@
 
 <script>
   // Fallback: Ensure skeleton hides even if Vue mounting fails
-  (function() {
+  (function () {
     function hideSkeletonFallback() {
       const fallbackLoader = document.getElementById('app-loading');
       if (fallbackLoader && !fallbackLoader.classList.contains('hidden')) {
@@ -2544,7 +2589,7 @@
     }
 
     if (document.readyState === 'complete') {
-      setTimeout(hideSkeletonFallback, 1000); 
+      setTimeout(hideSkeletonFallback, 1000);
     } else {
       window.addEventListener('load', () => {
         setTimeout(hideSkeletonFallback, 1000);
@@ -2579,7 +2624,7 @@ echo '<script src="' . url('views/pages/patient/my-records.js?v=' . time()) . '"
 
 <script>
   // GLOBAL FAILSAFE: Remove skeleton and v-cloak if Vue fails to mount
-  window.addEventListener('load', function() {
+  window.addEventListener('load', function () {
     setTimeout(() => {
       const loader = document.getElementById('app-loading');
       if (loader && !loader.classList.contains('hidden')) {
@@ -2597,8 +2642,11 @@ echo '<script src="' . url('views/pages/patient/my-records.js?v=' . time()) . '"
 </script>
 
 <!-- Modern Custom Select Dropdowns Engine, Custom Tooltips & TimePicker -->
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-select.js?v=<?= time() ?>"></script>
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>
-<script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/notification-locator.js?v=<?= time() ?>"></script>
-
+<script
+  src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-select.js?v=<?= time() ?>"></script>
+<script
+  src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-tooltip.js?v=<?= time() ?>"></script>
+<script
+  src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/custom-timepicker.js?v=<?= time() ?>"></script>
+<script
+  src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/notification-locator.js?v=<?= time() ?>"></script>

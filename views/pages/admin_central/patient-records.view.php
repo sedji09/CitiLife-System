@@ -203,6 +203,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="patient_id" id="edit_patient_id">
 

@@ -547,13 +547,16 @@ class CaseModel
     public function getCaseById($id)
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, p.first_name, p.last_name, p.middle_name, p.birthdate, p.home_address, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.patient_number,
+            SELECT c.*, 
+                   COALESCE(NULLIF(c.philhealth_relation, ''), NULLIF(req.philhealth_relation, '')) AS philhealth_relation,
+                   p.first_name, p.last_name, p.middle_name, p.birthdate, p.home_address, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, p.sex, p.contact_number, p.patient_number,
                    b.name AS branch_name, b.contact_number_1 AS branch_contact, b.contact_number_2 AS branch_contact_2, b.contact_number_3 AS branch_contact_3, b.gcash_qr_path,
                    COALESCE(NULLIF(u.full_name_report, ''), NULLIF(u.name, ''), SUBSTRING_INDEX(u.email, '@', 1)) AS radtech_name, u.professional_title AS radtech_title, u.signature AS radtech_signature,
                    COALESCE(NULLIF(ur.full_name_report, ''), NULLIF(ur.name, ''), SUBSTRING_INDEX(ur.email, '@', 1)) AS radiologist_name, ur.professional_title AS radiologist_title, ur.signature AS radiologist_signature
             FROM cases c
             JOIN patients p ON c.patient_id = p.id
             JOIN branches b ON c.branch_id = b.id
+            LEFT JOIN requests req ON c.request_id = req.id
             LEFT JOIN users u ON c.radtech_id = u.id
             LEFT JOIN users ur ON c.radiologist_id = ur.id
             WHERE c.id = ?
@@ -1203,7 +1206,7 @@ class CaseModel
         if (empty($data['report_template']))
             return ['success' => false, 'message' => "Please select a Report Template before submitting."];
 
-        $radId = !empty($data['radiologist_id']) ? (int)$data['radiologist_id'] : 0;
+        $radId = !empty($data['radiologist_id']) ? (int) $data['radiologist_id'] : 0;
         if (!$radId) {
             return ['success' => false, 'message' => "Please select an available radiologist before submitting."];
         }
@@ -1215,7 +1218,7 @@ class CaseModel
         if (!$targetRad || $targetRad['status'] !== 'Active') {
             return ['success' => false, 'message' => "The selected radiologist is inactive or does not exist."];
         }
-        if ((int)$targetRad['is_available'] !== 1) {
+        if ((int) $targetRad['is_available'] !== 1) {
             return ['success' => false, 'message' => "Selected radiologist is currently unavailable. Case submission cancelled."];
         }
 
@@ -1367,7 +1370,7 @@ class CaseModel
 
                 $caseNumber = $this->generateCaseNumber($requestData['branch_id']);
 
-                $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
+                $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
                 $stmtCase->execute([
                     $caseNumber,
                     $requestData['patient_id'],
@@ -1376,6 +1379,7 @@ class CaseModel
                     $requestData['priority'],
                     $requestData['philhealth_status'],
                     $requestData['philhealth_id'],
+                    $requestData['philhealth_relation'] ?? null,
                     $id
                 ]);
                 $caseId = $pdo->lastInsertId();
@@ -1761,6 +1765,10 @@ class CaseModel
             }
             if (!$this->hasColumn('cases', 'philhealth_relation')) {
                 $this->safeExec("ALTER TABLE cases ADD COLUMN philhealth_relation ENUM('Principal Member','Qualified Dependent') DEFAULT NULL");
+            }
+            // Auto backfill any case where philhealth_relation was missed from request record
+            if ($this->hasTable('requests') && $this->hasColumn('requests', 'philhealth_relation')) {
+                $this->safeExec("UPDATE cases c JOIN requests r ON c.request_id = r.id SET c.philhealth_relation = r.philhealth_relation WHERE (c.philhealth_relation IS NULL OR c.philhealth_relation = '') AND r.philhealth_relation IS NOT NULL AND r.philhealth_relation != ''");
             }
             if (!$this->hasColumn('cases', 'status_timestamp')) {
                 $this->safeExec("ALTER TABLE cases ADD COLUMN status_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");

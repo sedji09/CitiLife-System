@@ -44,6 +44,8 @@ if (isset($_GET['error'])) {
         $error = "Your account has been deleted. Please contact the administrator.";
     } elseif ($_GET['error'] === 'branch_deactivated') {
         $error = "Your branch has been deactivated. Please contact the administrator.";
+    } elseif ($_GET['error'] === 'inactivity') {
+        $error = "Your session expired due to inactivity. Please log in again.";
     }
 }
 
@@ -58,18 +60,33 @@ if (!isset($_SESSION['staff_login_attempts'])) {
 $attempts = &$_SESSION['staff_login_attempts'];
 $currentTime = time();
 
-if ($attempts['locked_until'] > $currentTime) {
+$clientIp = function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+$ipLimit = function_exists('checkRateLimit') ? checkRateLimit('login_staff_ip', $clientIp, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
+
+if (!$ipLimit['allowed']) {
+    $is_locked = true;
+    $remaining = $ipLimit['remaining_seconds'];
+    $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
+    $lock_message = "Too many failed login attempts. Please try again after $time_str.";
+} elseif ($attempts['locked_until'] > $currentTime) {
     $is_locked = true;
     $remaining = $attempts['locked_until'] - $currentTime;
     $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
-    $lock_message = "Too many failed attempts. Please try again after $time_str.";
+    $lock_message = "Too many failed login attempts. Please try again after $time_str.";
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (!empty($email) && !empty($password)) {
+    // Check account-specific rate limit
+    $emailLimit = function_exists('checkRateLimit') ? checkRateLimit('login_staff_email', $email, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
+    if (!$emailLimit['allowed']) {
+        $is_locked = true;
+        $remaining = $emailLimit['remaining_seconds'];
+        $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
+        $lock_message = "This account is temporarily locked due to multiple failed login attempts. Please try again after $time_str.";
+    } elseif (!empty($email) && !empty($password)) {
         // VALIDATION using filter_var();
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Invalid email format.";
@@ -104,6 +121,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     }
 
                     if (!$isBranchInactive) {
+                        // Clear all rate limits on success
+                        if (function_exists('clearRateLimit')) {
+                            clearRateLimit('login_staff_ip', $clientIp);
+                            clearRateLimit('login_staff_email', $email);
+                        }
+
                         // Check if device is remembered (Skip OTP if valid token exists)
                         $rememberToken = $_COOKIE['remember_device'] ?? null;
                         if ($rememberToken) {
@@ -140,12 +163,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         unset($_SESSION['staff_login_attempts']);
                         clearStaffLoginLock($pdo, $user['id']);
 
+                        session_regenerate_id(true);
                         $_SESSION['user_id'] = $user['id'];
                         $_SESSION['role'] = $user['role'];
                         $_SESSION['email'] = $user['email'];
                         $_SESSION['name'] = $user['name'] ?? '';
                         $_SESSION['avatar'] = $user['avatar'] ?? null;
                         $_SESSION['branch_id'] = $user['branch_id'];
+                        $_SESSION['LAST_ACTIVITY'] = time();
 
                         redirect(url('dashboard'));
                     }
@@ -162,14 +187,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     $attempts['locked_until'] = time() + 30; // 30 seconds
                 }
 
-                if ($attempts['attempts'] >= 5) {
-                    persistStaffLoginLock($pdo, $email, $attempts['locked_until']);
+                // Record IP and Email failed attempt
+                $rateResIp = function_exists('recordFailedAttempt') ? recordFailedAttempt('login_staff_ip', $clientIp, 5, 900) : ['allowed' => true];
+                $rateResEmail = function_exists('recordFailedAttempt') ? recordFailedAttempt('login_staff_email', $email, 5, 900) : ['allowed' => true];
+
+                if ($attempts['attempts'] >= 5 || !$rateResIp['allowed'] || !$rateResEmail['allowed']) {
+                    persistStaffLoginLock($pdo, $email, $attempts['locked_until'] ?: (time() + 900));
                     redirect(url('login'));
                 }
 
                 $error = 'Invalid email or password.';
-                if ($attempts['attempts'] >= 3) {
-                    $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
+                if ($attempts['attempts'] >= 3 || ($rateResIp['attempts'] ?? 0) >= 3) {
+                    $warning = "Warning: Multiple failed attempts. Account will be temporarily locked after 5 fails.";
                 }
 
                 require_once basePath('app/Models/AuditLogModel.php');
@@ -196,6 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title>Login - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -540,20 +570,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
         const lockTimer = document.getElementById('lockTimer');
         if (lockTimer) {
-            let remaining = parseInt(lockTimer.getAttribute('data-remaining'), 10);
+            let remaining = parseInt(lockTimer.getAttribute('data-remaining'), 10) || 0;
+            function updateTimerDisplay() {
+                if (remaining <= 0) {
+                    lockTimer.textContent = '0s';
+                    window.location.reload();
+                    return;
+                }
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                if (m > 0) {
+                    lockTimer.textContent = m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+                } else {
+                    lockTimer.textContent = s + ' seconds';
+                }
+            }
+            updateTimerDisplay();
             const interval = setInterval(() => {
                 remaining--;
                 if (remaining <= 0) {
                     clearInterval(interval);
                     window.location.reload();
                 } else {
-                    let text = '';
-                    if (remaining > 60) {
-                        text = Math.ceil(remaining / 60) + ' minutes';
-                    } else {
-                        text = remaining + ' seconds';
-                    }
-                    lockTimer.textContent = text;
+                    updateTimerDisplay();
                 }
             }, 1000);
         }

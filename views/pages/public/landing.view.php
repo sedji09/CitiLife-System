@@ -40,9 +40,10 @@ $xrayCategories = array_keys($groupedRates);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <link rel="stylesheet"
         href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/landing-page-styles.css">
-
+    <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
 </head>
 
 <body>
@@ -557,8 +558,8 @@ $xrayCategories = array_keys($groupedRates);
                 <?php if (isset($_GET['locked'])): ?>
                     <div
                         style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
-                        <strong>Access Locked</strong><br>
-                        <?= htmlspecialchars($_GET['locked']) ?>
+                        <strong style="display: block; font-size: 15px; margin-bottom: 4px;">Access Locked</strong>
+                        Too many failed attempts. Please try again after <strong id="patientLockTimer" data-remaining="<?= intval($_GET['locked_seconds'] ?? 900) ?>">...</strong>.
                     </div>
                 <?php endif; ?>
                 <?php if (isset($_GET['warning'])): ?>
@@ -639,6 +640,35 @@ $xrayCategories = array_keys($groupedRates);
                 // Ensure the function exists before calling
                 if (typeof openLoginModal === 'function') {
                     openLoginModal(new Event('click'));
+                }
+
+                const patientLockTimer = document.getElementById('patientLockTimer');
+                if (patientLockTimer) {
+                    let remaining = parseInt(patientLockTimer.getAttribute('data-remaining'), 10) || 0;
+                    function updatePatientTimer() {
+                        if (remaining <= 0) {
+                            patientLockTimer.textContent = '0s';
+                            window.location.href = '<?= url('?') ?>';
+                            return;
+                        }
+                        const m = Math.floor(remaining / 60);
+                        const s = remaining % 60;
+                        if (m > 0) {
+                            patientLockTimer.textContent = m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+                        } else {
+                            patientLockTimer.textContent = s + ' seconds';
+                        }
+                    }
+                    updatePatientTimer();
+                    const interval = setInterval(() => {
+                        remaining--;
+                        if (remaining <= 0) {
+                            clearInterval(interval);
+                            window.location.href = '<?= url('?') ?>';
+                        } else {
+                            updatePatientTimer();
+                        }
+                    }, 1000);
                 }
             });
         <?php endif; ?>

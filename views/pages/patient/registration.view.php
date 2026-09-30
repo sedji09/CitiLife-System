@@ -76,6 +76,7 @@
 
             <form id="patientRequestForm" method="POST" action="<?= url('registration') ?>" class="space-y-4"
                 enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <input type="hidden" name="form_action" value="request_xray">
 
                 <div>

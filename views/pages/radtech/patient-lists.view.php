@@ -514,6 +514,36 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         if (filterDate) sessionStorage.setItem('Citilife_radtechQueue_date', filterDate.value);
         if (sortDate) sessionStorage.setItem('Citilife_radtechQueue_sort', sortDate.value);
         sessionStorage.setItem('Citilife_radtechQueue_page', currentMainPage);
+
+        try {
+            const urlObj = new URL(window.location.href);
+            if (filterStatus && filterStatus.value && filterStatus.value !== 'All') {
+                urlObj.searchParams.set('filterStatus', filterStatus.value);
+            } else {
+                urlObj.searchParams.delete('filterStatus');
+                urlObj.searchParams.delete('status');
+            }
+
+            if (filterPriority && filterPriority.value && filterPriority.value !== 'All') {
+                urlObj.searchParams.set('filterPriority', filterPriority.value);
+            } else {
+                urlObj.searchParams.delete('filterPriority');
+            }
+
+            if (filterDate && filterDate.value && filterDate.value !== 'Today') {
+                urlObj.searchParams.set('filterDate', filterDate.value);
+            } else {
+                urlObj.searchParams.delete('filterDate');
+            }
+
+            if (searchInput && searchInput.value && searchInput.value.trim() !== '') {
+                urlObj.searchParams.set('search', searchInput.value.trim());
+            } else {
+                urlObj.searchParams.delete('search');
+            }
+
+            window.history.replaceState({}, document.title, urlObj.pathname + (urlObj.search && urlObj.search !== '?' ? urlObj.search : ''));
+        } catch (e) {}
     }
 
     function restoreFiltersFromSession() {

@@ -79,6 +79,33 @@ class Router
             $routeUri = '/' . trim((string)($route['uri'] ?? ''), '/');
 
             if (strcasecmp($routeUri, $path) === 0 && $route['method'] === $method) {
+                // Verify CSRF Token on all state-modifying HTTP methods (POST, PUT, DELETE, PATCH)
+                if (in_array(strtoupper($method), ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
+                    $exemptPaths = ['/system-health', '/test-email', '/test-env'];
+                    if (!in_array($path, $exemptPaths, true)) {
+                        if (function_exists('verify_csrf_token') && !verify_csrf_token()) {
+                            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                                || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false)
+                                || (strpos($path, '/app/api/') !== false)
+                                || (strpos($path, '/app/Api/') !== false);
+
+                            if ($isAjax) {
+                                header('Content-Type: application/json');
+                                http_response_code(403);
+                                echo json_encode([
+                                    'success' => false,
+                                    'status' => 'csrf_error',
+                                    'message' => 'Security token invalid or expired. Please refresh the page.'
+                                ]);
+                                exit;
+                            }
+
+                            $this->error(403);
+                            return;
+                        }
+                    }
+                }
+
                 // Execute middleware first
                 foreach ($route['middleware'] as $middleware) {
                     $this->runMiddleware($middleware);

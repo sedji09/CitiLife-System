@@ -5,6 +5,9 @@ RewriteEngine On
 # Case-insensitive rewrite for app/api requests so both app/api and app/Api work on Linux/Railway
 RewriteRule ^app/api/(.*)$ app/Api/$1 [L,NC]
 
+# Route sensitive uploads through public/index.php for authentication check
+RewriteRule ^public/uploads/(cases|reports|signatures|receipts)/(.*)$ public/index.php [L,NC]
+
 # Existing files
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 

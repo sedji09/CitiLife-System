@@ -75,8 +75,8 @@ class PaymentVerificationsController
                             $caseNumber = $caseModel->generateCaseNumber($reqBranchId);
                             
                             $stmtInsertCase = $pdo->prepare("
-                                INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
+                                INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
                             ");
                             $stmtInsertCase->execute([
                                 $caseNumber,
@@ -86,6 +86,7 @@ class PaymentVerificationsController
                                 $reqData['priority'],
                                 $reqData['philhealth_status'],
                                 $reqData['philhealth_id'],
+                                $reqData['philhealth_relation'] ?? null,
                                 $reqId
                             ]);
                             $newCaseId = $pdo->lastInsertId();

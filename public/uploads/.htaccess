@@ -1,1 +1,8 @@
-Options -Indexes
+# CitiLife Medical Security (Phase 5)
+# 1. Prevent Directory Indexing
+Options -Indexes -ExecCGI
+
+# 2. Block direct execution of any script files in all uploads subfolders
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|php8|phps|pl|py|cgi|sh|exe|bat|cmd|htaccess)$">
+    Require all denied
+</FilesMatch>

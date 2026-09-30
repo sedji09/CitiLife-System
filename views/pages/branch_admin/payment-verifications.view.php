@@ -153,6 +153,7 @@
                                                 </button>
                                             <?php endif; ?>
                                             <form method="POST" class="inline-block m-0">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
                                                 <input type="hidden" name="action" value="verify">
                                                 <button type="button" title="Verify Payment"
@@ -162,6 +163,7 @@
                                                 </button>
                                             </form>
                                             <form method="POST" class="inline-block m-0">
+                                                <?= csrf_field() ?>
                                                 <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
                                                 <input type="hidden" name="action" value="reject">
                                                 <button type="button" title="Reject Payment"
@@ -475,6 +477,7 @@
                 <div class="flex items-center gap-2">
                     ${gcashBtnHtml}
                     <form method="POST" class="inline-block m-0">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="payment_id" value="${payment.id}">
                         <input type="hidden" name="action" value="verify">
                         <button type="button" title="Verify Payment" onclick="confirmAction(this.form, 'verify')" class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-100 text-green-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition cursor-pointer">
@@ -482,6 +485,7 @@
                         </button>
                     </form>
                     <form method="POST" class="inline-block m-0">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="payment_id" value="${payment.id}">
                         <input type="hidden" name="action" value="reject">
                         <button type="button" title="Reject Payment" onclick="confirmAction(this.form, 'reject')" class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition cursor-pointer">
@@ -968,6 +972,16 @@
     }
 
     function confirmAction(form, action) {
+        // Ensure CSRF token is attached to the form
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaCsrf && !form.querySelector('input[name="_csrf_token"]')) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaCsrf;
+            form.appendChild(csrfInput);
+        }
+
         if (action === 'verify') {
             Swal.fire({
                 icon: 'warning',

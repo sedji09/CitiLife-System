@@ -245,6 +245,7 @@
 
         <form id="recordRequestForm" action="" method="POST" class="px-6 py-6"
             onsubmit="this.querySelector('#realSubmitBtn').disabled = false;">
+            <?= csrf_field() ?>
 
             <!-- STEP 1: SEARCH -->
             <div id="step-1-search">

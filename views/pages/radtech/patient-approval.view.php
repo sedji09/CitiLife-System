@@ -356,6 +356,7 @@ foreach ($allServices as $service) {
         </div>
         
         <form method="POST" id="assignForm" action="" onsubmit="return validateAssignForm(event);" class="space-y-4">
+            <?= csrf_field() ?>
             <!-- Exam Selector -->
             <div>
                 <label id="assignExamLabel" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Select Examination Procedure(s) <span class="text-red-500" id="assignExamRequiredAsterisk">*</span></label>
@@ -721,6 +722,15 @@ foreach ($allServices as $service) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '<?= url('patient-approval?action=reject&id=') ?>' + encodeURIComponent(requestId);
+
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaCsrf) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaCsrf;
+            form.appendChild(csrfInput);
+        }
 
         const reasonInput = document.createElement('input');
         reasonInput.type = 'hidden';

@@ -7,6 +7,8 @@ global $pdo;
 
 $error = '';
 $success = '';
+$minPassLength = intval(getSystemSetting('min_password_length', 8));
+if ($minPassLength <= 0) $minPassLength = 8;
 $validToken = false;
 $token = $_GET['token'] ?? ($_POST['token'] ?? '');
 
@@ -37,14 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
     $password = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    if (strlen($password) < 8) {
-        $error = "Password must be at least 8 characters long.";
-    } else if (!preg_match('/[A-Z]/', $password)) {
-        $error = "Password must contain at least one uppercase letter.";
-    } else if (!preg_match('/[0-9]/', $password)) {
-        $error = "Password must contain at least one number.";
-    } else if (!preg_match('/[^A-Za-z0-9]/', $password)) {
-        $error = "Password must contain at least one special character.";
+    $policyCheck = function_exists('validatePasswordPolicy') 
+        ? validatePasswordPolicy($password) 
+        : ['valid' => strlen($password) >= 8 && preg_match('/[A-Z]/', $password) && preg_match('/[0-9]/', $password) && preg_match('/[^A-Za-z0-9]/', $password), 'error' => 'Password must meet policy requirements.'];
+
+    if (!$policyCheck['valid']) {
+        $error = $policyCheck['error'];
     } else if ($password !== $confirmPassword) {
         $error = "Passwords do not match.";
     } else {
@@ -126,8 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title><?= $isActivation ? 'Set Password & Activate Account' : 'Reset Password' ?> - Citilife System</title>
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
+    <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);
@@ -214,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                         </button>
                     </div>
                     <!-- DESKTOP CHECKER -->
-                    <div class="mt-2 text-left bg-gray-50 rounded-lg p-3 border border-gray-100 hidden"
+                    <div class="mt-2 text-left bg-gray-50 rounded-lg p-3 border border-gray-100"
                         id="d_pw_checker">
                         <div class="flex justify-between items-center mb-1.5">
                             <span class="text-xs font-semibold text-gray-500">Password Strength:</span>
@@ -232,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                                 <svg class="w-3.5 h-3.5 icon-check hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span>8+ characters</span>
+                                <span><?= $minPassLength ?>+ characters</span>
                             </div>
                             <div class="flex items-center gap-1.5 pw-req-upper text-red-600">
                                 <svg class="w-3.5 h-3.5 icon-x" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -273,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                         </div>
-                        <input type="password" name="confirm_password" id="confirm_password" required minlength="8"
+                        <input type="password" name="confirm_password" id="confirm_password" required minlength="<?= $minPassLength ?>"
                             class="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                             placeholder="••••••••">
                         <button type="button" onclick="togglePassword('confirm_password', this)" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
@@ -283,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                     <div id="match_indicator" class="text-xs font-semibold mt-1.5 hidden"></div>
                 </div>
 
-                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
+                <button type="submit" id="submitBtn" disabled class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-gray-400 opacity-50 cursor-not-allowed pointer-events-none transition-all duration-200">
                     <?= $isActivation ? 'Activate Account & Sign In' : 'Update Password' ?>
                 </button>
             </form>
@@ -291,6 +293,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
     </div>
 
     <script>
+        const minLength = <?= $minPassLength ?>;
+
         function togglePassword(inputId, btn) {
             const input = document.getElementById(inputId);
             const isPassword = input.getAttribute('type') === 'password';
@@ -300,33 +304,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                 '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>';
         }
 
-        // Initialize password strengths
-        function initPwChecker(inputId, checkerId) {
-            const input = document.getElementById(inputId);
-            const checker = document.getElementById(checkerId);
-            if (!input || !checker) return;
+        document.addEventListener('DOMContentLoaded', function () {
+            const pwd = document.getElementById('password');
+            const confirmPwd = document.getElementById('confirm_password');
+            const checker = document.getElementById('d_pw_checker');
+            const indicator = document.getElementById('match_indicator');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (!pwd || !confirmPwd || !submitBtn) return;
 
             const reqs = [
-                { class: '.pw-req-length', regex: /.{8,}/ },
-                { class: '.pw-req-upper', regex: /[A-Z]/ },
-                { class: '.pw-req-number', regex: /[0-9]/ },
-                { class: '.pw-req-special', regex: /[^A-Za-z0-9]/ }
+                { class: '.pw-req-length', test: v => v.length >= minLength },
+                { class: '.pw-req-upper', test: v => /[A-Z]/.test(v) },
+                { class: '.pw-req-number', test: v => /[0-9]/.test(v) },
+                { class: '.pw-req-special', test: v => /[^A-Za-z0-9]/.test(v) }
             ];
 
-            input.addEventListener('focus', function () {
-                checker.classList.remove('hidden');
-            });
-
-            input.addEventListener('input', function (e) {
-                const val = e.target.value;
-                let passed = 0;
+            function validateAll() {
+                const val1 = pwd.value || '';
+                const val2 = confirmPwd.value || '';
+                let passedCount = 0;
 
                 reqs.forEach(req => {
                     const el = checker.querySelector(req.class);
                     const iconX = el.querySelector('.icon-x');
                     const iconCheck = el.querySelector('.icon-check');
-                    if (req.regex.test(val)) {
-                        passed++;
+                    if (req.test(val1)) {
+                        passedCount++;
                         el.classList.remove('text-red-600');
                         el.classList.add('text-green-600');
                         iconX.classList.add('hidden');
@@ -341,65 +345,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
 
                 const bar = checker.querySelector('.pw-bar');
                 const label = checker.querySelector('.pw-label');
-                const percent = (passed / reqs.length) * 100;
-
+                const percent = (passedCount / reqs.length) * 100;
                 bar.style.width = percent + '%';
-                bar.className = 'h-full transition-all duration-300 pw-bar ';
-                label.className = 'text-xs font-bold pw-label ';
 
-                if (val.length === 0) {
+                if (val1.length === 0) {
                     label.textContent = '';
                     bar.style.backgroundColor = 'transparent';
-                } else if (passed <= 1) {
-                    bar.style.backgroundColor = '#ef4444'; // red-500
+                } else if (passedCount <= 1) {
+                    bar.style.backgroundColor = '#ef4444';
                     label.style.color = '#ef4444';
                     label.textContent = 'Weak';
-                } else if (passed <= 3) {
-                    bar.style.backgroundColor = '#eab308'; // yellow-500
+                } else if (passedCount <= 3) {
+                    bar.style.backgroundColor = '#eab308';
                     label.style.color = '#eab308';
                     label.textContent = 'Medium';
                 } else {
-                    bar.style.backgroundColor = '#22c55e'; // green-500
+                    bar.style.backgroundColor = '#22c55e';
                     label.style.color = '#22c55e';
                     label.textContent = 'Strong';
                 }
-            });
-        }
 
-        // Initialize password match checker
-        function initMatchChecker(pwdId, confirmId, indicatorId) {
-            const pwd = document.getElementById(pwdId);
-            const confirmPwd = document.getElementById(confirmId);
-            const indicator = document.getElementById(indicatorId);
-
-            if (!pwd || !confirmPwd || !indicator) return;
-
-            function checkMatch() {
-                const val1 = pwd.value;
-                const val2 = confirmPwd.value;
-
+                // Check Match
+                let isMatch = false;
                 if (val2.length === 0) {
                     indicator.classList.add('hidden');
-                    return;
+                } else {
+                    indicator.classList.remove('hidden');
+                    if (val1 === val2) {
+                        isMatch = true;
+                        indicator.textContent = 'Passwords match ✓';
+                        indicator.style.color = '#22c55e';
+                    } else {
+                        isMatch = false;
+                        indicator.textContent = 'Passwords do not match';
+                        indicator.style.color = '#ef4444';
+                    }
                 }
 
-                indicator.classList.remove('hidden');
-                if (val1 === val2) {
-                    indicator.textContent = 'Passwords match';
-                    indicator.style.color = '#22c55e'; // green-500
+                // Enable button only if all 4 policy tests pass AND passwords match
+                const allPassed = (passedCount === reqs.length) && isMatch && (val1.length >= minLength);
+                if (allPassed) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400', 'pointer-events-none');
+                    submitBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'cursor-pointer', 'active:scale-95');
                 } else {
-                    indicator.textContent = 'Passwords do not match';
-                    indicator.style.color = '#ef4444'; // red-500
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400', 'pointer-events-none');
+                    submitBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'cursor-pointer', 'active:scale-95');
                 }
             }
 
-            pwd.addEventListener('input', checkMatch);
-            confirmPwd.addEventListener('input', checkMatch);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            initPwChecker('password', 'd_pw_checker');
-            initMatchChecker('password', 'confirm_password', 'match_indicator');
+            pwd.addEventListener('input', validateAll);
+            confirmPwd.addEventListener('input', validateAll);
+            validateAll();
         });
     </script>
 </body>

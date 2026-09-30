@@ -202,10 +202,23 @@ $router->get('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.ph
 $router->post('/app/api/search_branch_cases.php', 'app/Api/search_branch_cases.php');
 $router->get('/app/api/active_users_count.php', 'app/Api/active_users_count.php');
 $router->get('/app/api/radiologists_status.php', 'app/Api/radiologists_status.php');
+$router->get('/app/api/session_ping.php', 'app/Api/session_ping.php');
+$router->post('/app/api/session_ping.php', 'app/Api/session_ping.php');
+$router->get('/session-ping', 'app/Api/session_ping.php');
+$router->post('/session-ping', 'app/Api/session_ping.php');
 
 $router->get('/migrate', 'app/Api/migrate.php');
 $router->get('/app/api/migrate', 'app/Api/migrate.php');
 $router->get('/app/Api/migrate', 'app/Api/migrate.php');
+
+// Automated Database Backup Cron Endpoint
+$router->get('/api/cron/backup', 'app/Api/cron_backup.php');
+$router->post('/api/cron/backup', 'app/Api/cron_backup.php');
+$router->get('/api/cron-backup', 'app/Api/cron_backup.php');
+$router->post('/api/cron-backup', 'app/Api/cron_backup.php');
+$router->get('/app/api/cron_backup.php', 'app/Api/cron_backup.php');
+$router->post('/app/api/cron_backup.php', 'app/Api/cron_backup.php');
+
 
 $router->get('/system-health', function () {
     global $pdo;
@@ -265,6 +278,12 @@ $router->get('/test-error/500', function () use ($router) {
     $router->error(500); });
 $router->get('/test-error/503', function () use ($router) {
     $router->error(503); });
+
+// Secure Authenticated Medical File Streamer
+$router->get('/image', 'App\Controllers\ImageController@view', ['auth']);
+$router->get('/cases/image', 'App\Controllers\ImageController@view', ['auth']);
+$router->get('/secure-file', 'App\Controllers\ImageController@view', ['auth']);
+
 
 
 

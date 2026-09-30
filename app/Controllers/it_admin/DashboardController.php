@@ -73,20 +73,13 @@ class DashboardController
         $formattedDiskUsed = formatBytes($diskUsed);
         $dbProfile['storage_usage_pct'] = $diskUsagePercentage;
 
-        // Last backup
-        $backupDir = basePath('storage/backups/');
-        $lastBackupTimestamp = null;
-        $backupDirWritable = is_dir($backupDir) && is_writable($backupDir);
-        if (is_dir($backupDir)) {
-            $files = array_diff(scandir($backupDir, SCANDIR_SORT_DESCENDING) ?: [], ['.', '..']);
-            foreach ($files as $file) {
-                if (strpos($file, '.sql') !== false) {
-                    $backupFile = $backupDir . $file;
-                    $lastBackupTimestamp = filemtime($backupFile) ?: null;
-                    $dbProfile['last_backup'] = date('M d, Y H:i', $lastBackupTimestamp);
-                    break;
-                }
-            }
+        // Last backup via BackupService
+        $backupService = new \App\Services\BackupService($pdo);
+        $automationStatus = $backupService->getAutomationStatus();
+        $lastBackupTimestamp = $automationStatus['last_backup_time'];
+        $backupDirWritable = is_dir($backupService->getBackupDir()) && is_writable($backupService->getBackupDir());
+        if ($lastBackupTimestamp) {
+            $dbProfile['last_backup'] = date('M d, Y H:i', $lastBackupTimestamp);
         }
 
         // Real system health checks

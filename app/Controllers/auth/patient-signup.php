@@ -264,7 +264,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title>Patient Registration - <?= htmlspecialchars(getSystemName()) ?></title>
+    <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
     <link rel="stylesheet"
         href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/custom-datepicker.css?v=<?= time() ?>">

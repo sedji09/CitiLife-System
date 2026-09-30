@@ -6,6 +6,7 @@
         </div>
         <div class="flex items-center gap-3">
             <form action="<?= url('feedback') ?>" method="POST" class="flex items-center gap-2">
+                <?= csrf_field() ?>
                 <select name="branch_id" class="appearance-none px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition cursor-pointer" onchange="this.form.submit()">
                     <option value="">All Branches</option>
                     <?php foreach ($branches as $branch): ?>

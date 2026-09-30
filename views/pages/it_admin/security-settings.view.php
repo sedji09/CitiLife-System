@@ -28,6 +28,7 @@
     <?php endif; ?>
 
     <form action="" method="POST" class="space-y-6">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_security">
 
         <!-- Password Policy Card -->

@@ -254,6 +254,7 @@ $catBadgeLabel = match ($dCategory) {
 
 <?php if (empty($activeDispute) && !($isAmendMode ?? false)): ?>
     <form method="POST" action="" enctype="multipart/form-data" id="patient-details-form">
+        <?= csrf_field() ?>
         <input type="hidden" name="from" value="<?= htmlspecialchars($_GET['from'] ?? '') ?>">
     <?php endif; ?>
     <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -527,6 +528,7 @@ $catBadgeLabel = match ($dCategory) {
                 </div>
 
                 <form method="POST" action="" class="p-6 space-y-5 flex-1 flex flex-col">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="save_amendment" value="1">
                     <input type="hidden" name="dispute_id" value="<?= (int) ($activeDispute['id'] ?? 0) ?>">
 
@@ -1638,6 +1640,7 @@ $catBadgeLabel = match ($dCategory) {
         <!-- Modal Form -->
         <form method="POST" action="" id="edit-patient-info-form" onsubmit="return submitEditPatientInfo(event);"
             class="p-6 space-y-4">
+            <?= csrf_field() ?>
             <input type="hidden" name="update_patient_info" value="1">
             <input type="hidden" name="patient_id" value="<?= (int) ($caseDetails['patient_id'] ?? 0) ?>">
             <input type="hidden" name="case_id" value="<?= (int) ($caseDetails['id'] ?? 0) ?>">
@@ -2374,7 +2377,6 @@ $catBadgeLabel = match ($dCategory) {
 
             let autoSaveDebounce = null;
             function scheduleDraftSave() {
-                updateDraftIndicator('saving');
                 clearTimeout(autoSaveDebounce);
                 autoSaveDebounce = setTimeout(async () => {
                     const clinicalVal = clinicalTextarea ? clinicalTextarea.value : '';
@@ -2398,10 +2400,7 @@ $catBadgeLabel = match ($dCategory) {
                         }))
                     };
 
-                    const ok = await saveCaseDraftToIDB(draftData);
-                    if (ok) {
-                        updateDraftIndicator('saved', 'Draft saved');
-                    }
+                    await saveCaseDraftToIDB(draftData);
                 }, 450);
             }
             window.scheduleDraftSave = scheduleDraftSave;

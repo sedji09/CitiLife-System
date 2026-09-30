@@ -1118,6 +1118,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             <form id="paymentForm" method="POST"
                 action="<?= url('app/Api/submit_payment.php') ?>"
                 enctype="multipart/form-data">
+                <?= csrf_field() ?>
                 <input type="hidden" name="case_id" id="paymentCaseId" value="">
                 <input type="hidden" name="amount" id="paymentAmount" value="">
 

@@ -461,6 +461,7 @@ if ($backId) {
 
         <!-- Hidden form -->
         <form id="report-form" method="POST" action="">
+            <?= csrf_field() ?>
             <input type="hidden" name="case_id" value="<?= (int)$caseId ?>">
             <input type="hidden" name="branch_id" value="<?= (int)($caseDetails['branch_id'] ?? $branchIdQuery) ?>">
             <input type="hidden" name="clinical_information" id="clinical_information_hidden"

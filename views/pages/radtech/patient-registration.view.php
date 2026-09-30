@@ -93,6 +93,7 @@
         </div>
 
         <form method="POST" action="" novalidate class="space-y-4 rounded-xl border border-gray-300 shadow-sm bg-white px-6 py-5 mt-3">
+            <?= csrf_field() ?>
 
             <!-- Hidden field for existing patient selected -->
             <div class="hidden" hidden>
@@ -833,7 +834,7 @@
             return false;
         }
 
-        setFieldStatus(input, feedback, 'success', '✓ Valid Philippine mobile number (11/11)');
+        setFieldStatus(input, feedback, 'success', '');
         return true;
     }
 
@@ -854,7 +855,7 @@
             return false;
         }
 
-        setFieldStatus(input, feedback, 'success', '✓ Valid email address');
+        setFieldStatus(input, feedback, 'success', '');
         return true;
     }
 

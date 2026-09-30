@@ -438,7 +438,7 @@ if (!function_exists('generateReportToken')) {
     function generateReportToken($caseId)
     {
         $caseId = (int) $caseId;
-        $secretKey = 'CitiLife_Secure_HMAC_Secret_Token_2026';
+        $secretKey = function_exists('getAppSecret') ? getAppSecret() : (getenv('APP_SECRET') ?: 'CitiLife_Secure_HMAC_Secret_Token_2026');
         $sig = substr(hash_hmac('sha256', (string) $caseId, $secretKey), 0, 12);
         return rtrim(strtr(base64_encode($caseId . ':' . $sig), '+/', '-_'), '=');
     }
@@ -457,7 +457,7 @@ if (!function_exists('verifyReportToken')) {
         $decoded = base64_decode(strtr($token, '-_', '+/'));
         if (!$decoded || strpos($decoded, ':') === false) return 0;
         list($caseId, $sig) = explode(':', $decoded, 2);
-        $secretKey = 'CitiLife_Secure_HMAC_Secret_Token_2026';
+        $secretKey = function_exists('getAppSecret') ? getAppSecret() : (getenv('APP_SECRET') ?: 'CitiLife_Secure_HMAC_Secret_Token_2026');
         $expectedSig = substr(hash_hmac('sha256', (string) $caseId, $secretKey), 0, 12);
         if (hash_equals($expectedSig, $sig)) {
             return (int) $caseId;
@@ -465,3 +465,357 @@ if (!function_exists('verifyReportToken')) {
         return 0;
     }
 }
+
+if (!function_exists('getAppSecret')) {
+    /**
+     * Get the application encryption & HMAC secret key from environment or default fallback
+     * 
+     * @return string
+     */
+    function getAppSecret()
+    {
+        $secret = getenv('APP_SECRET') ?: ($_ENV['APP_SECRET'] ?? ($_SERVER['APP_SECRET'] ?? ''));
+        if (!empty($secret)) {
+            return $secret;
+        }
+        return 'CitiLife_Secure_HMAC_Secret_Token_2026';
+    }
+}
+
+if (!function_exists('csrf_token')) {
+    /**
+     * Get or initialize the CSRF token for the active session
+     * 
+     * @return string
+     */
+    function csrf_token()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        if (empty($_SESSION['_csrf_token']) || !is_string($_SESSION['_csrf_token'])) {
+            try {
+                $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+            } catch (\Throwable $e) {
+                $_SESSION['_csrf_token'] = md5(uniqid((string)mt_rand(), true) . microtime(true));
+            }
+        }
+        return $_SESSION['_csrf_token'];
+    }
+}
+
+if (!function_exists('csrf_field')) {
+    /**
+     * Generate HTML hidden input tag for CSRF protection
+     * 
+     * @return string
+     */
+    function csrf_field()
+    {
+        return '<input type="hidden" name="_csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
+    }
+}
+
+if (!function_exists('verify_csrf_token')) {
+    /**
+     * Verify CSRF token from POST, JSON payload, or Request Header against session token
+     * 
+     * @param string|null $token
+     * @return bool
+     */
+    function verify_csrf_token($token = null)
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
+        if ($token === null) {
+            // Check POST parameters
+            $token = $_POST['_csrf_token'] ?? $_POST['csrf_token'] ?? null;
+
+            // Check Request Headers
+            if (empty($token)) {
+                $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_SERVER['HTTP_X_XSRF_TOKEN'] ?? null);
+            }
+
+            if (empty($token) && function_exists('getallheaders')) {
+                $headers = getallheaders();
+                $token = $headers['X-CSRF-TOKEN'] ?? ($headers['X-CSRF-Token'] ?? ($headers['x-csrf-token'] ?? null));
+            }
+
+            // Check JSON body if applicable
+            if (empty($token)) {
+                $rawInput = @file_get_contents('php://input');
+                if (!empty($rawInput)) {
+                    $json = @json_decode($rawInput, true);
+                    if (is_array($json) && !empty($json['_csrf_token'])) {
+                        $token = $json['_csrf_token'];
+                    } elseif (is_array($json) && !empty($json['csrf_token'])) {
+                        $token = $json['csrf_token'];
+                    }
+                }
+            }
+        }
+
+        if (empty($token) || !is_string($token)) {
+            return false;
+        }
+
+        $sessionToken = csrf_token();
+        return hash_equals($sessionToken, $token);
+    }
+}
+
+if (!function_exists('getClientIp')) {
+    /**
+     * Get real client IP address with proxy support
+     * 
+     * @return string
+     */
+    function getClientIp()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $list = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            return trim($list[0]);
+        }
+        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    }
+}
+
+if (!function_exists('ensureRateLimitsTable')) {
+    /**
+     * Ensure rate_limits table exists in database
+     * 
+     * @param PDO $pdo
+     * @return void
+     */
+    function ensureRateLimitsTable($pdo)
+    {
+        static $ensured = false;
+        if ($ensured || !($pdo instanceof \PDO)) return;
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS rate_limits (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    rate_key VARCHAR(191) NOT NULL UNIQUE,
+                    attempts INT NOT NULL DEFAULT 1,
+                    locked_until DATETIME DEFAULT NULL,
+                    last_attempt_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_rate_key (rate_key),
+                    INDEX idx_locked_until (locked_until)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+            $ensured = true;
+        } catch (\Throwable $e) {
+            // Silently fail if permissions are restricted
+        }
+    }
+}
+
+if (!function_exists('checkRateLimit')) {
+    /**
+     * Check if an action by an identifier (IP / Email) is currently rate limited
+     * 
+     * @param string $action
+     * @param string $identifier
+     * @param int $maxAttempts
+     * @param int $decaySeconds
+     * @return array ['allowed' => bool, 'remaining_seconds' => int, 'attempts' => int]
+     */
+    function checkRateLimit($action, $identifier, $maxAttempts = 5, $decaySeconds = 900)
+    {
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof \PDO)) {
+            return ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 0];
+        }
+
+        ensureRateLimitsTable($pdo);
+        $rateKey = hash('sha256', strtolower(trim($action)) . '|' . strtolower(trim($identifier)));
+
+        try {
+            // Clean up records older than decay period
+            $cleanupStmt = $pdo->prepare("
+                DELETE FROM rate_limits 
+                WHERE rate_key = ? 
+                  AND (locked_until IS NULL OR locked_until <= NOW()) 
+                  AND last_attempt_at < DATE_SUB(NOW(), INTERVAL ? SECOND)
+            ");
+            $cleanupStmt->execute([$rateKey, $decaySeconds]);
+
+            $stmt = $pdo->prepare("SELECT attempts, locked_until, UNIX_TIMESTAMP(locked_until) as locked_ts FROM rate_limits WHERE rate_key = ? LIMIT 1");
+            $stmt->execute([$rateKey]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($row) {
+                $now = time();
+                $lockedTs = $row['locked_ts'] ? intval($row['locked_ts']) : 0;
+                if ($lockedTs > $now) {
+                    return [
+                        'allowed' => false,
+                        'remaining_seconds' => $lockedTs - $now,
+                        'attempts' => intval($row['attempts'])
+                    ];
+                }
+                return [
+                    'allowed' => true,
+                    'remaining_seconds' => 0,
+                    'attempts' => intval($row['attempts'])
+                ];
+            }
+        } catch (\Throwable $e) {}
+
+        return ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 0];
+    }
+}
+
+if (!function_exists('recordFailedAttempt')) {
+    /**
+     * Record a failed attempt for an action & identifier and trigger lockout if limit reached
+     * 
+     * @param string $action
+     * @param string $identifier
+     * @param int $maxAttempts
+     * @param int $decaySeconds
+     * @return array
+     */
+    function recordFailedAttempt($action, $identifier, $maxAttempts = 5, $decaySeconds = 900)
+    {
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof \PDO)) {
+            return ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 1];
+        }
+
+        ensureRateLimitsTable($pdo);
+        $rateKey = hash('sha256', strtolower(trim($action)) . '|' . strtolower(trim($identifier)));
+
+        try {
+            $stmt = $pdo->prepare("SELECT attempts, locked_until, UNIX_TIMESTAMP(locked_until) as locked_ts FROM rate_limits WHERE rate_key = ? LIMIT 1");
+            $stmt->execute([$rateKey]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            $now = time();
+            if ($row) {
+                $attempts = intval($row['attempts']) + 1;
+                $lockedUntil = null;
+                $remainingSeconds = 0;
+
+                if ($attempts >= $maxAttempts) {
+                    $lockedTs = $now + $decaySeconds;
+                    $lockedUntil = date('Y-m-d H:i:s', $lockedTs);
+                    $remainingSeconds = $decaySeconds;
+                }
+
+                $updateStmt = $pdo->prepare("
+                    UPDATE rate_limits 
+                    SET attempts = ?, 
+                        locked_until = CASE WHEN ? IS NOT NULL THEN ? ELSE locked_until END, 
+                        last_attempt_at = NOW() 
+                    WHERE rate_key = ?
+                ");
+                $updateStmt->execute([$attempts, $lockedUntil, $lockedUntil, $rateKey]);
+
+                return [
+                    'allowed' => $attempts < $maxAttempts,
+                    'remaining_seconds' => $remainingSeconds,
+                    'attempts' => $attempts
+                ];
+            } else {
+                $attempts = 1;
+                $lockedUntil = ($attempts >= $maxAttempts) ? date('Y-m-d H:i:s', $now + $decaySeconds) : null;
+                $insertStmt = $pdo->prepare("
+                    INSERT INTO rate_limits (rate_key, attempts, locked_until, last_attempt_at) 
+                    VALUES (?, ?, ?, NOW())
+                ");
+                $insertStmt->execute([$rateKey, $attempts, $lockedUntil]);
+
+                return [
+                    'allowed' => $attempts < $maxAttempts,
+                    'remaining_seconds' => ($attempts >= $maxAttempts) ? $decaySeconds : 0,
+                    'attempts' => $attempts
+                ];
+            }
+        } catch (\Throwable $e) {}
+
+        return ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 1];
+    }
+}
+
+if (!function_exists('clearRateLimit')) {
+    /**
+     * Clear rate limit records upon successful action
+     * 
+     * @param string $action
+     * @param string $identifier
+     * @return void
+     */
+    function clearRateLimit($action, $identifier)
+    {
+        global $pdo;
+        if (!isset($pdo) || !($pdo instanceof \PDO)) return;
+
+        try {
+            $rateKey = hash('sha256', strtolower(trim($action)) . '|' . strtolower(trim($identifier)));
+            $stmt = $pdo->prepare("DELETE FROM rate_limits WHERE rate_key = ?");
+            $stmt->execute([$rateKey]);
+        } catch (\Throwable $e) {}
+    }
+}
+
+if (!function_exists('validatePasswordPolicy')) {
+    /**
+     * Validate password against system security policy
+     * 
+     * @param string $password
+     * @param int|null $minLen
+     * @return array ['valid' => bool, 'error' => string, 'min_length' => int]
+     */
+    function validatePasswordPolicy($password, $minLen = null)
+    {
+        if ($minLen === null || $minLen <= 0) {
+            $minLen = intval(getSystemSetting('min_password_length', 8));
+            if ($minLen <= 0) $minLen = 8;
+        }
+
+        if (strlen($password) < $minLen) {
+            return [
+                'valid' => false,
+                'error' => "Password must be at least {$minLen} characters long.",
+                'min_length' => $minLen
+            ];
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            return [
+                'valid' => false,
+                'error' => "Password must contain at least one uppercase letter (A-Z).",
+                'min_length' => $minLen
+            ];
+        }
+        if (!preg_match('/[0-9]/', $password)) {
+            return [
+                'valid' => false,
+                'error' => "Password must contain at least one number (0-9).",
+                'min_length' => $minLen
+            ];
+        }
+        if (!preg_match('/[^A-Za-z0-9]/', $password)) {
+            return [
+                'valid' => false,
+                'error' => "Password must contain at least one special character (e.g. !@#$%^&*).",
+                'min_length' => $minLen
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'error' => '',
+            'min_length' => $minLen
+        ];
+    }
+}
+
+
+
+

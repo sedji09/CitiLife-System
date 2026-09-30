@@ -97,8 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title><?= $isStaffPortal ? 'Staff Password Reset' : 'Forgot Password' ?> - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
+    <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);

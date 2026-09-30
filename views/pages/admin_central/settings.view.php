@@ -51,6 +51,7 @@
         <?php endif; ?>
 
         <form id="settingsForm" action="" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="update_settings">
 
             <!-- General Branding Card -->

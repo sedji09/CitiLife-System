@@ -489,6 +489,15 @@
         form.method = 'POST';
         form.action = '';
 
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaCsrf) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaCsrf;
+            form.appendChild(csrfInput);
+        }
+
         const idInput = document.createElement('input');
         idInput.type = 'hidden';
         idInput.name = 'request_id';
@@ -587,6 +596,15 @@
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '';
+
+        const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaCsrf) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaCsrf;
+            form.appendChild(csrfInput);
+        }
 
         const idInput = document.createElement('input');
         idInput.type = 'hidden';

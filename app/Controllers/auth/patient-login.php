@@ -28,6 +28,9 @@ if (isset($_SESSION['role'])) {
 }
 
 $error = '';
+if (isset($_GET['error']) && $_GET['error'] === 'inactivity') {
+    $error = "Your session expired due to inactivity. Please log in again.";
+}
 $warning = '';
 $is_locked = false;
 $lock_message = '';
@@ -39,18 +42,33 @@ if (!isset($_SESSION['login_attempts'])) {
 $attempts = &$_SESSION['login_attempts'];
 $currentTime = time();
 
-if ($attempts['locked_until'] > $currentTime) {
+$clientIp = function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+$ipLimit = function_exists('checkRateLimit') ? checkRateLimit('login_patient_ip', $clientIp, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
+
+if (!$ipLimit['allowed']) {
+    $is_locked = true;
+    $remaining = $ipLimit['remaining_seconds'];
+    $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
+    $lock_message = "Too many failed login attempts. Please try again after $time_str.";
+} elseif ($attempts['locked_until'] > $currentTime) {
     $is_locked = true;
     $remaining = $attempts['locked_until'] - $currentTime;
     $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
-    $lock_message = "Too many failed attempts. Please try again after $time_str.";
+    $lock_message = "Too many failed login attempts. Please try again after $time_str.";
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (!empty($email) && !empty($password)) {
+    // Check account-specific rate limit
+    $emailLimit = function_exists('checkRateLimit') ? checkRateLimit('login_patient_email', $email, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
+    if (!$emailLimit['allowed']) {
+        $is_locked = true;
+        $remaining = $emailLimit['remaining_seconds'];
+        $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
+        $lock_message = "This account is temporarily locked due to multiple failed login attempts. Please try again after $time_str.";
+    } elseif (!empty($email) && !empty($password)) {
         // VALIDATION using filter_var();
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = "Invalid email format.";
@@ -77,6 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                     $error = 'Your account has been deactivated. Please contact the clinic.';
                 } else {
 
+                    // Clear rate limits on successful auth
+                    if (function_exists('clearRateLimit')) {
+                        clearRateLimit('login_patient_ip', $clientIp);
+                        clearRateLimit('login_patient_email', $email);
+                    }
+
                     // Check if device is remembered (Skip OTP if valid token exists)
                     $rememberToken = $_COOKIE['remember_device'] ?? null;
                     if ($rememberToken) {
@@ -84,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                         $stmtDevice->execute([$user['id'], $rememberToken]);
                         if ($stmtDevice->fetch()) {
                             // Device remembered, skip OTP and start full session
+                            session_regenerate_id(true);
                             $patientDisplayName = !empty($user['name']) ? $user['name'] : (!empty($user['first_name']) ? $user['first_name'] : trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')));
                             $_SESSION['user_id'] = $user['id'];
                             $_SESSION['role'] = $user['role'];
@@ -91,6 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             $_SESSION['patient_id'] = $user['patient_id'];
                             $_SESSION['name'] = $patientDisplayName;
                             $_SESSION['branch_id'] = $user['branch_id'];
+                            $_SESSION['LAST_ACTIVITY'] = time();
 
                             require_once basePath('app/Models/AuditLogModel.php');
                             $auditLogModel = new \AuditLogModel($pdo);
@@ -143,35 +169,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 $attempts['attempts']++;
                 if ($attempts['attempts'] >= 8) {
                     $attempts['locked_until'] = time() + 900; // 15 minutes
-                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } elseif ($attempts['attempts'] == 7) {
                     $attempts['locked_until'] = time() + 300; // 5 minutes
-                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } elseif ($attempts['attempts'] == 6) {
                     $attempts['locked_until'] = time() + 60; // 1 minute
-                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
                 } elseif ($attempts['attempts'] == 5) {
                     $attempts['locked_until'] = time() + 30; // 30 seconds
-                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
-                } else {
-                    $error = 'Invalid email or password.';
-                    if ($attempts['attempts'] >= 3) {
-                        $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
-                    }
-
-                    // Log the failed attempt
-                    require_once basePath('app/Models/AuditLogModel.php');
-                    $auditLogModel = new \AuditLogModel($pdo);
-                    $failedUserId = $user ? $user['id'] : 0;
-                    $auditLogModel->addLog(
-                        $failedUserId,
-                        'Failed Patient Login',
-                        'Patient Portal',
-                        'Session',
-                        $failedUserId,
-                        "Invalid email or password (" . substr($email, 0, 50) . ")"
-                    );
                 }
+
+                // Record IP and Email failed attempt
+                $rateResIp = function_exists('recordFailedAttempt') ? recordFailedAttempt('login_patient_ip', $clientIp, 5, 900) : ['allowed' => true];
+                $rateResEmail = function_exists('recordFailedAttempt') ? recordFailedAttempt('login_patient_email', $email, 5, 900) : ['allowed' => true];
+
+                if ($attempts['attempts'] >= 5 || !$rateResIp['allowed'] || !$rateResEmail['allowed']) {
+                    redirect(url('patient-login' . (!empty($redirectUrl) ? '?redirect=' . urlencode($redirectUrl) : '')));
+                }
+
+                $error = 'Invalid email or password.';
+                if ($attempts['attempts'] >= 3 || ($rateResIp['attempts'] ?? 0) >= 3) {
+                    $warning = "Warning: Multiple failed attempts. Account will be locked after 5 fails.";
+                }
+
+                // Log the failed attempt
+                require_once basePath('app/Models/AuditLogModel.php');
+                $auditLogModel = new \AuditLogModel($pdo);
+                $failedUserId = $user ? $user['id'] : 0;
+                $auditLogModel->addLog(
+                    $failedUserId,
+                    'Failed Patient Login',
+                    'Patient Portal',
+                    'Session',
+                    $failedUserId,
+                    "Invalid email or password (" . substr($email, 0, 50) . ")"
+                );
             }
         }
     } else {
@@ -179,11 +209,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     }
 }
 
-// Redirect back to landing page popup on any GET request or if there are errors
 $params = ['login' => 1];
 if (!empty($error)) $params['error'] = $error;
 if (!empty($warning)) $params['warning'] = $warning;
-if ($is_locked) $params['locked'] = $lock_message;
+if ($is_locked) {
+    $params['locked'] = $lock_message;
+    $params['locked_seconds'] = $remaining ?? 900;
+}
 if (!empty($redirectUrl)) $params['redirect'] = $redirectUrl;
 
 $qs = http_build_query($params);

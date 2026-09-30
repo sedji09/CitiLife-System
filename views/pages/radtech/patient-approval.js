@@ -1280,6 +1280,15 @@ function saveEditModal() {
     form.method = 'POST';
     form.action = window.__APP__.basePath + '/config/update_patient.php';
 
+    const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (metaCsrf) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf_token';
+        csrfInput.value = metaCsrf;
+        form.appendChild(csrfInput);
+    }
+
     const inputs = [
         { name: 'id', value: currentEditId },
         { name: 'name', value: name },

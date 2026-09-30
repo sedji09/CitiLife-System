@@ -211,6 +211,7 @@
                                             <?php if ($u['status'] === 'Pending'): ?>
                                                 <form action="" method="POST" class="inline"
                                                     onsubmit="return confirm('Resend account activation email to <?= htmlspecialchars($u['email']) ?>?')">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="resend_invite">
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <button type="submit"
@@ -221,6 +222,7 @@
                                                 </form>
                                             <?php elseif ($u['status'] === 'Active'): ?>
                                                 <form action="" method="POST" class="inline">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Inactive">
@@ -232,6 +234,7 @@
                                                 </form>
                                             <?php else: ?>
                                                 <form action="" method="POST" class="inline">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <input type="hidden" name="new_status" value="Active">
@@ -294,6 +297,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="create">
 
             <div>
@@ -376,6 +380,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="user_id" id="edit_user_id">
 
@@ -585,6 +590,15 @@
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '';
+
+            const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (metaCsrf) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf_token';
+                csrfInput.value = metaCsrf;
+                form.appendChild(csrfInput);
+            }
 
             const actionInput = document.createElement('input');
             actionInput.type = 'hidden';

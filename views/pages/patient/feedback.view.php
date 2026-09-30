@@ -57,6 +57,7 @@
 
         <div class="p-6">
             <form action="<?= url('feedback') ?>" method="POST" class="space-y-6">
+                <?= csrf_field() ?>
                 <input type="hidden" name="case_id" value="<?= htmlspecialchars($caseId ?? '') ?>">
                 <!-- Star Rating -->
                 <div>

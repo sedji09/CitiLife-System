@@ -213,6 +213,7 @@
                                         <div class="flex items-center justify-start gap-1.5">
                                             <?php if ($s['status'] === 'active'): ?>
                                                 <form action="" method="POST" class="inline">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="service_id" value="<?= $s['id'] ?>">
                                                     <input type="hidden" name="new_status" value="inactive">
@@ -224,6 +225,7 @@
                                                 </form>
                                             <?php else: ?>
                                                 <form action="" method="POST" class="inline">
+                                                    <?= csrf_field() ?>
                                                     <input type="hidden" name="action" value="toggle-status">
                                                     <input type="hidden" name="service_id" value="<?= $s['id'] ?>">
                                                     <input type="hidden" name="new_status" value="active">
@@ -283,6 +285,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="create">
             
             <div>
@@ -379,6 +382,7 @@
             </button>
         </div>
         <form action="" method="POST" class="p-6 space-y-4" autocomplete="off">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="service_id" id="edit_service_id">
             
@@ -598,6 +602,15 @@
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '';
+
+            const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (metaCsrf) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf_token';
+                csrfInput.value = metaCsrf;
+                form.appendChild(csrfInput);
+            }
 
             const actionInput = document.createElement('input');
             actionInput.type = 'hidden';

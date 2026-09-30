@@ -2,8 +2,13 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+$isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $role = $_SESSION['role'] ?? 'guest';
-$homeLink = ($role !== 'guest') ? url('dashboard') : url('login');
+$homeLink = $isLoggedIn ? url('dashboard') : url('login');
+$btnLabel = $isLoggedIn ? 'Return to Dashboard' : 'Go to Login';
+$descText = $isLoggedIn 
+    ? 'You do not have permission to view this medical record or page.' 
+    : 'Authentication required. Please log in with an authorized account to access this record.';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -94,7 +99,7 @@ $homeLink = ($role !== 'guest') ? url('dashboard') : url('login');
             <h1 class="error-code mb-2">403</h1>
             <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Access Denied</h2>
             <p class="text-base text-gray-600 mb-3 max-w-md mx-auto leading-relaxed">
-                You do not have permission to view this medical record or page.
+                <?= htmlspecialchars($descText) ?>
             </p>
             <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-semibold mb-6 shadow-xs">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -107,11 +112,19 @@ $homeLink = ($role !== 'guest') ? url('dashboard') : url('login');
 
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-md mx-auto">
                 <a href="<?= $homeLink ?>" class="btn-premium flex-1 w-full h-12 px-5 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm whitespace-nowrap">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                    </svg>
-                    Return to Dashboard
+                    <?php if ($isLoggedIn): ?>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    <?php else: ?>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                    <?php endif; ?>
+                    <?= htmlspecialchars($btnLabel) ?>
                 </a>
                 <button type="button" onclick="if(window.history.length > 1) { window.history.back(); } else { window.location.href='<?= $homeLink ?>'; }"
                     class="flex-1 w-full h-12 px-5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 text-sm whitespace-nowrap shadow-xs cursor-pointer">

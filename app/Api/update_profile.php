@@ -113,6 +113,16 @@ try {
                 }
 
                 if (!empty($password)) {
+                    $policyCheck = function_exists('validatePasswordPolicy') 
+                        ? validatePasswordPolicy($password) 
+                        : ['valid' => strlen($password) >= 8, 'error' => 'Password must be at least 8 characters.'];
+
+                    if (!$policyCheck['valid']) {
+                        $pdo->rollBack();
+                        echo json_encode(['success' => false, 'error' => $policyCheck['error']]);
+                        exit;
+                    }
+
                     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                     if ($avatarPath) {
                         $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, password = ?, avatar = ? WHERE id = ?");

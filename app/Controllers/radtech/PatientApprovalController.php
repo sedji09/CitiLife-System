@@ -58,7 +58,7 @@ class PatientApprovalController
                     // Generate a case number and insert into cases table
                     $caseBranchId = !empty($req['branch_id']) ? (int)$req['branch_id'] : (int)$branchId;
                     $caseNumber = $caseModel->generateCaseNumber($caseBranchId);
-                    $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
+                    $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
                     $stmtCase->execute([
                         $caseNumber, 
                         $req['patient_id'], 
@@ -67,6 +67,7 @@ class PatientApprovalController
                         $req['priority'], 
                         $req['philhealth_status'], 
                         $req['philhealth_id'],
+                        $req['philhealth_relation'] ?? null,
                         $requestId
                     ]);
                     $newCaseId = $pdo->lastInsertId();
