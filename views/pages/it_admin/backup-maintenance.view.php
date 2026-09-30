@@ -14,11 +14,6 @@
             <p class="text-sm text-gray-500 mt-1">Manage database snapshots, automated weekly schedules, selective exports, and restoration.</p>
         </div>
         <div class="flex items-center gap-2">
-            <button type="button" onclick="openCronModal()"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 text-xs font-bold text-gray-700 hover:text-indigo-600 transition shadow-xs cursor-pointer">
-                <i data-lucide="cloud-cog" class="w-4 h-4 text-indigo-500"></i>
-                <span>Cloud Cron Setup</span>
-            </button>
             <form action="" method="POST" class="inline">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="trigger_auto_backup">
@@ -357,67 +352,6 @@
     </div>
 </div>
 
-<!-- Cloud Cron Webhook Setup Modal -->
-<div id="cron-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col" style="max-height: 90vh;">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-            <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <i data-lucide="cloud-cog" class="w-4 h-4"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-bold text-gray-900">Cloud Cron Webhook Setup</h3>
-                    <p class="text-[11px] text-gray-500">Automate weekly backups on Railway via external cron services.</p>
-                </div>
-            </div>
-            <button type="button" onclick="closeCronModal()" class="text-gray-400 hover:text-gray-600 transition p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <div class="p-6 overflow-y-auto custom-scrollbar space-y-4 text-xs text-gray-600">
-            <div>
-                <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Your Webhook Endpoint URL
-                </label>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="cron-webhook-url" readonly value="<?= htmlspecialchars($cronWebhookUrl ?? '') ?>"
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono text-gray-800 select-all">
-                    <button type="button" onclick="copyWebhookUrl()" id="copy-btn"
-                        class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shrink-0 flex items-center gap-1.5 transition cursor-pointer shadow-xs">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                        <span id="copy-text">Copy</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200/70 space-y-3">
-                <h4 class="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-                    <i data-lucide="list-checks" class="w-4 h-4 text-indigo-600"></i>
-                    3-Step Setup (via cron-job.org):
-                </h4>
-                <ol class="list-decimal list-inside space-y-2 text-[11px] text-gray-600 leading-relaxed">
-                    <li>Open <a href="https://cron-job.org" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-bold hover:underline">cron-job.org</a> and create a free account.</li>
-                    <li>Click <strong>"Create Cronjob"</strong> and paste the <strong>Webhook URL</strong> above into the URL field.</li>
-                    <li>Set the schedule to <strong>"Every Sunday at 00:00 (Asia/Manila)"</strong> and save.</li>
-                </ol>
-            </div>
-
-            <div class="text-[11px] text-gray-500 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 flex items-start gap-2">
-                <i data-lucide="info" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
-                <p>When triggered, the system generates a new <strong>citilife_auto_*.sql</strong> snapshot and automatically archives snapshots older than 60 days.</p>
-            </div>
-        </div>
-
-        <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50/50 flex justify-end shrink-0">
-            <button type="button" onclick="closeCronModal()"
-                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
-                Close
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- Trash Bin Modal -->
 <div id="trash-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col" style="max-height: 85vh;">
@@ -530,38 +464,6 @@
 </form>
 
 <script>
-    function openCronModal() {
-        const modal = document.getElementById('cron-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-    }
-
-    function closeCronModal() {
-        const modal = document.getElementById('cron-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-    }
-
-    function copyWebhookUrl() {
-        const input = document.getElementById('cron-webhook-url');
-        if (!input) return;
-        input.select();
-        input.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(input.value).then(() => {
-            const textSpan = document.getElementById('copy-text');
-            if (textSpan) {
-                const orig = textSpan.innerText;
-                textSpan.innerText = 'Copied!';
-                setTimeout(() => textSpan.innerText = orig, 2000);
-            }
-        });
-    }
-
     async function triggerFilteredBackup(btn, event) {
         const tableSelect = document.getElementById('table_filter');
         const yearSelect = document.getElementById('year_filter');
