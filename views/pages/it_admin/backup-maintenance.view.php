@@ -320,14 +320,13 @@
                                                 class="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Restore Live Database (Rollback)">
                                                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <!-- Main Database Cylinder -->
-                                                    <ellipse cx="10" cy="5" rx="7" ry="2.5"></ellipse>
-                                                    <path d="M3 5v13c0 1.38 3.13 2.5 7 2.5 1.1 0 2.1-.09 3-.24"></path>
-                                                    <path d="M3 11c0 1.38 3.13 2.5 7 2.5 1.2 0 2.3-.08 3.3-.23"></path>
-                                                    <path d="M17 5v5"></path>
-                                                    <!-- Mini Complete Curved Restore Arrow Badge -->
-                                                    <path d="M21.5 16.5a3.2 3.2 0 1 1-.95-2.27L18.5 16"></path>
-                                                    <polyline points="16 15.5 18.5 16 18.5 13.5"></polyline>
+                                                    <!-- Top Database Disk -->
+                                                    <ellipse cx="12" cy="5" rx="8" ry="2.5"></ellipse>
+                                                    <path d="M4 5v4c0 1.1 2.4 2 5.5 2.3"></path>
+                                                    <path d="M20 5v4c0 .3-.2.6-.5.9"></path>
+                                                    <!-- Prominent Bold Curved Restore / Rollback Arrow -->
+                                                    <path d="M3 16.5a7.5 7.5 0 1 0 2.2-5.3L3 13"></path>
+                                                    <polyline points="3 8 3 13 8 13"></polyline>
                                                 </svg>
                                             </button>
 
