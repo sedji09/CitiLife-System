@@ -208,7 +208,7 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
             $urlDateFilter = 'All';
         } elseif ($lowerDateUrl === 'today') {
             $urlDateFilter = 'Today';
-        } elseif (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) || isset($_GET['priority'])) {
+        } elseif (isset($_GET['highlight']) || isset($_GET['highlight_case']) || isset($_GET['status']) || isset($_GET['priority']) || isset($_GET['branch'])) {
             $urlDateFilter = 'All';
         } elseif ($initialIsRelease) {
             $urlDateFilter = 'All';
@@ -890,6 +890,8 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                     if (rawD === 'backlog') tabStates[initialTab].date = 'Backlog';
                     else if (rawD === 'today') tabStates[initialTab].date = 'Today';
                     else if (rawD === 'all') tabStates[initialTab].date = 'All';
+                } else if (params.has('branch') || params.has('priority') || params.has('status') || params.has('filterStatus')) {
+                    tabStates[initialTab].date = 'All';
                 }
                 if (params.has('sort')) {
                     tabStates[initialTab].sort = params.get('sort');

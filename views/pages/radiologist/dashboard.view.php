@@ -613,7 +613,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         const firstPoint = exactElements[0];
                         const label = chart.data.labels[firstPoint.index];
                         const datasetLabel = chart.data.datasets[firstPoint.datasetIndex].label;
-                        window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?branch=' + encodeURIComponent(label) + '&priority=' + encodeURIComponent(datasetLabel);
+                        window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?branch=' + encodeURIComponent(label) + '&priority=' + encodeURIComponent(datasetLabel) + '&date=All&status=all&tab=worklist';
                     }
                 },
                 onHover: (e, activeElements) => {
@@ -677,7 +677,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     if (exactElements.length > 0) {
                         const firstPoint = exactElements[0];
                         const label = chart.data.labels[firstPoint.index]; // Branch
-                        window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?branch=' + encodeURIComponent(label);
+                        window.location.href = '<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>worklist?branch=' + encodeURIComponent(label) + '&date=All&status=all&priority=all&tab=worklist';
                     }
                 },
                 onHover: (e, activeElements) => {
