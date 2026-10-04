@@ -103,7 +103,7 @@
             </div>
             <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
                 <span class="text-gray-400 font-medium">Last Auto Run:</span>
-                <span class="font-bold text-indigo-600"><?= htmlspecialchars($automationStatus['last_auto_backup_formatted']) ?></span>
+                <span class="font-bold text-gray-800"><?= !empty($automationStatus['last_auto_backup_time']) ? date('M d, g:i A', $automationStatus['last_auto_backup_time']) : 'Never' ?></span>
             </div>
         </div>
 
@@ -120,10 +120,8 @@
                 <p class="text-[11px] text-gray-500 mt-0.5">Automated cleanup protects disk space.</p>
             </div>
             <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
-                <span class="text-gray-400 font-medium">Trash Bin:</span>
-                <button type="button" onclick="openTrashModal()" class="font-bold text-amber-600 hover:text-amber-700 hover:underline cursor-pointer">
-                    <?= count($trashBackups) ?> Archived Files
-                </button>
+                <span class="text-gray-400 font-medium">Status:</span>
+                <span class="font-bold text-gray-800">Protected</span>
             </div>
         </div>
 
