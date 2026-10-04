@@ -79,7 +79,7 @@ class DashboardController
         $lastBackupTimestamp = $automationStatus['last_backup_time'];
         $backupDirWritable = is_dir($backupService->getBackupDir()) && is_writable($backupService->getBackupDir());
         if ($lastBackupTimestamp) {
-            $dbProfile['last_backup'] = date('M d, Y H:i', $lastBackupTimestamp);
+            $dbProfile['last_backup'] = date('M d, Y - h:i A', $lastBackupTimestamp);
         }
 
         // Real system health checks
