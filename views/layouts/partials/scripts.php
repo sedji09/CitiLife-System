@@ -1721,19 +1721,20 @@
               this.notificationCount = data.unread_count;
               this.notifications = data.notifications;
 
-              // Play sound and display toast alerts for new unread notifications
-              if (!isInitial && data.notifications.length > 0) {
-                const newNotifs = data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
-                if (newNotifs.length > 0) {
-                  if (this.notifSound) {
-                    this.playNotificationSound();
-                  }
-                  if (this.notifSystem) {
-                    newNotifs.forEach(n => {
-                      const category = this.getNotificationCategory(n);
-                      this.showToast(n.title, n.message, category, n.link, n.id);
-                    });
-                  }
+              // Play sound and display toast alerts for unread notifications
+              const newNotifs = isInitial
+                ? data.notifications.filter(n => n.is_read == 0).slice(0, 3)
+                : data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
+
+              if (newNotifs.length > 0) {
+                if (this.notifSound) {
+                  this.playNotificationSound();
+                }
+                if (this.notifSystem) {
+                  newNotifs.forEach(n => {
+                    const category = this.getNotificationCategory(n);
+                    this.showToast(n.title, n.message, category, n.link, n.id);
+                  });
                 }
               }
 
@@ -1817,6 +1818,7 @@
           combined.includes('resolved') ||
           combined.includes('verified') ||
           combined.includes('success') ||
+          combined.includes('backup') ||
           (combined.includes('completed') && !combined.includes('reading completed'))
         ) {
           return 'success';
