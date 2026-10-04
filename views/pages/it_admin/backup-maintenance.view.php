@@ -320,11 +320,13 @@
                                                 class="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Restore Live Database (Rollback)">
                                                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                                                    <path d="M3 5v14a9 3 0 0 0 7 2.9"></path>
-                                                    <path d="M3 12a9 3 0 0 0 6.5 2.8"></path>
-                                                    <path d="M21 16a4 4 0 0 0-4-4h-5"></path>
-                                                    <polyline points="15 9 12 12 15 15"></polyline>
+                                                    <!-- Circular restore loop with curved arrow -->
+                                                    <path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"></path>
+                                                    <polyline points="3 3 3 8 8 8"></polyline>
+                                                    <!-- Database cylinder inside center -->
+                                                    <ellipse cx="13" cy="10.5" rx="3.5" ry="1.3"></ellipse>
+                                                    <path d="M9.5 10.5v3.5c0 .7 1.6 1.3 3.5 1.3s3.5-.6 3.5-1.3v-3.5"></path>
+                                                    <path d="M9.5 12.2c0 .7 1.6 1.3 3.5 1.3s3.5-.6 3.5-1.3"></path>
                                                 </svg>
                                             </button>
 
