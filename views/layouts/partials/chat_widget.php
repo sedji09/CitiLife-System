@@ -213,10 +213,10 @@
         </div>
 
         <!-- Input (FB Messenger Desktop Style) -->
-        <div class="px-2 py-2 border-t border-gray-100 flex items-center gap-1.5 shrink-0 bg-white">
+        <div class="px-2 py-2 border-t border-gray-100 flex items-end gap-1.5 shrink-0 bg-white">
           <!-- Photo icon -->
           <button type="button" @click="triggerChatAttachment(chat.id)"
-            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
+            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0 mb-0.5"
             title="Attach photo">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
@@ -226,23 +226,31 @@
           <input type="file" :ref="'chatAttachment_' + chat.id" class="hidden" accept="image/*,.pdf,.doc,.docx" multiple
             @change="handleChatAttachment(chat, $event)">
 
-          <!-- Capsule input (with subtle border and soft gray background) -->
-          <div class="flex-1 relative flex items-center">
-            <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" @focus="markChatAsSeen(chat)" @input="markChatAsSeen(chat)" @click="markChatAsSeen(chat)" placeholder="Aa"
-              class="w-full focus:bg-white rounded-full px-3.5 py-1.5 text-[14px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400 transition-all"
-              style="background-color: #f0f2f5; border: 1px solid #d1d5db; pointer-events: auto !important; position: relative; z-index: 51;">
+          <!-- Dynamic Multi-line Expanding Capsule Input (FB Messenger Style) -->
+          <div class="flex-1 relative flex items-center min-w-0">
+            <textarea
+              :ref="'chatInput_' + chat.id"
+              v-model="chat.newMessage"
+              rows="1"
+              placeholder="Aa"
+              @keydown="handleChatKeyDown(chat, $event)"
+              @input="onChatInput(chat, $event)"
+              @focus="markChatAsSeen(chat)"
+              @click="markChatAsSeen(chat)"
+              class="w-full focus:bg-white rounded-2xl px-3.5 py-1.5 text-[14px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400 transition-[border-color,background-color] resize-none leading-snug"
+              style="background-color: #f0f2f5; border: 1px solid #d1d5db; pointer-events: auto !important; position: relative; z-index: 51; max-height: 120px; min-height: 36px; height: 36px; overflow-y: auto; box-sizing: border-box; scrollbar-width: thin;"></textarea>
           </div>
 
           <!-- Dynamic Thumbs Up / Send Button -->
           <button v-if="chat.newMessage && chat.newMessage.trim() || (chat.selectedAttachments && chat.selectedAttachments.length > 0)"
             @click="sendMessage(chat)" 
-            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
+            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0 mb-0.5"
             title="Send">
             <i data-lucide="send" class="w-4 h-4"></i>
           </button>
           <button v-else
             type="button" @click="chat.newMessage = '__LIKE_ICON__'; sendMessage(chat)"
-            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0"
+            class="w-8 h-8 rounded-full text-red-600 hover:bg-red-50 flex items-center justify-center transition shrink-0 mb-0.5"
             title="Send a Like">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.77-.7-1.28-.56L10.5 4.3 6.8 8.01C6.29 8.52 6 9.22 6 9.94V19c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-.12z"/>

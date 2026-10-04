@@ -1086,9 +1086,32 @@
           }
         }
       },
+      handleChatKeyDown(chat, event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          this.sendMessage(chat);
+        }
+      },
+      onChatInput(chat, event) {
+        this.markChatAsSeen(chat);
+        const el = event.target;
+        if (el) {
+          el.style.height = '36px';
+          el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+      },
       setReply(chat, msg) {
         const text = (msg.message || '').slice(0, 20);
         chat.newMessage = 'Replying: ' + text + (text.length >= 20 ? '... ' : ' ');
+        nextTick(() => {
+          const inputRef = this.$refs['chatInput_' + chat.id];
+          const inputEl = Array.isArray(inputRef) ? inputRef[0] : inputRef;
+          if (inputEl) {
+            inputEl.style.height = '36px';
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+            inputEl.focus();
+          }
+        });
       },
       getBubbleRadius(chat, msg, msgIndex) {
         if (!chat.messages) return 'border-radius: 18px;';
@@ -1181,6 +1204,14 @@
 
           chat.newMessage = '';
           this.removeAllChatAttachments(chat);
+          this.markChatAsSeen(chat);
+
+          const inputRef = this.$refs['chatInput_' + chat.id];
+          const inputEl = Array.isArray(inputRef) ? inputRef[0] : inputRef;
+          if (inputEl) {
+            inputEl.style.height = '36px';
+          }
+
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
