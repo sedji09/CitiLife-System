@@ -1721,20 +1721,25 @@
               this.notificationCount = data.unread_count;
               this.notifications = data.notifications;
 
-              // Play sound and display toast alerts for unread notifications (Max 1 toast on load to prevent spam)
-              const newNotifs = isInitial
-                ? data.notifications.filter(n => n.is_read == 0).slice(0, 1)
-                : data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
+              // Suppress toast notifications while the Confidentiality Agreement modal is active
+              const isPrivacyModalOpen = !!document.getElementById('dpm-overlay');
 
-              if (newNotifs.length > 0) {
-                if (this.notifSound) {
-                  this.playNotificationSound();
-                }
-                if (this.notifSystem) {
-                  newNotifs.forEach(n => {
-                    const category = this.getNotificationCategory(n);
-                    this.showToast(n.title, n.message, category, n.link, n.id);
-                  });
+              // Play sound and display toast alerts for unread notifications (Max 1 toast on load to prevent spam)
+              if (!isPrivacyModalOpen) {
+                const newNotifs = isInitial
+                  ? data.notifications.filter(n => n.is_read == 0).slice(0, 1)
+                  : data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
+
+                if (newNotifs.length > 0) {
+                  if (this.notifSound) {
+                    this.playNotificationSound();
+                  }
+                  if (this.notifSystem) {
+                    newNotifs.forEach(n => {
+                      const category = this.getNotificationCategory(n);
+                      this.showToast(n.title, n.message, category, n.link, n.id);
+                    });
+                  }
                 }
               }
 
