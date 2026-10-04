@@ -320,13 +320,20 @@
                                                 class="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Restore Live Database (Rollback)">
                                                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <!-- Top Database Disk -->
-                                                    <ellipse cx="12" cy="5" rx="8" ry="2.5"></ellipse>
-                                                    <path d="M4 5v4c0 1.1 2.4 2 5.5 2.3"></path>
-                                                    <path d="M20 5v4c0 .3-.2.6-.5.9"></path>
-                                                    <!-- Prominent Bold Curved Restore / Rollback Arrow -->
-                                                    <path d="M3 16.5a7.5 7.5 0 1 0 2.2-5.3L3 13"></path>
-                                                    <polyline points="3 8 3 13 8 13"></polyline>
+                                                    <!-- Database Stack (Left) -->
+                                                    <ellipse cx="9" cy="5" rx="5.5" ry="2"></ellipse>
+                                                    <path d="M3.5 5v12.5c0 1.1 2.5 2 5.5 2 .9 0 1.8-.1 2.6-.3"></path>
+                                                    <path d="M3.5 9.2c0 1.1 2.5 2 5.5 2 1 0 1.9-.1 2.8-.4"></path>
+                                                    <path d="M3.5 13.4c0 1.1 2.5 2 5.5 2 .7 0 1.3-.06 1.9-.18"></path>
+                                                    <path d="M14.5 5v4"></path>
+                                                    <line x1="6.5" y1="7.8" x2="9.5" y2="7.8"></line>
+                                                    <line x1="6.5" y1="12" x2="9.5" y2="12"></line>
+                                                    <line x1="6.5" y1="16.2" x2="8.5" y2="16.2"></line>
+                                                    <!-- History Clock Restore Loop (Bottom-Right) -->
+                                                    <path d="M21.5 15.5a5.5 5.5 0 1 1-1.9-4.2"></path>
+                                                    <polyline points="21.5 11 21.5 15.5 17 15.5"></polyline>
+                                                    <!-- Clock Hands -->
+                                                    <polyline points="14 16 16 16 16 13.5"></polyline>
                                                 </svg>
                                             </button>
 
