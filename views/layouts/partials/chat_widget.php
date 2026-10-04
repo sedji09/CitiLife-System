@@ -228,7 +228,7 @@
 
           <!-- Capsule input (with subtle border and soft gray background) -->
           <div class="flex-1 relative flex items-center">
-            <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" placeholder="Aa"
+            <input type="text" v-model="chat.newMessage" @keyup.enter="sendMessage(chat)" @focus="markChatAsSeen(chat)" @input="markChatAsSeen(chat)" @click="markChatAsSeen(chat)" placeholder="Aa"
               class="w-full focus:bg-white rounded-full px-3.5 py-1.5 text-[14px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400 transition-all"
               style="background-color: #f0f2f5; border: 1px solid #d1d5db; pointer-events: auto !important; position: relative; z-index: 51;">
           </div>

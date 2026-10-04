@@ -88,7 +88,7 @@ try {
             }
 
             // Mark as read optionally
-            $markRead = $_GET['mark_read'] ?? '1';
+            $markRead = $_GET['mark_read'] ?? '0';
             if ($markRead === '1') {
                 $stmt = $pdo->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?");
                 $stmt->execute([$contactId, $userId]);

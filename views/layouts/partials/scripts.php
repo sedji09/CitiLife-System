@@ -411,7 +411,6 @@
         // Chat Settings
         userId: window.__APP__.userId || null,
         lastReceivedMessageId: null,
-        messageToasts: [],
         chatMenuOpen: false,
         chatSearchQuery: '',
         searchTimeout: null,
@@ -657,18 +656,6 @@
       window.showError = (msg) => {
         this.showToast('Error', msg, 'error');
       };
-      window.testMessageToast = (name, msg, role, avatar) => {
-        this.showMessageToast({
-          id: 99999,
-          latest_message_id: Date.now(),
-          name: name || 'Dr. Jane Smith',
-          role: role || 'radiologist',
-          avatar: avatar || null,
-          initials: 'JS',
-          latest_message: msg || 'Hello! The x-ray scan report has been reviewed.',
-          latest_message_time: new Date().toISOString()
-        });
-      };
 
       nextTick(() => this.renderIcons());
     },
@@ -781,12 +768,8 @@
                   if (senderId !== currentUserId) {
                     if (this.lastReceivedMessageId !== null && msgId > this.lastReceivedMessageId) {
                       playSound = true;
-                      // Show message toast notification if chat is not actively in focus
-                      const openChat = this.activeChats.find(c => String(c.id) === String(conv.id));
-                      const isActivelyOpen = openChat && !openChat.minimized && !document.hidden;
-                      if (!isActivelyOpen) {
-                        this.showMessageToast(conv);
-                      }
+                      // Messenger style: Auto-open incoming chat window at the bottom
+                      this.autoOpenIncomingChat(conv);
                     }
                     maxId = Math.max(maxId || 0, msgId);
                   }
@@ -807,10 +790,9 @@
           })
           .catch(err => console.error(err));
 
-        // Fetch active chats — only append NEW messages to avoid re-render stealing focus
+        // Fetch active chats — background fetch with mark_read=0 so it never auto-marks as seen
         this.activeChats.forEach(chat => {
-          const markReadParam = chat.minimized ? '0' : '1';
-          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + chat.id + '&mark_read=' + markReadParam, { credentials: 'same-origin' })
+          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + chat.id + '&mark_read=0', { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               if (data.success) {
@@ -944,10 +926,7 @@
       },
       toggleChatMinimize(chat) {
         chat.minimized = !chat.minimized;
-        // Clear unread badge when user opens the chat
         if (!chat.minimized) {
-          chat.unreadCount = 0;
-          fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + chat.id, { credentials: 'same-origin' }).catch(() => { });
           nextTick(() => {
             const body = this.$refs['chatBody_' + chat.id];
             if (body && body[0]) {
@@ -968,12 +947,10 @@
         const existing = this.activeChats.find(c => c.id == conv.id);
         if (existing) {
           existing.minimized = false;
-          existing.unreadCount = 0; // Clear badge when user opens it
           if (conv.avatar !== undefined) existing.avatar = conv.avatar;
           if (conv.name) existing.name = conv.name;
           if (conv.initials) existing.initials = conv.initials;
           if (conv.role) existing.role = conv.role;
-          fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + existing.id, { credentials: 'same-origin' }).catch(() => { });
           this.bringChatToFront(existing);
         } else {
           this.activeChats.unshift({
@@ -988,7 +965,7 @@
             attachmentPreviews: []
           });
 
-          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id, { credentials: 'same-origin' })
+          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id + '&mark_read=0', { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               const chat = this.activeChats.find(c => c.id === conv.id);
@@ -1069,8 +1046,6 @@
 
           if (idx > -1) {
             this.activeChats[idx].minimized = false;
-            this.activeChats[idx].unreadCount = 0; // Clear badge when brought to front
-            fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
             if (idx > 0) {
               const movedChat = this.activeChats.splice(idx, 1)[0];
               this.activeChats.unshift(movedChat);
@@ -1813,84 +1788,78 @@
           body: JSON.stringify({ action: 'mark_read', notification_id: id })
         }).catch(err => console.error(err));
       },
-      formatMessageToastDateTime(dateStr) {
-        if (!dateStr) {
-          const d = new Date();
-          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' • ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        }
-        try {
-          const d = new Date(typeof dateStr === 'string' ? dateStr.replace(/-/g, '/') : dateStr);
-          if (isNaN(d.getTime())) return dateStr;
-          const dateFormatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-          const timeFormatted = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-          return `${dateFormatted} • ${timeFormatted}`;
-        } catch (e) {
-          return dateStr;
-        }
-      },
-      getMessageToastText(toast) {
-        if (!toast) return 'Sent a message';
-        if (toast.message === '__LIKE_ICON__') {
-          return 'Sent a like 👍';
-        }
-        if (toast.message && toast.message.trim()) {
-          return toast.message;
-        }
-        if (toast.attachment) {
-          if (this.isImageAttachment(toast.attachment)) {
-            return '📷 Sent a photo';
+      autoOpenIncomingChat(conv) {
+        if (!conv || !conv.id) return;
+        const targetId = String(conv.id);
+        const existing = this.activeChats.find(c => String(c.id) === targetId);
+
+        if (existing) {
+          existing.minimized = false;
+          if (conv.avatar !== undefined) existing.avatar = conv.avatar;
+          if (conv.name) existing.name = conv.name;
+          if (conv.initials) existing.initials = conv.initials;
+          if (conv.role) existing.role = conv.role;
+
+          // Move to the front so the window is prominently visible at the bottom
+          const idx = this.activeChats.findIndex(c => String(c.id) === targetId);
+          if (idx > 0) {
+            const moved = this.activeChats.splice(idx, 1)[0];
+            this.activeChats.unshift(moved);
           }
-          return '📎 ' + this.getAttachmentFileName(toast.attachment);
-        }
-        return 'Sent a message';
-      },
-      showMessageToast(conv) {
-        if (!conv) return;
-        const msgId = conv.latest_message_id || Date.now();
-        // Prevent duplicate toast if already showing for the exact same message
-        if (this.messageToasts.some(t => t.messageId && String(t.messageId) === String(msgId))) {
-          return;
-        }
-        const id = Date.now() + Math.random();
-        const toastItem = {
-          id: id,
-          messageId: msgId,
-          senderId: conv.id,
-          name: conv.name || 'Staff Member',
-          role: conv.role || '',
-          avatar: conv.avatar || null,
-          initials: conv.initials || 'ST',
-          message: conv.latest_message || '',
-          attachment: conv.latest_attachment || null,
-          time: conv.latest_message_time || new Date().toISOString(),
-          conv: conv
-        };
-
-        // Keep maximum of 3 message toasts at once
-        if (this.messageToasts.length >= 3) {
-          this.messageToasts.shift();
-        }
-        this.messageToasts.push(toastItem);
-
-        setTimeout(() => {
-          this.dismissMessageToast(id);
-        }, 7000);
-      },
-      dismissMessageToast(id) {
-        this.messageToasts = this.messageToasts.filter(t => t.id !== id);
-      },
-      handleMessageToastClick(mToast) {
-        this.dismissMessageToast(mToast.id);
-        if (mToast.conv) {
-          this.openChatWindow(mToast.conv);
+          this.activeChats = [...this.activeChats];
+          this.scrollToBottom(existing);
         } else {
-          this.openChatWindow({
-            id: mToast.senderId,
-            name: mToast.name,
-            avatar: mToast.avatar,
-            initials: mToast.initials,
-            role: mToast.role
-          });
+          const newChat = {
+            id: conv.id,
+            name: conv.name,
+            initials: conv.initials,
+            avatar: conv.avatar,
+            role: conv.role,
+            messages: [],
+            newMessage: '',
+            minimized: false,
+            loading: true,
+            sending: false,
+            unreadCount: parseInt(conv.unread_count) || 1,
+            selectedAttachments: [],
+            attachmentPreviews: []
+          };
+
+          this.activeChats.unshift(newChat);
+          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id + '&mark_read=0', { credentials: 'same-origin' })
+            .then(res => res.json())
+            .then(data => {
+              const chat = this.activeChats.find(c => String(c.id) === String(conv.id));
+              if (chat && data.success) {
+                chat.messages = data.messages;
+                chat.loading = false;
+                this.scrollToBottom(chat);
+              }
+            }).catch(() => {
+              const chat = this.activeChats.find(c => String(c.id) === String(conv.id));
+              if (chat) chat.loading = false;
+            });
+        }
+        this.saveActiveChats();
+      },
+      markChatAsSeen(chat) {
+        if (!chat || !chat.id) return;
+        const targetId = String(chat.id);
+        const hasUnread = (chat.unreadCount > 0) || (chat.messages && chat.messages.some(m => String(m.sender_id) !== String(this.userId) && m.is_read == 0));
+        if (hasUnread) {
+          chat.unreadCount = 0;
+          if (chat.messages) {
+            chat.messages.forEach(m => {
+              if (String(m.sender_id) !== String(this.userId)) {
+                m.is_read = 1;
+              }
+            });
+          }
+          const conv = this.conversations.find(c => String(c.id) === targetId);
+          if (conv) {
+            conv.unread_count = 0;
+          }
+          fetch('<?= url("app/Api/messages.php") ?>?action=mark_chat_read&contact_id=' + targetId, { credentials: 'same-origin' }).catch(() => { });
         }
       },
       showToast(title, message, type = null, link = '#', notificationId = null) {
