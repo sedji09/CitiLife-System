@@ -1749,13 +1749,39 @@
               // Suppress toast notifications while the Confidentiality Agreement modal is active
               const isPrivacyModalOpen = !!document.getElementById('dpm-overlay');
 
-              // Play sound and display toast alerts for unread notifications (Max 1 toast on load to prevent spam)
+              // Load already shown toast notification IDs from localStorage so they only pop up ONCE
+              const storageKey = 'citilife_shown_toast_ids_' + (this.userId || window.__APP__?.userId || 'guest');
+              let shownToastIds = [];
+              try {
+                shownToastIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                if (!Array.isArray(shownToastIds)) shownToastIds = [];
+              } catch (e) {
+                shownToastIds = [];
+              }
+
+              // Play sound and display toast alerts for unread notifications that HAVE NOT been toasted yet
               if (!isPrivacyModalOpen) {
+                const unshownNotifs = data.notifications.filter(n => n.is_read == 0 && !shownToastIds.includes(String(n.id)));
+
                 const newNotifs = isInitial
-                  ? data.notifications.filter(n => n.is_read == 0).slice(0, 1)
-                  : data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
+                  ? unshownNotifs.slice(0, 1) // Max 1 toast on initial load if received while logged out
+                  : unshownNotifs.filter(n => !oldIds.includes(String(n.id))); // Real-time new arrival
 
                 if (newNotifs.length > 0) {
+                  // Mark as shown so navigation/reload will NEVER toast them again
+                  newNotifs.forEach(n => {
+                    const strId = String(n.id);
+                    if (!shownToastIds.includes(strId)) {
+                      shownToastIds.push(strId);
+                    }
+                  });
+                  if (shownToastIds.length > 100) {
+                    shownToastIds = shownToastIds.slice(-100);
+                  }
+                  try {
+                    localStorage.setItem(storageKey, JSON.stringify(shownToastIds));
+                  } catch (e) {}
+
                   if (this.notifSound) {
                     this.playNotificationSound();
                   }

@@ -1219,7 +1219,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 <div>
                                     <label class="block text-sm text-[#0a2540] mb-2">Upload Receipt Screenshot</label>
                                     <div class="relative">
-                                        <input type="file" name="payment_proof" id="paymentProof" accept="image/*"
+                                        <input type="file" name="payment_proof" id="paymentProof" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                             onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file chosen'">
                                         <div
@@ -1696,6 +1696,22 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
             e.preventDefault();
 
             const form = e.target;
+            const method = form.querySelector('input[name="payment_method"]:checked')?.value || 'Cash';
+            if (method === 'GCash') {
+                const fileInput = document.getElementById('paymentProof');
+                if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                    Swal.fire('Missing Proof', 'Please upload a proof of payment screenshot.', 'warning');
+                    return;
+                }
+                const file = fileInput.files[0];
+                const ext = file.name.split('.').pop().toLowerCase();
+                const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+                if (!allowedExts.includes(ext)) {
+                    Swal.fire('Invalid File', 'Please upload a valid image file (.jpg, .jpeg, .png, .webp). GIF and PDF files are not allowed.', 'warning');
+                    return;
+                }
+            }
+
             const formData = new FormData(form);
             const submitBtn = form.querySelector('button[type="submit"]');
             const originalBtnText = submitBtn.innerHTML;

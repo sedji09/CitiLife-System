@@ -313,75 +313,129 @@
 </div>
 
 <!-- Receipt Modal -->
-<div id="receiptModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-sm"
-    aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+<div id="receiptModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/70 backdrop-blur-sm"
+    aria-labelledby="modal-title" role="dialog" aria-modal="true" onclick="if(event.target === this) closeReceiptModal()">
+    <div class="flex min-h-screen items-center justify-center p-3 sm:p-4 md:p-6 text-center">
         <div
-            class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[90vh]">
+            class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full max-w-5xl flex flex-col"
+            style="max-height: 90vh;">
 
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2" id="modal-title">
-                    <i data-lucide="receipt" class="w-5 h-5 text-blue-600"></i> Payment Receipt
-                </h3>
-                <button type="button" onclick="closeReceiptModal()"
-                    class="text-gray-400 hover:text-gray-600 transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <!-- Content -->
-            <div class="px-6 py-5 flex-1 flex flex-col bg-gray-50/50 min-h-0">
-                <!-- Reference Number Badge -->
-                <div
-                    class="mb-4 shrink-0 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="px-6 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <i data-lucide="receipt" class="w-5 h-5"></i>
+                    </div>
                     <div>
-                        <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider block mb-1">Provided
-                            Reference Number</span>
-                        <strong id="modal-ref-number" class="text-xl font-bold text-blue-900"></strong>
-                    </div>
-                    <div class="text-xs text-blue-700 bg-blue-100/50 px-3 py-1.5 rounded-lg">
-                        Please verify this matches the receipt below
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 leading-tight" id="modal-title">
+                            Payment Receipt Verification
+                        </h3>
+                        <p class="text-xs text-gray-500">Cross-check patient payment details with uploaded proof</p>
                     </div>
                 </div>
-
-                <!-- Price Breakdown in Modal -->
-                <div class="mb-4 shrink-0 bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                    <div
-                        class="bg-gray-50/50 px-4 py-3 border-b border-gray-100 flex items-center gap-2 text-xs font-bold text-gray-600 tracking-wider">
-                        <i data-lucide="receipt" class="w-4 h-4"></i> PAYMENT BREAKDOWN
-                    </div>
-                    <div class="p-4 space-y-3">
-                        <div class="flex items-center justify-between text-gray-700 text-sm font-semibold"
-                            id="receiptModalOrigRow">
-                            <span id="receiptModalExamType">Chest PA</span>
-                            <span id="receiptModalOrigAmount" class="font-bold text-gray-900">₱0.00</span>
-                        </div>
-                        <div class="flex items-center justify-between pl-4 text-xs text-emerald-600 -mt-1 mb-1" id="receiptModalDiscRow">
-                            <span class="font-medium">PhilHealth Discount</span>
-                            <span id="receiptModalDiscAmount"
-                                class="font-semibold text-emerald-600 text-xs">-₱0.00</span>
-                        </div>
-                    </div>
-                    <div class="bg-red-50/30 px-4 py-3 border-t border-red-100 flex items-center justify-between">
-                        <span class="font-extrabold text-gray-900 text-sm tracking-wide">Total Amount</span>
-                        <span id="receiptModalNetAmount" class="font-black text-red-600 text-[15px]">₱0.00</span>
-                    </div>
-                </div>
-
-                <!-- Receipt Image Area -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-inner flex-1 min-h-[200px] overflow-y-auto"
-                    style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
-                    <img id="modal-receipt-img" src="" alt="Receipt" class="w-full h-auto block">
+                <div class="flex items-center gap-2">
+                    <a id="modal-receipt-full-link" href="#" target="_blank" rel="noopener noreferrer"
+                        class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition border border-blue-200"
+                        title="Open full image in new tab">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>Open Full Image</span>
+                    </a>
+                    <button type="button" onclick="closeReceiptModal()"
+                        class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="bg-white px-6 py-4 border-t border-gray-100 flex justify-end shrink-0">
-                <button type="button" onclick="closeReceiptModal()"
-                    class="inline-flex justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition">
-                    Close
-                </button>
+            <!-- Content Body (2-Column Grid on Desktop) -->
+            <div class="grid grid-cols-1 md:grid-cols-12 min-h-0 bg-gray-50 overflow-hidden flex-1" style="min-height: 0;">
+                
+                <!-- Left Column: Receipt Image Preview (7 cols on desktop) -->
+                <div class="md:col-span-7 flex flex-col items-center justify-center p-3 sm:p-4 min-h-[350px] md:min-h-0 relative overflow-hidden bg-slate-100/70 border-b md:border-b-0 border-gray-200"
+                    style="background-color: #f1f5f9;">
+                    <div class="w-full h-full flex items-center justify-center overflow-auto rounded-xl p-2"
+                        style="max-height: 68vh; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
+                        <img id="modal-receipt-img" src="" alt="Payment Receipt" 
+                            class="rounded-xl shadow-md bg-white border border-gray-200"
+                            style="max-height: 65vh; max-width: 100%; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto;">
+                    </div>
+                    <div class="mt-2 text-center text-[11px] text-gray-500 shrink-0">
+                        <span>Tip: Click "Open Full Image" at top right to view original resolution</span>
+                    </div>
+                </div>
+
+                <!-- Right Column: Verification Details Panel (5 cols on desktop) -->
+                <div class="md:col-span-5 p-5 sm:p-6 flex flex-col justify-between overflow-y-auto bg-white border-t md:border-t-0 md:border-l border-gray-200 min-h-0 space-y-4"
+                    style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
+                    
+                    <div class="space-y-4">
+                        <!-- Reference Number Card -->
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-100 rounded-xl p-4 shadow-xs">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+                                    Provided Reference No.
+                                </span>
+                                <button type="button" onclick="copyReceiptRef()" 
+                                    class="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-200 shadow-2xs hover:bg-blue-50 transition cursor-pointer"
+                                    id="copyRefBtn" title="Copy reference number">
+                                    <i data-lucide="copy" class="w-3 h-3"></i> <span id="copyRefText">Copy</span>
+                                </button>
+                            </div>
+                            <strong id="modal-ref-number" class="text-xl sm:text-2xl font-black text-blue-950 font-mono tracking-wider block break-all select-all"></strong>
+                            <div class="mt-2 pt-2 border-t border-blue-100/80 flex items-center gap-1.5 text-xs text-blue-700">
+                                <i data-lucide="info" class="w-3.5 h-3.5 shrink-0 text-blue-600"></i>
+                                <span>Verify this matches the reference in the receipt.</span>
+                            </div>
+                        </div>
+
+                        <!-- Price Breakdown in Modal -->
+                        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs">
+                            <div class="bg-gray-50 px-4 py-2.5 border-b border-gray-100 flex items-center justify-between text-xs font-bold text-gray-700 tracking-wider">
+                                <div class="flex items-center gap-1.5">
+                                    <i data-lucide="calculator" class="w-3.5 h-3.5 text-gray-500"></i>
+                                    <span>PAYMENT BREAKDOWN</span>
+                                </div>
+                            </div>
+                            <div class="p-4 space-y-2.5">
+                                <div class="flex items-center justify-between text-gray-700 text-sm font-semibold"
+                                    id="receiptModalOrigRow">
+                                    <span id="receiptModalExamType" class="text-gray-600 font-medium">Chest PA</span>
+                                    <span id="receiptModalOrigAmount" class="font-bold text-gray-900">₱0.00</span>
+                                </div>
+                                <div class="flex items-center justify-between pl-3 text-xs text-emerald-600" id="receiptModalDiscRow">
+                                    <span class="font-medium">PhilHealth Discount</span>
+                                    <span id="receiptModalDiscAmount"
+                                        class="font-bold text-emerald-600">-₱0.00</span>
+                                </div>
+                            </div>
+                            <div class="bg-red-50/60 px-4 py-3 border-t border-red-100 flex items-center justify-between">
+                                <span class="font-extrabold text-gray-900 text-sm tracking-wide">Total Amount Due</span>
+                                <span id="receiptModalNetAmount" class="font-black text-red-600 text-base sm:text-lg">₱0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Important Verification Note -->
+                        <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+                            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                            <div class="space-y-0.5">
+                                <span class="font-bold text-amber-950 uppercase tracking-wide text-[11px] block">Important Note</span>
+                                <p class="text-amber-800 leading-relaxed text-xs">
+                                    Make sure the <strong>Reference Number</strong> and <strong>Amount</strong> match the receipt before approving.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons inside side-panel -->
+                    <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2">
+                        <button type="button" onclick="closeReceiptModal()"
+                            class="w-full inline-flex justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition cursor-pointer">
+                            Close
+                        </button>
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
@@ -942,9 +996,15 @@
         let base = '<?= (defined("PROJECT_DIR") && PROJECT_DIR !== "") ? "/" . trim(PROJECT_DIR, "/") . "/" : "/" ?>';
         let cleanPath = path.startsWith('/') ? path.substring(1) : path;
         let imageSrc = base + cleanPath;
+        
         document.getElementById('modal-receipt-img').src = imageSrc;
-        document.getElementById('modal-ref-number').textContent = refNumber;
-        document.getElementById('receiptModalExamType').textContent = examType;
+        const fullLink = document.getElementById('modal-receipt-full-link');
+        if (fullLink) {
+            fullLink.href = imageSrc;
+        }
+
+        document.getElementById('modal-ref-number').textContent = refNumber || 'N/A';
+        document.getElementById('receiptModalExamType').textContent = examType || 'Exam';
 
         const orig = parseFloat(origAmount || netAmount || 0);
         const disc = parseFloat(discAmount || 0);
@@ -969,6 +1029,21 @@
 
     function closeReceiptModal() {
         document.getElementById('receiptModal').classList.add('hidden');
+    }
+
+    function copyReceiptRef() {
+        const refText = (document.getElementById('modal-ref-number').textContent || '').trim();
+        if (!refText || refText === 'N/A') return;
+        
+        navigator.clipboard.writeText(refText).then(() => {
+            const textSpan = document.getElementById('copyRefText');
+            if (textSpan) {
+                textSpan.textContent = 'Copied!';
+                setTimeout(() => {
+                    textSpan.textContent = 'Copy';
+                }, 1500);
+            }
+        }).catch(() => {});
     }
 
     function confirmAction(form, action) {

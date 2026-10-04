@@ -462,8 +462,8 @@
                             class="w-8 h-8 text-gray-400 group-hover:text-green-500 mb-2 transition-colors"></i>
                         <p class="text-sm font-semibold text-gray-700 group-hover:text-green-600 transition-colors">
                             Click to upload or drag and drop</p>
-                        <p class="text-xs text-gray-400 mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
-                        <input type="file" name="qr_code" accept="image/*" required
+                        <p class="text-xs text-gray-400 mt-1">PNG, JPG or WEBP (max. 5MB)</p>
+                        <input type="file" name="qr_code" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             onchange="updateFileName(this)">
                     </div>

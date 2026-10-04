@@ -93,10 +93,10 @@ if ($paymentMethod === 'GCash') {
     }
     
     $fileExt = strtolower(pathinfo($_FILES['payment_proof']['name'], PATHINFO_EXTENSION));
-    $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
     if (!in_array($fileExt, $allowedExts)) {
         $errors = ob_get_clean();
-        echo json_encode(['success' => false, 'message' => 'Invalid file type. Please upload an image (JPG, PNG).', 'debug' => $errors]);
+        echo json_encode(['success' => false, 'message' => 'Invalid file type. Please upload an image (JPG, PNG, WEBP).', 'debug' => $errors]);
         exit;
     }
     

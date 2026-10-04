@@ -99,7 +99,7 @@ class BranchesController
                         mkdir($uploadDir, 0755, true);
                     }
                     $fileExt = strtolower(pathinfo($_FILES['qr_code']['name'], PATHINFO_EXTENSION));
-                    $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
                     if (in_array($fileExt, $allowedExts)) {
                         $newFilename = 'gcash_qr_branch_' . $id . '_' . time() . '.' . $fileExt;
                         $dest = $uploadDir . $newFilename;
@@ -116,7 +116,7 @@ class BranchesController
                             $error = "Failed to move uploaded file.";
                         }
                     } else {
-                        $error = "Invalid file type. Only JPG, PNG, GIF, WEBP are allowed.";
+                        $error = "Invalid file type. Only JPG, PNG, and WEBP are allowed.";
                     }
                 } else {
                     $error = "Please select a valid image file.";

@@ -868,7 +868,7 @@ if (!function_exists('verifyTurnstile')) {
             curl_setopt($ch, CURLOPT_TIMEOUT, 6);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             $response = curl_exec($ch);
-            curl_close($ch);
+            unset($ch);
         } else {
             $context = stream_context_create([
                 'http' => [

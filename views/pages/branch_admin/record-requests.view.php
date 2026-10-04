@@ -2,6 +2,11 @@
 /**
  * Incoming Record Requests View (Branch Admin)
  * Backend logic handled by RecordRequestsController.php
+ *
+ * @var array<int, array<string, mixed>> $pendingRequests
+ * @var array<int, array<string, mixed>> $branchesList
+ * @var string|null $message
+ * @var string|null $messageType
  */
 ?>
 
@@ -90,7 +95,7 @@
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($pendingRequests as $req): ?>
+                        <?php foreach ($pendingRequests as $req): /** @var array<string, mixed> $req */ ?>
                             <tr class="hover:bg-gray-50/80 transition-colors record-row"
                                 data-id="<?= htmlspecialchars($req['id']) ?>"
                                 data-name="<?= htmlspecialchars($req['patient_name']) ?>"
