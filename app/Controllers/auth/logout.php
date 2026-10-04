@@ -41,7 +41,7 @@ if (ini_get("session.use_cookies")) {
 
 // Redirect to appropriate page based on role
 $reason = $_GET['reason'] ?? '';
-$page = ($role === 'patient') ? '' : 'login';
+$page = ($role === 'patient') ? '' : 'staff-portal';
 if ($reason) {
     $page .= ($page ? '?' : '?') . 'reason=' . urlencode($reason);
 }

@@ -132,7 +132,7 @@
         if (!urlStr) return false;
         const u = new URL(urlStr, window.location.origin);
         const path = u.pathname.toLowerCase();
-        if (path.includes('login') || path.includes('logout') || path.includes('api/') ||
+        if (path.includes('login') || path.includes('staff-portal') || path.includes('logout') || path.includes('api/') ||
           path.includes('print-report') ||
           u.searchParams.has('ajax_polling') || u.searchParams.has('ajax')) {
           return false;

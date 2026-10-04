@@ -6,7 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
 global $pdo;
 
 if (!isset($_SESSION['temp_user_id'])) {
-    redirect(url('login'));
+    $fallback = ($_SESSION['temp_portal'] ?? '') === 'patient' ? '?login=1' : 'staff-portal';
+    redirect(url($fallback));
 }
 
 $error = '';
@@ -265,7 +266,7 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
         </form>
         
         <div class="mt-4 border-t pt-4">
-            <a href="<?= url($_SESSION['temp_portal'] === 'patient' ? 'patient-login' : 'login') ?>" class="text-sm text-gray-500 hover:text-gray-800">Cancel and Return to Login</a>
+            <a href="<?= url($_SESSION['temp_portal'] === 'patient' ? 'patient-login' : 'staff-portal') ?>" class="text-sm text-gray-500 hover:text-gray-800">Cancel and Return to Login</a>
         </div>
     </div>
 

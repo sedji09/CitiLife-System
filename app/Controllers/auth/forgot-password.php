@@ -11,7 +11,7 @@ $error = '';
 $success = '';
 
 $portal = $_GET['portal'] ?? ($_POST['portal'] ?? '');
-if (empty($portal) && isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'login') !== false && strpos($_SERVER['HTTP_REFERER'], '?login=1') === false) {
+if (empty($portal) && isset($_SERVER['HTTP_REFERER']) && (strpos($_SERVER['HTTP_REFERER'], 'staff-portal') !== false || (strpos($_SERVER['HTTP_REFERER'], 'login') !== false && strpos($_SERVER['HTTP_REFERER'], '?login=1') === false))) {
     $portal = 'staff';
 }
 $isStaffPortal = ($portal === 'staff');
@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mt-8 pt-6 border-t border-gray-100 text-center">
             <p class="text-sm text-gray-600">
                 Remembered your password? 
-                <a href="<?= $isStaffPortal ? url('login') : url('?login=1') ?>" 
+                <a href="<?= $isStaffPortal ? url('staff-portal') : url('?login=1') ?>" 
                    class="font-bold text-red-600 hover:underline">
                     <?= $isStaffPortal ? 'Back to Staff Login' : 'Back to Login' ?>
                 </a>

@@ -18,10 +18,23 @@ $router->get('/google210f5a5117fa0e42.html', function () {
 }, []);
 
 // Authentication Routes (Guest Only)
-$router->get('/login', 'App\Controllers\AuthController@login', ['guest']);
-$router->post('/login', 'App\Controllers\AuthController@login', ['guest']);
-$router->get('/login.php', 'App\Controllers\AuthController@login', ['guest']);
-$router->post('/login.php', 'App\Controllers\AuthController@login', ['guest']);
+$router->get('/login', function () {
+    return redirect(url('?login=1'));
+}, ['guest']);
+$router->post('/login', function () {
+    return redirect(url('?login=1'));
+}, ['guest']);
+$router->get('/login.php', function () {
+    return redirect(url('?login=1'));
+}, ['guest']);
+$router->post('/login.php', function () {
+    return redirect(url('?login=1'));
+}, ['guest']);
+
+$router->get('/staff-portal', 'App\Controllers\AuthController@login', ['guest']);
+$router->post('/staff-portal', 'App\Controllers\AuthController@login', ['guest']);
+$router->get('/staff-portal.php', 'App\Controllers\AuthController@login', ['guest']);
+$router->post('/staff-portal.php', 'App\Controllers\AuthController@login', ['guest']);
 
 $router->get('/patient-login', 'App\Controllers\AuthController@patientLogin', ['guest']);
 $router->post('/patient-login', 'App\Controllers\AuthController@patientLogin', ['guest']);

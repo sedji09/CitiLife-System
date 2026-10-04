@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $role = $_SESSION['role'] ?? 'guest';
-$homeLink = $isLoggedIn ? url('dashboard') : url('login');
+$homeLink = $isLoggedIn ? url('dashboard') : url('?login=1');
 $btnLabel = $isLoggedIn ? 'Return to Dashboard' : 'Go to Login';
 $descText = $isLoggedIn 
     ? 'You do not have permission to view this medical record or page.' 

@@ -54,7 +54,7 @@ class Authorize
             ) {
                 return redirect(url('patient-login?redirect=' . urlencode($currentUri)));
             }
-            return redirect(url('login'));
+            return redirect(url('staff-portal'));
         }
     }
 }

@@ -67,7 +67,7 @@ $isSnapshot = filter_var($_GET['snapshot'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
 // Unauthenticated users cannot view print reports
 if (empty($sessionUserId) && empty($sessionRole)) {
-    redirect(url('login'));
+    redirect(url('staff-portal'));
     exit;
 }
 

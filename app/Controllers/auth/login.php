@@ -201,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
 
                 if ($attempts['attempts'] >= 5 || !$rateResIp['allowed'] || !$rateResEmail['allowed']) {
                     persistStaffLoginLock($pdo, $email, $attempts['locked_until'] ?: (time() + 900));
-                    redirect(url('login'));
+                    redirect(url('staff-portal'));
                 }
 
                 $error = 'Invalid email or password.';
@@ -480,7 +480,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             <p>Welcome internal staff! Please enter your details.</p>
         </div>
 
-        <form id="loginForm" name="loginForm" method="POST" action="<?= url('login') ?>" autocomplete="on" class="modal-form">
+        <form id="loginForm" name="loginForm" method="POST" action="<?= url('staff-portal') ?>" autocomplete="on" class="modal-form">
             <?php if (isset($_GET['reason']) && $_GET['reason'] === 'timeout'): ?>
                 <div class="modal-alert-error">
                     Session expired due to inactivity. Please log in again.

@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $role = $_SESSION['role'] ?? 'guest';
-$homeLink = ($role !== 'guest') ? url('dashboard') : url('login');
+$homeLink = ($role !== 'guest') ? url('dashboard') : url('');
 ?>
 <!DOCTYPE html>
 <html lang="en">
