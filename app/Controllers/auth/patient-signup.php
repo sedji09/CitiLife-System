@@ -142,6 +142,8 @@ if (isset($_REQUEST['ajax_action'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $turnstileToken = $_POST['cf-turnstile-response'] ?? '';
+
     $patientNumber = trim($_POST['patient_number'] ?? '');
     $firstName = trim($_POST['first_name'] ?? '');
     $lastName = trim($_POST['last_name'] ?? '');
@@ -162,7 +164,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contactPattern = "/^09\d{9}$/";
     $isContactValid = empty($contactNumber) ? true : preg_match($contactPattern, $contactNumber);
 
-    if (empty($patientNumber) || empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($branchId)) {
+    // Anti-bot validations
+    if (!verifyHoneypot('website_hp')) {
+        $error = 'Automated signup detected. Request blocked.';
+    } elseif (!verifyTurnstile($turnstileToken)) {
+        $error = 'Security verification failed. Please complete the verification challenge.';
+    } elseif (empty($patientNumber) || empty($firstName) || empty($lastName) || empty($birthdate) || empty($email) || empty($branchId)) {
         $error = 'Please fill out all required fields.';
     } elseif (!$isNameValid) {
         $error = 'Invalid Name. Please use letters only.';
@@ -266,6 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title>Patient Registration - <?= htmlspecialchars(getSystemName()) ?></title>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css">
     <link rel="stylesheet"
@@ -630,7 +638,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     </div>
 
-                    <div class="pt-4">
+                    <!-- Invisible Honeypot Field -->
+                    <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                        <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <!-- Cloudflare Turnstile Widget -->
+                    <div class="flex justify-center my-3">
+                        <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
+                    </div>
+
+                    <div class="pt-2">
                         <button type="submit"
                             class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
                             Sign up
@@ -884,6 +902,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         class="absolute top-2 left-4 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Email
                                         Address <span class="text-red-500">*</span></label>
                                     <p id="m_email_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
+                                </div>
+
+                                <!-- Invisible Honeypot Field -->
+                                <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                                    <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+                                </div>
+
+                                <!-- Cloudflare Turnstile Widget -->
+                                <div class="flex justify-center my-3">
+                                    <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
                                 </div>
 
                                 <button type="submit"

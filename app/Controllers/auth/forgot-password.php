@@ -18,8 +18,14 @@ $isStaffPortal = ($portal === 'staff');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
+    $turnstileToken = $_POST['cf-turnstile-response'] ?? '';
 
-    if (empty($email)) {
+    // Verify Honeypot & Turnstile CAPTCHA
+    if (!verifyHoneypot('website_hp')) {
+        $error = "Automated submission detected. Request blocked.";
+    } elseif (!verifyTurnstile($turnstileToken)) {
+        $error = "Security verification failed. Please try again.";
+    } elseif (empty($email)) {
         $error = "Please enter your email address.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
@@ -100,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <title><?= $isStaffPortal ? 'Staff Password Reset' : 'Forgot Password' ?> - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
@@ -151,7 +158,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="" class="space-y-6">
+        <form method="POST" action="" class="space-y-5">
+            <!-- Invisible Honeypot Field for anti-bot protection -->
+            <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+            </div>
+
             <?php if ($portal): ?>
                 <input type="hidden" name="portal" value="<?= htmlspecialchars($portal) ?>">
             <?php endif; ?>
@@ -171,6 +183,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         placeholder="<?= $isStaffPortal ? 'staff@example.com' : 'name@example.com' ?>"
                         value="<?= htmlspecialchars($email ?? '') ?>">
                 </div>
+            </div>
+
+            <!-- Cloudflare Turnstile Widget -->
+            <div class="flex justify-center">
+                <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
             </div>
 
             <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">

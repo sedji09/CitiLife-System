@@ -816,6 +816,98 @@ if (!function_exists('validatePasswordPolicy')) {
     }
 }
 
+if (!function_exists('getTurnstileSiteKey')) {
+    /**
+     * Get Cloudflare Turnstile Public Site Key
+     *
+     * @return string
+     */
+    function getTurnstileSiteKey(): string
+    {
+        return getenv('TURNSTILE_SITE_KEY') ?: ($_ENV['TURNSTILE_SITE_KEY'] ?? '1x00000000000000000000AA');
+    }
+}
+
+if (!function_exists('verifyTurnstile')) {
+    /**
+     * Verify Cloudflare Turnstile Token with Cloudflare Siteverify API
+     *
+     * @param string|null $token
+     * @param string|null $remoteIp
+     * @return bool
+     */
+    function verifyTurnstile(?string $token, ?string $remoteIp = null): bool
+    {
+        $secretKey = getenv('TURNSTILE_SECRET_KEY') ?: ($_ENV['TURNSTILE_SECRET_KEY'] ?? '1x0000000000000000000000000000000AA');
+
+        // If explicitly set to empty or 'disabled', skip verification
+        if ($secretKey === 'disabled' || $secretKey === '') {
+            return true;
+        }
+
+        if (empty($token)) {
+            return false;
+        }
+
+        $remoteIp = $remoteIp ?: (function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? ''));
+
+        $postData = http_build_query([
+            'secret' => $secretKey,
+            'response' => $token,
+            'remoteip' => $remoteIp
+        ]);
+
+        $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $response = curl_exec($ch);
+            curl_close($ch);
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'method'  => 'POST',
+                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                    'content' => $postData,
+                    'timeout' => 6
+                ]
+            ]);
+            $response = @file_get_contents($url, false, $context);
+        }
+
+        if ($response === false || empty($response)) {
+            // Graceful fallback if server cannot reach internet in local offline mode with test keys
+            if ($secretKey === '1x0000000000000000000000000000000AA') {
+                return true;
+            }
+            return false;
+        }
+
+        $result = json_decode($response, true);
+        return isset($result['success']) && $result['success'] === true;
+    }
+}
+
+if (!function_exists('verifyHoneypot')) {
+    /**
+     * Check if honeypot trap field is empty.
+     * Bots automatically fill hidden fields while legitimate users do not.
+     *
+     * @param string $fieldName
+     * @return bool True if valid (clean/empty), false if filled by a bot
+     */
+    function verifyHoneypot(string $fieldName = 'website_hp'): bool
+    {
+        return empty($_POST[$fieldName]);
+    }
+}
+
 
 
 

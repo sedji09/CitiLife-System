@@ -36,6 +36,7 @@ $xrayCategories = array_keys($groupedRates);
     <meta name="google-site-verification" content="google210f5a5117fa0e42">
     <title><?= htmlspecialchars(getSystemName()) ?> — Radiology Patient Portal</title>
     <link rel="icon" type="image/png" href="<?= getSystemLogoUrl() ?>">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -545,6 +546,11 @@ $xrayCategories = array_keys($groupedRates);
             </div>
 
             <form action="<?= url('patient-login') ?>" method="POST" class="modal-form">
+                <!-- Invisible Honeypot Field -->
+                <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                    <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+                </div>
+
                 <?php if (!empty($_GET['redirect']) || !empty($_SESSION['redirect_url'])): ?>
                     <input type="hidden" name="redirect"
                         value="<?= htmlspecialchars($_GET['redirect'] ?? $_SESSION['redirect_url']) ?>">
@@ -606,6 +612,17 @@ $xrayCategories = array_keys($groupedRates);
                 <div class="modal-forgot">
                     <a href="<?= url('forgot-password') ?>">Forgot your password?</a>
                 </div>
+
+                <?php 
+                $clientIp = function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+                $patAttempts = $_SESSION['login_attempts']['attempts'] ?? 0;
+                $ipCheck = function_exists('checkRateLimit') ? checkRateLimit('login_patient_ip', $clientIp, 5, 900) : ['attempts' => 0];
+                if ($patAttempts >= 2 || ($ipCheck['attempts'] ?? 0) >= 2): 
+                ?>
+                    <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+                        <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
+                    </div>
+                <?php endif; ?>
 
                 <button type="submit" class="modal-submit-btn">Log in</button>
 

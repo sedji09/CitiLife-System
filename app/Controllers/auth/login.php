@@ -61,7 +61,10 @@ $attempts = &$_SESSION['staff_login_attempts'];
 $currentTime = time();
 
 $clientIp = function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
-$ipLimit = function_exists('checkRateLimit') ? checkRateLimit('login_staff_ip', $clientIp, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
+$ipLimit = function_exists('checkRateLimit') ? checkRateLimit('login_staff_ip', $clientIp, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 0];
+
+// Require CAPTCHA adaptively if 2 or more failed attempts occurred
+$requireCaptcha = ($attempts['attempts'] >= 2 || ($ipLimit['attempts'] ?? 0) >= 2);
 
 if (!$ipLimit['allowed']) {
     $is_locked = true;
@@ -78,19 +81,26 @@ if (!$ipLimit['allowed']) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $turnstileToken = $_POST['cf-turnstile-response'] ?? '';
 
     // Check account-specific rate limit
-    $emailLimit = function_exists('checkRateLimit') ? checkRateLimit('login_staff_email', $email, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
-    if (!$emailLimit['allowed']) {
+    $emailLimit = function_exists('checkRateLimit') ? checkRateLimit('login_staff_email', $email, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 0];
+
+    // Anti-bot check
+    if (!verifyHoneypot('website_hp')) {
+        $error = "Automated login detected. Request blocked.";
+    } elseif ($requireCaptcha && !verifyTurnstile($turnstileToken)) {
+        $error = "Security verification required. Please complete the verification challenge.";
+    } elseif (!$emailLimit['allowed']) {
         $is_locked = true;
         $remaining = $emailLimit['remaining_seconds'];
         $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
         $lock_message = "This account is temporarily locked due to multiple failed login attempts. Please try again after $time_str.";
-    } elseif (!empty($email) && !empty($password)) {
-        // VALIDATION using filter_var();
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = "Invalid email format.";
-        } else {
+    } elseif (empty($email) || empty($password)) {
+        $error = "Please enter both email and password.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Invalid email format.";
+    } else {
             // Prepare statement to fetch user by email, prioritizing staff roles
             $stmt = $pdo->prepare('
                 SELECT * FROM users 
@@ -214,10 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 );
             }
         }
-    } else {
-        $error = 'Please enter both email and password.';
     }
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -230,6 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <style>
         * {
@@ -532,9 +540,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 </div>
             </div>
 
+            <!-- Invisible Honeypot Field -->
+            <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+            </div>
+
             <div class="modal-forgot">
                 <a href="<?= url('forgot-password?portal=staff') ?>">Forgot your password?</a>
             </div>
+
+            <?php if ($requireCaptcha): ?>
+                <div style="display: flex; justify-content: center; margin-bottom: 18px;">
+                    <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
+                </div>
+            <?php endif; ?>
 
             <button type="submit" class="modal-submit-btn" <?= $is_locked ? 'disabled' : '' ?>>Log in</button>
         </form>

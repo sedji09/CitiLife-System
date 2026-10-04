@@ -43,7 +43,10 @@ $attempts = &$_SESSION['login_attempts'];
 $currentTime = time();
 
 $clientIp = function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
-$ipLimit = function_exists('checkRateLimit') ? checkRateLimit('login_patient_ip', $clientIp, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
+$ipLimit = function_exists('checkRateLimit') ? checkRateLimit('login_patient_ip', $clientIp, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 0];
+
+// Require CAPTCHA adaptively if 2 or more failed attempts
+$requireCaptcha = ($attempts['attempts'] >= 2 || ($ipLimit['attempts'] ?? 0) >= 2);
 
 if (!$ipLimit['allowed']) {
     $is_locked = true;
@@ -60,19 +63,26 @@ if (!$ipLimit['allowed']) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $turnstileToken = $_POST['cf-turnstile-response'] ?? '';
 
     // Check account-specific rate limit
-    $emailLimit = function_exists('checkRateLimit') ? checkRateLimit('login_patient_email', $email, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0];
-    if (!$emailLimit['allowed']) {
+    $emailLimit = function_exists('checkRateLimit') ? checkRateLimit('login_patient_email', $email, 5, 900) : ['allowed' => true, 'remaining_seconds' => 0, 'attempts' => 0];
+
+    // Anti-bot validations
+    if (!verifyHoneypot('website_hp')) {
+        $error = "Automated login detected. Request blocked.";
+    } elseif ($requireCaptcha && !verifyTurnstile($turnstileToken)) {
+        $error = "Security verification required. Please complete the verification challenge.";
+    } elseif (!$emailLimit['allowed']) {
         $is_locked = true;
         $remaining = $emailLimit['remaining_seconds'];
         $time_str = $remaining > 60 ? ceil($remaining / 60) . " minutes" : $remaining . " seconds";
         $lock_message = "This account is temporarily locked due to multiple failed login attempts. Please try again after $time_str.";
-    } elseif (!empty($email) && !empty($password)) {
-        // VALIDATION using filter_var();
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = "Invalid email format.";
-        } else {
+    } elseif (empty($email) || empty($password)) {
+        $error = "Please enter both email and password.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Invalid email format.";
+    } else {
             // Prepare statement to fetch user by email along with patient name, prioritizing patient role
             $stmt = $pdo->prepare('
             SELECT u.*, p.first_name, p.last_name 
@@ -204,10 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                 );
             }
         }
-    } else {
-        $error = 'Please enter both email and password.';
     }
-}
 
 $params = ['login' => 1];
 if (!empty($error)) $params['error'] = $error;
