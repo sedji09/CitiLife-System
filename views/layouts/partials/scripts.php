@@ -1721,9 +1721,9 @@
               this.notificationCount = data.unread_count;
               this.notifications = data.notifications;
 
-              // Play sound and display toast alerts for unread notifications
+              // Play sound and display toast alerts for unread notifications (Max 1 toast on load to prevent spam)
               const newNotifs = isInitial
-                ? data.notifications.filter(n => n.is_read == 0).slice(0, 3)
+                ? data.notifications.filter(n => n.is_read == 0).slice(0, 1)
                 : data.notifications.filter(n => !oldIds.includes(String(n.id)) && n.is_read == 0);
 
               if (newNotifs.length > 0) {

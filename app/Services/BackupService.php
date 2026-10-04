@@ -768,6 +768,10 @@ class BackupService
 
         // 1. In-App Notification (Toast & Bell)
         try {
+            // Auto-mark previous backup notifications as read to prevent spam piling
+            $stmtDismiss = $this->pdo->prepare("UPDATE notifications SET is_read = 1 WHERE role = 'it_admin' AND title LIKE '%Backup%' AND is_read = 0");
+            $stmtDismiss->execute();
+
             require_once __DIR__ . '/../Models/NotificationModel.php';
             $notifModel = new \NotificationModel($this->pdo);
             $title = 'Weekly Database Backup Complete';
