@@ -115,7 +115,10 @@
                         :class="conv.unread_count > 0 ? 'font-bold text-black' : ''">{{ conv.name }}</div>
                       <div class="text-xs truncate flex gap-1"
                         :class="conv.unread_count > 0 ? 'font-bold text-gray-900' : 'text-gray-500'">
-                        <span v-if="conv.latest_message" class="truncate">
+                        <span v-if="conv.latest_message === '__LIKE_ICON__'" class="truncate italic">
+                          <span v-if="conv.sender_id === userId">You </span>sent a like 👍
+                        </span>
+                        <span v-else-if="conv.latest_message" class="truncate">
                           <span v-if="conv.sender_id === userId">You: </span>
                           {{ conv.latest_message }}
                         </span>

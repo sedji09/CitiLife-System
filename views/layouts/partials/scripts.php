@@ -411,6 +411,7 @@
         // Chat Settings
         userId: window.__APP__.userId || null,
         lastReceivedMessageId: null,
+        messageToasts: [],
         chatMenuOpen: false,
         chatSearchQuery: '',
         searchTimeout: null,
@@ -656,6 +657,18 @@
       window.showError = (msg) => {
         this.showToast('Error', msg, 'error');
       };
+      window.testMessageToast = (name, msg, role, avatar) => {
+        this.showMessageToast({
+          id: 99999,
+          latest_message_id: Date.now(),
+          name: name || 'Dr. Jane Smith',
+          role: role || 'radiologist',
+          avatar: avatar || null,
+          initials: 'JS',
+          latest_message: msg || 'Hello! The x-ray scan report has been reviewed.',
+          latest_message_time: new Date().toISOString()
+        });
+      };
 
       nextTick(() => this.renderIcons());
     },
@@ -768,6 +781,12 @@
                   if (senderId !== currentUserId) {
                     if (this.lastReceivedMessageId !== null && msgId > this.lastReceivedMessageId) {
                       playSound = true;
+                      // Show message toast notification if chat is not actively in focus
+                      const openChat = this.activeChats.find(c => String(c.id) === String(conv.id));
+                      const isActivelyOpen = openChat && !openChat.minimized && !document.hidden;
+                      if (!isActivelyOpen) {
+                        this.showMessageToast(conv);
+                      }
                     }
                     maxId = Math.max(maxId || 0, msgId);
                   }
@@ -1793,6 +1812,86 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'mark_read', notification_id: id })
         }).catch(err => console.error(err));
+      },
+      formatMessageToastDateTime(dateStr) {
+        if (!dateStr) {
+          const d = new Date();
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' • ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+        try {
+          const d = new Date(typeof dateStr === 'string' ? dateStr.replace(/-/g, '/') : dateStr);
+          if (isNaN(d.getTime())) return dateStr;
+          const dateFormatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const timeFormatted = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          return `${dateFormatted} • ${timeFormatted}`;
+        } catch (e) {
+          return dateStr;
+        }
+      },
+      getMessageToastText(toast) {
+        if (!toast) return 'Sent a message';
+        if (toast.message === '__LIKE_ICON__') {
+          return 'Sent a like 👍';
+        }
+        if (toast.message && toast.message.trim()) {
+          return toast.message;
+        }
+        if (toast.attachment) {
+          if (this.isImageAttachment(toast.attachment)) {
+            return '📷 Sent a photo';
+          }
+          return '📎 ' + this.getAttachmentFileName(toast.attachment);
+        }
+        return 'Sent a message';
+      },
+      showMessageToast(conv) {
+        if (!conv) return;
+        const msgId = conv.latest_message_id || Date.now();
+        // Prevent duplicate toast if already showing for the exact same message
+        if (this.messageToasts.some(t => t.messageId && String(t.messageId) === String(msgId))) {
+          return;
+        }
+        const id = Date.now() + Math.random();
+        const toastItem = {
+          id: id,
+          messageId: msgId,
+          senderId: conv.id,
+          name: conv.name || 'Staff Member',
+          role: conv.role || '',
+          avatar: conv.avatar || null,
+          initials: conv.initials || 'ST',
+          message: conv.latest_message || '',
+          attachment: conv.latest_attachment || null,
+          time: conv.latest_message_time || new Date().toISOString(),
+          conv: conv
+        };
+
+        // Keep maximum of 3 message toasts at once
+        if (this.messageToasts.length >= 3) {
+          this.messageToasts.shift();
+        }
+        this.messageToasts.push(toastItem);
+
+        setTimeout(() => {
+          this.dismissMessageToast(id);
+        }, 7000);
+      },
+      dismissMessageToast(id) {
+        this.messageToasts = this.messageToasts.filter(t => t.id !== id);
+      },
+      handleMessageToastClick(mToast) {
+        this.dismissMessageToast(mToast.id);
+        if (mToast.conv) {
+          this.openChatWindow(mToast.conv);
+        } else {
+          this.openChatWindow({
+            id: mToast.senderId,
+            name: mToast.name,
+            avatar: mToast.avatar,
+            initials: mToast.initials,
+            role: mToast.role
+          });
+        }
       },
       showToast(title, message, type = null, link = '#', notificationId = null) {
         const id = Date.now() + Math.random();

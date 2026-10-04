@@ -158,8 +158,7 @@
                   <!-- Text Message Bubble or Like Icon -->
                   <div class="relative group/bubble w-fit">
                     <div v-if="msg.message === '__LIKE_ICON__'"
-                         class="px-1 py-1"
-                         :class="msg.sender_id == userId ? 'text-red-600' : 'text-gray-400'">
+                         class="px-1 py-1 text-red-600">
                          <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
                            <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.77-.7-1.28-.56L10.5 4.3 6.8 8.01C6.29 8.52 6 9.22 6 9.94V19c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-.12z"/>
                          </svg>
