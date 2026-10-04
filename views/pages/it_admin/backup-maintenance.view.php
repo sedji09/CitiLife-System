@@ -63,65 +63,67 @@
     <?php endif; ?>
 
     <!-- Top 3 Key Metrics & Schedule Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
         
         <!-- Card 1: Total Backups -->
-        <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Backups</p>
-                <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
-                    <i data-lucide="server" class="w-4 h-4"></i>
+        <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between h-full space-y-3">
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Backups</p>
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+                        <i data-lucide="server" class="w-4 h-4"></i>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-black text-gray-900 leading-none"><?= count($backups) ?></span>
+                    <span class="text-xs font-semibold text-gray-400">Snapshots</span>
                 </div>
             </div>
-            <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-black text-gray-900 leading-none"><?= count($backups) ?></span>
-                <span class="text-xs font-semibold text-gray-400">Snapshots</span>
-            </div>
-            <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
+            <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px] mt-auto">
                 <span class="text-gray-400 font-medium">Latest Backup:</span>
                 <span class="font-bold text-gray-800"><?= !empty($backups) ? date('M d, g:i A', $backups[0]['date']) : 'Never' ?></span>
             </div>
         </div>
 
         <!-- Card 2: Weekly Automation Schedule -->
-        <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Weekly Schedule</p>
-                <?php if ($automationStatus['is_overdue'] ?? false): ?>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Overdue
-                    </span>
-                <?php else: ?>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
-                    </span>
-                <?php endif; ?>
-            </div>
+        <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between h-full space-y-3">
             <div>
-                <p class="text-xs font-bold text-gray-900 tracking-tight">Every Sunday · 12:00 AM</p>
-                <p class="text-[11px] text-gray-500 mt-0.5">Next: <span class="font-bold text-indigo-600"><?= htmlspecialchars($automationStatus['next_scheduled_run_formatted']) ?></span></p>
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Weekly Schedule</p>
+                    <?php if ($automationStatus['is_overdue'] ?? false): ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Overdue
+                        </span>
+                    <?php else: ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active
+                        </span>
+                    <?php endif; ?>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-900 tracking-tight">Every Sunday · 12:00 AM</p>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Next: <span class="font-bold text-indigo-600"><?= htmlspecialchars($automationStatus['next_scheduled_run_formatted']) ?></span></p>
+                </div>
             </div>
-            <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
+            <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px] mt-auto">
                 <span class="text-gray-400 font-medium">Last Auto Run:</span>
                 <span class="font-bold text-gray-800"><?= !empty($automationStatus['last_auto_backup_time']) ? date('M d, g:i A', $automationStatus['last_auto_backup_time']) : 'Never' ?></span>
             </div>
         </div>
 
         <!-- Card 3: Auto-Retention Policy -->
-        <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-3">
-            <div class="flex items-center justify-between">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Retention Policy</p>
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                    <i data-lucide="shield-check" class="w-4 h-4"></i>
-                </div>
-            </div>
+        <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm flex flex-col justify-between h-full space-y-3">
             <div>
-                <p class="text-xs font-bold text-gray-900 tracking-tight">Last 8 Snapshots / 60 Days</p>
-                <p class="text-[11px] text-gray-500 mt-0.5">Automated cleanup protects disk space.</p>
-            </div>
-            <div class="pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
-                <span class="text-gray-400 font-medium">Status:</span>
-                <span class="font-bold text-gray-800">Protected</span>
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Retention Policy</p>
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-900 tracking-tight">Last 8 Snapshots / 60 Days</p>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Automated cleanup protects disk space.</p>
+                </div>
             </div>
         </div>
 
