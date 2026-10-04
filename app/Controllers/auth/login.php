@@ -111,12 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
 
-            // Check if user exists and verify password
-            if ($user && password_verify($password, $user['password'])) {
+            // Check if user exists, is staff, and verify password
+            if ($user && $user['role'] !== 'patient' && password_verify($password, $user['password'])) {
                 if ($user['status'] === 'Inactive') {
                     $error = "Your account has been deactivated. Please contact the administrator.";
-                } elseif ($user['role'] === 'patient') {
-                    $error = "This portal is for Staff and Administrators only. Please use the Patient Portal.";
                 } else {
                     // Check if user's branch has been deactivated
                     $isBranchInactive = false;

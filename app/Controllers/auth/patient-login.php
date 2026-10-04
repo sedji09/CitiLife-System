@@ -95,11 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
 
-            // Check if user exists and verify password
-            if ($user && password_verify($password, $user['password'])) {
-                if ($user['role'] !== 'patient') {
-                    $error = 'This is the Patient Portal. Staff must log in at the Staff Portal.';
-                } else if (isset($user['is_email_verified']) && $user['is_email_verified'] == 0) {
+            // Check if user exists and verify password for patient role
+            if ($user && $user['role'] === 'patient' && password_verify($password, $user['password'])) {
+                if (isset($user['is_email_verified']) && $user['is_email_verified'] == 0) {
                     $error = 'Please verify your email address first. Check your inbox for the verification link.';
                 } else if (isset($user['status']) && $user['status'] === 'Inactive') {
                     $error = 'Your account has been deactivated. Please contact the clinic.';
