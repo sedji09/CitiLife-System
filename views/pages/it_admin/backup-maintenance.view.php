@@ -320,13 +320,14 @@
                                                 class="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                 title="Restore Live Database (Rollback)">
                                                 <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <!-- Circular restore loop with curved arrow -->
-                                                    <path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"></path>
-                                                    <polyline points="3 3 3 8 8 8"></polyline>
-                                                    <!-- Database cylinder inside center -->
-                                                    <ellipse cx="13" cy="10.5" rx="3.5" ry="1.3"></ellipse>
-                                                    <path d="M9.5 10.5v3.5c0 .7 1.6 1.3 3.5 1.3s3.5-.6 3.5-1.3v-3.5"></path>
-                                                    <path d="M9.5 12.2c0 .7 1.6 1.3 3.5 1.3s3.5-.6 3.5-1.3"></path>
+                                                    <!-- Main Database Cylinder -->
+                                                    <ellipse cx="10" cy="5" rx="7" ry="2.5"></ellipse>
+                                                    <path d="M3 5v13c0 1.38 3.13 2.5 7 2.5 1.1 0 2.1-.09 3-.24"></path>
+                                                    <path d="M3 11c0 1.38 3.13 2.5 7 2.5 1.2 0 2.3-.08 3.3-.23"></path>
+                                                    <path d="M17 5v5"></path>
+                                                    <!-- Mini Complete Curved Restore Arrow Badge -->
+                                                    <path d="M21.5 16.5a3.2 3.2 0 1 1-.95-2.27L18.5 16"></path>
+                                                    <polyline points="16 15.5 18.5 16 18.5 13.5"></polyline>
                                                 </svg>
                                             </button>
 
