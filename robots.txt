@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin_central/
+Disallow: /branch_admin/
+Disallow: /radtech/
+Disallow: /radiologist/
+Disallow: /staff/
+Disallow: /patient/
+Disallow: /app/
+Disallow: /storage/
+Disallow: /config/
+
+Sitemap: https://citilife-system-production-a5e9.up.railway.app/sitemap.xml

@@ -31,9 +31,42 @@ $xrayCategories = array_keys($groupedRates);
     <meta charset="UTF-8">
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
     <meta name="description"
         content="Citilife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports through the Patient Portal.">
-    <meta name="google-site-verification" content="google210f5a5117fa0e42">
+    <meta name="keywords"
+        content="CitiLife, Citilife Diagnostic Center, Radiology Patient Portal, X-Ray, Medical Clinic, Patient Portal, Laboratory, Diagnostic Center">
+    <meta name="author" content="CitiLife Diagnostic Center">
+    <meta name="google-site-verification" content="8qyBPuiUWCtjwbplmuZEo2YzBdrPHLMBhDMdPBKF2P0" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://citilife-system-production-a5e9.up.railway.app/">
+    <meta property="og:title" content="<?= htmlspecialchars(getSystemName()) ?> — Radiology Patient Portal">
+    <meta property="og:description"
+        content="Citilife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports.">
+    <meta property="og:image" content="<?= getSystemLogoUrl() ?>">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars(getSystemName()) ?> — Radiology Patient Portal">
+    <meta name="twitter:description"
+        content="Citilife Diagnostic Center - Access your radiology examination status, receive updates, and view your available radiology reports.">
+    <meta name="twitter:image" content="<?= getSystemLogoUrl() ?>">
+
+    <!-- Structured Data (JSON-LD) for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MedicalBusiness",
+      "name": "<?= htmlspecialchars(getSystemName()) ?> Diagnostic Center",
+      "url": "https://citilife-system-production-a5e9.up.railway.app/",
+      "logo": "<?= getSystemLogoUrl() ?>",
+      "description": "Secure Radiology Patient Portal and Diagnostic Center providing real-time examination status, updates, and online radiology reports.",
+      "medicalSpecialty": "Radiology"
+    }
+    </script>
+
     <title><?= htmlspecialchars(getSystemName()) ?> — Radiology Patient Portal</title>
     <link rel="icon" type="image/png" href="<?= getSystemLogoUrl() ?>">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
