@@ -10,10 +10,32 @@ $router->post('/', 'App\Controllers\LandingController@index', []);
 $router->get('/index.php', 'App\Controllers\LandingController@index', []);
 $router->post('/index.php', 'App\Controllers\LandingController@index', []);
 
-// Google Search Console Site Verification File
+// Google Search Console & SEO Routes
 $router->get('/google210f5a5117fa0e42.html', function () {
     header('Content-Type: text/html; charset=UTF-8');
     echo "google-site-verification: google210f5a5117fa0e42.html\n";
+    exit;
+}, []);
+
+$router->get('/robots.txt', function () {
+    header('Content-Type: text/plain; charset=UTF-8');
+    $file = __DIR__ . '/public/robots.txt';
+    if (file_exists($file)) {
+        readfile($file);
+    } else {
+        echo "User-agent: *\nAllow: /\nDisallow: /admin_central/\nDisallow: /branch_admin/\nDisallow: /staff/\nDisallow: /patient/\nSitemap: https://citilife-system-production-a5e9.up.railway.app/sitemap.xml\n";
+    }
+    exit;
+}, []);
+
+$router->get('/sitemap.xml', function () {
+    header('Content-Type: application/xml; charset=UTF-8');
+    $file = __DIR__ . '/public/sitemap.xml';
+    if (file_exists($file)) {
+        readfile($file);
+    } else {
+        echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://citilife-system-production-a5e9.up.railway.app/</loc><lastmod>' . date('Y-m-d') . '</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url></urlset>';
+    }
     exit;
 }, []);
 
