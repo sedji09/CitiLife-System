@@ -888,10 +888,236 @@ img {
 }
 
 
+/* ===== BRANCHES / LOCATIONS (COMPACT UNIFIED CARD) ===== */
+.branches-section {
+    padding: 60px 24px;
+    background: #f8fafc;
+}
+
+.branches-inner {
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+.branches-container-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.branches-card-head {
+    padding: 32px 28px 20px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+}
+
+.branches-badge-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #e20f10;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+}
+
+.branches-card-head h2 {
+    font-size: clamp(22px, 3vw, 28px);
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.branches-card-head p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.branches-compact-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 20px 24px;
+    background: #fcfdfe;
+}
+
+.branch-compact-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.branch-compact-item:hover {
+    transform: translateY(-2px);
+    border-color: #e20f10;
+    box-shadow: 0 6px 16px rgba(226, 15, 16, 0.08);
+}
+
+.branch-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.branch-item-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+
+.branch-item-name {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.branch-dir-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e20f10;
+    background: #fef2f2;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.branch-compact-item:hover .branch-dir-hint {
+    background: #e20f10;
+    color: #ffffff;
+}
+
+.branch-item-addr {
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.branch-item-landmark {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+    line-height: 1.35;
+}
+
+/* Integrated Facebook Ribbon */
+.branches-fb-ribbon {
+    padding: 16px 24px;
+    background: #f0f7ff;
+    border-top: 1px solid #dbeafe;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.branches-fb-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fb-icon-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #1877f2;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(24, 119, 242, 0.25);
+}
+
+.fb-icon-circle svg {
+    width: 22px;
+    height: 22px;
+}
+
+.fb-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e3a8a;
+    line-height: 1.2;
+}
+
+.fb-sub {
+    font-size: 12px;
+    color: #3b82f6;
+    margin-top: 2px;
+}
+
+.fb-action-btn {
+    background: #1877f2;
+    color: #ffffff !important;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(24, 119, 242, 0.25);
+}
+
+.fb-action-btn:hover {
+    background: #0d65d9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.35);
+}
+
+/* ===== NPC SEAL BADGE (DIRECT DISPLAY) ===== */
+.npc-seal-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 48px;
+}
+
+.npc-seal-badge-img {
+    height: 190px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.08));
+    transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.npc-seal-badge-img:hover {
+    transform: translateY(-4px) scale(1.02);
+    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.13));
+}
+
 /* ===== FOOTER ===== */
 .landing-footer {
-    padding: 16px 24px;
-    background: #fff;
+    padding: 22px 24px;
+    background: #ffffff;
     border-top: 1px solid #e2e8f0;
 }
 
@@ -901,31 +1127,44 @@ img {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
+    gap: 16px;
 }
 
-.footer-brand {
+.footer-copy {
+    font-size: 13.5px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.footer-socials {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.footer-brand img {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    opacity: 0.75;
+.footer-social-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #1877f2;
+    color: #ffffff !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(24, 119, 242, 0.2);
+    text-decoration: none;
 }
 
-.footer-brand span {
-    font-weight: 700;
-    font-size: 15px;
-    color: #334155;
+.footer-social-btn:hover {
+    background: #0d65d9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.35);
 }
 
-.footer-copy {
-    font-size: 13px;
-    color: #94a3b8;
+.footer-social-btn svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -1037,9 +1276,45 @@ img {
         margin-bottom: 40px;
     }
 
+    .branches-section {
+        padding: 50px 16px;
+    }
+
+    .branches-compact-list {
+        grid-template-columns: 1fr;
+        padding: 16px;
+        gap: 10px;
+    }
+
+    .branches-fb-ribbon {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 16px;
+        gap: 14px;
+    }
+
+    .branches-fb-info {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .fb-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .npc-seal-container {
+        margin-top: 32px;
+    }
+
+    .npc-seal-badge-img {
+        height: 140px;
+    }
+
     .footer-inner {
         flex-direction: column;
         text-align: center;
+        gap: 16px;
     }
 }
 

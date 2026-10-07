@@ -23,6 +23,52 @@ foreach ($xrayRates as $rate) {
     $groupedRates[$rate['category']][] = $rate;
 }
 $xrayCategories = array_keys($groupedRates);
+
+// Citilife 7 Branches
+$branches = [
+    [
+        'name' => 'GAPAN',
+        'address' => 'Bayanihan, Gapan City',
+        'landmark' => 'In front of Gapan District Hospital',
+        'map_query' => 'CitiLife Diagnostic Center Bayanihan Gapan City'
+    ],
+    [
+        'name' => 'PEÑARANDA',
+        'address' => 'Rizal Street, Sto. Tomas, Peñaranda',
+        'landmark' => 'In front of Gerdel Twins Hardware',
+        'map_query' => 'CitiLife Diagnostic Center Rizal Street Sto Tomas Penaranda'
+    ],
+    [
+        'name' => 'GENERAL TINIO',
+        'address' => 'Padolina Street, Gulod, General Tinio',
+        'landmark' => 'Beside Medicare Community Hospital',
+        'map_query' => 'CitiLife Diagnostic Center Padolina Street Gulod General Tinio'
+    ],
+    [
+        'name' => 'STO DOMINGO',
+        'address' => 'Petron Compound Gas Station, Pulong Buli, Santo Domingo',
+        'landmark' => '',
+        'map_query' => 'CitiLife Diagnostic Center Santo Domingo Nueva Ecija'
+    ],
+    [
+        'name' => 'SAN ANTONIO',
+        'address' => 'Along Provincial Road, San Antonio',
+        'landmark' => 'In front of San Antonio District Hospital',
+        'map_query' => 'CitiLife Diagnostic Center San Antonio Nueva Ecija'
+    ],
+    [
+        'name' => 'PANTABANGAN',
+        'address' => 'Villar compound, Purok West, Poblacion, Pantabangan',
+        'landmark' => '',
+        'map_query' => 'CitiLife Diagnostic Center Pantabangan Nueva Ecija'
+    ],
+    [
+        'name' => 'BONGABON',
+        'address' => 'L. De Lara Street, Bongabon',
+        'landmark' => 'Beside Bongabon District Hospital',
+        'map_query' => 'CitiLife Diagnostic Center L De Lara Street Bongabon'
+    ]
+];
 ?>
 <!DOCTYPE html>
 <html lang="en" class="notranslate" translate="no">
@@ -62,8 +108,11 @@ $xrayCategories = array_keys($groupedRates);
       "name": "<?= htmlspecialchars(getSystemName()) ?> Diagnostic Center",
       "url": "https://citilife-system-production-a5e9.up.railway.app/",
       "logo": "<?= getSystemLogoUrl() ?>",
-      "description": "Secure Radiology Patient Portal and Diagnostic Center providing real-time examination status, updates, and online radiology reports.",
-      "medicalSpecialty": "Radiology"
+      "description": "Secure Radiology Patient Portal and Diagnostic Center providing real-time examination status, updates, and online radiology reports across 7 branches in Nueva Ecija.",
+      "medicalSpecialty": "Radiology",
+      "sameAs": [
+        "https://www.facebook.com/Citilifediagnosticcenter"
+      ]
     }
     </script>
 
@@ -76,7 +125,7 @@ $xrayCategories = array_keys($groupedRates);
         rel="stylesheet">
     <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
     <link rel="stylesheet"
-        href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/landing-page-styles.css">
+        href="<?= url('public/assets/css/landing-page-styles.css?v=' . time()) ?>">
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
 </head>
@@ -98,8 +147,10 @@ $xrayCategories = array_keys($groupedRates);
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#about">About</a></li>
-                <li><a href="#features">Services</a></li>
+                <li><a href="#features">Features</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#pricing">Services & Rates</a></li>
+                <li><a href="#branches">Branches</a></li>
             </ul>
 
             <a href="#" onclick="openLoginModal(event)" class="nav-cta-btn">
@@ -168,6 +219,11 @@ $xrayCategories = array_keys($groupedRates);
                     <div class="stat-desc">Request and take your examinations at your most convenient Citilife branch
                     </div>
                 </div>
+            </div>
+
+            <!-- NPC Seal Badge (Direct Display) -->
+            <div class="npc-seal-container">
+                <img src="<?= url('public/assets/images/npc-seal.png?v=' . time()) ?>" alt="National Privacy Commission DPO/DPS Registered Seal" class="npc-seal-badge-img">
             </div>
         </div>
     </section>
@@ -301,6 +357,65 @@ $xrayCategories = array_keys($groupedRates);
         </div>
     </section>
 
+    <!-- ===== BRANCHES / COME AND VISIT US (COMPACT UNIFIED CARD) ===== -->
+    <section class="branches-section" id="branches">
+        <div class="branches-inner">
+            <div class="branches-container-card">
+                <div class="branches-card-head">
+                    <div class="branches-badge-label">
+                        Our Branches
+                    </div>
+                    <h2>COME AND VISIT US!</h2>
+                    <p>Visit any of our 7 diagnostic center branches across Nueva Ecija.</p>
+                </div>
+
+                <div class="branches-compact-list">
+                    <?php foreach ($branches as $branch): ?>
+                        <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($branch['map_query']) ?>"
+                           target="_blank" rel="noopener noreferrer" class="branch-compact-item">
+                            <div class="branch-info">
+                                <div class="branch-item-title-row">
+                                    <span class="branch-item-name"><?= htmlspecialchars($branch['name']) ?></span>
+                                    <span class="branch-dir-hint">
+                                        <span>Map</span>
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="branch-item-addr"><?= htmlspecialchars($branch['address']) ?></div>
+                                <?php if (!empty($branch['landmark'])): ?>
+                                    <div class="branch-item-landmark"><?= htmlspecialchars($branch['landmark']) ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Integrated Facebook Ribbon -->
+                <div class="branches-fb-ribbon">
+                    <div class="branches-fb-info">
+                        <div class="fb-icon-circle">
+                            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="fb-title">Citilife Diagnostic Center</div>
+                            <div class="fb-sub">Official Facebook Page & Updates</div>
+                        </div>
+                    </div>
+                    <a href="https://www.facebook.com/Citilifediagnosticcenter" target="_blank" rel="noopener noreferrer" class="fb-action-btn">
+                        Visit Facebook Page
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ===== CTA ===== -->
     <section class="cta-section">
         <div class="cta-card">
@@ -318,8 +433,15 @@ $xrayCategories = array_keys($groupedRates);
 
     <!-- ===== FOOTER ===== -->
     <footer class="landing-footer">
-        <div class="footer-inner" style="justify-content: center;">
-            <div class="footer-copy">&copy; <?= date('Y') ?> Citilife Diagnostic Center. All rights reserved.</div>
+        <div class="footer-inner">
+            <div class="footer-copy">&copy; <?= date('Y') ?>. Citilife Diagnostic Center. All rights reserved.</div>
+            <div class="footer-socials">
+                <a href="https://www.facebook.com/Citilifediagnosticcenter" target="_blank" rel="noopener noreferrer" class="footer-social-btn" title="Follow Citilife Diagnostic Center on Facebook" aria-label="Facebook">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                </a>
+            </div>
         </div>
     </footer>
 

@@ -6,6 +6,8 @@ env.php
 
 # Database Dumps & SQL Backups
 *.sql
+!schema_only.sql
+!migrations/*.sql
 *.sql.gz
 storage/backups/*
 !storage/backups/.htaccess

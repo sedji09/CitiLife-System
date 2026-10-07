@@ -73,15 +73,19 @@ class PaymentVerificationsController
                             require_once __DIR__ . '/../../Models/CaseModel.php';
                             $caseModel = new \CaseModel($pdo);
                             $caseNumber = $caseModel->generateCaseNumber($reqBranchId);
+                            $serviceType = !empty($reqData['service_type']) ? $reqData['service_type'] : 'X-Ray';
+                            $serviceId = !empty($reqData['service_id']) ? (int)$reqData['service_id'] : null;
                             
                             $stmtInsertCase = $pdo->prepare("
-                                INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
+                                INSERT INTO cases (case_number, patient_id, branch_id, service_type, service_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
                             ");
                             $stmtInsertCase->execute([
                                 $caseNumber,
                                 $reqData['patient_id'],
                                 $reqBranchId,
+                                $serviceType,
+                                $serviceId,
                                 $reqData['exam_type'],
                                 $reqData['priority'],
                                 $reqData['philhealth_status'],
@@ -92,7 +96,7 @@ class PaymentVerificationsController
                             $newCaseId = $pdo->lastInsertId();
                             
                             // 4. Record audit log
-                            $details = "Verified payment ID: {$paymentId} for Request #{$reqData['request_number']}. Created Case #{$caseNumber} (ID: {$newCaseId}) and moved directly to RadTech Patient Queue.";
+                            $details = "Verified payment ID: {$paymentId} for Request #{$reqData['request_number']}. Created Case #{$caseNumber} (ID: {$newCaseId}) and moved directly to examination queue.";
                             $auditLogModel->addLog($currentUserId, 'Approved & Created Case', 'Payment Verifications', 'Case', $newCaseId, $details, $reqBranchId);
 
                             // 5. Send notifications
@@ -112,17 +116,17 @@ class PaymentVerificationsController
                             if ($patUser) {
                                 $notifModel->add(
                                     "Request Approved",
-                                    "Your payment for request {$reqData['request_number']} has been verified and approved (Case #{$caseNumber}). Please proceed to the X-ray room for examination.",
+                                    "Your payment for request {$reqData['request_number']} has been verified and approved (Case #{$caseNumber}). Please proceed to the {$serviceType} examination room.",
                                     url("dashboard?case_id=" . urlencode($newCaseId) . "&highlight=" . urlencode($caseNumber)),
                                     $patUser['user_id'],
                                     'patient'
                                 );
                             }
                             
-                            // Send Notification to RadTech team at this branch
+                            // Send Notification to Clinical/RadTech team at this branch
                             $notifModel->add(
                                 "New Patient in Queue",
-                                "Case #{$caseNumber} ({$reqData['exam_type']}) payment verified and approved. Ready for X-ray examination.",
+                                "Case #{$caseNumber} ({$reqData['exam_type']}) payment verified and approved. Ready for {$serviceType} examination.",
                                 url("patient-lists?tab=queue&highlight=" . urlencode($caseNumber) . "&filterDate=Today"),
                                 null,
                                 'radtech',

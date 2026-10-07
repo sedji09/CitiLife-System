@@ -58,11 +58,16 @@ class PatientApprovalController
                     // Generate a case number and insert into cases table
                     $caseBranchId = !empty($req['branch_id']) ? (int)$req['branch_id'] : (int)$branchId;
                     $caseNumber = $caseModel->generateCaseNumber($caseBranchId);
-                    $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
+                    $serviceType = !empty($req['service_type']) ? $req['service_type'] : 'X-Ray';
+                    $serviceId = !empty($req['service_id']) ? (int)$req['service_id'] : null;
+
+                    $stmtCase = $pdo->prepare("INSERT INTO cases (case_number, patient_id, branch_id, service_type, service_id, exam_type, priority, philhealth_status, philhealth_id, philhealth_relation, status, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)");
                     $stmtCase->execute([
                         $caseNumber, 
                         $req['patient_id'], 
                         $caseBranchId, 
+                        $serviceType,
+                        $serviceId,
                         $req['exam_type'],
                         $req['priority'], 
                         $req['philhealth_status'], 
@@ -72,7 +77,7 @@ class PatientApprovalController
                     ]);
                     $newCaseId = $pdo->lastInsertId();
                     
-                    $auditLogModel->addLog($currentUserId, "Approved Patient Request", 'Patient Approval', 'Request', $requestId, "Approved request #{$req['request_number']} and created Case #{$caseNumber}", $caseBranchId);
+                    $auditLogModel->addLog($currentUserId, "Approved Patient Request", 'Patient Approval', 'Request', $requestId, "Approved request #{$req['request_number']} and created Case #{$caseNumber} ($serviceType)", $caseBranchId);
                     
                     // Send notification and email to patient
                     $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
@@ -81,7 +86,7 @@ class PatientApprovalController
                     if ($patUser) {
                         $notificationModel->add(
                             "Request Approved",
-                            "Your X-ray request ({$caseNumber}) has been approved. Please proceed to the X-ray room.",
+                            "Your {$serviceType} request ({$caseNumber}) has been approved. Please proceed to the {$serviceType} examination room.",
                             url('dashboard'),
                             $patUser['id'],
                             'patient'
@@ -90,19 +95,20 @@ class PatientApprovalController
                         if (!empty($patUser['email'])) {
                             $portalUrl = (function_exists('appBaseUrl') ? appBaseUrl() : '') . (function_exists('url') ? url('dashboard') : '/dashboard');
                             $patientName = $patUser['name'] ?: 'Patient';
-                            $subject = "Your X-ray Request ({$caseNumber}) is Approved - Citilife System";
+                            $subject = "Your {$serviceType} Request ({$caseNumber}) is Approved - Citilife System";
                             $emailBody = renderNotificationEmail(
                                 $patientName,
-                                "X-ray Request Approved",
-                                "Good news! Your X-ray request has been approved. You may now proceed to the X-ray room for examination.",
+                                "{$serviceType} Request Approved",
+                                "Good news! Your {$serviceType} request has been approved. You may now proceed for examination.",
                                 [
                                     'Case Number' => htmlspecialchars($caseNumber),
+                                    'Modality' => htmlspecialchars($serviceType),
                                     'Examination' => htmlspecialchars($req['exam_type'] ?: 'N/A'),
                                     'Status' => '<span style="color: #1a7f37; font-weight: 600;">Approved</span>'
                                 ],
                                 "View Case Status",
                                 $portalUrl,
-                                "You're receiving this notification regarding your X-ray examination at Citilife.",
+                                "You're receiving this notification regarding your {$serviceType} examination at Citilife.",
                                 "#16a34a"
                             );
                             sendEmailAsync($patUser['email'], $patientName, $subject, $emailBody);
@@ -110,7 +116,7 @@ class PatientApprovalController
                     }
 
                     $pdo->commit();
-                    $_SESSION['flash_success'] = "Patient request has been finally approved. They can now proceed to X-ray.";
+                    $_SESSION['flash_success'] = "Patient request has been approved. They can now proceed to examination.";
                     redirect(url('patient-details?role=radtech&id=' . urlencode($newCaseId) . '&from=approval'));
                 } catch (\Throwable $e) {
                     if ($pdo->inTransaction()) {

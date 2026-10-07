@@ -22,6 +22,11 @@ class ServicePricingController
             $action = $_POST['action'] ?? '';
 
             if ($action === 'create') {
+                $serviceType = trim($_POST['service_type'] ?? 'X-Ray');
+                if (empty($serviceType)) {
+                    $serviceType = 'X-Ray';
+                }
+
                 $category = trim($_POST['category'] ?? '');
                 $customCategory = trim($_POST['custom_category'] ?? '');
                 if ($category === '__new__' && !empty($customCategory)) {
@@ -48,26 +53,31 @@ class ServicePricingController
                 } elseif ($serviceModel->serviceExists($examType)) {
                     $error = "An exam procedure with this name already exists.";
                 } else {
-                    if ($serviceModel->createService($category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status)) {
+                    if ($serviceModel->createService($category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status, $serviceType)) {
                         $newId = $pdo->lastInsertId();
-                        $success = "X-Ray service '{$examType}' added successfully!";
+                        $success = "Diagnostic service '{$examType}' ({$serviceType}) added successfully!";
                         $auditLogModel->addLog(
                             $currentUserId,
-                            "Added X-Ray Service: $examType",
+                            "Added Diagnostic Service: $examType",
                             'Service Pricing',
                             'Service',
                             $newId,
-                            "Category: $category, Price: PHP $price, PhilHealth: " . ($isPhilhealthCovered ? "Yes (Discount: PHP $philhealthDiscount)" : "No") . ", Status: $status",
+                            "Type: $serviceType, Category: $category, Price: PHP $price, PhilHealth: " . ($isPhilhealthCovered ? "Yes (Discount: PHP $philhealthDiscount)" : "No") . ", Status: $status",
                             null
                         );
                     } else {
-                        $error = "Failed to add new X-Ray service.";
+                        $error = "Failed to add new diagnostic service.";
                     }
                 }
             }
 
             if ($action === 'update') {
                 $id = $_POST['service_id'] ?? null;
+                $serviceType = trim($_POST['service_type'] ?? 'X-Ray');
+                if (empty($serviceType)) {
+                    $serviceType = 'X-Ray';
+                }
+
                 $category = trim($_POST['category'] ?? '');
                 $customCategory = trim($_POST['custom_category'] ?? '');
                 if ($category === '__new__' && !empty($customCategory)) {
@@ -94,19 +104,19 @@ class ServicePricingController
                 } elseif ($serviceModel->serviceExists($examType, $id)) {
                     $error = "An exam procedure with this name already exists.";
                 } else {
-                    if ($serviceModel->updateService($id, $category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status)) {
+                    if ($serviceModel->updateService($id, $category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status, $serviceType)) {
                         $success = "Service '{$examType}' updated successfully!";
                         $auditLogModel->addLog(
                             $currentUserId,
-                            "Updated X-Ray Service: $examType",
+                            "Updated Diagnostic Service: $examType",
                             'Service Pricing',
                             'Service',
                             $id,
-                            "Category: $category, Price: PHP $price, PhilHealth: " . ($isPhilhealthCovered ? "Yes (Discount: PHP $philhealthDiscount)" : "No") . ", Status: $status",
+                            "Type: $serviceType, Category: $category, Price: PHP $price, PhilHealth: " . ($isPhilhealthCovered ? "Yes (Discount: PHP $philhealthDiscount)" : "No") . ", Status: $status",
                             null
                         );
                     } else {
-                        $error = "Failed to update X-Ray service.";
+                        $error = "Failed to update diagnostic service.";
                     }
                 }
             }
@@ -138,10 +148,10 @@ class ServicePricingController
             if ($action === 'delete') {
                 $id = $_POST['service_id'] ?? null;
                 if ($id && $serviceModel->deleteService($id)) {
-                    $success = "X-Ray service removed successfully.";
+                    $success = "Diagnostic service removed successfully.";
                     $auditLogModel->addLog(
                         $currentUserId,
-                        "Deleted X-Ray Service",
+                        "Deleted Diagnostic Service",
                         'Service Pricing',
                         'Service',
                         $id,
@@ -154,9 +164,10 @@ class ServicePricingController
             }
         }
 
-        // Fetch all services and categories
+        // Fetch all services, categories, and service types
         $services = $serviceModel->getAllServices();
         $categories = $serviceModel->getCategories();
+        $serviceTypes = $serviceModel->getServiceTypes();
 
         return get_defined_vars();
     }

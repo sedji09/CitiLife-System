@@ -142,7 +142,8 @@ CREATE TABLE `cases` (
   `case_number` varchar(50) NOT NULL,
   `patient_id` int(11) NOT NULL,
   `branch_id` int(11) DEFAULT NULL,
-  `service_type` enum('X-Ray','Ultrasound') NOT NULL DEFAULT 'X-Ray',
+  `service_type` varchar(50) NOT NULL DEFAULT 'X-Ray',
+  `service_id` int(11) DEFAULT NULL,
   `exam_type` varchar(100) NOT NULL,
   `priority` enum('Normal','Priority','STAT','Urgent','Routine') NOT NULL DEFAULT 'Normal',
   `philhealth_status` enum('With PhilHealth Card','Without PhilHealth Card') NOT NULL,
@@ -177,9 +178,11 @@ CREATE TABLE `cases` (
   UNIQUE KEY `req_id_unique` (`request_id`),
   KEY `patient_id` (`patient_id`),
   KEY `fk_cases_branch` (`branch_id`),
+  KEY `fk_cases_service` (`service_id`),
   CONSTRAINT `fk_cases_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_cases_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_cases_requests` FOREIGN KEY (`request_id`) REFERENCES `requests` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_cases_requests` FOREIGN KEY (`request_id`) REFERENCES `requests` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_cases_service` FOREIGN KEY (`service_id`) REFERENCES `xray_services` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -423,6 +426,8 @@ CREATE TABLE `requests` (
   `request_number` varchar(50) NOT NULL,
   `patient_id` int(11) NOT NULL,
   `branch_id` int(11) NOT NULL,
+  `service_type` varchar(50) NOT NULL DEFAULT 'X-Ray',
+  `service_id` int(11) DEFAULT NULL,
   `exam_type` varchar(100) NOT NULL,
   `original_price` decimal(10,2) DEFAULT NULL,
   `philhealth_discount` decimal(10,2) DEFAULT 0.00,
@@ -442,8 +447,10 @@ CREATE TABLE `requests` (
   UNIQUE KEY `request_number` (`request_number`),
   KEY `patient_id` (`patient_id`),
   KEY `branch_id` (`branch_id`),
+  KEY `fk_requests_service` (`service_id`),
   CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `requests_ibfk_2` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE CASCADE
+  CONSTRAINT `requests_ibfk_2` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_requests_service` FOREIGN KEY (`service_id`) REFERENCES `xray_services` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -581,6 +588,7 @@ DROP TABLE IF EXISTS `xray_services`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `xray_services` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `service_type` varchar(50) NOT NULL DEFAULT 'X-Ray',
   `category` varchar(100) NOT NULL,
   `exam_type` varchar(150) NOT NULL,
   `price` decimal(10,2) NOT NULL,

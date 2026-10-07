@@ -48,6 +48,36 @@ class ServiceModel {
     }
 
     /**
+     * Get all unique service types (modalities).
+     */
+    public function getServiceTypes() {
+        try {
+            $stmt = $this->pdo->query("SELECT DISTINCT service_type FROM xray_services WHERE service_type IS NOT NULL AND service_type != '' ORDER BY service_type ASC");
+            $types = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            if (empty($types)) {
+                return ['X-Ray', 'Ultrasound', 'CT Scan', 'ECG', '2D-Echo', 'Laboratory'];
+            }
+            return $types;
+        } catch (\Throwable $e) {
+            return ['X-Ray', 'Ultrasound', 'CT Scan', 'ECG', '2D-Echo', 'Laboratory'];
+        }
+    }
+
+    /**
+     * Get active services by specific service type (or all if null).
+     */
+    public function getActiveServicesByType($serviceType = null) {
+        if ($serviceType) {
+            $stmt = $this->pdo->prepare("SELECT * FROM xray_services WHERE status = 'active' AND service_type = ? ORDER BY category ASC, exam_type ASC");
+            $stmt->execute([$serviceType]);
+        } else {
+            $stmt = $this->pdo->prepare("SELECT * FROM xray_services WHERE status = 'active' ORDER BY category ASC, exam_type ASC");
+            $stmt->execute();
+        }
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Check if a service with the given exam type already exists.
      */
     public function serviceExists($examType, $excludeId = null) {
@@ -62,19 +92,19 @@ class ServiceModel {
     }
 
     /**
-     * Create a new service.
+     * Create a new service with optional service_type (modality).
      */
-    public function createService($category, $examType, $price, $isPhilhealthCovered = 0, $philhealthDiscount = 0.00, $status = 'active') {
-        $stmt = $this->pdo->prepare("INSERT INTO xray_services (category, exam_type, price, is_philhealth_covered, philhealth_discount, status) VALUES (?, ?, ?, ?, ?, ?)");
-        return $stmt->execute([$category, $examType, $price, (int)$isPhilhealthCovered, (float)$philhealthDiscount, $status]);
+    public function createService($category, $examType, $price, $isPhilhealthCovered = 0, $philhealthDiscount = 0.00, $status = 'active', $serviceType = 'X-Ray') {
+        $stmt = $this->pdo->prepare("INSERT INTO xray_services (service_type, category, exam_type, price, is_philhealth_covered, philhealth_discount, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([$serviceType ?: 'X-Ray', $category, $examType, $price, (int)$isPhilhealthCovered, (float)$philhealthDiscount, $status]);
     }
 
     /**
-     * Update an existing service.
+     * Update an existing service including service_type.
      */
-    public function updateService($id, $category, $examType, $price, $isPhilhealthCovered = 0, $philhealthDiscount = 0.00, $status = 'active') {
-        $stmt = $this->pdo->prepare("UPDATE xray_services SET category = ?, exam_type = ?, price = ?, is_philhealth_covered = ?, philhealth_discount = ?, status = ? WHERE id = ?");
-        return $stmt->execute([$category, $examType, $price, (int)$isPhilhealthCovered, (float)$philhealthDiscount, $status, $id]);
+    public function updateService($id, $category, $examType, $price, $isPhilhealthCovered = 0, $philhealthDiscount = 0.00, $status = 'active', $serviceType = 'X-Ray') {
+        $stmt = $this->pdo->prepare("UPDATE xray_services SET service_type = ?, category = ?, exam_type = ?, price = ?, is_philhealth_covered = ?, philhealth_discount = ?, status = ? WHERE id = ?");
+        return $stmt->execute([$serviceType ?: 'X-Ray', $category, $examType, $price, (int)$isPhilhealthCovered, (float)$philhealthDiscount, $status, $id]);
     }
 
     /**
@@ -93,3 +123,4 @@ class ServiceModel {
         return $stmt->execute([$id]);
     }
 }
+
