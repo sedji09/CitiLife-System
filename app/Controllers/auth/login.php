@@ -237,6 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
+    <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
     <style>
         * {
             box-sizing: border-box;

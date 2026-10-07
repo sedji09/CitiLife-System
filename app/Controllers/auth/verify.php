@@ -120,6 +120,7 @@ if (empty($token)) {
     <title>Create Password - <?= htmlspecialchars(getSystemName()) ?></title>
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
+    <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);

@@ -19,6 +19,7 @@ $descText = $isLoggedIn
     <title>403 - Access Denied | Citilife System</title>
     <link rel="icon" type="image/png" href="<?= function_exists('getSystemLogoUrl') ? getSystemLogoUrl() : url('public/assets/img/logo/citilife-logo.png') ?>">
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
+    <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
 

@@ -15,6 +15,7 @@
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/alerts.js?v=<?= time() ?>"></script>
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/form-validator.js?v=<?= time() ?>"></script>
   <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
+  <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/offline-tracker.js?v=<?= time() ?>"></script>
 
   <link rel="stylesheet" href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>tailwind/src/output.css?v=<?= filemtime(__DIR__ . '/../../../tailwind/src/output.css') ?>">
   <style>

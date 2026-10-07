@@ -78,6 +78,7 @@ $xrayCategories = array_keys($groupedRates);
     <link rel="stylesheet"
         href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/css/landing-page-styles.css">
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
+    <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
 </head>
 
 <body>

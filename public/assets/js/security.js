@@ -63,7 +63,12 @@
                 }
             }
 
-            return originalFetch.call(this, resource, init);
+            return originalFetch.call(this, resource, init).catch(function (error) {
+                if (!navigator.onLine && window.CitiLifeOfflineTracker) {
+                    window.CitiLifeOfflineTracker.showOffline();
+                }
+                throw error;
+            });
         };
     }
 
@@ -78,6 +83,12 @@
         };
 
         XMLHttpRequest.prototype.send = function (body) {
+            this.addEventListener('error', function () {
+                if (!navigator.onLine && window.CitiLifeOfflineTracker) {
+                    window.CitiLifeOfflineTracker.showOffline();
+                }
+            });
+
             if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(this._csrfMethod)) {
                 const token = getCsrfToken();
                 if (token) {

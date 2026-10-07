@@ -130,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
     <title><?= $isActivation ? 'Set Password & Activate Account' : 'Reset Password' ?> - Citilife System</title>
     <link rel="stylesheet" href="<?= url('tailwind/src/output.css') ?>">
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
+    <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
     <style>
         .glass-panel {
             background: rgba(255, 255, 255, 0.85);
