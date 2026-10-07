@@ -735,12 +735,12 @@ if (empty($_SESSION['data_privacy_accepted'])):
 
                 <!-- 4. FOOTER ACTIONS -->
                 <div id="dpm-footer">
-                    <button id="acceptPrivacyBtn" class="dpm-btn-accept">
-                        I Accept and Continue
-                    </button>
                     <a href="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>logout" class="dpm-btn-decline">
                         Decline and Logout
                     </a>
+                    <button id="acceptPrivacyBtn" class="dpm-btn-accept">
+                        I Accept and Continue
+                    </button>
                 </div>
             </div>
         </div>
