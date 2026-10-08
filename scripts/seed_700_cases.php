@@ -42,8 +42,8 @@ $sampleMapping = [
     'sample_elbow_arm.png'       => 'case_186_1776945916_1.png',
     'sample_abdomen_upright.png' => 'case_187_1776954181_0.png',
     'sample_abdomen_pedia.png'   => 'case_188_1776999735_0.png',
-    'sample_hand.png'            => 'case_254_1781749645_0.png',
-    'sample_spine.png'           => 'case_283_1782566393_0.png',
+    'sample_hand.png'            => 'case_186_1776945916_1.png',
+    'sample_spine.png'           => 'case_185_1776945278_0.png',
 ];
 
 echo "Preparing sample images in public/assets/uploads/cases/samples/...\n";
