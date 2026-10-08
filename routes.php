@@ -319,14 +319,6 @@ $router->get('/image', 'App\Controllers\ImageController@view', ['auth']);
 $router->get('/cases/image', 'App\Controllers\ImageController@view', ['auth']);
 $router->get('/secure-file', 'App\Controllers\ImageController@view', ['auth']);
 
-// One-click Database Alignment for Live Deployment / Railway
-$syncHandler = function () {
-    header('Content-Type: text/plain; charset=UTF-8');
-    require_once __DIR__ . '/scripts/align_700_cases_and_patients.php';
-    exit;
-};
-$router->get('/sync-db-700', $syncHandler);
-$router->get('/sync-db-700.php', $syncHandler);
 
 
 
