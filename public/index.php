@@ -16,7 +16,13 @@ if ($isLocalhost) {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 }
 
-header('Content-Language: en');
+require_once __DIR__ . '/../helpers.php';
+
+if (file_exists(__DIR__ . '/../env.php')) {
+    require_once __DIR__ . '/../env.php';
+}
+
+$nonce = function_exists('csp_nonce') ? csp_nonce() : base64_encode(random_bytes(16));
 
 // Global Security & OWASP Defense-in-Depth Headers
 header('X-Frame-Options: SAMEORIGIN');
@@ -35,18 +41,12 @@ if ($isHttps) {
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
 }
 
-// Content Security Policy (Optimized for Mozilla Observatory + Full compatibility)
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';");
+// Content Security Policy (Strict Nonce + Fallback for full compatibility)
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://challenges.cloudflare.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';");
 
 // Remove PHP Version Information Leak
 if (function_exists('header_remove')) {
     header_remove('X-Powered-By');
-}
-
-require_once __DIR__ . '/../helpers.php';
-
-if (file_exists(__DIR__ . '/../env.php')) {
-    require_once __DIR__ . '/../env.php';
 }
 
 // Define PROJECT_DIR dynamic constant for root routing compatibility

@@ -482,6 +482,26 @@ if (!function_exists('getAppSecret')) {
     }
 }
 
+if (!function_exists('csp_nonce')) {
+    /**
+     * Generate or retrieve single-request CSP Nonce
+     * 
+     * @return string
+     */
+    function csp_nonce()
+    {
+        static $nonce = null;
+        if ($nonce === null) {
+            try {
+                $nonce = base64_encode(random_bytes(16));
+            } catch (\Throwable $e) {
+                $nonce = base64_encode(uniqid((string)mt_rand(), true));
+            }
+        }
+        return $nonce;
+    }
+}
+
 if (!function_exists('csrf_token')) {
     /**
      * Get or initialize the CSRF token for the active session
