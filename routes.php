@@ -319,6 +319,19 @@ $router->get('/image', 'App\Controllers\ImageController@view', ['auth']);
 $router->get('/cases/image', 'App\Controllers\ImageController@view', ['auth']);
 $router->get('/secure-file', 'App\Controllers\ImageController@view', ['auth']);
 
+// One-click Database Alignment for Live Deployment / Railway
+$router->get('/sync-db-700', function () {
+    $secret = $_GET['secret'] ?? '';
+    if ($secret !== 'citilife2026') {
+        http_response_code(403);
+        die("Unauthorized. Missing or invalid secret key.");
+    }
+    header('Content-Type: text/plain; charset=UTF-8');
+    require_once __DIR__ . '/scripts/align_700_cases_and_patients.php';
+    exit;
+});
+
+
 
 
 
