@@ -23,7 +23,12 @@
             rows.sort((a, b) => {
                 const dateA = new Date(a.dataset.date || 0).getTime();
                 const dateB = new Date(b.dataset.date || 0).getTime();
-                return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
+                if (dateA !== dateB) {
+                    return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
+                }
+                const idA = a.dataset.id || '';
+                const idB = b.dataset.id || '';
+                return sort === 'Newest Case' ? idB.localeCompare(idA) : idA.localeCompare(idB);
             });
             rows.forEach(row => tbody.appendChild(row));
         }

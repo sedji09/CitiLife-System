@@ -651,26 +651,14 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
             rows.sort((a, b) => {
-                // Priority Weight: STAT > Urgent/Priority > Routine
-                const getPriorityWeight = (prio) => {
-                    const p = (prio || '').toUpperCase();
-                    if (p === 'STAT') return 3;
-                    if (p === 'URGENT' || p === 'PRIORITY') return 2;
-                    return 1;
-                };
-
-                const weightA = getPriorityWeight(a.dataset.priority);
-                const weightB = getPriorityWeight(b.dataset.priority);
-
-                // Sort by priority first (highest weight first)
-                if (weightA !== weightB) {
-                    return weightB - weightA;
+                const dateA = new Date(a.dataset.date || 0).getTime();
+                const dateB = new Date(b.dataset.date || 0).getTime();
+                if (dateA !== dateB) {
+                    return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
                 }
-
-                // If same priority, sort by date
-                const dateA = new Date(a.dataset.date).getTime();
-                const dateB = new Date(b.dataset.date).getTime();
-                return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
+                const idA = a.dataset.id || '';
+                const idB = b.dataset.id || '';
+                return sort === 'Newest Case' ? idB.localeCompare(idA) : idA.localeCompare(idB);
             });
 
             rows.forEach(row => tbody.appendChild(row));

@@ -294,15 +294,15 @@
 
         // Sort
         if (sort === 'Newest Case' || sort === 'Oldest Case') {
-            const priorityMap = { 'STAT': 3, 'Urgent': 2, 'Routine': 1 };
-
             rows.sort((a, b) => {
-                const scoreA = priorityMap[a.dataset.priority] || 0;
-                const scoreB = priorityMap[b.dataset.priority] || 0;
-                if (scoreA !== scoreB) return scoreB - scoreA;
-                const dateA = new Date(a.dataset.date).getTime();
-                const dateB = new Date(b.dataset.date).getTime();
-                return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
+                const dateA = new Date(a.dataset.date || 0).getTime();
+                const dateB = new Date(b.dataset.date || 0).getTime();
+                if (dateA !== dateB) {
+                    return sort === 'Newest Case' ? dateB - dateA : dateA - dateB;
+                }
+                const idA = a.dataset.id || '';
+                const idB = b.dataset.id || '';
+                return sort === 'Newest Case' ? idB.localeCompare(idA) : idA.localeCompare(idB);
             });
 
             rows.forEach(row => tbody.appendChild(row));
