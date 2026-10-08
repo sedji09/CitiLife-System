@@ -608,6 +608,14 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         if (savedPage && savedPage > 0) {
             currentMainPage = savedPage;
         }
+
+        if (window.initCustomSelects) window.initCustomSelects();
+
+        [filterPriority, filterStatus, filterDate, sortDate].forEach(el => {
+            if (el && el._customSelect) {
+                el._customSelect.sync();
+            }
+        });
     }
 
     document.addEventListener('input', (e) => {
@@ -1748,10 +1756,47 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         controls.appendChild(createButton('Next &rsaquo;', currentDisputesPage + 1, currentDisputesPage >= totalPages));
     }
 
+    function saveDisputesState() {
+        const searchInput = document.getElementById('disputes-search-input');
+        const filterCat = document.getElementById('disputes-filter-category');
+        const filterStatus = document.getElementById('disputes-filter-status');
+        const sortDate = document.getElementById('disputes-sort-date');
+
+        if (searchInput) sessionStorage.setItem('Citilife_radtechDisputes_search', searchInput.value);
+        if (filterCat) sessionStorage.setItem('Citilife_radtechDisputes_category', filterCat.value);
+        if (filterStatus) sessionStorage.setItem('Citilife_radtechDisputes_status', filterStatus.value);
+        if (sortDate) sessionStorage.setItem('Citilife_radtechDisputes_sort', sortDate.value);
+        sessionStorage.setItem('radtech_disputes_page', currentDisputesPage);
+    }
+
+    function restoreDisputesState() {
+        const searchInput = document.getElementById('disputes-search-input');
+        const filterCat = document.getElementById('disputes-filter-category');
+        const filterStatus = document.getElementById('disputes-filter-status');
+        const sortDate = document.getElementById('disputes-sort-date');
+
+        const savedSearch = sessionStorage.getItem('Citilife_radtechDisputes_search');
+        const savedCat = sessionStorage.getItem('Citilife_radtechDisputes_category');
+        const savedStatus = sessionStorage.getItem('Citilife_radtechDisputes_status');
+        const savedSort = sessionStorage.getItem('Citilife_radtechDisputes_sort');
+
+        if (searchInput && savedSearch !== null) searchInput.value = savedSearch;
+        if (filterCat && savedCat) filterCat.value = savedCat;
+        if (filterStatus && savedStatus) filterStatus.value = savedStatus;
+        if (sortDate && savedSort) sortDate.value = savedSort;
+
+        if (window.initCustomSelects) window.initCustomSelects();
+
+        [filterCat, filterStatus, sortDate].forEach(el => {
+            if (el && el._customSelect) el._customSelect.sync();
+        });
+    }
+
     // Event listeners for disputes search, filter, and sorting
     document.addEventListener('input', (e) => {
         if (e.target && e.target.id === 'disputes-search-input') {
             currentDisputesPage = 1;
+            saveDisputesState();
             applyDisputesFilter();
         }
     });
@@ -1759,6 +1804,7 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
     document.addEventListener('change', (e) => {
         if (e.target && (e.target.id === 'disputes-filter-category' || e.target.id === 'disputes-filter-status' || e.target.id === 'disputes-sort-date')) {
             currentDisputesPage = 1;
+            saveDisputesState();
             applyDisputesFilter();
         }
     });
@@ -1921,6 +1967,7 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         const tabBtnDisputes = document.getElementById('tab-btn-disputes');
 
         if (tab === 'disputes') {
+            sessionStorage.setItem('radtech_active_tab', 'disputes');
             if (queueControls) queueControls.classList.add('hidden');
             if (queueCard) queueCard.classList.add('hidden');
             if (disputesControls) disputesControls.classList.remove('hidden');
@@ -1931,12 +1978,15 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
             if (tabBtnDisputes) {
                 tabBtnDisputes.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-red-600 border-b-2 border-red-600 hover:text-red-700';
             }
+            restoreDisputesState();
+            applyDisputesFilter();
             try {
                 const targetPath = '<?= url("correction-requests") ?>';
                 const cleanUrl = new URL(targetPath, window.location.origin);
                 window.history.replaceState({}, document.title, cleanUrl.pathname);
             } catch (e) {}
         } else {
+            sessionStorage.setItem('radtech_active_tab', 'queue');
             if (queueControls) queueControls.classList.remove('hidden');
             if (queueCard) queueCard.classList.remove('hidden');
             if (disputesControls) disputesControls.classList.add('hidden');
@@ -1947,6 +1997,8 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
             if (tabBtnDisputes) {
                 tabBtnDisputes.className = 'flex items-center gap-2 px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300';
             }
+            restoreFiltersFromSession();
+            applyFilters();
             try {
                 const targetPath = '<?= url("patient-lists") ?>';
                 const cleanUrl = new URL(targetPath, window.location.origin);
@@ -2038,6 +2090,9 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         } catch (e) { }
 
         setTimeout(() => {
+            if (!hasHighlight) {
+                restoreDisputesState();
+            }
             paginateDisputes();
             const urlParamsInit = new URLSearchParams(window.location.search);
             const reqTabInit = urlParamsInit.get('tab');

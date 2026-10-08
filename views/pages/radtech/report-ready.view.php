@@ -272,7 +272,17 @@
         }
     });
 
+    function saveState() {
+        const searchInput = document.getElementById('search-input');
+        const filterPriority = document.getElementById('filter-priority');
+        const sortDate = document.getElementById('sort-date');
+        if (searchInput) sessionStorage.setItem('Citilife_reportReady_search', searchInput.value);
+        if (filterPriority) sessionStorage.setItem('Citilife_reportReady_priority', filterPriority.value);
+        if (sortDate) sessionStorage.setItem('Citilife_reportReady_sort', sortDate.value);
+    }
+
     function applyFilters() {
+        saveState();
         const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
         const priority = document.getElementById('filter-priority')?.value || 'Filter by Priority';
         const sort = document.getElementById('sort-date')?.value || 'Sort by:';
@@ -516,11 +526,33 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        const hasHighlight = (new window.URLSearchParams(window.location.search)).has('highlight') ||
+            (new window.URLSearchParams(window.location.search)).has('highlight_case') ||
+            (new window.URLSearchParams(window.location.search)).has('case_id');
+
+        const searchInput = document.getElementById('search-input');
+        const filterPriority = document.getElementById('filter-priority');
+        const sortSelect = document.getElementById('sort-date');
+
+        if (!hasHighlight) {
+            const savedSearch = sessionStorage.getItem('Citilife_reportReady_search');
+            const savedPriority = sessionStorage.getItem('Citilife_reportReady_priority');
+            const savedSort = sessionStorage.getItem('Citilife_reportReady_sort');
+            if (searchInput && savedSearch !== null) searchInput.value = savedSearch;
+            if (filterPriority && savedPriority) filterPriority.value = savedPriority;
+            if (sortSelect && savedSort) sortSelect.value = savedSort;
+        }
+
+        if (sortSelect && (sortSelect.value === 'Sort by:' || !sortSelect.value)) {
+            sortSelect.value = 'Newest Case';
+        }
+
+        if (window.initCustomSelects) window.initCustomSelects();
+        [filterPriority, sortSelect].forEach(el => {
+            if (el && el._customSelect) el._customSelect.sync();
+        });
+
         setTimeout(() => {
-            const sortSelect = document.getElementById('sort-date');
-            if (sortSelect && (sortSelect.value === 'Sort by:' || !sortSelect.value)) {
-                sortSelect.value = 'Newest Case';
-            }
             applyFilters();
             handleHighlight();
         }, 100);

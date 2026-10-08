@@ -1316,22 +1316,35 @@ function saveEditModal() {
     form.submit();
 }
 
+function saveApprovalState() {
+    const searchInput = document.getElementById('search-input');
+    const filterStatus = document.getElementById('filter-status');
+    const sortDate = document.getElementById('sort-date');
+    if (searchInput) sessionStorage.setItem('Citilife_radtechApproval_search', searchInput.value);
+    if (filterStatus) sessionStorage.setItem('Citilife_radtechApproval_status', filterStatus.value);
+    if (sortDate) sessionStorage.setItem('Citilife_radtechApproval_sort', sortDate.value);
+    sessionStorage.setItem('Citilife_radtechApproval_page', window.currentApprovalPage || 1);
+}
+
 document.addEventListener('input', (e) => {
     if (e.target && (e.target.id === 'search-input' || e.target.id === 'filter-priority' || e.target.id === 'sort-date' || e.target.id === 'filter-status')) {
+        window.currentApprovalPage = 1;
         applyFilters();
     }
 });
 
 document.addEventListener('change', (e) => {
     if (e.target && (e.target.id === 'filter-priority' || e.target.id === 'sort-date' || e.target.id === 'filter-status')) {
+        window.currentApprovalPage = 1;
         applyFilters();
     }
 });
 
 function applyFilters() {
-    const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const sort = document.getElementById('sort-date')?.value || 'Newest Request';
-    const filterStatus = document.getElementById('filter-status')?.value || 'All';
+        saveApprovalState();
+        const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+        const sort = document.getElementById('sort-date')?.value || 'Newest Request';
+        const filterStatus = document.getElementById('filter-status')?.value || 'All';
 
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
@@ -1479,6 +1492,32 @@ function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
 
 // Initial sorting on load and re-applying filters after real-time updates
 document.addEventListener('DOMContentLoaded', () => {
+    const hasHighlight = (new window.URLSearchParams(window.location.search)).has('highlight') ||
+        (new window.URLSearchParams(window.location.search)).has('highlight_case') ||
+        (new window.URLSearchParams(window.location.search)).has('highlight_req') ||
+        (new window.URLSearchParams(window.location.search)).has('id');
+
+    const searchInput = document.getElementById('search-input');
+    const filterStatus = document.getElementById('filter-status');
+    const sortDate = document.getElementById('sort-date');
+
+    if (!hasHighlight) {
+        const savedSearch = sessionStorage.getItem('Citilife_radtechApproval_search');
+        const savedStatus = sessionStorage.getItem('Citilife_radtechApproval_status');
+        const savedSort = sessionStorage.getItem('Citilife_radtechApproval_sort');
+        const savedPage = parseInt(sessionStorage.getItem('Citilife_radtechApproval_page'));
+
+        if (searchInput && savedSearch !== null) searchInput.value = savedSearch;
+        if (filterStatus && savedStatus) filterStatus.value = savedStatus;
+        if (sortDate && savedSort) sortDate.value = savedSort;
+        if (savedPage && savedPage > 0) window.currentApprovalPage = savedPage;
+    }
+
+    if (window.initCustomSelects) window.initCustomSelects();
+    [filterStatus, sortDate].forEach(el => {
+        if (el && el._customSelect) el._customSelect.sync();
+    });
+
     setTimeout(() => {
         applyFilters();
         handlePageHighlight();

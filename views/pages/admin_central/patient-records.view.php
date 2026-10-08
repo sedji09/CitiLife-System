@@ -292,19 +292,27 @@
         document.getElementById('sex').value = patient.sex;
         document.getElementById('contact_number').value = patient.contact_number;
         document.getElementById('home_address').value = patient.home_address || '';
-        document.getElementById('editPatientModal').classList.remove('hidden');
-    }
-
     function closeEditModal() {
         document.getElementById('editPatientModal').classList.add('hidden');
     }
 
+    function saveAdminPatientsState() {
+        const patientSearch = document.getElementById('patientSearch');
+        const branchFilter = document.getElementById('branchFilter');
+        const sortCase = document.getElementById('sortCase');
+        if (patientSearch) sessionStorage.setItem('Citilife_adminPatients_search', patientSearch.value);
+        if (branchFilter) sessionStorage.setItem('Citilife_adminPatients_branch', branchFilter.value);
+        if (sortCase) sessionStorage.setItem('Citilife_adminPatients_sort', sortCase.value);
+        sessionStorage.setItem('Citilife_adminPatients_page', currentPage);
+    }
+
     function filterAndSortPatients(resetPage = true) {
         if (resetPage) currentPage = 1;
+        saveAdminPatientsState();
 
-        const searchQuery = document.getElementById('patientSearch').value.toLowerCase();
-        const branchFilter = document.getElementById('branchFilter').value.toLowerCase();
-        const sortMode = document.getElementById('sortCase').value;
+        const searchQuery = (document.getElementById('patientSearch')?.value || '').toLowerCase().trim();
+        const branchFilter = (document.getElementById('branchFilter')?.value || '').toLowerCase().trim();
+        const sortMode = document.getElementById('sortCase')?.value || 'newest';
         const tableBody = document.getElementById('patientsTableBody');
         const rows = Array.from(document.querySelectorAll('.patient-row'));
 
@@ -472,6 +480,26 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) window.lucide.createIcons();
+
+        const patientSearch = document.getElementById('patientSearch');
+        const branchFilter = document.getElementById('branchFilter');
+        const sortCase = document.getElementById('sortCase');
+
+        const savedSearch = sessionStorage.getItem('Citilife_adminPatients_search');
+        const savedBranch = sessionStorage.getItem('Citilife_adminPatients_branch');
+        const savedSort = sessionStorage.getItem('Citilife_adminPatients_sort');
+        const savedPage = parseInt(sessionStorage.getItem('Citilife_adminPatients_page'));
+
+        if (patientSearch && savedSearch !== null) patientSearch.value = savedSearch;
+        if (branchFilter && savedBranch) branchFilter.value = savedBranch;
+        if (sortCase && savedSort) sortCase.value = savedSort;
+        if (savedPage && savedPage > 0) currentPage = savedPage;
+
+        if (window.initCustomSelects) window.initCustomSelects();
+        [branchFilter, sortCase].forEach(el => {
+            if (el && el._customSelect) el._customSelect.sync();
+        });
+
         filterAndSortPatients(false);
 
         const bDateInput = document.getElementById('birthdate');

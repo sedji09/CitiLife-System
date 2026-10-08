@@ -376,9 +376,7 @@
             if (select._customSelect || select.closest('.cs-wrapper') || select.hasAttribute('data-custom-select-initialized')) {
                 return;
             }
-            if (select.offsetParent !== null) {
-                new CustomSelect(select);
-            }
+            new CustomSelect(select);
         });
     }
 

@@ -525,6 +525,11 @@
             filterDate.value = savedDate;
         }
 
+        if (window.initCustomSelects) window.initCustomSelects();
+        [filterPriority, sortDate, filterDate].forEach(el => {
+            if (el && el._customSelect) el._customSelect.sync();
+        });
+
         // Event Listeners
         searchInput.addEventListener('input', applyFilters);
         if (filterPriority) filterPriority.addEventListener('change', applyFilters);

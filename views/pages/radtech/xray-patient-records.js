@@ -187,7 +187,15 @@
         container.appendChild(createButton('Last &raquo;', totalPages, curr >= totalPages));
     }
 
+    function saveState() {
+        const searchInput = document.getElementById('search-input');
+        const sortSelect = document.getElementById('sort-date');
+        if (searchInput) sessionStorage.setItem('Citilife_radtechXray_search', searchInput.value);
+        if (sortSelect) sessionStorage.setItem('Citilife_radtechXray_sort', sortSelect.value);
+    }
+
     function applyFilters() {
+        saveState();
         currentPages.completed = 1;
         currentPages.disputes = 1;
         renderPage('completed');
@@ -211,11 +219,32 @@
 
     // ── Init (DOM is already ready when this script loads) ────────────────────
     function init() {
-        // Auto-set sort to "Newest Case" and render immediately
+        const hasHighlight = (new URLSearchParams(window.location.search)).has('highlight') ||
+            (new URLSearchParams(window.location.search)).has('highlight_case') ||
+            (new URLSearchParams(window.location.search)).has('case_id');
+
+        const searchInput = document.getElementById('search-input');
         const sortSelect = document.getElementById('sort-date');
-        if (sortSelect && sortSelect.value === 'Sort by:') {
+
+        if (!hasHighlight) {
+            const savedSearch = sessionStorage.getItem('Citilife_radtechXray_search');
+            const savedSort = sessionStorage.getItem('Citilife_radtechXray_sort');
+            if (searchInput && savedSearch !== null) searchInput.value = savedSearch;
+            if (sortSelect && savedSort) sortSelect.value = savedSort;
+        } else {
+            if (searchInput) searchInput.value = '';
+            sessionStorage.removeItem('Citilife_radtechXray_search');
+        }
+
+        if (sortSelect && (sortSelect.value === 'Sort by:' || !sortSelect.value)) {
             sortSelect.value = 'Newest Case';
         }
+
+        if (window.initCustomSelects) window.initCustomSelects();
+        if (sortSelect && sortSelect._customSelect) {
+            sortSelect._customSelect.sync();
+        }
+
         renderPage('completed');
         renderPage('disputes');
     }
