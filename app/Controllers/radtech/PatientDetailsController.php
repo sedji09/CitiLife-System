@@ -50,6 +50,15 @@ class PatientDetailsController
         $fromParam = $_GET['from'] ?? '';
         $disputeId = (int)($_GET['dispute_id'] ?? 0);
 
+        if (!$caseId && $disputeId > 0) {
+            $stmtDispCase = $pdo->prepare("SELECT case_id FROM result_disputes WHERE id = ? LIMIT 1");
+            $stmtDispCase->execute([$disputeId]);
+            $foundCaseId = (int)$stmtDispCase->fetchColumn();
+            if ($foundCaseId > 0) {
+                $caseId = $foundCaseId;
+            }
+        }
+
         if ($caseId > 0) {
             $_SESSION['active_radtech_case_id'] = $caseId;
             if (!empty($fromParam)) {
@@ -664,7 +673,12 @@ class PatientDetailsController
         // 4. Fetch Case & Patient Details
         $caseDetails = $caseModel->getCaseById($caseId);
 
-        if (!$caseDetails || $caseDetails['branch_id'] != $branchId) {
+        $userRole = $_SESSION['role'] ?? 'radtech';
+        $isGlobalRole = in_array($userRole, ['admin_central', 'central_admin', 'superadmin', 'radiologist']);
+        $userBranchId = (int)($_SESSION['branch_id'] ?? 0);
+        $caseBranchId = (int)($caseDetails['branch_id'] ?? 0);
+
+        if (!$caseDetails || (!$isGlobalRole && $userBranchId > 0 && $caseBranchId > 0 && $caseBranchId !== $userBranchId)) {
             $caseNotFound     = true;
             $radiologistsList = [];
             $isAmendMode      = false;

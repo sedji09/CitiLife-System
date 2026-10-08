@@ -1531,7 +1531,7 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
 
                                             <?php if ($showAmendBtn): ?>
                                                 <!-- Action for Typo / Template / Findings: Edit / Amend Mode (Amber icon only with tooltip) -->
-                                                <a href="<?= url('patient-details?ref=' . generateReportToken((int) $d['case_id']) . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
+                                                <a href="<?= url('patient-details?id=' . (int) $d['case_id'] . '&ref=' . generateReportToken((int) $d['case_id']) . '&from=disputes&dispute_id=' . (int) $d['id']) ?>"
                                                     class="p-1.5 rounded-md border border-amber-500 bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-amber-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                                     title="<?= !empty($d['is_amended']) ? 'Report Already Edited (Click to re-edit if needed)' : htmlspecialchars($amendBtnTitle) ?>">
                                                     <i data-lucide="edit-3" class="w-4 h-4"></i>

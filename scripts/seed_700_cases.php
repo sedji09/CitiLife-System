@@ -214,7 +214,7 @@ try {
         $currentSeq = (int)$currentSeq;
 
         // Get current patient sequence for this branch
-        $patPrefix = "PAT-{$branchCode}-{$year}-";
+        $patPrefix = "PAT{$year}-{$branchCode}-";
         $pStmtLast = $pdo->prepare("SELECT patient_number FROM patients WHERE patient_number LIKE ? ORDER BY id DESC LIMIT 1");
         $pStmtLast->execute([$patPrefix . '%']);
         $lastPatient = $pStmtLast->fetchColumn();
@@ -242,7 +242,7 @@ try {
             $contactNumber = '09' . mt_rand(10, 99) . '-' . mt_rand(100, 999) . '-' . mt_rand(1000, 9999);
             $patientEmail = strtolower(str_replace(' ', '', $firstName)) . '.' . strtolower(str_replace(' ', '', $lastName)) . mt_rand(10, 999) . '@gmail.com';
 
-            $patientNumber = $patPrefix . str_pad($patSeq, 4, '0', STR_PAD_LEFT);
+            $patientNumber = $patPrefix . str_pad($patSeq, 5, '0', STR_PAD_LEFT);
             $patSeq++;
 
             // Insert Patient

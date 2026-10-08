@@ -33,12 +33,11 @@ function generatePatientNumber($pdo, $branchId) {
     } elseif (stripos($branchName, 'Pantabangan') !== false) {
         $code = 'PAN';
         $padLength = 4;
-    } else {
-        $padLength = 3;
+        $padLength = 5;
     }
 
     $year = date('Y');
-    $prefix = "PAT-{$code}-{$year}-";
+    $prefix = "PAT{$year}-{$code}-";
 
     $stmtLast = $pdo->prepare("SELECT patient_number FROM patients WHERE patient_number LIKE ? ORDER BY id DESC LIMIT 1");
     $stmtLast->execute([$prefix . '%']);
@@ -49,5 +48,5 @@ function generatePatientNumber($pdo, $branchId) {
         $seqIndex = (int)$m[1] + 1;
     }
 
-    return $prefix . str_pad($seqIndex, $padLength, '0', STR_PAD_LEFT);
+    return $prefix . str_pad($seqIndex, 5, '0', STR_PAD_LEFT);
 }
