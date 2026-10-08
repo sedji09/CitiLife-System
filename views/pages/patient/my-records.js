@@ -572,4 +572,3 @@ window.submitFeedbackForm = function () {
             }
         }, 300);
     }
-}
