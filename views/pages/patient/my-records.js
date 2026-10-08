@@ -558,6 +558,7 @@ window.submitFeedbackForm = function () {
 
 
     // Handle highlight from URL (e.g. from notifications)
+    const urlParams = new URLSearchParams(window.location.search);
     const highlightId = urlParams.get('highlight');
     if (highlightId) {
         setTimeout(() => {
@@ -570,5 +571,5 @@ window.submitFeedbackForm = function () {
                 }, 3000);
             }
         }, 300);
-
+    }
 }
