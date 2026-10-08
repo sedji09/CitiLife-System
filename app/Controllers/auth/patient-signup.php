@@ -295,8 +295,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script
         src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/security.js?v=<?= time() ?>"></script>
 
-    <!-- Load Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Load Lucide Icons (Local Fast Bundle) -->
+    <script src="<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>public/assets/js/lucide.min.js?v=<?= filemtime(__DIR__ . '/../../../public/assets/js/lucide.min.js') ?>"></script>
 
     <style>
         /* Global override for Vanilla JS Datepicker to make selected date RED */
