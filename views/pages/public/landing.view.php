@@ -370,8 +370,12 @@ $branches = [
                 </div>
 
                 <div class="branches-compact-list">
-                    <?php foreach ($branches as $branch): ?>
-                        <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($branch['map_query']) ?>"
+                    <?php foreach ($branches as $branch): 
+                        $mapLink = (strpos($branch['map_query'], 'http://') === 0 || strpos($branch['map_query'], 'https://') === 0)
+                            ? $branch['map_query']
+                            : 'https://www.google.com/maps/search/?api=1&query=' . urlencode($branch['map_query']);
+                    ?>
+                        <a href="<?= htmlspecialchars($mapLink) ?>"
                             target="_blank" rel="noopener noreferrer" class="branch-compact-item">
                             <div class="branch-info">
                                 <div class="branch-item-title-row">
