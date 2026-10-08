@@ -30,19 +30,19 @@ $branches = [
         'name' => 'GAPAN',
         'address' => 'Bayanihan, Gapan City',
         'landmark' => 'In front of Gapan District Hospital',
-        'map_query' => 'CitiLife Diagnostic Center Bayanihan Gapan City'
+        'map_query' => 'https://maps.app.goo.gl/3Cy9MfDhZWxFSD98A'
     ],
     [
         'name' => 'PEÑARANDA',
         'address' => 'Rizal Street, Sto. Tomas, Peñaranda',
         'landmark' => 'In front of Gerdel Twins Hardware',
-        'map_query' => 'CitiLife Diagnostic Center Rizal Street Sto Tomas Penaranda'
+        'map_query' => 'https://maps.app.goo.gl/6HV2TPXgCLpnFsVe9'
     ],
     [
         'name' => 'GENERAL TINIO',
         'address' => 'Padolina Street, Gulod, General Tinio',
         'landmark' => 'Beside Medicare Community Hospital',
-        'map_query' => 'CitiLife Diagnostic Center Padolina Street Gulod General Tinio'
+        'map_query' => 'https://maps.app.goo.gl/2i9WWEpALSRj2i3f6'
     ],
     [
         'name' => 'STO DOMINGO',
@@ -66,7 +66,7 @@ $branches = [
         'name' => 'BONGABON',
         'address' => 'L. De Lara Street, Bongabon',
         'landmark' => 'Beside Bongabon District Hospital',
-        'map_query' => 'CitiLife Diagnostic Center L De Lara Street Bongabon'
+        'map_query' => 'https://maps.app.goo.gl/YKqqkYZMMab9rNyv8'
     ]
 ];
 ?>
@@ -124,8 +124,7 @@ $branches = [
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <meta name="csrf-token" content="<?= function_exists('csrf_token') ? csrf_token() : '' ?>">
-    <link rel="stylesheet"
-        href="<?= url('public/assets/css/landing-page-styles.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= url('public/assets/css/landing-page-styles.css?v=' . time()) ?>">
     <script src="<?= url('public/assets/js/security.js?v=' . time()) ?>"></script>
     <script src="<?= url('public/assets/js/offline-tracker.js?v=' . time()) ?>"></script>
 </head>
@@ -223,7 +222,8 @@ $branches = [
 
             <!-- NPC Seal Badge (Direct Display) -->
             <div class="npc-seal-container">
-                <img src="<?= url('public/assets/images/npc-seal.png?v=' . time()) ?>" alt="National Privacy Commission DPO/DPS Registered Seal" class="npc-seal-badge-img">
+                <img src="<?= url('public/assets/images/npc-seal.png?v=' . time()) ?>"
+                    alt="National Privacy Commission DPO/DPS Registered Seal" class="npc-seal-badge-img">
             </div>
         </div>
     </section>
@@ -372,14 +372,15 @@ $branches = [
                 <div class="branches-compact-list">
                     <?php foreach ($branches as $branch): ?>
                         <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode($branch['map_query']) ?>"
-                           target="_blank" rel="noopener noreferrer" class="branch-compact-item">
+                            target="_blank" rel="noopener noreferrer" class="branch-compact-item">
                             <div class="branch-info">
                                 <div class="branch-item-title-row">
                                     <span class="branch-item-name"><?= htmlspecialchars($branch['name']) ?></span>
                                     <span class="branch-dir-hint">
                                         <span>Map</span>
                                         <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
                                     </span>
                                 </div>
@@ -397,7 +398,8 @@ $branches = [
                     <div class="branches-fb-info">
                         <div class="fb-icon-circle">
                             <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                <path
+                                    d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                             </svg>
                         </div>
                         <div>
@@ -405,10 +407,12 @@ $branches = [
                             <div class="fb-sub">Official Facebook Page & Updates</div>
                         </div>
                     </div>
-                    <a href="https://www.facebook.com/Citilifediagnosticcenter" target="_blank" rel="noopener noreferrer" class="fb-action-btn">
+                    <a href="https://www.facebook.com/Citilifediagnosticcenter" target="_blank"
+                        rel="noopener noreferrer" class="fb-action-btn">
                         Visit Facebook Page
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
                     </a>
                 </div>
@@ -436,9 +440,12 @@ $branches = [
         <div class="footer-inner">
             <div class="footer-copy">&copy; <?= date('Y') ?>. Citilife Diagnostic Center. All rights reserved.</div>
             <div class="footer-socials">
-                <a href="https://www.facebook.com/Citilifediagnosticcenter" target="_blank" rel="noopener noreferrer" class="footer-social-btn" title="Follow Citilife Diagnostic Center on Facebook" aria-label="Facebook">
+                <a href="https://www.facebook.com/Citilifediagnosticcenter" target="_blank" rel="noopener noreferrer"
+                    class="footer-social-btn" title="Follow Citilife Diagnostic Center on Facebook"
+                    aria-label="Facebook">
                     <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        <path
+                            d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                     </svg>
                 </a>
             </div>
@@ -704,7 +711,8 @@ $branches = [
             <form action="<?= url('patient-login') ?>" method="POST" class="modal-form">
                 <?= csrf_field() ?>
                 <!-- Invisible Honeypot Field -->
-                <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;"
+                    aria-hidden="true">
                     <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
                 </div>
 
@@ -722,7 +730,8 @@ $branches = [
                     <div
                         style="background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; border: 1px solid #fecaca;">
                         <strong style="display: block; font-size: 15px; margin-bottom: 4px;">Access Locked</strong>
-                        Too many failed attempts. Please try again after <strong id="patientLockTimer" data-remaining="<?= intval($_GET['locked_seconds'] ?? 900) ?>">...</strong>.
+                        Too many failed attempts. Please try again after <strong id="patientLockTimer"
+                            data-remaining="<?= intval($_GET['locked_seconds'] ?? 900) ?>">...</strong>.
                     </div>
                 <?php endif; ?>
                 <?php if (isset($_GET['warning'])): ?>
@@ -770,14 +779,15 @@ $branches = [
                     <a href="<?= url('forgot-password') ?>">Forgot your password?</a>
                 </div>
 
-                <?php 
+                <?php
                 $clientIp = function_exists('getClientIp') ? getClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
                 $patAttempts = $_SESSION['login_attempts']['attempts'] ?? 0;
                 $ipCheck = function_exists('checkRateLimit') ? checkRateLimit('login_patient_ip', $clientIp, 5, 900) : ['attempts' => 0];
-                if ($patAttempts >= 2 || ($ipCheck['attempts'] ?? 0) >= 2): 
-                ?>
+                if ($patAttempts >= 2 || ($ipCheck['attempts'] ?? 0) >= 2):
+                    ?>
                     <div style="display: flex; justify-content: center; margin-bottom: 16px;">
-                        <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
+                        <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>"
+                            data-theme="light"></div>
                     </div>
                 <?php endif; ?>
 
