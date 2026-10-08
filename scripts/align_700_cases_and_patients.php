@@ -143,16 +143,38 @@ try {
     ];
 
     echo "Cleared old records. Generating 100 perfectly aligned patients & cases per branch...\n\n";
+    if (function_exists('ob_flush')) { @ob_flush(); }
+    flush();
 
     $year = '2026';
     $totalPatients = 0;
     $totalCases = 0;
+
+    $insPat = $pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, sex, birthdate, contact_number, email, home_address, branch_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    $insCase = $pdo->prepare("INSERT INTO cases (
+        case_number, patient_id, branch_id, service_type, service_id, exam_type, priority,
+        philhealth_status, philhealth_id, status, report_status, approval_status,
+        image_status, image_path, released, created_at, clinical_information,
+        findings, impression, recommendation, radiologist_id, radtech_id,
+        date_completed, report_template
+    ) VALUES (
+        ?, ?, ?, 'X-Ray', ?, ?, ?,
+        ?, ?, 'Completed', 'Final', 'Approved',
+        'Uploaded', ?, 1, ?, 'Routine medical check-up / diagnostic evaluation',
+        ?, ?, '', ?, ?,
+        ?, ?
+    )");
+
+    $seqStmt = $pdo->prepare("INSERT INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 100) ON DUPLICATE KEY UPDATE current_number = 100");
 
     foreach ($branches as $branchId => $branchInfo) {
         $branchCode = $branchInfo['code'];
         $branchName = $branchInfo['name'];
 
         echo "Seeding Branch {$branchId}: {$branchName} ({$branchCode})...\n";
+        if (function_exists('ob_flush')) { @ob_flush(); }
+        flush();
 
         for ($seq = 1; $seq <= 100; $seq++) {
             $seqStr = str_pad($seq, 5, '0', STR_PAD_LEFT);
@@ -197,7 +219,6 @@ try {
             }
 
             // Insert Patient
-            $insPat = $pdo->prepare("INSERT INTO patients (patient_number, first_name, middle_name, last_name, sex, birthdate, contact_number, email, home_address, branch_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $insPat->execute([
                 $patientNumber,
                 $firstName,
@@ -226,20 +247,6 @@ try {
             $imagePathJson = json_encode([$template['image']]);
 
             // Insert Case
-            $insCase = $pdo->prepare("INSERT INTO cases (
-                case_number, patient_id, branch_id, service_type, service_id, exam_type, priority,
-                philhealth_status, philhealth_id, status, report_status, approval_status,
-                image_status, image_path, released, created_at, clinical_information,
-                findings, impression, recommendation, radiologist_id, radtech_id,
-                date_completed, report_template
-            ) VALUES (
-                ?, ?, ?, 'X-Ray', ?, ?, ?,
-                ?, ?, 'Completed', 'Final', 'Approved',
-                'Uploaded', ?, 1, ?, 'Routine medical check-up / diagnostic evaluation',
-                ?, ?, '', ?, ?,
-                ?, ?
-            )");
-
             $insCase->execute([
                 $caseNumber,
                 $patientId,
@@ -262,10 +269,11 @@ try {
         }
 
         // Update branch sequence to 100
-        $pdo->prepare("INSERT INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 100) ON DUPLICATE KEY UPDATE current_number = 100")
-            ->execute([$branchId, (int)$year]);
+        $seqStmt->execute([$branchId, (int)$year]);
 
         echo "  --> Branch {$branchName}: Completed 100 aligned records ({$branchCode}{$year}-00001 to {$branchCode}{$year}-00100)\n";
+        if (function_exists('ob_flush')) { @ob_flush(); }
+        flush();
     }
 
     // 5. Seed 50 Resolved Disputes per Branch (350 total)
