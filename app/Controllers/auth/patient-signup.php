@@ -514,7 +514,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <span class="text-red-500">*</span></label>
                             <input id="d_patient_number" name="patient_number" type="text" required
                                 class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
-                                placeholder="e.g. PATGAP-2026-00001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
+                                placeholder="e.g. PAT2026-GAP-00001" value="<?= htmlspecialchars($patientNumber ?? '') ?>">
                             <p id="d_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200"></p>
                             <p class="text-xs text-gray-500 mt-1">Found on your clinic receipt or given by staff.</p>
                         </div>
@@ -640,13 +640,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <!-- Invisible Honeypot Field -->
-                    <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                    <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;"
+                        aria-hidden="true">
                         <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
                     </div>
 
                     <!-- Cloudflare Turnstile Widget -->
                     <div class="flex justify-center my-3">
-                        <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
+                        <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>"
+                            data-theme="light"></div>
                     </div>
 
                     <div class="pt-2">
@@ -718,7 +720,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     placeholder=" " value="<?= htmlspecialchars($patientNumber ?? '') ?>" />
                                 <label for="m_patient_number"
                                     class="absolute top-2 left-3 z-10 origin-[0] -translate-y-0 scale-75 transform text-[15px] text-gray-500 duration-300 peer-placeholder-shown:translate-y-2 peer-placeholder-shown:scale-100 peer-focus:-translate-y-0 peer-focus:scale-[0.8] peer-focus:text-blue-600 pointer-events-none transition-all">Patient
-                                    ID (e.g. PATGAP-2026-00001) <span class="text-red-500">*</span></label>
+                                    ID (e.g. PAT2026-GAP-00001) <span class="text-red-500">*</span></label>
                                 <p id="m_patient_number_feedback" class="hidden text-xs mt-1.5 transition-all duration-200">
                                 </p>
                             </div>
@@ -906,13 +908,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
 
                                 <!-- Invisible Honeypot Field -->
-                                <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                                <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;"
+                                    aria-hidden="true">
                                     <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
                                 </div>
 
                                 <!-- Cloudflare Turnstile Widget -->
                                 <div class="flex justify-center my-3">
-                                    <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>" data-theme="light"></div>
+                                    <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(getTurnstileSiteKey()) ?>"
+                                        data-theme="light"></div>
                                 </div>
 
                                 <button type="submit"
