@@ -186,7 +186,8 @@ try {
             } catch (PDOException $e) {
                 if ($pdo->inTransaction())
                     $pdo->rollBack();
-                echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+                error_log("Update profile DB error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'error' => 'A database error occurred while updating your profile.']);
             }
         } else if ($action === 'update_radtech_settings') {
             $userId = $_SESSION['user_id'];
@@ -260,7 +261,8 @@ try {
                     exit;
                 }
             } catch (PDOException $e) {
-                echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+                error_log("Update radtech settings DB error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'error' => 'A database error occurred while updating settings.']);
                 exit;
             }
         } else {
@@ -270,5 +272,6 @@ try {
     }
 
 } catch (\Throwable $th) {
-    echo json_encode(['success' => false, 'error' => 'Server Error: ' . $th->getMessage() . ' in ' . $th->getFile() . ' on line ' . $th->getLine()]);
+    error_log("Update profile server error: " . $th->getMessage() . " in " . $th->getFile() . " on line " . $th->getLine());
+    echo json_encode(['success' => false, 'error' => 'An unexpected server error occurred. Please try again.']);
 }

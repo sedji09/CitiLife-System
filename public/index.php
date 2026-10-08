@@ -18,6 +18,29 @@ if ($isLocalhost) {
 
 header('Content-Language: en');
 
+// Global Security & OWASP Defense-in-Depth Headers
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+
+// Strict-Transport-Security (HSTS) - Enabled on HTTPS and Railway/Proxies
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+
+if ($isHttps) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+}
+
+// Content Security Policy (Permissive, non-breaking baseline for Citilife assets)
+header("Content-Security-Policy: default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self';");
+
+// Remove PHP Version Information Leak
+if (function_exists('header_remove')) {
+    header_remove('X-Powered-By');
+}
+
 require_once __DIR__ . '/../helpers.php';
 
 if (file_exists(__DIR__ . '/../env.php')) {

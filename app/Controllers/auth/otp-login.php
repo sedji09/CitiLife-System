@@ -244,6 +244,7 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
         <?php endif; ?>
 
         <form method="POST" action="" class="space-y-6" onsubmit="document.getElementById('submitBtn').disabled = true; document.getElementById('submitBtn').innerHTML = 'Verifying...';">
+            <?= csrf_field() ?>
             <div class="flex justify-center gap-2 sm:gap-3" id="otp-container">
                 <?php for ($i = 0; $i < 6; $i++): ?>
                     <input type="number" name="otp[]" maxlength="1" class="w-12 h-14 text-center text-xl font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-red-500 transition-all outline-none" required>
@@ -259,6 +260,7 @@ if ($userSecurity['otp_locked_until'] && strtotime($userSecurity['otp_locked_unt
         </form>
 
         <form method="POST" action="" class="mt-6">
+            <?= csrf_field() ?>
             <input type="hidden" name="resend" value="1">
             <p class="text-sm text-gray-600">Didn't receive the code? 
                 <button type="submit" id="resendBtn" class="font-bold text-red-600 hover:underline bg-transparent border-none cursor-pointer disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed">Resend Code</button>

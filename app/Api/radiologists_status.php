@@ -21,7 +21,8 @@ try {
 
     echo json_encode(['success' => true, 'data' => $radiologistsList]);
 } catch (\Exception $e) {
+    error_log("radiologists_status error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Unable to fetch radiologists status']);
 }
 exit;

@@ -702,6 +702,7 @@ $branches = [
             </div>
 
             <form action="<?= url('patient-login') ?>" method="POST" class="modal-form">
+                <?= csrf_field() ?>
                 <!-- Invisible Honeypot Field -->
                 <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
                     <input type="text" name="website_hp" tabindex="-1" autocomplete="off">

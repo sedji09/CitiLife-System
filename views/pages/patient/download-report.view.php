@@ -1095,7 +1095,7 @@ if (!$isMultiExam) {
     <?php endif; ?>
 
     <?php if (!$isPreview): ?>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWQV46GjGJRlieSUP0GuadnZ00NX6hGBL67QQQR5kB7KHybNyUuo5Sx3NPWVHw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script>
             // Automatically open print dialog or download when page loads
             window.addEventListener('load', () => {

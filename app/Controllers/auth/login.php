@@ -482,6 +482,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
         </div>
 
         <form id="loginForm" name="loginForm" method="POST" action="<?= url('staff-portal') ?>" autocomplete="on" class="modal-form">
+            <?= csrf_field() ?>
             <?php if (isset($_GET['reason']) && $_GET['reason'] === 'timeout'): ?>
                 <div class="modal-alert-error">
                     Session expired due to inactivity. Please log in again.

@@ -265,20 +265,23 @@ $router->get('/system-health', function () {
             $stmt = $pdo->query("SELECT COUNT(*) FROM `{$t}`");
             $status['tables'][$t] = ['exists' => true, 'count' => (int) $stmt->fetchColumn()];
         } catch (\Throwable $e) {
-            $status['tables'][$t] = ['exists' => false, 'error' => $e->getMessage()];
+            error_log("System health check error on table {$t}: " . $e->getMessage());
+            $status['tables'][$t] = ['exists' => false];
         }
     }
     try {
         $stmt = $pdo->query("SELECT role, COUNT(*) as count FROM users GROUP BY role");
         $status['users_by_role'] = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     } catch (\Throwable $e) {
-        $status['users_by_role'] = ['error' => $e->getMessage()];
+        error_log("System health check users error: " . $e->getMessage());
+        $status['users_by_role'] = ['status' => 'unavailable'];
     }
     try {
         $stmt = $pdo->query("SELECT role, COUNT(*) as count FROM notifications GROUP BY role");
         $status['notifications_by_role'] = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     } catch (\Throwable $e) {
-        $status['notifications_by_role'] = ['error' => $e->getMessage()];
+        error_log("System health check notifs error: " . $e->getMessage());
+        $status['notifications_by_role'] = ['status' => 'unavailable'];
     }
     echo json_encode($status, JSON_PRETTY_PRINT);
     exit;

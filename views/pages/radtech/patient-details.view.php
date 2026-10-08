@@ -14,7 +14,7 @@ if (isset($caseNotFound) && $caseNotFound) {
 <script src="<?= url('public/assets/js/custom-datepicker.js') ?>?v=<?= time() ?>"></script>
 
 <!-- html2canvas for Report Release snapshot -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <?php
 $userRole = $_SESSION['role'] ?? 'radtech';

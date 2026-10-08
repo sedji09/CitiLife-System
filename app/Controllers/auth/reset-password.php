@@ -199,6 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
 
         <?php if ($validToken): ?>
             <form method="POST" action="" class="space-y-6">
+                <?= csrf_field() ?>
                 <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
                 
                 <div>

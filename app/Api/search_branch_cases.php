@@ -71,5 +71,6 @@ try {
     echo json_encode(['success' => true, 'data' => $results]);
     
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => 'Database query failed: ' . $e->getMessage()]);
+    error_log("Search branch cases error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'An error occurred while searching cases. Please try again.']);
 }

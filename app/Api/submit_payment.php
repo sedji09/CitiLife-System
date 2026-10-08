@@ -153,8 +153,11 @@ try {
     echo json_encode(['success' => true, 'message' => 'Payment submitted successfully.', 'debug' => $errors]);
     exit;
 } catch (Exception $e) {
-    $pdo->rollBack();
-    $errors = ob_get_clean();
-    echo json_encode(['success' => false, 'message' => 'Error processing payment: ' . $e->getMessage(), 'debug' => $errors]);
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    ob_get_clean();
+    error_log("Payment processing error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'An error occurred while processing payment. Please try again.']);
     exit;
 }

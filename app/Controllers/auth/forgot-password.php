@@ -160,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST" action="" class="space-y-5">
+            <?= csrf_field() ?>
             <!-- Invisible Honeypot Field for anti-bot protection -->
             <div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
                 <input type="text" name="website_hp" tabindex="-1" autocomplete="off">

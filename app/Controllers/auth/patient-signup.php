@@ -503,6 +503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="POST" action="" class="space-y-6" novalidate>
+                    <?= csrf_field() ?>
                     <!-- Identifies which form was sent (optional check) -->
                     <input type="hidden" name="form_type" value="desktop">
 
@@ -704,6 +705,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form id="signupFormMobile" method="POST" action="" class="flex-grow flex flex-col justify-between"
                     onkeydown="return event.key != 'Enter';" novalidate>
+                    <?= csrf_field() ?>
                     <!-- Identifies which form was sent -->
                     <input type="hidden" name="form_type" value="mobile">
 

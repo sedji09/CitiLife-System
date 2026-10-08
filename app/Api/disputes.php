@@ -727,6 +727,7 @@ try {
         exit;
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    error_log("Disputes API error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'An error occurred while processing the dispute request.']);
     exit;
 }

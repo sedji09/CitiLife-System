@@ -236,5 +236,6 @@ try {
             break;
     }
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
+    error_log("Messages API error: " . $e->getMessage());
+    echo json_encode(['error' => 'An error occurred while processing message request.']);
 }
