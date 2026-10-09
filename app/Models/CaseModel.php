@@ -12,6 +12,7 @@ class CaseModel
     public function __construct($pdo)
     {
         $this->pdo = $pdo;
+        $this->ensureSchema();
     }
 
     /**
@@ -1898,6 +1899,15 @@ class CaseModel
                 if (!$this->hasColumn('case_amendments', 'exam_type_after')) {
                     $this->safeExec("ALTER TABLE case_amendments ADD COLUMN exam_type_after VARCHAR(255) DEFAULT NULL");
                 }
+            }
+
+            // 5. Data Normalization: Auto repair any case/request numbers with -8810x -> -0010x and sync branch sequences
+            $this->safeExec("UPDATE cases SET case_number = REPLACE(case_number, '-881', '-001') WHERE case_number LIKE '%-881%'");
+            if ($this->hasTable('requests')) {
+                $this->safeExec("UPDATE requests SET request_number = REPLACE(request_number, '-881', '-001') WHERE request_number LIKE '%-881%'");
+            }
+            if ($this->hasTable('branch_case_sequences')) {
+                $this->safeExec("UPDATE branch_case_sequences SET current_number = 103 WHERE current_number >= 50000");
             }
         } catch (\Throwable $e) {
             error_log('ensureSchema safe catch: ' . $e->getMessage());
