@@ -119,6 +119,7 @@
                                     data-id="<?= htmlspecialchars(strtolower($p['patient_number'])) ?>"
                                     data-name="<?= htmlspecialchars(strtolower($patFullName)) ?>"
                                     data-branch="<?= htmlspecialchars(strtolower($p['branch_name'] ?? 'general')) ?>"
+                                    data-case-time="<?= !empty($p['latest_case_date']) ? strtotime($p['latest_case_date']) : 0 ?>"
                                     data-case-date="<?= htmlspecialchars($p['latest_case_date'] ?? '0000-00-00 00:00:00') ?>">
                                     <td class="py-3 px-3 whitespace-nowrap font-medium text-gray-900">
                                         <?= htmlspecialchars($p['patient_number']) ?>
@@ -310,6 +311,8 @@
         sessionStorage.setItem('Citilife_adminPatients_page', currentPage);
     }
 
+    let currentFilteredRows = [];
+
     function filterAndSortPatients(resetPage = true) {
         if (resetPage) currentPage = 1;
         saveAdminPatientsState();
@@ -317,49 +320,81 @@
         const searchQuery = (document.getElementById('patientSearch')?.value || '').toLowerCase().trim();
         const branchFilter = (document.getElementById('branchFilter')?.value || '').toLowerCase().trim();
         const sortMode = document.getElementById('sortCase')?.value || 'newest';
-        const tableBody = document.getElementById('patientsTableBody');
         const rows = Array.from(document.querySelectorAll('.patient-row'));
 
-        let visibleCount = 0;
-
         // 1. Filtering
-        rows.forEach(row => {
-            const id = row.dataset.id;
-            const name = row.dataset.name;
-            const branch = row.dataset.branch;
+        currentFilteredRows = rows.filter(row => {
+            const id = row.dataset.id || '';
+            const name = row.dataset.name || '';
+            const branch = row.dataset.branch || '';
 
-            const matchesSearch = id.includes(searchQuery) || name.includes(searchQuery);
-            const matchesBranch = branchFilter === "" || branch === branchFilter;
+            const matchesSearch = !searchQuery || id.includes(searchQuery) || name.includes(searchQuery);
+            const matchesBranch = !branchFilter || branch === branchFilter;
 
-            if (matchesSearch && matchesBranch) {
-                row.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                row.classList.add('hidden');
-            }
+            return matchesSearch && matchesBranch;
+        });
+
+        // 2. High-speed integer sorting
+        currentFilteredRows.sort((a, b) => {
+            const timeA = parseInt(a.dataset.caseTime || '0', 10);
+            const timeB = parseInt(b.dataset.caseTime || '0', 10);
+
+            if (sortMode === 'newest') return timeB - timeA;
+            if (sortMode === 'oldest') return timeA - timeB;
+            return 0;
         });
 
         // Toggle No Results
         const noResultsRow = document.getElementById('noResultsRow');
         if (noResultsRow) {
-            noResultsRow.classList.toggle('hidden', visibleCount > 0);
+            noResultsRow.classList.toggle('hidden', currentFilteredRows.length > 0);
         }
 
-        // 2. Sorting
-        const visibleRows = rows.filter(r => !r.classList.contains('hidden'));
-        visibleRows.sort((a, b) => {
-            const dateA = new Date(a.dataset.caseDate);
-            const dateB = new Date(b.dataset.caseDate);
+        // Re-order DOM via fragment
+        const tableBody = document.getElementById('patientsTableBody');
+        if (tableBody) {
+            const frag = document.createDocumentFragment();
+            if (noResultsRow) frag.appendChild(noResultsRow);
+            currentFilteredRows.forEach(r => frag.appendChild(r));
+            tableBody.appendChild(frag);
+        }
 
-            if (sortMode === 'newest') return dateB - dateA;
-            if (sortMode === 'oldest') return dateA - dateB;
-            return 0;
-        });
+        goToPage(currentPage);
+    }
 
-        // Re-append to table body
-        visibleRows.forEach(row => tableBody.appendChild(row));
+    function goToPage(page) {
+        const totalRecords = currentFilteredRows.length;
+        const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
 
-        updatePagination(visibleRows);
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+        currentPage = page;
+
+        sessionStorage.setItem('Citilife_adminPatients_page', currentPage);
+
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);
+
+        // Hide all patient rows first
+        const allRows = document.querySelectorAll('.patient-row');
+        for (let i = 0; i < allRows.length; i++) {
+            allRows[i].classList.add('hidden');
+        }
+
+        // Unhide only current page's records
+        for (let i = startIdx; i < endIdx; i++) {
+            if (currentFilteredRows[i]) {
+                currentFilteredRows[i].classList.remove('hidden');
+            }
+        }
+
+        // Update UI counters
+        document.getElementById('startIndex').innerText = totalRecords === 0 ? 0 : startIdx + 1;
+        document.getElementById('endIndex').innerText = endIdx;
+        document.getElementById('totalRecords').innerText = totalRecords;
+
+        // Render page links
+        renderPaginationControls(totalPages);
     }
 
     function renderPaginationControls(totalPages) {
@@ -383,8 +418,7 @@
                 btn.disabled = true;
             } else {
                 btn.onclick = () => {
-                    currentPage = page;
-                    filterAndSortPatients(false);
+                    goToPage(page);
                 };
             }
             return btn;
@@ -445,37 +479,6 @@
 
         // Last Button
         container.appendChild(createButton('Last &raquo;', totalPages, currentPage >= totalPages));
-    }
-
-    function updatePagination(visibleRows) {
-        const totalRecords = visibleRows.length;
-        const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
-
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-
-        sessionStorage.setItem('Citilife_adminPatients_page', currentPage);
-
-        const startIdx = (currentPage - 1) * itemsPerPage;
-        const endIdx = Math.min(startIdx + itemsPerPage, totalRecords);
-
-        // All rows in visibleRows are already not hidden by filter, but we need to hide those not on current page
-        const allVisibleByFilter = visibleRows;
-        document.querySelectorAll('.patient-row').forEach(r => r.classList.add('hidden')); // Hide all first
-
-        allVisibleByFilter.forEach((row, index) => {
-            if (index >= startIdx && index < endIdx) {
-                row.classList.remove('hidden');
-            }
-        });
-
-        // Update UI
-        document.getElementById('startIndex').innerText = totalRecords === 0 ? 0 : startIdx + 1;
-        document.getElementById('endIndex').innerText = endIdx;
-        document.getElementById('totalRecords').innerText = totalRecords;
-
-        // Render page links
-        renderPaginationControls(totalPages);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
