@@ -764,30 +764,89 @@ $catBadgeLabel = match ($dCategory) {
                         ?>
 
                         <?php if ($isMultiExamModal): ?>
-                            <div class="space-y-4">
-                                <div class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-xl flex items-center gap-2">
-                                    <i data-lucide="layers" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
-                                    <span>Multiple exams detected. You can edit findings and impressions individually per exam:</span>
-                                </div>
-                                <?php foreach ($examReportsModal as $eName => $eData): ?>
-                                    <div class="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200 space-y-3">
-                                        <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
-                                            <span class="w-2 h-2 rounded-full bg-red-600"></span>
-                                            <span class="text-xs font-bold text-gray-800 uppercase tracking-wider"><?= htmlspecialchars($eName) ?></span>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">FINDINGS</label>
-                                            <textarea name="exam_findings[<?= htmlspecialchars($eName) ?>]" rows="4" <?= $isEdited ? 'readonly disabled' : '' ?>
-                                                class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
-                                                placeholder="Enter findings for <?= htmlspecialchars($eName) ?>…"><?= htmlspecialchars($eData['findings'] ?? '') ?></textarea>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">IMPRESSION</label>
-                                            <textarea name="exam_impression[<?= htmlspecialchars($eName) ?>]" rows="2" <?= $isEdited ? 'readonly disabled' : '' ?>
-                                                class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
-                                                placeholder="Enter impression for <?= htmlspecialchars($eName) ?>…"><?= htmlspecialchars($eData['impression'] ?? '') ?></textarea>
+                            <?php $multiExamModalCount = count($examReportsModal); ?>
+                            <div class="space-y-3">
+                                <!-- Top Bar: Info + Counter + Prev/Next Capsule -->
+                                <div class="bg-amber-50 border border-amber-200 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-2 shadow-2xs">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <i data-lucide="layers" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                                        <div class="text-xs font-semibold text-amber-900 truncate">
+                                            Multiple Exams <span class="text-amber-700 font-normal hidden sm:inline">(Edit findings &amp; impression per exam)</span>
                                         </div>
                                     </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span id="amend-exam-counter" class="text-xs font-bold text-amber-900 bg-white/90 border border-amber-200 px-2.5 py-0.5 rounded-full select-none shadow-2xs">
+                                            1 of <?= $multiExamModalCount ?>
+                                        </span>
+                                        <!-- Capsule Navigation (< | >) -->
+                                        <div class="inline-flex items-center bg-white border border-amber-200 rounded-full p-0.5 shadow-2xs text-gray-600 transition-colors">
+                                            <button type="button" 
+                                                id="prev-amend-exam-btn" 
+                                                onclick="switchAmendExamSlide(-1)" 
+                                                class="w-7 h-7 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-900 hover:bg-amber-50 active:bg-amber-100 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed cursor-pointer" 
+                                                title="Previous Exam" 
+                                                disabled>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                            </button>
+                                            <span class="w-[1px] h-3.5 bg-gray-200 mx-0.5"></span>
+                                            <button type="button" 
+                                                id="next-amend-exam-btn" 
+                                                onclick="switchAmendExamSlide(1)" 
+                                                class="w-7 h-7 flex items-center justify-center rounded-full text-gray-700 hover:text-gray-900 hover:bg-amber-50 active:bg-amber-100 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:cursor-not-allowed cursor-pointer" 
+                                                title="Next Exam"
+                                                <?= $multiExamModalCount <= 1 ? 'disabled' : '' ?>>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Exam Navigation Tabs -->
+                                <?php if ($multiExamModalCount > 1): ?>
+                                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                                        <?php $tabIdx = 0; ?>
+                                        <?php foreach ($examReportsModal as $eName => $eData): ?>
+                                            <button type="button"
+                                                onclick="goToAmendExamSlide(<?= $tabIdx ?>)"
+                                                class="amend-exam-tab px-3 py-1.5 text-xs font-bold rounded-xl border transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer <?= $tabIdx === 0 ? 'bg-amber-500 text-white border-amber-600 shadow-xs' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-white hover:border-gray-300' ?>"
+                                                data-tab-index="<?= $tabIdx ?>">
+                                                <span class="w-1.5 h-1.5 rounded-full <?= $tabIdx === 0 ? 'bg-white' : 'bg-red-500' ?>"></span>
+                                                <?= htmlspecialchars($eName) ?>
+                                            </button>
+                                            <?php $tabIdx++; ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- Exam Slides -->
+                                <?php $slideIdx = 0; ?>
+                                <?php foreach ($examReportsModal as $eName => $eData): ?>
+                                    <div class="amend-exam-slide space-y-3 <?= $slideIdx > 0 ? 'hidden' : '' ?>" data-amend-slide-index="<?= $slideIdx ?>" data-exam-name="<?= htmlspecialchars($eName) ?>">
+                                        <div class="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200 space-y-3 shadow-2xs">
+                                            <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                                                    <span class="text-xs font-bold text-gray-800 uppercase tracking-wider"><?= htmlspecialchars($eName) ?></span>
+                                                </div>
+                                                <span class="text-[10px] font-semibold text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded-full shadow-2xs">
+                                                    Exam <?= $slideIdx + 1 ?> of <?= $multiExamModalCount ?>
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">FINDINGS</label>
+                                                <textarea name="exam_findings[<?= htmlspecialchars($eName) ?>]" rows="4" <?= $isEdited ? 'readonly disabled' : '' ?>
+                                                    class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                                    placeholder="Enter findings for <?= htmlspecialchars($eName) ?>…"><?= htmlspecialchars($eData['findings'] ?? '') ?></textarea>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">IMPRESSION</label>
+                                                <textarea name="exam_impression[<?= htmlspecialchars($eName) ?>]" rows="2" <?= $isEdited ? 'readonly disabled' : '' ?>
+                                                    class="w-full text-sm font-mono p-3 rounded-xl border <?= $isEdited ? 'border-gray-200 bg-gray-100/80 text-gray-700 cursor-not-allowed select-text' : 'border-gray-200 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100' ?> outline-none leading-relaxed resize-y transition"
+                                                    placeholder="Enter impression for <?= htmlspecialchars($eName) ?>…"><?= htmlspecialchars($eData['impression'] ?? '') ?></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php $slideIdx++; ?>
                                 <?php endforeach; ?>
                             </div>
                         <?php else: ?>
@@ -836,6 +895,54 @@ $catBadgeLabel = match ($dCategory) {
         </div>
 
         <script>
+            function switchAmendExamSlide(direction) {
+                const slides = Array.from(document.querySelectorAll('.amend-exam-slide'));
+                if (!slides.length) return;
+
+                let currentIndex = slides.findIndex(s => !s.classList.contains('hidden'));
+                if (currentIndex === -1) currentIndex = 0;
+
+                let nextIndex = currentIndex + direction;
+                if (nextIndex < 0) nextIndex = 0;
+                if (nextIndex >= slides.length) nextIndex = slides.length - 1;
+                goToAmendExamSlide(nextIndex);
+            }
+
+            function goToAmendExamSlide(targetIndex) {
+                const slides = Array.from(document.querySelectorAll('.amend-exam-slide'));
+                if (!slides.length || targetIndex < 0 || targetIndex >= slides.length) return;
+
+                slides.forEach((s, idx) => {
+                    if (idx === targetIndex) {
+                        s.classList.remove('hidden');
+                    } else {
+                        s.classList.add('hidden');
+                    }
+                });
+
+                const tabs = document.querySelectorAll('.amend-exam-tab');
+                tabs.forEach((tab, idx) => {
+                    const dot = tab.querySelector('.rounded-full');
+                    if (idx === targetIndex) {
+                        tab.className = 'amend-exam-tab px-3 py-1.5 text-xs font-bold rounded-xl border transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer bg-amber-500 text-white border-amber-600 shadow-xs';
+                        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-white';
+                    } else {
+                        tab.className = 'amend-exam-tab px-3 py-1.5 text-xs font-bold rounded-xl border transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer bg-gray-50 text-gray-600 border-gray-200 hover:bg-white hover:border-gray-300';
+                        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500';
+                    }
+                });
+
+                const counter = document.getElementById('amend-exam-counter');
+                if (counter) {
+                    counter.textContent = `${targetIndex + 1} of ${slides.length}`;
+                }
+
+                const prevBtn = document.getElementById('prev-amend-exam-btn');
+                const nextBtn = document.getElementById('next-amend-exam-btn');
+                if (prevBtn) prevBtn.disabled = (targetIndex === 0);
+                if (nextBtn) nextBtn.disabled = (targetIndex === slides.length - 1);
+            }
+
             function applyRadtechSidePrefix(side) {
                 const inp = document.getElementById('amend_exam_type_input');
                 if (!inp || inp.disabled || inp.readOnly) return;
@@ -859,6 +966,11 @@ $catBadgeLabel = match ($dCategory) {
                     if (multiInputs.length > 0) {
                         for (let mi of multiInputs) {
                             if (!mi.value.trim()) {
+                                const slide = mi.closest('.amend-exam-slide');
+                                if (slide) {
+                                    const sIdx = parseInt(slide.getAttribute('data-amend-slide-index') || '0', 10);
+                                    goToAmendExamSlide(sIdx);
+                                }
                                 if (window.FormValidator) window.FormValidator.showError(mi, 'Please enter report findings for all exams before saving.');
                                 if (typeof toast === 'function') toast('Please enter report findings for all exams.', 'error');
                                 mi.focus();
