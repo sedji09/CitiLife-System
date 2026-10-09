@@ -37,6 +37,12 @@ $router->get('/sitemap.xml', function () {
     exit;
 }, []);
 
+$router->get('/run-link-patient-cleanup', function () {
+    header('Content-Type: text/plain; charset=UTF-8');
+    require_once __DIR__ . '/scripts/link_patient_and_cleanup.php';
+    exit;
+}, []);
+
 // Authentication Routes (Guest Only)
 $router->get('/login', function () {
     return redirect(url('?login=1'));
