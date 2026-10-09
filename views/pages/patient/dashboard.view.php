@@ -1008,11 +1008,6 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                                 class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs sm:text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap">
                                 Request Correction
                             </button>
-                        <?php elseif (($isCorrectionWorkflow || in_array($latestCase['id'], $disputedCaseIds)) && !in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited'])): ?>
-                            <span
-                                class="inline-flex items-center justify-center px-2.5 sm:px-4 py-2 sm:py-2.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap">
-                                <?= htmlspecialchars($sInfo['label'] ?? 'Correction Requested') ?>
-                            </span>
                         <?php endif; ?>
 
                         <?php if (!in_array($latestCase['id'], $feedbackCaseIds) && (!$isCorrectionWorkflow || in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']))): ?>
