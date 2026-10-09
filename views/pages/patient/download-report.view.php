@@ -370,8 +370,17 @@ if (!$isMultiExam) {
             align-items: center;
             justify-content: space-between;
             padding-bottom: 15px;
-            border-bottom: 1.5px solid #111;
+            position: relative;
             margin-bottom: 15px;
+        }
+
+        .report-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 115px;
+            right: 0;
+            border-bottom: 1.5px solid #111;
         }
 
         .header-left {

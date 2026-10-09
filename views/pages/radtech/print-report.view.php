@@ -493,9 +493,19 @@ if (!$isMultiExam) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1.5px solid #111;
+            position: relative;
             width: 100%;
             box-sizing: border-box;
+            padding-bottom: 2px;
+        }
+
+        .report-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 115px; /* Starts after 100px logo + 15px gap */
+            right: 0;
+            border-bottom: 1.5px solid #111;
         }
 
         .header-left {

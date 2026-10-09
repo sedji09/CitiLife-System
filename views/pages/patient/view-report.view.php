@@ -567,8 +567,17 @@ if (!$isMultiExam) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1.5px solid #111;
+            position: relative;
             padding-bottom: 5px;
+        }
+
+        .report-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 115px;
+            right: 0;
+            border-bottom: 1.5px solid #111;
         }
 
         .header-left {
