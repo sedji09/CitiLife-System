@@ -56,19 +56,13 @@ class ResultDisputeModel {
      * Get disputes for Clinic with STRICT ROLE FILTERING (Step 3 & Step 4)
      */
     public function getDisputesForClinic($branchId = null, $role = null, $status = null) {
-        // Auto-heal / sync orphaned active disputes for cases that are ALREADY Released or Completed
+        // Auto-heal orphaned branch IDs if any
         try {
             $this->pdo->exec("
                 UPDATE result_disputes rd
                 JOIN cases c ON rd.case_id = c.id
                 SET rd.branch_id = c.branch_id
                 WHERE rd.branch_id IS NULL OR rd.branch_id != c.branch_id
-            ");
-            $this->pdo->exec("
-                UPDATE result_disputes rd
-                JOIN cases c ON rd.case_id = c.id
-                SET rd.status = 'Resolved', rd.resolved_at = NOW(), rd.resolution_notes = COALESCE(rd.resolution_notes, 'Case released directly by RadTech.')
-                WHERE (c.released = 1 OR c.status IN ('Completed', 'Released')) AND rd.status NOT IN ('Resolved', 'Rejected')
             ");
         } catch (\Throwable $e) {}
 
