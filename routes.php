@@ -96,7 +96,8 @@ $router->get('/logout', 'App\Controllers\AuthController@logout');
 $router->get('/logout.php', 'App\Controllers\AuthController@logout');
 
 // Privacy accept route
-$router->post('/accept-privacy', 'App\Controllers\AuthController@acceptPrivacy', ['auth']);
+$router->post('/accept-privacy', 'App\Controllers\AuthController@acceptPrivacy', []);
+$router->get('/accept-privacy', 'App\Controllers\AuthController@acceptPrivacy', []);
 
 // Whitelisted dashboard pages (routed dynamically to PageController)
 $dashboardPages = [

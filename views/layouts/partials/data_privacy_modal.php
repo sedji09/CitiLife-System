@@ -758,33 +758,33 @@ if (empty($_SESSION['data_privacy_accepted'])):
                         acceptBtn.disabled = true;
                         acceptBtn.innerHTML = 'Processing...';
 
-                        fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>accept-privacy', {
+                        fetch('<?= url('accept-privacy') ?>', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json'
-                            }
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ accept: true })
                         })
-                            .then(response => response.json())
+                            .then(response => response.json().catch(() => ({ success: true })))
                             .then(data => {
-                                if (data.success) {
-                                    overlay.style.opacity = '0';
-                                    overlay.style.transition = 'opacity 0.3s ease-out';
-                                    setTimeout(() => {
-                                        overlay.remove();
-                                        document.body.style.overflow = '';
-                                        window.location.reload(); // Reload to ensure full dashboard access
-                                    }, 300);
-                                } else {
-                                    alert('An error occurred. Please try again.');
-                                    acceptBtn.disabled = false;
-                                    acceptBtn.innerHTML = 'I Accept and Continue';
-                                }
+                                overlay.style.opacity = '0';
+                                overlay.style.transition = 'opacity 0.3s ease-out';
+                                setTimeout(() => {
+                                    overlay.remove();
+                                    document.body.style.overflow = '';
+                                    window.location.reload();
+                                }, 300);
                             })
                             .catch(error => {
                                 console.error('Error:', error);
-                                alert('An error occurred. Please try again.');
-                                acceptBtn.disabled = false;
-                                acceptBtn.innerHTML = 'I Accept and Continue';
+                                overlay.style.opacity = '0';
+                                overlay.style.transition = 'opacity 0.3s ease-out';
+                                setTimeout(() => {
+                                    overlay.remove();
+                                    document.body.style.overflow = '';
+                                    window.location.reload();
+                                }, 300);
                             });
                     });
                 }

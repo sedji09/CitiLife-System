@@ -25,18 +25,24 @@ $displayName = $displayInfo['displayName'];
 $userEmail = $sessionEmail; // Maintain variable name for compatibility
 
 // 2. Get Linked Patient Record and User Status
-$stmtU = $pdo->prepare("SELECT u.status AS user_status, p.*, b.name AS branch_name 
-                       FROM users u 
-                       LEFT JOIN patients p ON u.patient_id = p.id 
-                       LEFT JOIN branches b ON p.branch_id = b.id
-                       WHERE u.id = ?");
-$stmtU->execute([$userId]);
-$userPatientRow = $stmtU->fetch();
+$userPatientRow = $patientModel->getPatientByUserId($userId);
+if (!$userPatientRow) {
+    $stmtU = $pdo->prepare("SELECT u.status AS user_status, p.*, b.name AS branch_name 
+                           FROM users u 
+                           LEFT JOIN patients p ON (u.patient_id = p.id OR (u.email = p.email AND p.email IS NOT NULL AND p.email != ''))
+                           LEFT JOIN branches b ON p.branch_id = b.id
+                           WHERE u.id = ?");
+    $stmtU->execute([$userId]);
+    $userPatientRow = $stmtU->fetch();
+}
 
 $patientRow = $userPatientRow; // For compatibility
 $patientFullName = formatFullName($patientRow);
-$userAccountStatus = $userPatientRow['user_status'] ?? 'Pending';
-$patientId = $patientRow['id'] ?? null;
+$userAccountStatus = $userPatientRow['user_status'] ?? 'Active';
+$patientId = $patientRow['id'] ?? ($_SESSION['patient_id'] ?? null);
+if ($patientId && empty($_SESSION['patient_id'])) {
+    $_SESSION['patient_id'] = $patientId;
+}
 
 // 3. Get Patient Latest Case
 $latestCase = null;

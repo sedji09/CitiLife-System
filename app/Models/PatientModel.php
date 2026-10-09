@@ -33,20 +33,25 @@ class PatientModel
     }
 
     /**
-     * Get patient by user ID.
+     * Get patient by user ID (with self-healing email matching).
      */
     public function getPatientByUserId($userId)
     {
-        $hasPatientId = $this->hasColumn('users', 'patient_id');
-        if ($hasPatientId) {
-            $stmt = $this->pdo->prepare("SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age 
-                                   FROM patients p 
-                                   JOIN users u ON u.patient_id = p.id 
-                                   WHERE u.id = ?");
-            $stmt->execute([$userId]);
-            return $stmt->fetch();
+        $stmt = $this->pdo->prepare("SELECT p.*, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age 
+                               FROM patients p 
+                               JOIN users u ON (u.patient_id = p.id OR (u.email = p.email AND p.email IS NOT NULL AND p.email != ''))
+                               WHERE u.id = ?
+                               ORDER BY p.id ASC
+                               LIMIT 1");
+        $stmt->execute([$userId]);
+        $patient = $stmt->fetch();
+        if ($patient && !empty($patient['id'])) {
+            try {
+                $this->pdo->prepare("UPDATE users SET patient_id = ? WHERE id = ? AND (patient_id IS NULL OR patient_id != ?)")
+                          ->execute([$patient['id'], $userId, $patient['id']]);
+            } catch (\Exception $e) {}
         }
-        return null;
+        return $patient;
     }
 
     public function getPatientById($id)
