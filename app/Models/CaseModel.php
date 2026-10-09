@@ -12,7 +12,6 @@ class CaseModel
     public function __construct($pdo)
     {
         $this->pdo = $pdo;
-        $this->ensureSchema();
     }
 
     /**
@@ -1763,6 +1762,9 @@ class CaseModel
      */
     public function ensureSchema()
     {
+        if ($this->pdo && $this->pdo->inTransaction()) {
+            return;
+        }
         try {
             // 1. Ensure cases columns
             if (!$this->hasColumn('cases', 'approval_status')) {

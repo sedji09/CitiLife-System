@@ -159,7 +159,9 @@ class PaymentVerificationsController
                                 $reqBranchId
                             );
                             
-                            $pdo->commit();
+                            if ($pdo->inTransaction()) {
+                                $pdo->commit();
+                            }
 
                             // Send Email to Patient if available (outside transaction)
                             if ($patUser && !empty($patUser['email'])) {
