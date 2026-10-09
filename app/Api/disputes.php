@@ -84,11 +84,41 @@ try {
         echo json_encode(['success' => true, 'message' => 'Your correction request has been submitted to the clinic. It will be reviewed shortly.']);
         exit;
 
-    } elseif ($action === 'escalate_to_radiologist') {
-        echo json_encode([
-            'success' => false, 
-            'message' => 'Escalation to radiologist is discontinued. Correction requests are resolved directly by RadTech.'
-        ]);
+    } elseif ($action === 'start_correction') {
+        // Step: RadTech starts working on a correction (e.g. opens Fix Demographics modal)
+        $userId = $_SESSION['user_id'] ?? null;
+        $role = $_SESSION['role'] ?? '';
+
+        if (!in_array($role, ['radtech', 'branch_admin', 'admin_central'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized action.']);
+            exit;
+        }
+
+        $disputeId = intval($_POST['dispute_id'] ?? 0);
+        if (!$disputeId) {
+            echo json_encode(['success' => false, 'message' => 'Dispute ID is required.']);
+            exit;
+        }
+
+        $stmtDisp = $pdo->prepare("
+            SELECT rd.*, c.id AS case_id 
+            FROM result_disputes rd 
+            JOIN cases c ON rd.case_id = c.id 
+            WHERE rd.id = ?
+        ");
+        $stmtDisp->execute([$disputeId]);
+        $disp = $stmtDisp->fetch(PDO::FETCH_ASSOC);
+
+        if ($disp && in_array($disp['status'], ['Issue Reported', 'Pending RadTech Review', 'For RadTech Review'])) {
+            $pdo->prepare("UPDATE result_disputes SET status = 'Correction in Progress', assigned_role = 'radtech' WHERE id = ?")
+                ->execute([$disputeId]);
+
+            if (!empty($disp['case_id'])) {
+                $caseModel->transitionStatus($disp['case_id'], 'Correction in Progress', $userId);
+            }
+        }
+
+        echo json_encode(['success' => true]);
         exit;
 
     } elseif ($action === 'update_patient_demographics') {

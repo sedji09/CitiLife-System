@@ -2900,6 +2900,20 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         document.getElementById('fix-demo-dispute-id').value = data.id || '';
         document.getElementById('fix-modal-subtitle').innerText = 'Case #: ' + (data.case_number || 'N/A') + ' | Patient #: ' + (data.patient_number || 'N/A');
 
+        // Advance status to 'Correction in Progress' when opening the modal
+        if (data && data.id && (data.status === 'Issue Reported' || data.status === 'Pending RadTech Review' || data.status === 'For RadTech Review')) {
+            const fdProg = new FormData();
+            fdProg.append('dispute_id', data.id);
+            fetch('<?= PROJECT_DIR ? '/' . PROJECT_DIR . '/' : '/' ?>app/Api/disputes.php?action=start_correction', {
+                method: 'POST',
+                body: fdProg
+            }).then(r => r.json()).then(res => {
+                if (res && res.success) {
+                    data.status = 'Correction in Progress';
+                }
+            }).catch(() => {});
+        }
+
         // Statement: Render clean bulleted text directly below the heading
         const descText = data.description || '';
         const statementEl = document.getElementById('fix-patient-statement');
