@@ -194,23 +194,26 @@
                     <?php endforeach; ?>
                 </div>
 
-                <?php if (isset($totalPages) && $totalPages > 1): ?>
+                <?php if (isset($totalItems) && $totalItems > 0): ?>
                     <div
                         class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-6 mt-8 gap-4">
                         <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">
                             Showing <span
-                                class="font-semibold text-gray-800 dark:text-gray-200"><?= htmlspecialchars($offset + 1) ?></span>
+                                class="font-semibold text-gray-800 dark:text-gray-200"><?= $totalItems > 0 ? htmlspecialchars($offset + 1) : 0 ?></span>
                             to <span
                                 class="font-semibold text-gray-800 dark:text-gray-200"><?= htmlspecialchars(min($offset + $itemsPerPage, $totalItems)) ?></span>
                             of <span
                                 class="font-semibold text-gray-800 dark:text-gray-200"><?= htmlspecialchars($totalItems) ?></span>
-                            cases
+                            records
                         </span>
 
                         <div class="flex items-center flex-wrap gap-1.5">
                             <?php
                             $currentPage = (int) ($currentPage ?? 1);
-                            $baseUrl = url("records-history?p=");
+                            $queryParams = $_GET;
+                            unset($queryParams['p']);
+                            $baseQuery = !empty($queryParams) ? http_build_query($queryParams) . '&' : '';
+                            $baseUrl = url("records-history?" . $baseQuery . "p=");
 
                             // Calculate sliding window
                             $range = 2; // Show 2 pages before and after
@@ -229,7 +232,7 @@
                             // Helper for disabled vs active buttons
                             $renderButton = function ($label, $targetPage, $isDisabled) use ($baseUrl) {
                                 if ($isDisabled) {
-                                    return '<span class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-xs font-semibold text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60">' . $label . '</span>';
+                                    return '<span class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-xs font-semibold text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60 select-none">' . $label . '</span>';
                                 } else {
                                     return '<a href="' . $baseUrl . $targetPage . '" class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800 focus:ring-2 focus:ring-red-400 transition shadow-sm">' . $label . '</a>';
                                 }
@@ -244,20 +247,26 @@
 
                             <!-- Left Ellipsis -->
                             <?php if ($start > 1): ?>
-                                <span class="px-2 py-1.5 text-xs font-semibold text-gray-500">...</span>
+                                <span class="px-2 py-1.5 text-xs font-semibold text-gray-500 select-none">...</span>
                             <?php endif; ?>
 
                             <!-- Page Numbers -->
                             <?php for ($i = $start; $i <= $end; $i++): ?>
-                                <a href="<?= $baseUrl . $i ?>"
-                                    class="<?= $i == $currentPage ? 'px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600' : 'px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800 focus:ring-2 focus:ring-red-400 transition shadow-sm' ?>">
-                                    <?= $i ?>
-                                </a>
+                                <?php if ($i == $currentPage): ?>
+                                    <span class="px-3 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm border border-red-600 select-none">
+                                        <?= $i ?>
+                                    </span>
+                                <?php else: ?>
+                                    <a href="<?= $baseUrl . $i ?>"
+                                        class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800 focus:ring-2 focus:ring-red-400 transition shadow-sm">
+                                        <?= $i ?>
+                                    </a>
+                                <?php endif; ?>
                             <?php endfor; ?>
 
                             <!-- Right Ellipsis -->
                             <?php if ($end < $totalPages): ?>
-                                <span class="px-2 py-1.5 text-xs font-semibold text-gray-500">...</span>
+                                <span class="px-2 py-1.5 text-xs font-semibold text-gray-500 select-none">...</span>
                             <?php endif; ?>
 
                             <!-- Next -->
