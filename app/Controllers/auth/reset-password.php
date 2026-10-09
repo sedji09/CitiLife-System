@@ -159,23 +159,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
                     </svg>
                 <?php endif; ?>
             </div>
-            <?php
-            $greetName = 'Staff Member';
-            if (isset($user['role'])) {
-                if ($user['role'] === 'patient' && !empty($user['first_name'])) {
-                    $greetName = $user['first_name'];
-                } else if (!empty($user['name'])) {
-                    $greetName = explode(' ', $user['name'])[0];
-                }
-            }
-            ?>
             <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
                 <?= $isActivation ? 'Set Your Password' : 'Reset Password' ?>
             </h1>
             <p class="text-sm text-gray-500 mt-2">
                 <?= $isActivation 
-                    ? "Hi " . htmlspecialchars($greetName) . ", create a password to activate your staff account." 
-                    : "Hi " . htmlspecialchars($greetName) . ", please enter your new password below." ?>
+                    ? "Create a password to activate your staff account." 
+                    : "Please enter your new password below." ?>
             </p>
         </div>
 
