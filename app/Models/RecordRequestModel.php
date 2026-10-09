@@ -9,14 +9,18 @@ class RecordRequestModel {
 
     public function __construct($pdo) {
         $this->pdo = $pdo;
+        $this->ensureSchema();
     }
 
     /**
-     * Ensure schema has birthdate column.
+     * Ensure schema has birthdate and rejection_reason columns.
      */
     public function ensureSchema() {
         try {
             $this->pdo->exec("ALTER TABLE record_requests ADD COLUMN birthdate DATE NULL AFTER patient_name");
+        } catch (\Throwable $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE record_requests ADD COLUMN rejection_reason TEXT NULL AFTER status");
         } catch (\Throwable $e) {}
     }
 
@@ -64,6 +68,7 @@ class RecordRequestModel {
      * Count pending record requests for a specific branch.
      */
     public function countPendingRequestsForBranch($branchName) {
+        $this->ensureSchema();
         $stmt = $this->pdo->prepare("
             SELECT COUNT(*) 
             FROM record_requests 
@@ -77,16 +82,29 @@ class RecordRequestModel {
      * Update request status.
      */
     public function updateRequestStatus($requestId, $status, $branchName = null, $rejectionReason = null) {
-        $sql = "UPDATE record_requests SET status = ?, rejection_reason = ? WHERE id = ?";
-        $params = [$status, $rejectionReason, $requestId];
-        
-        if ($branchName) {
-            $sql .= " AND request_branch = ?";
-            $params[] = $branchName;
+        $this->ensureSchema();
+        try {
+            $sql = "UPDATE record_requests SET status = ?, rejection_reason = ? WHERE id = ?";
+            $params = [$status, $rejectionReason, $requestId];
+            
+            if ($branchName) {
+                $sql .= " AND LOWER(request_branch) = LOWER(?)";
+                $params[] = $branchName;
+            }
+            
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($params);
+        } catch (\PDOException $e) {
+            // Fallback if rejection_reason fails
+            $sql = "UPDATE record_requests SET status = ? WHERE id = ?";
+            $params = [$status, $requestId];
+            if ($branchName) {
+                $sql .= " AND LOWER(request_branch) = LOWER(?)";
+                $params[] = $branchName;
+            }
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($params);
         }
-        
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($params);
     }
 
     /**
