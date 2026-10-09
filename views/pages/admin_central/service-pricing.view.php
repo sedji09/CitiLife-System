@@ -790,8 +790,12 @@
             }, 3000);
         }
 
-        // Add Service Modal Validation
-        document.querySelector('#addServiceModal form')?.addEventListener('submit', function (e) {
+        // Add Service Modal Validation & Confirmation
+        let addServiceConfirmed = false;
+        document.querySelector('#addServiceModal form')?.addEventListener('submit', async function (e) {
+            if (addServiceConfirmed) return;
+            e.preventDefault();
+
             if (window.FormValidator) window.FormValidator.clearAllErrors('#addServiceModal');
             const cat = document.getElementById('category');
             const customCat = document.getElementById('custom_category');
@@ -840,16 +844,31 @@
             }
 
             if (hasError) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
                 if (firstError) firstError.focus();
                 if (typeof toast === 'function') toast('Please check the procedure details.', 'error');
                 return false;
             }
+
+            if (typeof confirmAlert === 'function') {
+                const res = await confirmAlert('Confirm Procedure', `Are you sure you want to add "${exam.value.trim()}"?`, 'Yes, Save');
+                if (res && res.isConfirmed) {
+                    addServiceConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            } else {
+                if (confirm(`Are you sure you want to add "${exam.value.trim()}"?`)) {
+                    addServiceConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            }
         });
 
-        // Edit Service Modal Validation
-        document.querySelector('#editServiceModal form')?.addEventListener('submit', function (e) {
+        // Edit Service Modal Validation & Confirmation
+        let editServiceConfirmed = false;
+        document.querySelector('#editServiceModal form')?.addEventListener('submit', async function (e) {
+            if (editServiceConfirmed) return;
+            e.preventDefault();
+
             if (window.FormValidator) window.FormValidator.clearAllErrors('#editServiceModal');
             const cat = document.getElementById('edit_category');
             const customCat = document.getElementById('edit_custom_category');
@@ -898,11 +917,22 @@
             }
 
             if (hasError) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
                 if (firstError) firstError.focus();
                 if (typeof toast === 'function') toast('Please check the procedure details.', 'error');
                 return false;
+            }
+
+            if (typeof confirmAlert === 'function') {
+                const res = await confirmAlert('Confirm Changes', `Are you sure you want to save changes to "${exam.value.trim()}"?`, 'Yes, Save Changes');
+                if (res && res.isConfirmed) {
+                    editServiceConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            } else {
+                if (confirm(`Are you sure you want to save changes to "${exam.value.trim()}"?`)) {
+                    editServiceConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
             }
         });
 

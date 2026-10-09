@@ -876,8 +876,12 @@
             }, 3000);
         }
 
-        // Add Branch Modal Validation
-        document.querySelector('#addBranchModal form')?.addEventListener('submit', function (e) {
+        // Add Branch Modal Validation & Confirmation
+        let addBranchConfirmed = false;
+        document.querySelector('#addBranchModal form')?.addEventListener('submit', async function (e) {
+            if (addBranchConfirmed) return;
+            e.preventDefault();
+
             if (window.FormValidator) window.FormValidator.clearAllErrors('#addBranchModal');
             const name = document.getElementById('name');
             const addr = document.getElementById('address');
@@ -892,16 +896,31 @@
             }
 
             if (hasError) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
                 if (firstError) firstError.focus();
                 if (typeof toast === 'function') toast('Please enter the required branch details.', 'error');
                 return false;
             }
+
+            if (typeof confirmAlert === 'function') {
+                const res = await confirmAlert('Confirm New Branch', `Are you sure you want to add the branch "${name.value.trim()}"?`, 'Yes, Add Branch');
+                if (res && res.isConfirmed) {
+                    addBranchConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            } else {
+                if (confirm(`Are you sure you want to add the branch "${name.value.trim()}"?`)) {
+                    addBranchConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            }
         });
 
-        // Edit Branch Modal Validation
-        document.querySelector('#editBranchModal form')?.addEventListener('submit', function (e) {
+        // Edit Branch Modal Validation & Confirmation
+        let editBranchConfirmed = false;
+        document.querySelector('#editBranchModal form')?.addEventListener('submit', async function (e) {
+            if (editBranchConfirmed) return;
+            e.preventDefault();
+
             if (window.FormValidator) window.FormValidator.clearAllErrors('#editBranchModal');
             const editName = document.getElementById('edit_name');
 
@@ -915,11 +934,22 @@
             }
 
             if (hasError) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
                 if (firstError) firstError.focus();
                 if (typeof toast === 'function') toast('Please enter the required branch details.', 'error');
                 return false;
+            }
+
+            if (typeof confirmAlert === 'function') {
+                const res = await confirmAlert('Confirm Changes', `Are you sure you want to save changes for "${editName.value.trim()}"?`, 'Yes, Save Changes');
+                if (res && res.isConfirmed) {
+                    editBranchConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            } else {
+                if (confirm(`Are you sure you want to save changes for "${editName.value.trim()}"?`)) {
+                    editBranchConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
             }
         });
 

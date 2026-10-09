@@ -832,8 +832,12 @@
             }, 3000);
         }
 
-        // Inline form validation for Add User Modal
-        document.querySelector('#addUserModal form')?.addEventListener('submit', function (e) {
+        // Inline form validation and confirmation for Add User Modal
+        let addUserConfirmed = false;
+        document.querySelector('#addUserModal form')?.addEventListener('submit', async function (e) {
+            if (addUserConfirmed) return;
+            e.preventDefault();
+
             if (window.FormValidator) window.FormValidator.clearAllErrors('#addUserModal');
             const email = document.getElementById('email');
             const role = document.getElementById('role');
@@ -859,16 +863,31 @@
             }
 
             if (hasError) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
                 if (firstError) firstError.focus();
                 if (typeof toast === 'function') toast('Please check the required fields.', 'error');
                 return false;
             }
+
+            if (typeof confirmAlert === 'function') {
+                const res = await confirmAlert('Confirm User Creation', `Are you sure you want to create an account for "${email.value.trim()}"?`, 'Yes, Create');
+                if (res && res.isConfirmed) {
+                    addUserConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            } else {
+                if (confirm(`Are you sure you want to create an account for "${email.value.trim()}"?`)) {
+                    addUserConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            }
         });
 
-        // Inline form validation for Edit User Modal
-        document.querySelector('#editUserModal form')?.addEventListener('submit', function (e) {
+        // Inline form validation and confirmation for Edit User Modal
+        let editUserConfirmed = false;
+        document.querySelector('#editUserModal form')?.addEventListener('submit', async function (e) {
+            if (editUserConfirmed) return;
+            e.preventDefault();
+
             if (window.FormValidator) window.FormValidator.clearAllErrors('#editUserModal');
             const email = document.getElementById('edit_email');
             const role = document.getElementById('edit_role');
@@ -894,11 +913,22 @@
             }
 
             if (hasError) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
                 if (firstError) firstError.focus();
                 if (typeof toast === 'function') toast('Please check the required fields.', 'error');
                 return false;
+            }
+
+            if (typeof confirmAlert === 'function') {
+                const res = await confirmAlert('Confirm Changes', `Are you sure you want to save changes for "${email.value.trim()}"?`, 'Yes, Save Changes');
+                if (res && res.isConfirmed) {
+                    editUserConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
+            } else {
+                if (confirm(`Are you sure you want to save changes for "${email.value.trim()}"?`)) {
+                    editUserConfirmed = true;
+                    HTMLFormElement.prototype.submit.call(this);
+                }
             }
         });
 
