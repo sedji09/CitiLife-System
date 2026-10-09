@@ -49,7 +49,7 @@
         <!-- Search & Filters -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             <div class="relative md:col-span-6 w-full">
-                <input type="text" id="patientSearch" oninput="filterAndSortPatients()"
+                <input type="text" id="patientSearch" oninput="handleSearchInput()"
                     placeholder="Search by Name or Patient ID..."
                     class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500/10 focus:border-red-500 transition-all shadow-sm">
                 <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-gray-400"></i>
@@ -311,19 +311,31 @@
         sessionStorage.setItem('Citilife_adminPatients_page', currentPage);
     }
 
+    let allPatientRows = [];
     let currentFilteredRows = [];
+    let searchDebounceTimeout = null;
+
+    function handleSearchInput() {
+        clearTimeout(searchDebounceTimeout);
+        searchDebounceTimeout = setTimeout(() => {
+            filterAndSortPatients(true);
+        }, 120);
+    }
 
     function filterAndSortPatients(resetPage = true) {
         if (resetPage) currentPage = 1;
         saveAdminPatientsState();
 
+        if (!allPatientRows || allPatientRows.length === 0) {
+            allPatientRows = Array.from(document.querySelectorAll('.patient-row'));
+        }
+
         const searchQuery = (document.getElementById('patientSearch')?.value || '').toLowerCase().trim();
         const branchFilter = (document.getElementById('branchFilter')?.value || '').toLowerCase().trim();
         const sortMode = document.getElementById('sortCase')?.value || 'newest';
-        const rows = Array.from(document.querySelectorAll('.patient-row'));
 
         // 1. Filtering
-        currentFilteredRows = rows.filter(row => {
+        currentFilteredRows = allPatientRows.filter(row => {
             const id = row.dataset.id || '';
             const name = row.dataset.name || '';
             const branch = row.dataset.branch || '';
