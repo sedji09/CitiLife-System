@@ -928,20 +928,29 @@ class CaseModel
     public function generateRequestNumber()
     {
         $year = date('Y');
+        $prefix = "REQ-{$year}-";
 
-        $stmt = $this->pdo->prepare("SELECT current_number FROM request_sequences WHERE year = ? FOR UPDATE");
-        $stmt->execute([$year]);
-        $current = $stmt->fetchColumn();
+        $stmtReqs = $this->pdo->prepare("SELECT request_number FROM requests WHERE request_number LIKE ?");
+        $stmtReqs->execute([$prefix . '%']);
+        $allNums = $stmtReqs->fetchAll(\PDO::FETCH_COLUMN);
 
-        if ($current === false) {
-            $this->pdo->prepare("INSERT INTO request_sequences (year, current_number) VALUES (?, 1)")->execute([$year]);
-            $next = 1;
-        } else {
-            $next = ((int) $current) + 1;
-            $this->pdo->prepare("UPDATE request_sequences SET current_number = ? WHERE year = ?")->execute([$next, $year]);
+        $maxSeq = 0;
+        foreach ($allNums as $rNum) {
+            if (preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $rNum, $m)) {
+                $val = (int) $m[1];
+                if ($val > $maxSeq && $val < 50000) {
+                    $maxSeq = $val;
+                }
+            }
         }
 
-        return "REQ-{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
+        $next = $maxSeq + 1;
+        try {
+            $this->pdo->prepare("INSERT INTO request_sequences (year, current_number) VALUES (?, ?) ON DUPLICATE KEY UPDATE current_number = ?")
+                ->execute([$year, $next, $next]);
+        } catch (\Throwable $e) {}
+
+        return $prefix . str_pad($next, 5, '0', STR_PAD_LEFT);
     }
 
     /**
