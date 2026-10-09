@@ -200,16 +200,22 @@ class PatientModel
         $year = date('Y');
         $prefix = "PAT{$year}-{$code}-";
 
-        $stmtLast = $this->pdo->prepare("SELECT patient_number FROM patients WHERE patient_number LIKE ? ORDER BY id DESC LIMIT 1");
-        $stmtLast->execute([$prefix . '%']);
-        $lastPatient = $stmtLast->fetchColumn();
+        $stmt = $this->pdo->prepare("SELECT patient_number FROM patients WHERE patient_number LIKE ?");
+        $stmt->execute([$prefix . '%']);
+        $allNums = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-        $seqIndex = 1;
-        if ($lastPatient && preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $lastPatient, $m)) {
-            $seqIndex = (int) $m[1] + 1;
+        $maxSeq = 0;
+        foreach ($allNums as $pNum) {
+            if (preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $pNum, $m)) {
+                $val = (int)$m[1];
+                if ($val > $maxSeq && $val < 50000) {
+                    $maxSeq = $val;
+                }
+            }
         }
 
-        return $prefix . str_pad($seqIndex, $padLength, '0', STR_PAD_LEFT);
+        $nextSeq = $maxSeq + 1;
+        return $prefix . str_pad($nextSeq, $padLength, '0', STR_PAD_LEFT);
     }
 
     public function getPendingPatients()
