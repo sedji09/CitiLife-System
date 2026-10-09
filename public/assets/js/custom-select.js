@@ -17,13 +17,18 @@
             if (!this.select || 
                 this.select._customSelect || 
                 this.select.closest('.cs-wrapper') || 
+                this.select.closest('.swal2-container, .swal2-popup, .swal2-modal, [class*="swal2"]') ||
+                this.select.classList.contains('swal2-select') ||
+                this.select.classList.contains('swal2-input') ||
                 this.select.hasAttribute('data-custom-select-initialized')) {
                 return;
             }
 
             // Skip if explicitly flagged or has no-custom-select class
             if (this.select.hasAttribute('data-no-custom') || 
-                this.select.classList.contains('no-custom-select')) {
+                this.select.classList.contains('no-custom-select') ||
+                this.select.classList.contains('swal2-select') ||
+                this.select.classList.contains('swal2-input')) {
                 return;
             }
 
@@ -371,9 +376,14 @@
     // Global init helper
     function initCustomSelects(root = document) {
         if (!root) return;
-        const selects = root.querySelectorAll('select:not([data-no-custom]):not(.no-custom-select):not([data-custom-select-initialized])');
+        const selects = root.querySelectorAll('select:not([data-no-custom]):not(.no-custom-select):not(.swal2-select):not([class*="swal2"]):not([data-custom-select-initialized])');
         selects.forEach(select => {
-            if (select._customSelect || select.closest('.cs-wrapper') || select.hasAttribute('data-custom-select-initialized')) {
+            if (select._customSelect || 
+                select.closest('.cs-wrapper') || 
+                select.closest('.swal2-container, .swal2-popup, .swal2-modal, [class*="swal2"]') ||
+                select.classList.contains('swal2-select') ||
+                select.classList.contains('swal2-input') ||
+                select.hasAttribute('data-custom-select-initialized')) {
                 return;
             }
             new CustomSelect(select);

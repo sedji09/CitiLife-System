@@ -46,6 +46,14 @@
     border: none !important;
 }
 
+/* Guard against SweetAlert2 internal elements */
+.swal2-container .cs-wrapper,
+.swal2-popup .cs-wrapper,
+.swal2-modal .cs-wrapper,
+.swal2-html-container .cs-wrapper {
+    display: none !important;
+}
+
 /* Trigger button simulating input box */
 .cs-trigger {
     width: 100%;
