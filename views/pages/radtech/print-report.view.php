@@ -1328,6 +1328,10 @@ if (!$isMultiExam) {
                 setTimeout(() => {
                     downloadPDF();
                 }, 500); // Give DOM a moment to settle
+            <?php elseif (!$isPreview && !$isSnapshot): ?>
+                setTimeout(() => {
+                    window.print();
+                }, 400); // Automatically open the native printer dialog
             <?php endif; ?>
         });
 

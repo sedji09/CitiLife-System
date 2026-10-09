@@ -118,6 +118,30 @@ const alerts = {
   },
 
   /**
+   * Open compact floating popup window for printing
+   */
+  openPrintPopup: function (url) {
+    const width = Math.min(900, window.screen.availWidth - 60);
+    const height = Math.min(960, window.screen.availHeight - 60);
+    const left = Math.max(0, Math.round((window.screen.availWidth - width) / 2));
+    const top = Math.max(0, Math.round((window.screen.availHeight - height) / 2));
+    const features = `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`;
+    
+    const popup = window.open(url, 'CitilifePrintReport', features);
+    if (popup && popup.focus) {
+      popup.focus();
+    }
+    return popup;
+  },
+
+  /**
+   * Direct print helper
+   */
+  printReport: function (url) {
+    return alerts.openPrintPopup(url);
+  },
+
+  /**
    * Show a professional confirmation dialog for generic actions (navigation, callbacks)
    */
   confirmAction: async function (title, message, callback = null, confirmText = 'Yes, Proceed', newTab = false, event = null) {
@@ -132,7 +156,10 @@ const alerts = {
       if (typeof callback === 'function') {
         callback();
       } else if (typeof callback === 'string') {
-        if (newTab) {
+        const isPrintAction = title.toLowerCase().includes('print') || (callback.includes('print-report') && !callback.includes('download=true'));
+        if (isPrintAction) {
+          alerts.openPrintPopup(callback);
+        } else if (newTab) {
           window.open(callback, '_blank');
         } else {
           window.location.href = callback;
@@ -151,3 +178,8 @@ window.errorAlert = alerts.error;
 window.confirmAlert = alerts.confirm;
 window.confirmFormAction = alerts.confirmFormAction;
 window.confirmAction = alerts.confirmAction;
+window.printReport = alerts.printReport;
+window.openPrintPopup = alerts.openPrintPopup;
+window.confirmPrint = function (title, message, printUrl, confirmText = 'Yes, Print', event = null) {
+  return alerts.confirmAction(title || 'Confirm Print', message || 'Would you like to confirm printing this report?', printUrl, confirmText, false, event);
+};
