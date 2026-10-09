@@ -128,15 +128,11 @@ foreach ($allRoleMenus as $item) {
   }
 }
 
-// 2. Add extra dynamic menus from system features if they have permission but it's not their native menu
-// IT Admin uses a fixed sidebar — skip injecting backup/audit extras here (available via dashboard quick actions)
-$itAdminDynamicSkip = ['backup_mgmt', 'audit_logs', 'user_mgmt', 'branch_mgmt', 'system_security'];
-if ($role !== 'patient') {
+// 2. Add extra dynamic menus from system features for custom roles (branch_admin, radtech, radiologist)
+// Admin Central, IT Admin, and Patient use their dedicated fixed menu structure
+if (!in_array($role, ['admin_central', 'it_admin', 'patient'], true)) {
   foreach ($systemFeatures as $permKey => $item) {
-    if ($role === 'it_admin' && in_array($permKey, $itAdminDynamicSkip, true)) {
-      continue;
-    }
-    if (!in_array($permKey, $addedPerms) && hasPermission($role, $permKey) > 0) {
+    if (!in_array($permKey, $addedPerms, true) && hasPermission($role, $permKey) > 0) {
       $menuItems[] = $item;
     }
   }
