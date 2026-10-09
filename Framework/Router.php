@@ -108,6 +108,17 @@ class Router
                                 exit;
                             }
 
+                            if ($path === '/patient-signup' || $path === '/patient-signup.php') {
+                                $iframeParam = isset($_GET['iframe']) ? '&iframe=1' : '';
+                                header('Location: ' . url('patient-signup?error=' . urlencode('Security session expired. Please submit again.') . $iframeParam));
+                                exit;
+                            }
+
+                            if ($path === '/patient-login' || $path === '/login' || $path === '/staff-portal') {
+                                header('Location: ' . url('?login=1&error=' . urlencode('Security session expired. Please try again.')));
+                                exit;
+                            }
+
                             $this->error(403);
                             return;
                         }

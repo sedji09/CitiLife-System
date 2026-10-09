@@ -112,7 +112,7 @@ $descText = $isLoggedIn
             </div>
 
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-md mx-auto">
-                <a href="<?= $homeLink ?>" class="btn-premium flex-1 w-full h-12 px-5 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+                <a href="<?= $homeLink ?>" target="_top" class="btn-premium flex-1 w-full h-12 px-5 text-white font-bold rounded-2xl flex items-center justify-center gap-2 text-sm whitespace-nowrap">
                     <?php if ($isLoggedIn): ?>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -127,7 +127,7 @@ $descText = $isLoggedIn
                     <?php endif; ?>
                     <?= htmlspecialchars($btnLabel) ?>
                 </a>
-                <button type="button" onclick="if(window.history.length > 1) { window.history.back(); } else { window.location.href='<?= $homeLink ?>'; }"
+                <button type="button" onclick="if(window.self !== window.top) { window.top.location.href='<?= $homeLink ?>'; } else if(window.history.length > 1) { window.history.back(); } else { window.location.href='<?= $homeLink ?>'; }"
                     class="flex-1 w-full h-12 px-5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 text-sm whitespace-nowrap shadow-xs cursor-pointer">
                     Go Back
                 </button>
@@ -140,6 +140,11 @@ $descText = $isLoggedIn
             </p>
         </div>
     </div>
+    <script>
+        if (window.self !== window.top) {
+            document.querySelectorAll('a').forEach(a => a.setAttribute('target', '_top'));
+        }
+    </script>
 </body>
 
 </html>
