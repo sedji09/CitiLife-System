@@ -1814,6 +1814,22 @@ class CaseModel
                 if (!$this->hasColumn('requests', 'amount_due')) {
                     $this->safeExec("ALTER TABLE requests ADD COLUMN amount_due DECIMAL(10,2) DEFAULT NULL");
                 }
+                if (!$this->hasColumn('requests', 'rejection_reason')) {
+                    $this->safeExec("ALTER TABLE requests ADD COLUMN rejection_reason TEXT DEFAULT NULL");
+                }
+            }
+
+            // Ensure payments table columns
+            if ($this->hasTable('payments')) {
+                if (!$this->hasColumn('payments', 'rejection_reason')) {
+                    $this->safeExec("ALTER TABLE payments ADD COLUMN rejection_reason TEXT DEFAULT NULL");
+                }
+                if (!$this->hasColumn('payments', 'verified_by')) {
+                    $this->safeExec("ALTER TABLE payments ADD COLUMN verified_by INT DEFAULT NULL");
+                }
+                if (!$this->hasColumn('payments', 'verified_at')) {
+                    $this->safeExec("ALTER TABLE payments ADD COLUMN verified_at DATETIME DEFAULT NULL");
+                }
             }
 
             // 3. Ensure result_disputes table and all its columns exist

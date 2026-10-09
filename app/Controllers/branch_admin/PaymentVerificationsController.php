@@ -16,6 +16,32 @@ class PaymentVerificationsController
         $currentUserId = $_SESSION['user_id'] ?? 0;
         $branchId = $_SESSION['branch_id'] ?? 1;
 
+        // Ensure necessary columns exist in database
+        try {
+            if ($pdo) {
+                // Check & add payments columns
+                $stmtPayCols = $pdo->query("SHOW COLUMNS FROM payments LIKE 'rejection_reason'");
+                if ($stmtPayCols && !$stmtPayCols->fetch()) {
+                    $pdo->exec("ALTER TABLE payments ADD COLUMN rejection_reason TEXT DEFAULT NULL");
+                }
+                $stmtPayCols2 = $pdo->query("SHOW COLUMNS FROM payments LIKE 'verified_by'");
+                if ($stmtPayCols2 && !$stmtPayCols2->fetch()) {
+                    $pdo->exec("ALTER TABLE payments ADD COLUMN verified_by INT DEFAULT NULL");
+                }
+                $stmtPayCols3 = $pdo->query("SHOW COLUMNS FROM payments LIKE 'verified_at'");
+                if ($stmtPayCols3 && !$stmtPayCols3->fetch()) {
+                    $pdo->exec("ALTER TABLE payments ADD COLUMN verified_at DATETIME DEFAULT NULL");
+                }
+                // Check & add requests columns
+                $stmtReqCols = $pdo->query("SHOW COLUMNS FROM requests LIKE 'rejection_reason'");
+                if ($stmtReqCols && !$stmtReqCols->fetch()) {
+                    $pdo->exec("ALTER TABLE requests ADD COLUMN rejection_reason TEXT DEFAULT NULL");
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("PaymentVerifications schema migration notice: " . $e->getMessage());
+        }
+
         $successMsg = '';
         $errorMsg = '';
 
