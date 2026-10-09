@@ -79,6 +79,10 @@ class PatientApprovalController
                     
                     $auditLogModel->addLog($currentUserId, "Approved Patient Request", 'Patient Approval', 'Request', $requestId, "Approved request #{$req['request_number']} and created Case #{$caseNumber} ($serviceType)", $caseBranchId);
                     
+                    if ($pdo->inTransaction()) {
+                        $pdo->commit();
+                    }
+
                     // Send notification and email to patient
                     $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
                     $stmtPat->execute([$req['patient_id']]);
@@ -115,7 +119,6 @@ class PatientApprovalController
                         }
                     }
 
-                    $pdo->commit();
                     $_SESSION['flash_success'] = "Patient request has been approved. They can now proceed to examination.";
                     redirect(url('patient-details?role=radtech&id=' . urlencode($newCaseId) . '&from=approval'));
                 } catch (\Throwable $e) {
@@ -395,6 +398,10 @@ class PatientApprovalController
                     $reqBranchId = !empty($req['branch_id']) ? (int)$req['branch_id'] : (int)$branchId;
                     $auditLogModel->addLog($currentUserId, "Assigned Exam", 'Patient Approval', 'Request', $requestId, "Assigned $examType (Original: PHP $originalPrice, PhilHealth Discount: PHP $philhealthDiscount, Due: PHP $amountDue) to request #{$req['request_number']}", $reqBranchId);
                     
+                    if ($pdo->inTransaction()) {
+                        $pdo->commit();
+                    }
+
                     // Send notification and email to patient
                     $stmtPat = $pdo->prepare("SELECT u.id, u.name, u.email FROM users u WHERE u.patient_id = ? AND u.role = 'patient' LIMIT 1");
                     $stmtPat->execute([$req['patient_id']]);
@@ -434,10 +441,11 @@ class PatientApprovalController
                         }
                     }
                     
-                    $pdo->commit();
                     $_SESSION['flash_success'] = "Exam assigned successfully. Awaiting patient payment.";
                 } catch (\Exception $e) {
-                    $pdo->rollBack();
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
                     $_SESSION['flash_error'] = "Assignment failed: " . $e->getMessage();
                 }
                 
