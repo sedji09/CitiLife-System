@@ -44,15 +44,17 @@ if ($patientRow && isset($patientRow['patient_number'])) {
             $rejectedCases[] = $c;
         } elseif ($isCancelled) {
             $cancelledCases[] = $c;
-        } elseif (in_array($c['status'], ['Completed', 'Released']) && empty($c['re_edit_reason']) && ($c['report_status'] ?? '') !== 'Draft') {
+        } elseif ((in_array($c['status'], ['Completed', 'Released']) || (!empty($c['released']) && $c['released'] == 1) || in_array($c['status'], ['Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification', 'Correction Completed', 'Resolved', 'Edited'])) && empty($c['re_edit_reason']) && ($c['report_status'] ?? '') !== 'Draft') {
             $completedCases[] = $c;
         }
     }
 
-    // Fetch Pending / Ongoing cases
+    // Fetch Pending / Ongoing cases (exclude completed, released, and correction workflow cases)
     $rawPending = $caseModel->getActiveCasesByPatient($patientId) ?: [];
     foreach ($rawPending as $p) {
-        if (!in_array($p['status'] ?? '', ['Released', 'Completed', 'Cancelled', 'Rejected'])) {
+        $pStat = $p['status'] ?? '';
+        $isDoneOrCorrection = in_array($pStat, ['Released', 'Completed', 'Cancelled', 'Rejected', 'Issue Reported', 'For RadTech Review', 'Pending RadTech Review', 'Correction in Progress', 'Pending RadTech Verification', 'Correction Completed', 'Resolved', 'Edited']) || (!empty($p['released']) && $p['released'] == 1);
+        if (!$isDoneOrCorrection) {
             $pendingCases[] = $p;
         }
     }

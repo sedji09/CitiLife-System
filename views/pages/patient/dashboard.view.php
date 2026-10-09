@@ -746,7 +746,7 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
         $caseStatusVal = $latestCase['status'];
         $canCancel = in_array($displayStatus, ['Pending', 'Pending Payment']);
         $isPendingPayment = ($caseStatusVal === 'Pending Payment');
-        $isCompletedOrReleased = in_array($caseStatusVal, ['Released', 'Completed']);
+        $isCompletedOrReleased = in_array($caseStatusVal, ['Released', 'Completed']) || (!empty($latestCase['released']) && $latestCase['released'] == 1) || $isCorrectionWorkflow;
         $isExpired = strtotime($latestCase['created_at']) < strtotime('-3 months');
         $isExpired7Days = strtotime($latestCase['created_at']) < strtotime('-7 days');
         ?>
