@@ -19,24 +19,47 @@ $success = '';
 // Helper: generate next case number
 function generateCaseNumber($pdo, $branchId)
 {
-    if (!$branchId)
-        return 'CX-' . date('Y') . '-0000';
-    $stmtB = $pdo->prepare("SELECT name FROM branches WHERE id = ?");
-    $stmtB->execute([$branchId]);
-    $branchName = $stmtB->fetchColumn() ?: 'General';
+    $branchCode = 'GEN';
+    if ($branchId) {
+        $stmtB = $pdo->prepare("SELECT name FROM branches WHERE id = ?");
+        $stmtB->execute([$branchId]);
+        $branchName = $stmtB->fetchColumn() ?: 'General';
 
-    $year = date('Y');
-    $stmtLast = $pdo->prepare("SELECT case_number FROM cases WHERE case_number LIKE ? ORDER BY id DESC LIMIT 1");
-    $stmtLast->execute(["CX-{$year}-%"]);
-    $lastCase = $stmtLast->fetchColumn();
-
-    if ($lastCase && preg_match('/CX-' . $year . '-(\d+)/', $lastCase, $m)) {
-        $caseIndex = (int) $m[1] + 1;
-    } else {
-        $caseIndex = 1;
+        if (stripos($branchName, 'Gapan') !== false)
+            $branchCode = 'GAP';
+        elseif (stripos($branchName, 'Bongabon') !== false)
+            $branchCode = 'BON';
+        elseif (stripos($branchName, 'Peñaranda') !== false)
+            $branchCode = 'PEN';
+        elseif (stripos($branchName, 'General Tinio') !== false || stripos($branchName, 'General Tion') !== false)
+            $branchCode = 'GTI';
+        elseif (stripos($branchName, 'San Antonio') !== false)
+            $branchCode = 'SAN';
+        elseif (stripos($branchName, 'Sto Domingo') !== false)
+            $branchCode = 'STD';
+        elseif (stripos($branchName, 'Pantabangan') !== false)
+            $branchCode = 'PAN';
     }
 
-    return 'CX-' . $year . '-' . str_pad($caseIndex, 4, '0', STR_PAD_LEFT);
+    $year = date('Y');
+    $prefix = "{$branchCode}{$year}-";
+
+    $stmtCases = $pdo->prepare("SELECT case_number FROM cases WHERE case_number LIKE ?");
+    $stmtCases->execute([$prefix . '%']);
+    $allNums = $stmtCases->fetchAll(\PDO::FETCH_COLUMN);
+
+    $maxSeq = 0;
+    foreach ($allNums as $cNum) {
+        if (preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $cNum, $m)) {
+            $val = (int) $m[1];
+            if ($val > $maxSeq && $val < 50000) {
+                $maxSeq = $val;
+            }
+        }
+    }
+
+    $next = $maxSeq + 1;
+    return $prefix . str_pad($next, 5, '0', STR_PAD_LEFT);
 }
 
 // Fetch branches for dropdown

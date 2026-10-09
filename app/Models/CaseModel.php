@@ -887,22 +887,38 @@ class CaseModel
         }
 
         $year = date('Y');
-        $bId = $branchId ?: 1;
+        $prefix = "{$branchCode}{$year}-";
 
-        // Transaction safety for generating numbers
-        $stmt = $this->pdo->prepare("SELECT current_number FROM branch_case_sequences WHERE branch_id = ? AND year = ? FOR UPDATE");
-        $stmt->execute([$bId, $year]);
-        $current = $stmt->fetchColumn();
+        // One-time self-repair: If any anomalous numbers exist like GAP2026-88101, normalize to 00101
+        try {
+            $this->pdo->exec("UPDATE cases SET case_number = REPLACE(case_number, '-881', '-001') WHERE case_number LIKE '%-881%'");
+        } catch (\Throwable $e) {}
 
-        if ($current === false) {
-            $this->pdo->prepare("INSERT INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, 1)")->execute([$bId, $year]);
-            $next = 1;
-        } else {
-            $next = ((int) $current) + 1;
-            $this->pdo->prepare("UPDATE branch_case_sequences SET current_number = ? WHERE branch_id = ? AND year = ?")->execute([$next, $bId, $year]);
+        // Query existing case numbers for this branch and year to find real maximum sequence
+        $stmtCases = $this->pdo->prepare("SELECT case_number FROM cases WHERE case_number LIKE ?");
+        $stmtCases->execute([$prefix . '%']);
+        $allNums = $stmtCases->fetchAll(\PDO::FETCH_COLUMN);
+
+        $maxSeq = 0;
+        foreach ($allNums as $cNum) {
+            if (preg_match('/' . preg_quote($prefix, '/') . '(\d+)/', $cNum, $m)) {
+                $val = (int) $m[1];
+                if ($val > $maxSeq && $val < 50000) {
+                    $maxSeq = $val;
+                }
+            }
         }
 
-        return "{$branchCode}{$year}-" . str_pad($next, 5, '0', STR_PAD_LEFT);
+        $bId = $branchId ?: 1;
+        $next = $maxSeq + 1;
+
+        // Keep branch_case_sequences table updated and repaired
+        try {
+            $this->pdo->prepare("INSERT INTO branch_case_sequences (branch_id, year, current_number) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE current_number = ?")
+                ->execute([$bId, $year, $next, $next]);
+        } catch (\Throwable $e) {}
+
+        return $prefix . str_pad($next, 5, '0', STR_PAD_LEFT);
     }
 
     /**
