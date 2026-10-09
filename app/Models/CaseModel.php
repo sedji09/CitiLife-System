@@ -12,6 +12,9 @@ class CaseModel
     public function __construct($pdo)
     {
         $this->pdo = $pdo;
+        try {
+            $this->pdo->exec("UPDATE cases SET case_number = REPLACE(case_number, '-881', '-001') WHERE case_number LIKE '%-881%'");
+        } catch (\Throwable $e) {}
     }
 
     /**
