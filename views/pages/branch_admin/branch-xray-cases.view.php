@@ -382,10 +382,6 @@
                     btn.onclick = () => {
                         currentPage = page;
                         renderPage();
-                        const card = document.getElementById('xray-cases-table-card');
-                        if (card) {
-                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
                     };
                 }
                 return btn;

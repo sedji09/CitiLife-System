@@ -1095,10 +1095,6 @@ if ($tabParam === 'release' || $statusParam === 'Report Ready' || $statusParam =
                         currentPage = page;
                         saveWorklistState();
                         updateTable();
-                        const card = document.getElementById('worklist-table-card');
-                        if (card) {
-                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
                     };
                 }
                 return btn;

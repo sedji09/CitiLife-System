@@ -240,10 +240,6 @@
                     btn.onclick = () => {
                         currentPage = page;
                         renderPage();
-                        const card = document.getElementById('record-requests-table');
-                        if (card) {
-                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
                     };
                 }
                 return btn;

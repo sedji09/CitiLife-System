@@ -698,10 +698,6 @@
                 btn.onclick = () => {
                     currentPage = page;
                     filterAndSortServices(false);
-                    const card = document.getElementById('services-table-card');
-                    if (card) {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
                 };
             }
             return btn;

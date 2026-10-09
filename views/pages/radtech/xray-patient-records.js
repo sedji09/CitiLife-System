@@ -128,11 +128,6 @@
                 btn.onclick = () => {
                     currentPages[type] = page;
                     renderPage(type);
-                    const cardId = type === 'completed' ? 'xray-records-table-card' : 'disputes-table-card';
-                    const card = document.getElementById(cardId);
-                    if (card) {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
                 };
             }
             return btn;

@@ -385,10 +385,6 @@
                 btn.onclick = () => {
                     currentPage = page;
                     filterAndSortPatients(false);
-                    const card = document.getElementById('patients-table-card');
-                    if (card) {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
                 };
             }
             return btn;

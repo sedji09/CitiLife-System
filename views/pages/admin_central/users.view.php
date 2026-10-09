@@ -720,10 +720,6 @@
                 btn.onclick = () => {
                     currentPage = page;
                     filterAndSortUsers(false);
-                    const card = document.getElementById('users-table-card');
-                    if (card) {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
                 };
             }
             return btn;

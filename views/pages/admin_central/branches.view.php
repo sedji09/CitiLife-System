@@ -768,10 +768,6 @@
                 btn.onclick = () => {
                     currentPage = page;
                     filterAndSortBranches(false);
-                    const card = document.getElementById('branches-table-card');
-                    if (card) {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
                 };
             }
             return btn;

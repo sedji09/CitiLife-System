@@ -259,10 +259,6 @@ $records = $caseModel->getWorklist(null, null, ['Report Ready', 'Completed'], fa
                     btn.onclick = () => {
                         currentPage = page;
                         renderPage();
-                        const card = document.getElementById('history-table-card');
-                        if (card) {
-                            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
                     };
                 }
                 return btn;

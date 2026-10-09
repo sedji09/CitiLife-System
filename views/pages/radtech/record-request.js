@@ -116,10 +116,6 @@ function updatePaginationUI(totalFiltered, totalPages) {
             btn.onclick = () => {
                 currentPage = page;
                 applyFilters();
-                const card = document.getElementById('record-requests-card');
-                if (card) {
-                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
             };
         }
         return btn;
