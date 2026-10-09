@@ -36,6 +36,9 @@ $router->get('/sitemap.xml', function () {
     } else {
         echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://citilife-system-production-a5e9.up.railway.app/</loc><lastmod>' . date('Y-m-d') . '</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url></urlset>';
     }
+$router->get('/run-align-700-cases', function () {
+    header('Content-Type: text/plain; charset=UTF-8');
+    require_once __DIR__ . '/scripts/align_700_cases_and_patients.php';
     exit;
 }, []);
 
