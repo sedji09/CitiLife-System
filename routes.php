@@ -37,12 +37,6 @@ $router->get('/sitemap.xml', function () {
     exit;
 }, []);
 
-$router->get('/run-align-700-cases', function () {
-    header('Content-Type: text/plain; charset=UTF-8');
-    require_once __DIR__ . '/scripts/align_700_cases_and_patients.php';
-    exit;
-}, []);
-
 // Authentication Routes (Guest Only)
 $router->get('/login', function () {
     return redirect(url('?login=1'));
