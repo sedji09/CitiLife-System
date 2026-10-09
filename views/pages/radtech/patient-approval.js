@@ -1492,6 +1492,10 @@ function renderPaginationControls(totalPages, totalRecords, startIdx, endIdx) {
 
 // Initial sorting on load and re-applying filters after real-time updates
 document.addEventListener('DOMContentLoaded', () => {
+    if (typeof Swal !== 'undefined' && Swal.isVisible() && Swal.isLoading()) {
+        Swal.close();
+    }
+
     const hasHighlight = (new window.URLSearchParams(window.location.search)).has('highlight') ||
         (new window.URLSearchParams(window.location.search)).has('highlight_case') ||
         (new window.URLSearchParams(window.location.search)).has('highlight_req') ||
@@ -1527,6 +1531,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Re-apply filters when real-time polling updates the table content
 document.addEventListener('realtime:updated', () => {
     applyFilters();
+});
+
+window.addEventListener('pageshow', () => {
+    if (typeof Swal !== 'undefined' && Swal.isVisible() && Swal.isLoading()) {
+        Swal.close();
+    }
 });
 
 function handlePageHighlight(targetId) {
