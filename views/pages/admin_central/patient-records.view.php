@@ -292,6 +292,10 @@
         document.getElementById('sex').value = patient.sex;
         document.getElementById('contact_number').value = patient.contact_number;
         document.getElementById('home_address').value = patient.home_address || '';
+
+        document.getElementById('editPatientModal').classList.remove('hidden');
+    }
+
     function closeEditModal() {
         document.getElementById('editPatientModal').classList.add('hidden');
     }
