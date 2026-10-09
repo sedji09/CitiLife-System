@@ -15,6 +15,16 @@ if (!function_exists('hasPermission')) {
     function hasPermission($role, $permKey) {
         global $pdo;
         
+        // Superadmin bypass: admin_central and it_admin have full permission
+        if ($role === 'admin_central' || $role === 'it_admin') {
+            return 1;
+        }
+
+        // Patient role access for feedback
+        if ($role === 'patient' && ($permKey === 'patient_feedback' || $permKey === 'feedback')) {
+            return 1;
+        }
+
         static $permCache = [];
         $cacheKey = $role . '_' . $permKey;
         

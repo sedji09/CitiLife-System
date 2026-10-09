@@ -141,7 +141,7 @@ class PageController
             'patient-records' => 'patient_history'
         ];
 
-        if (isset($pagePermMap[$page])) {
+        if (isset($pagePermMap[$page]) && $role !== 'patient') {
             guardPermission($role, $pagePermMap[$page]);
         }
 
