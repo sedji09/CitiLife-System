@@ -36,10 +36,8 @@ class ServicePricingController
                 $examType = trim($_POST['exam_type'] ?? '');
                 $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT);
                 $isPhilhealthCovered = !empty($_POST['is_philhealth_covered']) ? 1 : 0;
-                $philhealthDiscount = $isPhilhealthCovered ? filter_var($_POST['philhealth_discount'] ?? 0, FILTER_VALIDATE_FLOAT) : 0.00;
-                if ($philhealthDiscount === false || $philhealthDiscount < 0) {
-                    $philhealthDiscount = 0.00;
-                }
+                $rawDiscount = trim($_POST['philhealth_discount'] ?? '');
+                $philhealthDiscount = ($isPhilhealthCovered && $rawDiscount !== '') ? filter_var($rawDiscount, FILTER_VALIDATE_FLOAT) : ($isPhilhealthCovered ? false : 0.00);
 
                 $status = $_POST['status'] ?? 'active';
                 if (!in_array($status, ['active', 'inactive'])) {
@@ -48,12 +46,14 @@ class ServicePricingController
 
                 if (empty($category) || empty($examType) || $price === false || $price < 0) {
                     $error = "Please fill in all required fields with valid values.";
+                } elseif ($isPhilhealthCovered && ($philhealthDiscount === false || $philhealthDiscount <= 0)) {
+                    $error = "Please enter a valid PhilHealth discount amount greater than ₱0.00.";
                 } elseif ($isPhilhealthCovered && $philhealthDiscount > $price) {
                     $error = "PhilHealth discount cannot exceed the procedure price.";
                 } elseif ($serviceModel->serviceExists($examType)) {
                     $error = "An exam procedure with this name already exists.";
                 } else {
-                    if ($serviceModel->createService($category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status, $serviceType)) {
+                    if ($serviceModel->createService($category, $examType, $price, $isPhilhealthCovered, (float)$philhealthDiscount, $status, $serviceType)) {
                         $newId = $pdo->lastInsertId();
                         $success = "Diagnostic service '{$examType}' ({$serviceType}) added successfully!";
                         $auditLogModel->addLog(
@@ -87,10 +87,8 @@ class ServicePricingController
                 $examType = trim($_POST['exam_type'] ?? '');
                 $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT);
                 $isPhilhealthCovered = !empty($_POST['is_philhealth_covered']) ? 1 : 0;
-                $philhealthDiscount = $isPhilhealthCovered ? filter_var($_POST['philhealth_discount'] ?? 0, FILTER_VALIDATE_FLOAT) : 0.00;
-                if ($philhealthDiscount === false || $philhealthDiscount < 0) {
-                    $philhealthDiscount = 0.00;
-                }
+                $rawDiscount = trim($_POST['philhealth_discount'] ?? '');
+                $philhealthDiscount = ($isPhilhealthCovered && $rawDiscount !== '') ? filter_var($rawDiscount, FILTER_VALIDATE_FLOAT) : ($isPhilhealthCovered ? false : 0.00);
 
                 $status = $_POST['status'] ?? 'active';
                 if (!in_array($status, ['active', 'inactive'])) {
@@ -99,12 +97,14 @@ class ServicePricingController
 
                 if (!$id || empty($category) || empty($examType) || $price === false || $price < 0) {
                     $error = "Please provide valid information to update the service.";
+                } elseif ($isPhilhealthCovered && ($philhealthDiscount === false || $philhealthDiscount <= 0)) {
+                    $error = "Please enter a valid PhilHealth discount amount greater than ₱0.00.";
                 } elseif ($isPhilhealthCovered && $philhealthDiscount > $price) {
                     $error = "PhilHealth discount cannot exceed the procedure price.";
                 } elseif ($serviceModel->serviceExists($examType, $id)) {
                     $error = "An exam procedure with this name already exists.";
                 } else {
-                    if ($serviceModel->updateService($id, $category, $examType, $price, $isPhilhealthCovered, $philhealthDiscount, $status, $serviceType)) {
+                    if ($serviceModel->updateService($id, $category, $examType, $price, $isPhilhealthCovered, (float)$philhealthDiscount, $status, $serviceType)) {
                         $success = "Service '{$examType}' updated successfully!";
                         $auditLogModel->addLog(
                             $currentUserId,

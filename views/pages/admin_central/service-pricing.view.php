@@ -340,7 +340,7 @@
                     <label for="philhealth_discount" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">PhilHealth Discount Amount (PHP)</label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm pointer-events-none select-none">₱</span>
-                        <input type="number" step="0.01" min="0" id="philhealth_discount" name="philhealth_discount" placeholder="200.00"
+                        <input type="number" step="0.01" min="0.01" id="philhealth_discount" name="philhealth_discount" placeholder="200.00"
                             class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1">Deducted from the total payable amount for patients with a PhilHealth card.</p>
@@ -437,7 +437,7 @@
                     <label for="edit_philhealth_discount" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">PhilHealth Discount Amount (PHP)</label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm pointer-events-none select-none">₱</span>
-                        <input type="number" step="0.01" min="0" id="edit_philhealth_discount" name="philhealth_discount" placeholder="200.00"
+                        <input type="number" step="0.01" min="0.01" id="edit_philhealth_discount" name="philhealth_discount" placeholder="200.00"
                             class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1">Deducted from the total payable amount for patients with a PhilHealth card.</p>
@@ -484,6 +484,7 @@
         if (checkbox && checkbox.checked) {
             wrapper.classList.remove('hidden');
             input.required = true;
+            input.min = '0.01';
             if (track) { track.classList.remove('bg-gray-200'); track.style.backgroundColor = '#dc2626'; }
             if (knob) { knob.style.transform = 'translateX(20px)'; }
         } else {
@@ -796,6 +797,8 @@
             const customCat = document.getElementById('custom_category');
             const exam = document.getElementById('exam_type');
             const price = document.getElementById('price');
+            const isCovered = document.getElementById('is_philhealth_covered');
+            const philDiscount = document.getElementById('philhealth_discount');
 
             let hasError = false;
             let firstError = null;
@@ -816,10 +819,24 @@
                 hasError = true;
             }
 
-            if (!price || !price.value || parseFloat(price.value) < 0) {
+            const parsedPrice = price && price.value !== '' ? parseFloat(price.value) : NaN;
+            if (isNaN(parsedPrice) || parsedPrice < 0) {
                 if (window.FormValidator) window.FormValidator.showError(price, 'Please enter a valid price.');
                 if (!hasError) firstError = price;
                 hasError = true;
+            }
+
+            if (isCovered && isCovered.checked) {
+                const parsedDiscount = philDiscount && philDiscount.value !== '' ? parseFloat(philDiscount.value) : NaN;
+                if (isNaN(parsedDiscount) || parsedDiscount <= 0) {
+                    if (window.FormValidator) window.FormValidator.showError(philDiscount, 'Please enter a PhilHealth discount amount greater than ₱0.00.');
+                    if (!hasError) firstError = philDiscount;
+                    hasError = true;
+                } else if (!isNaN(parsedPrice) && parsedDiscount > parsedPrice) {
+                    if (window.FormValidator) window.FormValidator.showError(philDiscount, 'PhilHealth discount cannot exceed procedure price.');
+                    if (!hasError) firstError = philDiscount;
+                    hasError = true;
+                }
             }
 
             if (hasError) {
@@ -838,6 +855,8 @@
             const customCat = document.getElementById('edit_custom_category');
             const exam = document.getElementById('edit_exam_type');
             const price = document.getElementById('edit_price');
+            const isCovered = document.getElementById('edit_is_philhealth_covered');
+            const philDiscount = document.getElementById('edit_philhealth_discount');
 
             let hasError = false;
             let firstError = null;
@@ -858,10 +877,24 @@
                 hasError = true;
             }
 
-            if (!price || !price.value || parseFloat(price.value) < 0) {
+            const parsedPrice = price && price.value !== '' ? parseFloat(price.value) : NaN;
+            if (isNaN(parsedPrice) || parsedPrice < 0) {
                 if (window.FormValidator) window.FormValidator.showError(price, 'Please enter a valid price.');
                 if (!hasError) firstError = price;
                 hasError = true;
+            }
+
+            if (isCovered && isCovered.checked) {
+                const parsedDiscount = philDiscount && philDiscount.value !== '' ? parseFloat(philDiscount.value) : NaN;
+                if (isNaN(parsedDiscount) || parsedDiscount <= 0) {
+                    if (window.FormValidator) window.FormValidator.showError(philDiscount, 'Please enter a PhilHealth discount amount greater than ₱0.00.');
+                    if (!hasError) firstError = philDiscount;
+                    hasError = true;
+                } else if (!isNaN(parsedPrice) && parsedDiscount > parsedPrice) {
+                    if (window.FormValidator) window.FormValidator.showError(philDiscount, 'PhilHealth discount cannot exceed procedure price.');
+                    if (!hasError) firstError = philDiscount;
+                    hasError = true;
+                }
             }
 
             if (hasError) {
