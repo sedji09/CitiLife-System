@@ -969,8 +969,29 @@ if ($latestCase && isset($latestCase['record_type']) && $latestCase['record_type
                             </div>
                         </div>
                     </div>
+
+                    <?php if ($isCompletedOrReleased): ?>
+                        <?php
+                        $isCaseClaimed = !empty($latestCase['is_claimed']) && (int)$latestCase['is_claimed'] === 1;
+                        $caseBranchName = $latestCase['branch_name'] ?? ($patientRow['branch_name'] ?? 'Branch');
+                        ?>
+                        <!-- Compact Result Claim Status -->
+                        <div class="mt-4 pt-3.5 border-t border-gray-100 flex items-center gap-2.5 flex-wrap text-xs">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider <?= $isCaseClaimed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' ?>">
+                                <?= $isCaseClaimed ? 'Claimed' : 'Ready for Pick-up' ?>
+                            </span>
+                            <span class="text-gray-600">
+                                <?php if ($isCaseClaimed): ?>
+                                    Claimed on <?= date('M d, Y', strtotime($latestCase['claimed_at'])) ?><?php if (!empty($latestCase['claimed_by'])): ?> by <strong class="text-gray-800 font-medium"><?= htmlspecialchars($latestCase['claimed_by']) ?></strong><?php if (!empty($latestCase['claimed_relationship'])): ?> (<?= htmlspecialchars($latestCase['claimed_relationship']) ?>)<?php endif; ?><?php endif; ?>
+                                <?php else: ?>
+                                    Official film &amp; envelope available at <strong class="text-gray-800 font-medium">CitiLife <?= htmlspecialchars($caseBranchName) ?></strong>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
+
 
             <?php
             $isCorrectionCompleted = in_array($displayStatus, ['Resolved', 'Correction Completed', 'Edited']) || ((int) ($latestCase['is_amended'] ?? 0) === 1);

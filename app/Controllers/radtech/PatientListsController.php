@@ -95,20 +95,38 @@ if (isset($_GET['action'])) {
                             ->execute([$currentUserId, $id]);
 
                         $caseModel->releaseResult($id);
-                        $_SESSION['flash_success'] = "Result released. Case moved to X-ray Patient Records.";
 
-                        // Log the action
-                        $branchId = $_SESSION['branch_id'] ?? 1;
+                        $isClaimed = !empty($_POST['is_claimed']) && ((int) $_POST['is_claimed'] === 1 || $_POST['is_claimed'] === 'true' || $_POST['is_claimed'] === '1');
                         $patientName = formatFullName($caseData);
-                        $details = "Patient: $patientName, Case: {$caseData['case_number']}";
-                        $auditLogModel->addLog($currentUserId, "Released X-ray report", 'Patient Records', 'Case', $id, $details, $branchId);
+
+                        if ($isClaimed) {
+                            $claimedBy = trim($_POST['claimed_by'] ?? $patientName);
+                            $claimedRel = trim($_POST['claimed_relationship'] ?? 'Self');
+                            $claimedIdPres = trim($_POST['claimed_id_presented'] ?? '');
+                            $claimedNotes = trim($_POST['claimed_notes'] ?? '');
+
+                            $caseModel->markAsClaimed($id, $claimedBy, $claimedRel, $claimedIdPres, $claimedNotes, $currentUserId);
+
+                            $claimDetails = "Patient: {$patientName}, Case: {$caseData['case_number']}, Receiver: {$claimedBy} ({$claimedRel})" . ($claimedIdPres ? ", ID: {$claimedIdPres}" : "");
+                            $auditLogModel->addLog($currentUserId, "Released & marked X-ray result as claimed", 'Patient Records', 'Case', $id, $claimDetails, $branchId);
+                            $_SESSION['flash_success'] = "Result released and marked as claimed by {$claimedBy}.";
+                        } else {
+                            $_SESSION['flash_success'] = "Result released. Case moved to X-ray Patient Records.";
+                            // Log the standard release action
+                            $details = "Patient: $patientName, Case: {$caseData['case_number']}";
+                            $auditLogModel->addLog($currentUserId, "Released X-ray report", 'Patient Records', 'Case', $id, $details, $branchId);
+                        }
 
                         $patientUserId = $caseModel->getPatientUserId($id);
                         if ($patientUserId) {
-                            $notifTitle = $activeDispute ? "Correction Request Resolved" : "Report Released";
-                            $notifMsg = $activeDispute 
-                                ? "Your correction request for Case {$caseData['case_number']} has been resolved and your updated report released." 
-                                : "Your X-ray report for Case {$caseData['case_number']} has been released. You can now view it.";
+                            $notifTitle = $activeDispute ? "Correction Request Resolved" : "Examination Completed";
+                            if ($activeDispute) {
+                                $notifMsg = "Your correction request for Case {$caseData['case_number']} has been resolved and your updated findings and X-ray report are ready.";
+                            } elseif ($isClaimed) {
+                                $notifMsg = "Your X-ray examination for Case {$caseData['case_number']} is completed. Your official findings and X-ray film have been released and claimed.";
+                            } else {
+                                $notifMsg = "Your X-ray examination for Case {$caseData['case_number']} is completed. Your official findings and X-ray film are now ready for claiming at the clinic.";
+                            }
 
                             $notificationModel->add(
                                 $notifTitle,
@@ -217,10 +235,10 @@ if (isset($_GET['action'])) {
 
                         $patientUserId = $caseModel->getPatientUserId($id);
                         if ($patientUserId) {
-                            $notifTitle = $activeDispute ? "Correction Request Resolved" : "Report Released";
+                            $notifTitle = $activeDispute ? "Correction Request Resolved" : "Examination Completed";
                             $notifMsg = $activeDispute 
-                                ? "Your correction request for Case {$caseData['case_number']} has been resolved and your updated report released." 
-                                : "Your X-ray report for Case {$caseData['case_number']} has been released. You can now view it.";
+                                ? "Your correction request for Case {$caseData['case_number']} has been resolved and your updated findings and X-ray report are ready." 
+                                : "Your X-ray examination for Case {$caseData['case_number']} is completed. Your official findings and X-ray film are now ready for claiming at the clinic.";
 
                             $notificationModel->add(
                                 $notifTitle,

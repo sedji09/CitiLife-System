@@ -453,7 +453,7 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
                                         </a>
 
                                         <!-- Release — active when Report Ready -->
-                                        <button type="button" onclick="releaseToPhoto(<?= $row['id'] ?>, this, event)"
+                                        <button type="button" onclick="releaseToPhoto(<?= $row['id'] ?>, this, event, '<?= htmlspecialchars($row['case_number'] ?? '', ENT_QUOTES) ?>', '<?= htmlspecialchars(formatFullName($row), ENT_QUOTES) ?>', '<?= htmlspecialchars($row['procedure_name'] ?? $row['procedure'] ?? 'X-ray', ENT_QUOTES) ?>')"
                                             class="p-1.5 rounded-md border border-red-500 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition shadow-sm inline-flex items-center justify-center cursor-pointer"
                                             title="Release Result">
                                             <i data-lucide="send" class="w-4 h-4"></i>
@@ -960,9 +960,164 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
 
 
 
+<!-- NATIVE MODAL: RELEASE & CLAIM RESULT (PATIENT QUEUE) -->
+<div id="modalMarkClaimQueue" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-xs transition-opacity duration-200" style="z-index: 999999 !important;" onclick="if(event.target === this) closeMarkClaimQueueModal()">
+    <div class="flex min-h-screen items-center justify-center p-3 sm:p-4 text-center">
+        <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white text-left shadow-2xl transition-all border border-gray-100 overflow-hidden my-auto animate-fade-in" onclick="event.stopPropagation()">
+            
+            <!-- Header (Fixed at top) -->
+            <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-bold text-gray-900 leading-tight">Release Examination Result</h3>
+                        <p class="text-[11px] text-gray-500">Select release option and confirm official report release</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeMarkClaimQueueModal()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Body (Scrollable if content expands) -->
+            <form id="formMarkClaimQueue" onsubmit="submitMarkClaimQueue(event)" class="flex flex-col flex-1 overflow-hidden m-0">
+                <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
+                    <input type="hidden" id="queue_claim_case_id" value="">
+                    <input type="hidden" id="queue_release_option" value="release_only">
+                    <input type="hidden" id="queue_claim_receiver_type" value="Self">
+
+                    <!-- Case & Patient Banner -->
+                    <div class="p-2.5 bg-gray-50/90 border border-gray-200/80 rounded-xl shadow-2xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Case Number</span>
+                            <span id="queue_claim_modal_case_no" class="text-xs sm:text-sm font-black text-gray-900 font-mono tracking-tight">--</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Patient Name</span>
+                            <span id="queue_claim_modal_pat_name" class="text-xs sm:text-sm font-bold text-gray-900 flex items-center justify-end gap-1">
+                                <i data-lucide="user" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <span class="truncate">--</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Release Options Selection -->
+                    <div class="space-y-2">
+                        <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                            Select Release Option <span class="text-red-500">*</span>
+                        </label>
+
+                        <!-- Option 1 Card -->
+                        <div id="card-opt-release-only" onclick="selectQueueReleaseOption('release_only')"
+                            class="p-3 rounded-xl border-2 border-blue-600 bg-blue-50/70 cursor-pointer transition shadow-2xs">
+                            <strong class="text-gray-900 block font-bold text-xs sm:text-sm">Option 1: Release Only</strong>
+                            <p class="text-[11px] text-gray-600 mt-0.5 leading-relaxed">
+                                Marks case as officially released and available in Completed Records.
+                            </p>
+                        </div>
+
+                        <!-- Option 2 Card -->
+                        <div id="card-opt-claim-now" onclick="selectQueueReleaseOption('claim_now')"
+                            class="p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50/80 cursor-pointer transition shadow-2xs">
+                            <strong class="text-gray-900 block font-bold text-xs sm:text-sm">Option 2: Release & Claim Result Now</strong>
+                            <p class="text-[11px] text-gray-600 mt-0.5 leading-relaxed">
+                                Patient or authorized representative is present. Verify receiver and mark as Claimed immediately.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Claim Details Section (Only when Option 2 is chosen) -->
+                    <div id="queue_claim_details_section" class="hidden space-y-3 pt-2.5 border-t border-gray-100">
+                        <!-- Receiver Type Toggle -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                Claimed By <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="queue-btn-type-self" onclick="setQueueClaimReceiverType('Self')"
+                                    class="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs">
+                                    <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Patient (Self)
+                                </button>
+                                <button type="button" id="queue-btn-type-rep" onclick="setQueueClaimReceiverType('Representative')"
+                                    class="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer">
+                                    <i data-lucide="users" class="w-3.5 h-3.5"></i> Representative
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recipient Full Name -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                Recipient Full Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="queue_claim_receiver_name"
+                                class="w-full rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium"
+                                placeholder="Enter full name of receiver">
+                        </div>
+
+                        <!-- Relationship -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                Relationship to Patient <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="queue_claim_relationship" value="Self" disabled
+                                class="w-full rounded-xl border border-gray-300 bg-gray-100/70 px-3 py-1.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium cursor-not-allowed"
+                                placeholder="e.g. Spouse, Parent, Child, Sibling">
+                        </div>
+
+                        <!-- Valid ID Presented (Representative Only) -->
+                        <div id="queue_claim_id_wrapper" class="hidden space-y-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    Valid ID Presented <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="queue_claim_id_type"
+                                    class="w-full rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium"
+                                    placeholder="e.g. National ID, Driver's License">
+                                <!-- Quick ID chips -->
+                                <div class="flex flex-wrap gap-1 mt-1.5">
+                                    <button type="button" onclick="document.getElementById('queue_claim_id_type').value = 'National ID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">National ID</button>
+                                    <button type="button" onclick="document.getElementById('queue_claim_id_type').value = 'PhilHealth ID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">PhilHealth ID</button>
+                                    <button type="button" onclick="document.getElementById('queue_claim_id_type').value = 'Driver\'s License'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">Driver's License</button>
+                                    <button type="button" onclick="document.getElementById('queue_claim_id_type').value = 'UMID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">UMID</button>
+                                    <button type="button" onclick="document.getElementById('queue_claim_id_type').value = 'Passport'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">Passport</button>
+                                    <button type="button" onclick="document.getElementById('queue_claim_id_type').value = 'Company ID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">Company ID</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    ID Number <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="queue_claim_id_number"
+                                    class="w-full rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium"
+                                    placeholder="e.g. 1234-5678-9012">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer (Fixed at bottom of modal, buttons side-by-side) -->
+                <div class="px-5 py-3 border-t border-gray-100 bg-gray-50/80 flex items-center justify-end gap-2.5 shrink-0">
+                    <button type="button" onclick="closeMarkClaimQueueModal()"
+                        class="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition cursor-pointer shadow-2xs">
+                        Cancel
+                    </button>
+                    <button type="submit" id="btnSubmitClaimQueue"
+                        class="inline-flex items-center gap-1.5 px-6 py-2 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition active:scale-95 cursor-pointer">
+                        <i data-lucide="check" class="w-4 h-4"></i> Confirm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Release Loading Overlay -->
 <div id="release-loading-overlay"
-    class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden"
+    style="z-index: 9999999 !important;">
     <div
         class="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center max-w-xs w-full mx-4 border border-gray-100 dark:border-gray-700 transition-all">
         <div id="release-spinner-container">
@@ -1125,23 +1280,241 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
         }
     }
 
-    async function releaseToPhoto(caseId, btn, event = null) {
-        if (event) event.preventDefault();
-        const confirmed = await confirmAlert('Confirm Release', 'Would you like to confirm releasing this result and moving it to X-ray Patient Records?');
-        if (!confirmed.isConfirmed) return;
+    let pendingQueueReleaseBtn = null;
+    let queueActivePatientName = '';
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function releaseToPhoto(caseId, btn, event = null, caseNumber = '', patientName = '', procedureName = 'X-ray') {
+        if (event) event.preventDefault();
+        pendingQueueReleaseBtn = btn;
+        openMarkClaimQueueModal(caseId, caseNumber, patientName, procedureName);
+    }
+
+    function selectQueueReleaseOption(opt) {
+        const hiddenOpt = document.getElementById('queue_release_option');
+        const card1 = document.getElementById('card-opt-release-only');
+        const card2 = document.getElementById('card-opt-claim-now');
+        const radio1 = document.getElementById('radio-opt-release-only');
+        const radio2 = document.getElementById('radio-opt-claim-now');
+        const claimSection = document.getElementById('queue_claim_details_section');
+        const submitBtn = document.getElementById('btnSubmitClaimQueue');
+
+        if (!hiddenOpt) return;
+        hiddenOpt.value = opt;
+
+        if (opt === 'release_only') {
+            if (card1) card1.className = 'p-3 rounded-xl border-2 border-blue-600 bg-blue-50/70 cursor-pointer transition shadow-2xs';
+            if (card2) card2.className = 'p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50/80 cursor-pointer transition shadow-2xs';
+            if (claimSection) claimSection.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.className = 'inline-flex items-center gap-1.5 px-6 py-2 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition active:scale-95 cursor-pointer';
+                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm';
+            }
+        } else {
+            if (card2) card2.className = 'p-3 rounded-xl border-2 border-blue-600 bg-blue-50/70 cursor-pointer transition shadow-2xs';
+            if (card1) card1.className = 'p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50/80 cursor-pointer transition shadow-2xs';
+            if (claimSection) claimSection.classList.remove('hidden');
+            if (submitBtn) {
+                submitBtn.className = 'inline-flex items-center gap-1.5 px-6 py-2 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition active:scale-95 cursor-pointer';
+                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm';
+            }
+        }
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+
+    function openMarkClaimQueueModal(caseId, caseNumber, patientName, procedureName) {
+        const modal = document.getElementById('modalMarkClaimQueue');
+        if (!modal) return;
+
+        queueActivePatientName = patientName || 'Patient';
+
+        if (document.getElementById('queue_claim_case_id')) document.getElementById('queue_claim_case_id').value = caseId;
+        if (document.getElementById('queue_claim_modal_case_no')) document.getElementById('queue_claim_modal_case_no').textContent = caseNumber || 'Case';
+        if (document.getElementById('queue_claim_modal_pat_name')) document.getElementById('queue_claim_modal_pat_name').textContent = queueActivePatientName;
+
+        if (document.getElementById('queue_claim_receiver_name')) document.getElementById('queue_claim_receiver_name').value = queueActivePatientName;
+        if (document.getElementById('queue_claim_relationship')) {
+            document.getElementById('queue_claim_relationship').value = 'Self';
+            document.getElementById('queue_claim_relationship').disabled = true;
+        }
+        if (document.getElementById('queue_claim_id_type')) document.getElementById('queue_claim_id_type').value = '';
+        if (document.getElementById('queue_claim_id_number')) document.getElementById('queue_claim_id_number').value = '';
+
+        // Default to Option 1: Release Only
+        selectQueueReleaseOption('release_only');
+        setQueueClaimReceiverType('Self');
+
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+
+    function closeMarkClaimQueueModal() {
+        const modal = document.getElementById('modalMarkClaimQueue');
+        if (modal) modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function setQueueClaimReceiverType(type) {
+        const btnSelf = document.getElementById('queue-btn-type-self');
+        const btnRep = document.getElementById('queue-btn-type-rep');
+        const hiddenType = document.getElementById('queue_claim_receiver_type');
+        const nameInput = document.getElementById('queue_claim_receiver_name');
+        const relInput = document.getElementById('queue_claim_relationship');
+        const idWrapper = document.getElementById('queue_claim_id_wrapper');
+        const idTypeInput = document.getElementById('queue_claim_id_type');
+        const idNumberInput = document.getElementById('queue_claim_id_number');
+
+        if (!btnSelf || !btnRep) return;
+
+        hiddenType.value = type;
+
+        if (type === 'Self') {
+            btnSelf.className = 'flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs';
+            btnRep.className = 'flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer';
+            nameInput.value = queueActivePatientName;
+            relInput.value = 'Self';
+            relInput.disabled = true;
+            relInput.classList.add('bg-gray-100/70', 'cursor-not-allowed');
+            if (idWrapper) idWrapper.classList.add('hidden');
+            if (idTypeInput) idTypeInput.value = '';
+            if (idNumberInput) idNumberInput.value = '';
+        } else {
+            btnRep.className = 'flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs';
+            btnSelf.className = 'flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer';
+            nameInput.value = '';
+            relInput.value = '';
+            relInput.disabled = false;
+            relInput.classList.remove('bg-gray-100/70', 'cursor-not-allowed');
+            if (idWrapper) idWrapper.classList.remove('hidden');
+            nameInput.focus();
+        }
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+
+    function submitMarkClaimQueue(e) {
+        if (e) e.preventDefault();
+
+        const caseId = document.getElementById('queue_claim_case_id')?.value;
+        const releaseOpt = document.getElementById('queue_release_option')?.value || 'release_only';
+
+        if (releaseOpt === 'release_only') {
+            closeMarkClaimQueueModal();
+            executeReleaseToPhoto(caseId, pendingQueueReleaseBtn, null);
+            return;
+        }
+
+        // Option 2: Release & Claim Now
+        const receiverType = document.getElementById('queue_claim_receiver_type')?.value || 'Self';
+        const nameInput = document.getElementById('queue_claim_receiver_name');
+        const relInput = document.getElementById('queue_claim_relationship');
+        const idTypeInput = document.getElementById('queue_claim_id_type');
+        const idNumInput = document.getElementById('queue_claim_id_number');
+
+        const receiverName = (nameInput?.value || '').trim();
+        const relationship = (relInput?.value || '').trim();
+        const idType = (idTypeInput?.value || '').trim();
+        const idNumber = (idNumInput?.value || '').trim();
+
+        // Reset previous validation borders
+        [nameInput, relInput, idTypeInput, idNumInput].forEach(inp => {
+            if (inp) {
+                inp.classList.remove('border-red-500', 'ring-2', 'ring-red-500/20');
+                inp.classList.add('border-gray-300');
+            }
+        });
+
+        const showWarn = (msg, inputEl) => {
+            if (inputEl) {
+                inputEl.classList.remove('border-gray-300');
+                inputEl.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                inputEl.focus();
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Required Field Missing',
+                    text: msg,
+                    customClass: { container: '!z-[9999999]', popup: 'rounded-2xl p-5' }
+                });
+            } else {
+                alert(msg);
+            }
+        };
+
+        if (!receiverName) {
+            showWarn(receiverType === 'Representative' ? 'Please enter the Representative\'s Full Name.' : 'Please enter the Recipient\'s Full Name.', nameInput);
+            return;
+        }
+
+        if (receiverType === 'Representative') {
+            if (!relationship) {
+                showWarn('Please enter the Representative\'s Relationship to Patient (e.g. Spouse, Parent, Child, Sibling).', relInput);
+                return;
+            }
+            if (!idType) {
+                showWarn('Please select or enter the Representative\'s Valid ID Presented (e.g. National ID, Driver\'s License).', idTypeInput);
+                return;
+            }
+            if (!idNumber) {
+                showWarn('Please enter the Representative\'s ID Number as proof.', idNumInput);
+                return;
+            }
+        }
+
+        let idPresented = '';
+        if (idType && idNumber) {
+            idPresented = `${idType} (ID No: ${idNumber})`;
+        } else if (idType) {
+            idPresented = idType;
+        } else if (idNumber) {
+            idPresented = `ID No: ${idNumber}`;
+        }
+
+        const claimData = {
+            is_claimed: 1,
+            claimed_by: receiverName,
+            claimed_relationship: relationship || 'Self',
+            claimed_id_presented: idPresented
+        };
+
+        closeMarkClaimQueueModal();
+        executeReleaseToPhoto(caseId, pendingQueueReleaseBtn, claimData);
+    }
+
+    async function executeReleaseToPhoto(caseId, btn, claimData = null) {
         const baseDir = '<?= (defined("PROJECT_DIR") && PROJECT_DIR) ? "/" . PROJECT_DIR : "" ?>';
         const overlay = document.getElementById('release-loading-overlay');
         const statusText = document.getElementById('release-status-text');
 
         // Disable button to prevent double clicks
-        const originalHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        let originalHTML = '';
+        if (btn) {
+            originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
 
         // Show refined overlay
         if (overlay) overlay.classList.remove('hidden');
-        if (statusText) statusText.textContent = 'Initializing report snapshot...';
+        if (statusText) {
+            statusText.textContent = claimData 
+                ? 'Initializing report release & claim...' 
+                : 'Initializing report snapshot...';
+        }
 
         try {
             // 1. Create a hidden iframe to render the perfect print layout
@@ -1197,12 +1570,23 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
                         base64Images.push(imgData);
                     }
 
-                    if (statusText) statusText.textContent = 'Uploading consolidated report...';
+                    if (statusText) {
+                        statusText.textContent = claimData 
+                            ? 'Releasing report and recording claim details...' 
+                            : 'Uploading consolidated report...';
+                    }
 
                     // Submit images to backend
                     const formData = new FormData();
                     formData.append('id', caseId);
                     formData.append('images', JSON.stringify(base64Images));
+
+                    if (claimData) {
+                        formData.append('is_claimed', '1');
+                        formData.append('claimed_by', claimData.claimed_by || '');
+                        formData.append('claimed_relationship', claimData.claimed_relationship || 'Self');
+                        formData.append('claimed_id_presented', claimData.claimed_id_presented || '');
+                    }
 
                     const response = await fetch(`${baseDir}/patient-lists?action=release_and_upload`, {
                         method: 'POST',
@@ -1227,11 +1611,13 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
                         if (spinner) spinner.classList.add('hidden');
                         if (successIcon) successIcon.classList.remove('hidden');
                         if (titleEl) {
-                            titleEl.textContent = 'Result Released!';
+                            titleEl.textContent = claimData ? 'Result Released & Claimed!' : 'Result Released!';
                             titleEl.className = 'text-base font-bold text-green-600 dark:text-green-400';
                         }
                         if (statusTextEl) {
-                            statusTextEl.textContent = 'Case moved to X-ray Patient Records. Returning to Patient Queue...';
+                            statusTextEl.textContent = claimData 
+                                ? `Report released and marked as claimed by ${claimData.claimed_by}. Updating...`
+                                : 'Case moved to X-ray Patient Records. Returning to Patient Queue...';
                             statusTextEl.className = 'text-xs text-gray-600 dark:text-gray-300 mt-2 text-center font-medium';
                         }
 
@@ -1244,8 +1630,10 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
                     console.error(err);
                     errorAlert('Generation Failed', err.message);
                     if (overlay) overlay.classList.add('hidden');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
                 } finally {
                     iframe.remove();
                 }
@@ -1254,8 +1642,10 @@ if ($hlTarget && empty($_GET['tab']) && (!isset($page) || !in_array($page, ['cor
             console.error(e);
             errorAlert('Error', 'An unexpected error occurred during processing.');
             if (overlay) overlay.classList.add('hidden');
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
     }
 </script>

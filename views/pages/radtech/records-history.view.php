@@ -73,10 +73,27 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
 
 <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
     <!-- Top Details Section -->
-    <div>
-        <div class="flex items-start justify-between border-b border-gray-300 pb-4">
+        <?php
+        $isClaimedCase = !empty($caseDetails['is_claimed']) && (int)$caseDetails['is_claimed'] === 1;
+        ?>
+        <div class="flex items-center justify-between border-b border-gray-200 pb-4 flex-wrap gap-3">
             <h3 class="text-[22px] font-bold text-gray-900">Findings Report and Images</h3>
-            <span class="text-gray-400 text-sm mt-1"><?= date('Y-m-d', strtotime($caseDetails['created_at'])) ?></span>
+            <div class="flex items-center gap-3">
+                <span class="text-gray-500 font-medium text-xs sm:text-sm bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200/80 shadow-2xs">
+                    <?= date('F d, Y', strtotime($caseDetails['created_at'])) ?>
+                </span>
+                <?php if ($isClaimedCase): ?>
+                    <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs sm:text-sm font-bold rounded-xl shadow-2xs">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Released &amp; Claimed
+                    </span>
+                <?php else: ?>
+                    <button type="button"
+                        onclick="openClaimModalHistory(<?= $caseId ?>, '<?= htmlspecialchars(addslashes($caseDetails['case_number'])) ?>', '<?= htmlspecialchars(addslashes($fullName)) ?>', '<?= htmlspecialchars(addslashes($caseDetails['exam_type'] ?? 'X-ray')) ?>')"
+                        class="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-sm cursor-pointer active:scale-95">
+                        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Mark as Claimed
+                    </button>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="mt-6 flex flex-col md:flex-row justify-between gap-8">
@@ -142,18 +159,46 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
                         ?>
                     </span>
                 </div>
+
+                <?php if ($isClaimedCase): ?>
+                    <!-- Claim Details -->
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Claim Details</span>
+                        <div class="flex items-center gap-2 flex-wrap text-sm">
+                            <span class="text-gray-900 font-medium">
+                                <?= htmlspecialchars($caseDetails['claimed_by'] ?: $fullName) ?>
+                                <span class="text-gray-500 font-normal">(<?= htmlspecialchars($caseDetails['claimed_relationship'] ?: 'Self') ?>)</span>
+                            </span>
+                            <span class="text-gray-300">•</span>
+                            <button type="button"
+                                onclick="openClaimDetailsModalHistory(<?= htmlspecialchars(json_encode([
+                                    'case_id' => $caseId,
+                                    'case_number' => $caseDetails['case_number'],
+                                    'patient_name' => $fullName,
+                                    'claimed_at' => !empty($caseDetails['claimed_at']) ? date('M d, Y h:i A', strtotime($caseDetails['claimed_at'])) : '—',
+                                    'claimed_by' => $caseDetails['claimed_by'] ?: $fullName,
+                                    'claimed_relationship' => $caseDetails['claimed_relationship'] ?: 'Self',
+                                    'claimed_id_presented' => $caseDetails['claimed_id_presented'] ?? '',
+                                    'claimed_notes' => $caseDetails['claimed_notes'] ?? ''
+                                ]), ENT_QUOTES, 'UTF-8') ?>)"
+                                class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition">
+                                See Full Details
+                            </button>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
 
-            <div class="text-right md:w-1/3">
+            <div class="text-right md:w-1/3 flex flex-col items-end justify-start">
                 <h4 class="text-xl font-bold text-gray-900">Exam Type</h4>
-                <p class="text-gray-500 font-medium text-lg mt-0.5"><?= htmlspecialchars($caseDetails['exam_type']) ?>
-                </p>
+                <p class="text-gray-500 font-medium text-lg mt-0.5"><?= htmlspecialchars($caseDetails['exam_type']) ?></p>
             </div>
         </div>
     </div>
 
     <!-- Dual Column Split -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+
 
         <!-- Findings Report -->
         <div class="flex flex-col border border-gray-200 rounded-2xl overflow-hidden h-[480px]">
@@ -596,6 +641,505 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
             const top = (screen.height - popupHeight) / 2;
 
             window.open(url, 'ReportViewer', `width=${popupWidth},height=${popupHeight},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+        }
+
+    </script>
+
+    <!-- ========================================== -->
+    <!-- NATIVE MODAL: MARK RESULT AS CLAIMED       -->
+    <!-- ========================================== -->
+    <div id="modalMarkClaimHistory" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-xs transition-opacity duration-200" onclick="if(event.target === this) closeClaimModalHistory()">
+        <div class="flex min-h-screen items-center justify-center p-3 sm:p-4 text-center">
+            <div class="relative w-full max-w-lg rounded-2xl bg-white text-left shadow-2xl transition-all border border-gray-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+                <!-- Header -->
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shrink-0">
+                            <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900 leading-tight">Mark Result as Claimed</h3>
+                            <p class="text-xs text-gray-500">Verify receiver and confirm physical result release</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeClaimModalHistory()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <form id="formMarkClaimHistory" onsubmit="submitMarkClaimHistory(event)" class="p-5 space-y-3.5">
+                    <input type="hidden" id="claim_hist_case_id">
+
+                    <!-- Summary Info Card -->
+                    <div class="p-3 bg-gray-50/80 border border-gray-200/80 rounded-xl shadow-2xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Case Number</span>
+                        <div class="text-sm font-black text-gray-900 font-mono tracking-tight" id="claim_hist_modal_case_no">—</div>
+                        <div class="text-xs font-semibold text-gray-700 flex items-center gap-1.5 mt-0.5 truncate">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-gray-400 shrink-0"></i>
+                            <span class="truncate" id="claim_hist_modal_pat_name">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Verification Tip -->
+                    <div class="flex items-center gap-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-800">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-blue-600 shrink-0"></i>
+                        <span>Please verify receiver ID before handing over the official printed film & envelope.</span>
+                    </div>
+
+                    <!-- Receiver Type Selector -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                            Who is claiming? <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="btn-hist-type-self" onclick="setClaimHistoryReceiverType('Self')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs">
+                                <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Patient (Self)
+                            </button>
+                            <button type="button" id="btn-hist-type-rep" onclick="setClaimHistoryReceiverType('Representative')" class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer">
+                                <i data-lucide="users" class="w-3.5 h-3.5"></i> Representative
+                            </button>
+                        </div>
+                        <input type="hidden" id="claim_hist_receiver_type" value="Self">
+                    </div>
+
+                    <!-- Receiver Name & Relationship -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                Claimed By (Full Name) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="claim_hist_receiver_name" required class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium" placeholder="Full name of receiver">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                Relationship <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="claim_hist_relationship" value="Self" disabled class="w-full rounded-xl border border-gray-300 bg-gray-100/70 px-3 py-2 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs disabled:cursor-not-allowed font-medium" placeholder="e.g. Spouse, Parent, Child">
+                        </div>
+                    </div>
+
+                    <!-- Valid ID (Representative Only) -->
+                    <div id="claim_hist_id_wrapper" class="hidden space-y-2.5">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                Valid ID Presented <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="claim_hist_id_type" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium" placeholder="e.g. PhilHealth ID, Driver's License, National ID">
+                            <!-- Quick Chips -->
+                            <div class="flex flex-wrap gap-1 mt-1.5">
+                                <button type="button" onclick="document.getElementById('claim_hist_id_type').value = 'National ID (PhilSys)'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">National ID</button>
+                                <button type="button" onclick="document.getElementById('claim_hist_id_type').value = 'PhilHealth ID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">PhilHealth</button>
+                                <button type="button" onclick="document.getElementById('claim_hist_id_type').value = 'Driver\'s License'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">Driver's License</button>
+                                <button type="button" onclick="document.getElementById('claim_hist_id_type').value = 'UMID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">UMID</button>
+                                <button type="button" onclick="document.getElementById('claim_hist_id_type').value = 'Passport'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">Passport</button>
+                                <button type="button" onclick="document.getElementById('claim_hist_id_type').value = 'Company / School ID'" class="text-[10px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md transition cursor-pointer">Company ID</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                ID Number <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="claim_hist_id_number" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs sm:text-sm text-gray-900 outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition shadow-2xs font-medium" placeholder="e.g. 1234-5678-9012">
+                        </div>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                        <button type="button" onclick="closeClaimModalHistory()" class="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition cursor-pointer">
+                            Cancel
+                        </button>
+                        <button type="submit" id="btnSubmitClaimHistory" class="inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition active:scale-95 cursor-pointer">
+                            <i data-lucide="check" class="w-4 h-4"></i> Confirm Claim
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- NATIVE MODAL: RESULT CLAIM DETAILS         -->
+    <!-- ========================================== -->
+    <div id="modalClaimDetailsHistory" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-xs transition-opacity duration-200" onclick="if(event.target === this) closeClaimDetailsModalHistory()">
+        <div class="flex min-h-screen items-center justify-center p-3 sm:p-4 text-center">
+            <div class="relative w-full max-w-md rounded-2xl bg-white text-left shadow-2xl transition-all border border-gray-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+                <!-- Header -->
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900 leading-tight">Result Claim Details</h3>
+                            <p class="text-xs text-gray-500">Physical result pickup verification record</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeClaimDetailsModalHistory()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="p-5 space-y-3.5">
+                    <!-- Summary Card -->
+                    <div class="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="h-9 w-9 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+                                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md uppercase tracking-wide" id="detail_hist_case_no">Case #—</span>
+                                <p class="text-sm font-bold text-gray-900 mt-0.5 truncate" id="detail_hist_pat_name">—</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-xs font-bold text-emerald-800 block" id="detail_hist_claimed_at">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Info List Card -->
+                    <div class="bg-gray-50/80 border border-gray-200/80 rounded-xl p-3.5 space-y-2.5">
+                        <div class="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Claimed By</span>
+                            <span class="text-xs sm:text-sm font-bold text-gray-900" id="detail_hist_claimed_by">—</span>
+                        </div>
+                        <div class="flex items-center justify-between border-b border-gray-200/60 pb-2" id="detail_hist_row_rel">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Relationship</span>
+                            <span class="text-xs font-semibold text-gray-800 bg-white border border-gray-200 px-2 py-0.5 rounded-md shadow-2xs" id="detail_hist_relationship">—</span>
+                        </div>
+                        <div class="flex items-center justify-between border-b border-gray-200/60 pb-2" id="detail_hist_row_id">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">ID Presented</span>
+                            <span class="text-xs font-semibold text-gray-800" id="detail_hist_id_presented">—</span>
+                        </div>
+                        <div class="flex flex-col gap-1 pt-0.5" id="detail_hist_row_notes">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pickup Notes</span>
+                            <p class="text-xs text-gray-700 bg-white p-2.5 rounded-lg border border-gray-200/80 italic leading-relaxed shadow-2xs" id="detail_hist_notes">—</p>
+                        </div>
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <div class="pt-3 border-t border-gray-100 flex items-center justify-end">
+                        <button type="button" onclick="closeClaimDetailsModalHistory()" class="px-5 py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl transition shadow-2xs cursor-pointer active:scale-95">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activeHistPatientName = '';
+
+        function openClaimDetailsModalHistory(info) {
+            const modal = document.getElementById('modalClaimDetailsHistory');
+            if (!modal || !info) return;
+
+            document.getElementById('detail_hist_case_no').textContent = `Case #${info.case_number}`;
+            document.getElementById('detail_hist_pat_name').textContent = info.patient_name;
+            document.getElementById('detail_hist_claimed_at').textContent = info.claimed_at || '—';
+            document.getElementById('detail_hist_claimed_by').textContent = info.claimed_by || '—';
+            
+            const relVal = (info.claimed_relationship || 'Self').trim();
+            document.getElementById('detail_hist_relationship').textContent = relVal;
+
+            // Conditionally show/hide ID Presented (only if representative with valid ID recorded)
+            const idRow = document.getElementById('detail_hist_row_id');
+            const idVal = (info.claimed_id_presented || '').trim();
+            if (idRow) {
+                if (idVal && idVal !== 'None Specified' && idVal !== 'None' && idVal !== '—' && relVal.toLowerCase() !== 'self') {
+                    document.getElementById('detail_hist_id_presented').textContent = idVal;
+                    idRow.classList.remove('hidden');
+                } else {
+                    idRow.classList.add('hidden');
+                }
+            }
+
+            // Conditionally show/hide Pickup Notes (only if notes actually exist)
+            const notesRow = document.getElementById('detail_hist_row_notes');
+            const notesVal = (info.claimed_notes || '').trim();
+            if (notesRow) {
+                if (notesVal && notesVal !== 'No additional notes' && notesVal !== 'No additional pickup notes provided.' && notesVal !== 'None' && notesVal !== '—') {
+                    document.getElementById('detail_hist_notes').textContent = notesVal;
+                    notesRow.classList.remove('hidden');
+                } else {
+                    notesRow.classList.add('hidden');
+                }
+            }
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+
+        function closeClaimDetailsModalHistory() {
+            const modal = document.getElementById('modalClaimDetailsHistory');
+            if (modal) modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function openClaimModalHistory(caseId, caseNumber, patientName, procedureName = 'X-ray') {
+            const modal = document.getElementById('modalMarkClaimHistory');
+            if (!modal) return;
+
+            activeHistPatientName = patientName || 'Patient';
+
+            document.getElementById('claim_hist_case_id').value = caseId;
+            document.getElementById('claim_hist_modal_case_no').textContent = caseNumber;
+            document.getElementById('claim_hist_modal_pat_name').textContent = activeHistPatientName;
+            const procHistEl = document.getElementById('claim_hist_modal_procedure');
+            if (procHistEl) procHistEl.textContent = procedureName || 'X-ray';
+
+            document.getElementById('claim_hist_receiver_name').value = activeHistPatientName;
+            document.getElementById('claim_hist_relationship').value = 'Self';
+            document.getElementById('claim_hist_relationship').disabled = true;
+            if (document.getElementById('claim_hist_id_type')) document.getElementById('claim_hist_id_type').value = '';
+            if (document.getElementById('claim_hist_id_number')) document.getElementById('claim_hist_id_number').value = '';
+            if (document.getElementById('claim_hist_notes')) document.getElementById('claim_hist_notes').value = '';
+
+            setClaimHistoryReceiverType('Self');
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+
+        function closeClaimModalHistory() {
+            const modal = document.getElementById('modalMarkClaimHistory');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function setClaimHistoryReceiverType(type) {
+            const btnSelf = document.getElementById('btn-hist-type-self');
+            const btnRep = document.getElementById('btn-hist-type-rep');
+            const hiddenType = document.getElementById('claim_hist_receiver_type');
+            const nameInput = document.getElementById('claim_hist_receiver_name');
+            const relInput = document.getElementById('claim_hist_relationship');
+            const idWrapper = document.getElementById('claim_hist_id_wrapper');
+            const idTypeInput = document.getElementById('claim_hist_id_type');
+            const idNumberInput = document.getElementById('claim_hist_id_number');
+
+            if (!btnSelf || !btnRep) return;
+
+            hiddenType.value = type;
+
+            if (type === 'Self') {
+                btnSelf.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs';
+                btnRep.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer';
+                nameInput.value = activeHistPatientName;
+                relInput.value = 'Self';
+                relInput.disabled = true;
+                relInput.classList.add('bg-gray-100/70', 'cursor-not-allowed');
+                if (idWrapper) idWrapper.classList.add('hidden');
+                if (idTypeInput) idTypeInput.value = '';
+                if (idNumberInput) idNumberInput.value = '';
+            } else {
+                btnRep.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs';
+                btnSelf.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer';
+                nameInput.value = '';
+                relInput.value = '';
+                relInput.disabled = false;
+                relInput.classList.remove('bg-gray-100/70', 'cursor-not-allowed');
+                if (idWrapper) idWrapper.classList.remove('hidden');
+                nameInput.focus();
+            }
+
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+
+        function submitMarkClaimHistory(e) {
+            if (e) e.preventDefault();
+
+            const caseId = document.getElementById('claim_hist_case_id')?.value;
+            const caseNo = document.getElementById('claim_hist_modal_case_no')?.textContent || 'this record';
+            const receiverType = document.getElementById('claim_hist_receiver_type')?.value || 'Self';
+            const nameInput = document.getElementById('claim_hist_receiver_name');
+            const relInput = document.getElementById('claim_hist_relationship');
+            const idTypeInput = document.getElementById('claim_hist_id_type');
+            const idNumInput = document.getElementById('claim_hist_id_number');
+
+            const receiverName = (nameInput?.value || '').trim();
+            const relationship = (relInput?.value || '').trim();
+            const idType = (idTypeInput?.value || '').trim();
+            const idNumber = (idNumInput?.value || '').trim();
+            const notes = (document.getElementById('claim_hist_notes')?.value || '').trim();
+            const btnSubmit = document.getElementById('btnSubmitClaimHistory');
+
+            [nameInput, relInput, idTypeInput, idNumInput].forEach(inp => {
+                if (inp) {
+                    inp.classList.remove('border-red-500', 'ring-2', 'ring-red-500/20');
+                    inp.classList.add('border-gray-300');
+                }
+            });
+
+            if (!receiverName) {
+                if (nameInput) {
+                    nameInput.classList.remove('border-gray-300');
+                    nameInput.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                    nameInput.focus();
+                }
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Receiver Name Required',
+                    text: 'Please enter the name of the person claiming the result.',
+                    customClass: { container: '!z-[999999]', popup: 'rounded-2xl p-5' }
+                });
+                return;
+            }
+
+            if (receiverType === 'Representative') {
+                if (!relationship) {
+                    if (relInput) {
+                        relInput.classList.remove('border-gray-300');
+                        relInput.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                        relInput.focus();
+                    }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Relationship Required',
+                        text: 'Please specify the relationship of the representative to the patient.',
+                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl p-5' }
+                    });
+                    return;
+                }
+                if (!idType) {
+                    if (idTypeInput) {
+                        idTypeInput.classList.remove('border-gray-300');
+                        idTypeInput.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                        idTypeInput.focus();
+                    }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Valid ID Type Required',
+                        text: 'Please enter or select the Valid ID presented by the representative.',
+                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl p-5' }
+                    });
+                    return;
+                }
+                if (!idNumber) {
+                    if (idNumInput) {
+                        idNumInput.classList.remove('border-gray-300');
+                        idNumInput.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                        idNumInput.focus();
+                    }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ID Number Required',
+                        text: 'Please enter the ID Number of the presented ID for verification.',
+                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl p-5' }
+                    });
+                    return;
+                }
+            }
+
+            let fullIdPresented = '';
+            if (receiverType === 'Representative') {
+                fullIdPresented = `${idType} (#${idNumber})`;
+            }
+
+            const proceedWithHistorySubmission = () => {
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
+                    if (window.lucide) lucide.createIcons();
+                }
+
+                fetch('app/api/claim_case.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        case_id: caseId,
+                        action: 'mark_claimed',
+                        claimed_by: receiverName,
+                        claimed_relationship: relationship || 'Self',
+                        claimed_id_presented: fullIdPresented,
+                        claimed_notes: notes
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        closeClaimModalHistory();
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Marked as Claimed!',
+                                text: data.message || 'X-ray result has been marked as Claimed.',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                            }).then(() => window.location.reload());
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        if (btnSubmit) {
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm Claim';
+                            if (window.lucide) lucide.createIcons();
+                        }
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed',
+                                text: data.message || 'Failed to update claim status.',
+                                customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                            });
+                        }
+                    }
+                })
+                .catch(err => {
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm Claim';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred while communicating with the server.',
+                            customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                        });
+                    }
+                });
+            };
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Confirm Result Claim?',
+                    html: `Are you sure you want to mark Case <b>${caseNo}</b> as claimed by <b>${receiverName}</b>?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Confirm Claim',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#dc2626',
+                    reverseButtons: true,
+                    customClass: {
+                        container: '!z-[999999]',
+                        popup: 'rounded-2xl p-5'
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        proceedWithHistorySubmission();
+                    }
+                });
+            } else {
+                if (confirm(`Are you sure you want to mark Case ${caseNo} as Claimed by ${receiverName}?`)) {
+                    proceedWithHistorySubmission();
+                }
+            }
         }
     </script>
 

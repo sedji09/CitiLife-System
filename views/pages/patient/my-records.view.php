@@ -304,8 +304,26 @@ $statusBadge = [
                                             <i data-lucide="map-pin" class="w-4 h-4"></i> <?= htmlspecialchars($branchName) ?>
                                         </span>
                                     </div>
+
+                                    <?php
+                                    $isRecordClaimed = !empty($c['is_claimed']) && (int)$c['is_claimed'] === 1;
+                                    ?>
+                                    <!-- Compact Result Claim Status -->
+                                    <div class="mt-2.5 flex items-center gap-2 flex-wrap text-xs">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider <?= $isRecordClaimed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' ?>">
+                                            <?= $isRecordClaimed ? 'Claimed' : 'Ready for Pick-up' ?>
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                            <?php if ($isRecordClaimed): ?>
+                                                Claimed on <?= date('M d, Y', strtotime($c['claimed_at'])) ?><?php if (!empty($c['claimed_by'])): ?> by <strong class="text-gray-700 font-medium"><?= htmlspecialchars($c['claimed_by']) ?></strong><?php endif; ?>
+                                            <?php else: ?>
+                                                Pickup at <strong class="text-gray-700 font-medium">CitiLife <?= htmlspecialchars($branchName) ?></strong>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+
 
                             <?php
                             $isExpired7Days = strtotime($c['created_at']) < strtotime('-7 days');

@@ -9,6 +9,7 @@
     function getFilteredRows(type) {
         const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
         const sort   = document.getElementById('sort-date')?.value    || 'Sort by:';
+        const claimFilter = (document.getElementById('filter-claim-status')?.value || 'all').toLowerCase();
 
         const tbodyId = type === 'completed' ? 'table-body' : 'disputes-table-body';
         const rowClass = type === 'completed' ? 'tr.record-row' : 'tr.dispute-row';
@@ -38,10 +39,12 @@
             const name    = (row.dataset.name || '').toLowerCase();
             const id      = (row.dataset.id   || '').toLowerCase();
             const patient = (row.dataset.patient || '').toLowerCase();
+            const claimed = (row.dataset.claimed || 'unclaimed').toLowerCase();
 
             const matchSearch = !search || name.includes(search) || id.includes(search) || patient.includes(search);
+            const matchClaim  = (claimFilter === 'all') || (claimed === claimFilter);
 
-            return matchSearch;
+            return matchSearch && matchClaim;
         });
     }
 
@@ -78,7 +81,7 @@
             if (!emptyMsg) {
                 emptyMsg = document.createElement('tr');
                 emptyMsg.id = emptyMsgId;
-                emptyMsg.innerHTML = `<td colspan="7" class="text-center py-8 text-gray-500">No records match your filters.</td>`;
+                emptyMsg.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-500">No records match your filters.</td>`;
                 tbody.appendChild(emptyMsg);
             } else {
                 emptyMsg.style.display = '';
@@ -89,6 +92,9 @@
 
         // Update pagination UI
         updatePaginationUI(type, filteredRows.length, totalPages);
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
     }
 
     function updatePaginationUI(type, totalFiltered, totalPages) {
@@ -190,8 +196,10 @@
     function saveState() {
         const searchInput = document.getElementById('search-input');
         const sortSelect = document.getElementById('sort-date');
+        const claimFilter = document.getElementById('filter-claim-status');
         if (searchInput) sessionStorage.setItem('Citilife_radtechXray_search', searchInput.value);
         if (sortSelect) sessionStorage.setItem('Citilife_radtechXray_sort', sortSelect.value);
+        if (claimFilter) sessionStorage.setItem('Citilife_radtechXray_claim', claimFilter.value);
     }
 
     function applyFilters() {
@@ -208,7 +216,7 @@
     });
 
     document.addEventListener('change', (e) => {
-        if (e.target && e.target.id === 'sort-date') applyFilters();
+        if (e.target && (e.target.id === 'sort-date' || e.target.id === 'filter-claim-status')) applyFilters();
     });
 
     // ── Re-apply pagination after realtime polling replaces tbody innerHTML ───
@@ -216,6 +224,373 @@
         renderPage('completed');
         renderPage('disputes');
     });
+
+    // ── Native Claim Modals Logic ──────────────────────────────────────────
+    let activeClaimPatientName = '';
+    let currentDetailCaseId = null;
+    let currentDetailCaseNo = '';
+
+    window.openMarkClaimModal = function (caseId, caseNumber, patientName, procedureName = 'X-ray') {
+        const modal = document.getElementById('modalMarkClaim');
+        if (!modal) return;
+
+        activeClaimPatientName = patientName || 'Patient';
+
+        document.getElementById('claim_modal_case_id').value = caseId;
+        document.getElementById('claim_modal_case_no').textContent = caseNumber;
+        document.getElementById('claim_modal_pat_name').textContent = activeClaimPatientName;
+        const procEl = document.getElementById('claim_modal_procedure');
+        if (procEl) procEl.textContent = procedureName || 'X-ray';
+
+        document.getElementById('claim_receiver_name').value = activeClaimPatientName;
+        document.getElementById('claim_relationship').value = 'Self';
+        document.getElementById('claim_relationship').disabled = true;
+        if (document.getElementById('claim_id_type')) document.getElementById('claim_id_type').value = '';
+        if (document.getElementById('claim_id_number')) document.getElementById('claim_id_number').value = '';
+        if (document.getElementById('claim_notes')) document.getElementById('claim_notes').value = '';
+
+        setClaimReceiverType('Self');
+
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    };
+
+    window.closeMarkClaimModal = function () {
+        const modal = document.getElementById('modalMarkClaim');
+        if (modal) modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    window.setClaimReceiverType = function (type) {
+        const btnSelf = document.getElementById('btn-type-self');
+        const btnRep = document.getElementById('btn-type-rep');
+        const hiddenType = document.getElementById('claim_receiver_type');
+        const nameInput = document.getElementById('claim_receiver_name');
+        const relInput = document.getElementById('claim_relationship');
+        const idWrapper = document.getElementById('claim_id_wrapper');
+        const idTypeInput = document.getElementById('claim_id_type');
+        const idNumberInput = document.getElementById('claim_id_number');
+
+        if (!btnSelf || !btnRep) return;
+
+        hiddenType.value = type;
+
+        if (type === 'Self') {
+            btnSelf.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs';
+            btnRep.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer';
+            nameInput.value = activeClaimPatientName;
+            relInput.value = 'Self';
+            relInput.disabled = true;
+            relInput.classList.add('bg-gray-100/70', 'cursor-not-allowed');
+            if (idWrapper) idWrapper.classList.add('hidden');
+            if (idTypeInput) idTypeInput.value = '';
+            if (idNumberInput) idNumberInput.value = '';
+        } else {
+            btnRep.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 font-bold text-xs transition cursor-pointer shadow-2xs';
+            btnSelf.className = 'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold text-xs hover:bg-gray-50 transition cursor-pointer';
+            nameInput.value = '';
+            relInput.value = '';
+            relInput.disabled = false;
+            relInput.classList.remove('bg-gray-100/70', 'cursor-not-allowed');
+            if (idWrapper) idWrapper.classList.remove('hidden');
+            nameInput.focus();
+        }
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    };
+
+    window.submitMarkClaim = function (e) {
+        if (e) e.preventDefault();
+
+        const caseId = document.getElementById('claim_modal_case_id')?.value;
+        const caseNo = document.getElementById('claim_modal_case_no')?.textContent || 'this record';
+        const receiverType = document.getElementById('claim_receiver_type')?.value || 'Self';
+        const nameInput = document.getElementById('claim_receiver_name');
+        const relInput = document.getElementById('claim_relationship');
+        const idTypeInput = document.getElementById('claim_id_type');
+        const idNumInput = document.getElementById('claim_id_number');
+
+        const receiverName = (nameInput?.value || '').trim();
+        const relationship = (relInput?.value || '').trim();
+        const idType = (idTypeInput?.value || '').trim();
+        const idNumber = (idNumInput?.value || '').trim();
+        const notes = (document.getElementById('claim_notes')?.value || '').trim();
+        const btnSubmit = document.getElementById('btnSubmitClaim');
+
+        // Reset previous validation borders
+        [nameInput, relInput, idTypeInput, idNumInput].forEach(inp => {
+            if (inp) {
+                inp.classList.remove('border-red-500', 'ring-2', 'ring-red-500/20');
+                inp.classList.add('border-gray-300');
+            }
+        });
+
+        const showWarn = (msg, inputEl) => {
+            if (inputEl) {
+                inputEl.classList.remove('border-gray-300');
+                inputEl.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+                inputEl.focus();
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Required Field Missing',
+                    text: msg,
+                    customClass: { container: '!z-[9999999]', popup: 'rounded-2xl p-5' }
+                });
+            } else {
+                alert(msg);
+            }
+        };
+
+        if (!receiverName) {
+            showWarn(receiverType === 'Representative' ? 'Please enter the Representative\'s Full Name.' : 'Please enter the Recipient\'s Full Name.', nameInput);
+            return;
+        }
+
+        if (receiverType === 'Representative') {
+            if (!relationship) {
+                showWarn('Please enter the Representative\'s Relationship to Patient (e.g. Spouse, Parent, Child, Sibling).', relInput);
+                return;
+            }
+            if (!idType) {
+                showWarn('Please select or enter the Representative\'s Valid ID Presented (e.g. National ID, Driver\'s License).', idTypeInput);
+                return;
+            }
+            if (!idNumber) {
+                showWarn('Please enter the Representative\'s ID Number as proof.', idNumInput);
+                return;
+            }
+        }
+
+        let idPresented = '';
+        if (idType && idNumber) {
+            idPresented = `${idType} (ID No: ${idNumber})`;
+        } else if (idType) {
+            idPresented = idType;
+        } else if (idNumber) {
+            idPresented = `ID No: ${idNumber}`;
+        }
+
+        const proceedWithSubmission = () => {
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
+                if (window.lucide) lucide.createIcons();
+            }
+
+            fetch('app/api/claim_case.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    case_id: caseId,
+                    action: 'mark_claimed',
+                    claimed_by: receiverName,
+                    claimed_relationship: relationship,
+                    claimed_id_presented: idPresented,
+                    claimed_notes: notes
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeMarkClaimModal();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Marked as Claimed!',
+                            text: data.message || 'X-ray result has been marked as Claimed.',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                        }).then(() => window.location.reload());
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm Claim';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Failed',
+                            text: data.message || 'Could not update claim status.',
+                            customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                        });
+                    } else {
+                        alert(data.message || 'Error occurred.');
+                    }
+                }
+            })
+            .catch(err => {
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Confirm Claim';
+                    if (window.lucide) lucide.createIcons();
+                }
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Network communication error.',
+                        customClass: { container: '!z-[999999]', popup: 'rounded-2xl' }
+                    });
+                }
+            });
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Confirm Result Claim?',
+                text: `Are you sure you want to mark Case ${caseNo} as Claimed by ${receiverName}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Confirm Claim',
+                cancelButtonText: 'No, Cancel',
+                reverseButtons: true,
+                customClass: {
+                    container: '!z-[999999]',
+                    popup: 'rounded-2xl p-6 font-sans',
+                    confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs sm:text-sm shadow-sm transition border-0 cursor-pointer',
+                    cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition border-0 mr-2 cursor-pointer'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    proceedWithSubmission();
+                }
+            });
+        } else {
+            if (confirm(`Are you sure you want to mark Case ${caseNo} as Claimed by ${receiverName}?`)) {
+                proceedWithSubmission();
+            }
+        }
+    };
+
+    window.openClaimDetailsModal = function (info) {
+        const modal = document.getElementById('modalClaimDetails');
+        if (!modal) return;
+
+        currentDetailCaseId = info.case_id;
+        currentDetailCaseNo = info.case_number;
+
+        document.getElementById('detail_case_no').textContent = `Case #${info.case_number}`;
+        document.getElementById('detail_pat_name').textContent = info.patient_name;
+        document.getElementById('detail_claimed_at').textContent = info.claimed_at || '—';
+        document.getElementById('detail_claimed_by').textContent = info.claimed_by || '—';
+        
+        const relVal = (info.claimed_relationship || 'Self').trim();
+        document.getElementById('detail_relationship').textContent = relVal;
+
+        // Conditionally show/hide ID Presented (only if representative with valid ID recorded)
+        const idRow = document.getElementById('detail_row_id');
+        const idVal = (info.claimed_id_presented || '').trim();
+        if (idRow) {
+            if (idVal && idVal !== 'None Specified' && idVal !== 'None' && idVal !== '—' && relVal.toLowerCase() !== 'self') {
+                document.getElementById('detail_id_presented').textContent = idVal;
+                idRow.classList.remove('hidden');
+            } else {
+                idRow.classList.add('hidden');
+            }
+        }
+
+        // Conditionally show/hide Pickup Notes (only if notes actually exist)
+        const notesRow = document.getElementById('detail_row_notes');
+        const notesVal = (info.claimed_notes || '').trim();
+        if (notesRow) {
+            if (notesVal && notesVal !== 'No additional notes' && notesVal !== 'No additional pickup notes provided.' && notesVal !== 'None' && notesVal !== '—') {
+                document.getElementById('detail_notes').textContent = notesVal;
+                notesRow.classList.remove('hidden');
+            } else {
+                notesRow.classList.add('hidden');
+            }
+        }
+
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    };
+
+    window.closeClaimDetailsModal = function () {
+        const modal = document.getElementById('modalClaimDetails');
+        if (modal) modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    window.revertFromDetailsModal = function () {
+        if (!currentDetailCaseId) return;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Revert to Unclaimed?',
+                text: `Are you sure you want to mark Case ${currentDetailCaseNo} back to Unclaimed?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Revert to Unclaimed',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-2xl p-5',
+                    confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition border-0',
+                    cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-xl text-xs transition border-0 mr-2'
+                },
+                buttonsStyling: false
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    doRevertClaim(currentDetailCaseId);
+                }
+            });
+        } else {
+            if (confirm(`Are you sure you want to mark Case ${currentDetailCaseNo} back to Unclaimed?`)) {
+                doRevertClaim(currentDetailCaseId);
+            }
+        }
+    };
+
+    function doRevertClaim(caseId) {
+        fetch('app/api/claim_case.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                case_id: caseId,
+                action: 'mark_unclaimed'
+            })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                closeClaimDetailsModal();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reverted!',
+                        text: d.message || 'Status reverted to Unclaimed.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: { popup: 'rounded-2xl' }
+                    }).then(() => window.location.reload());
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Error', text: d.message || 'Failed to revert status.' });
+                }
+            }
+        });
+    }
 
     // ── Init (DOM is already ready when this script loads) ────────────────────
     function init() {
@@ -225,12 +600,15 @@
 
         const searchInput = document.getElementById('search-input');
         const sortSelect = document.getElementById('sort-date');
+        const claimFilter = document.getElementById('filter-claim-status');
 
         if (!hasHighlight) {
             const savedSearch = sessionStorage.getItem('Citilife_radtechXray_search');
             const savedSort = sessionStorage.getItem('Citilife_radtechXray_sort');
+            const savedClaim = sessionStorage.getItem('Citilife_radtechXray_claim');
             if (searchInput && savedSearch !== null) searchInput.value = savedSearch;
             if (sortSelect && savedSort) sortSelect.value = savedSort;
+            if (claimFilter && savedClaim) claimFilter.value = savedClaim;
         } else {
             if (searchInput) searchInput.value = '';
             sessionStorage.removeItem('Citilife_radtechXray_search');

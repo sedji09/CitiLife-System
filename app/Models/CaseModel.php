@@ -627,7 +627,11 @@ class CaseModel
                 r.philhealth_discount,
                 r.amount_due,
                 r.rejection_reason,
-                NULL as radtech_submitted_at
+                NULL as radtech_submitted_at,
+                0 as is_claimed,
+                NULL as claimed_at,
+                NULL as claimed_by,
+                NULL as claimed_relationship
             FROM requests r
             LEFT JOIN branches b ON r.branch_id = b.id
             WHERE r.patient_id = ?
@@ -660,7 +664,11 @@ class CaseModel
                 0.00 as philhealth_discount,
                 0 as amount_due,
                 NULL as rejection_reason,
-                c.radtech_submitted_at
+                c.radtech_submitted_at,
+                COALESCE(c.is_claimed, 0) as is_claimed,
+                c.claimed_at,
+                c.claimed_by,
+                c.claimed_relationship
             FROM cases c
             LEFT JOIN branches b ON c.branch_id = b.id
             WHERE c.patient_id = ?
@@ -1983,5 +1991,61 @@ class CaseModel
 
         $stmtUpdate = $this->pdo->prepare($sql);
         return $stmtUpdate->execute($params);
+    }
+
+    /**
+     * Mark hardcopy X-ray result/film as claimed by patient or authorized representative.
+     *
+     * @param int $caseId
+     * @param string $claimedBy
+     * @param string|null $relationship
+     * @param string|null $idPresented
+     * @param string|null $notes
+     * @param int|null $claimedByUserId
+     * @return bool
+     */
+    public function markAsClaimed(int $caseId, string $claimedBy, ?string $relationship = null, ?string $idPresented = null, ?string $notes = null, ?int $claimedByUserId = null): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE cases 
+            SET is_claimed = 1,
+                claimed_at = NOW(),
+                claimed_by = ?,
+                claimed_relationship = ?,
+                claimed_id_presented = ?,
+                claimed_notes = ?,
+                claimed_by_user_id = ?
+            WHERE id = ?
+        ");
+        return $stmt->execute([
+            trim($claimedBy),
+            $relationship ? trim($relationship) : null,
+            $idPresented ? trim($idPresented) : null,
+            $notes ? trim($notes) : null,
+            $claimedByUserId,
+            $caseId
+        ]);
+    }
+
+    /**
+     * Mark hardcopy X-ray result/film as unclaimed (revert claim status).
+     *
+     * @param int $caseId
+     * @return bool
+     */
+    public function markAsUnclaimed(int $caseId): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE cases 
+            SET is_claimed = 0,
+                claimed_at = NULL,
+                claimed_by = NULL,
+                claimed_relationship = NULL,
+                claimed_id_presented = NULL,
+                claimed_notes = NULL,
+                claimed_by_user_id = NULL
+            WHERE id = ?
+        ");
+        return $stmt->execute([$caseId]);
     }
 }

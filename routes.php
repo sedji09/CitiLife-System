@@ -226,6 +226,8 @@ $router->get('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->post('/app/api/disputes.php', 'app/Api/disputes.php');
 $router->get('/App/Api/disputes.php', 'app/Api/disputes.php');
 $router->post('/App/Api/disputes.php', 'app/Api/disputes.php');
+$router->post('/app/api/claim_case.php', 'app/Api/claim_case.php');
+$router->post('/app/Api/claim_case.php', 'app/Api/claim_case.php');
 
 // Additional missing APIs that were working on localhost directly but failing on Railway router
 $router->get('/app/api/notifications.php', 'app/Api/notifications.php');

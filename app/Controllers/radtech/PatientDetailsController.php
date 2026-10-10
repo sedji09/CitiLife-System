@@ -169,10 +169,10 @@ class PatientDetailsController
 
                     $patientUserId = $caseModel->getPatientUserId($id);
                     if ($patientUserId) {
-                        $notifTitle = !empty($activeDispute) ? "Correction Request Resolved" : "Report Released";
+                        $notifTitle = !empty($activeDispute) ? "Correction Request Resolved" : "Examination Completed";
                         $notifMsg = !empty($activeDispute)
-                            ? "Your correction request for Case {$caseData['case_number']} has been resolved and your updated report released."
-                            : "Your X-ray report for Case {$caseData['case_number']} has been released. You can now view it.";
+                            ? "Your correction request for Case {$caseData['case_number']} has been resolved and your updated findings and X-ray report are ready."
+                            : "Your X-ray examination for Case {$caseData['case_number']} is completed. Your official findings and X-ray film are now ready for claiming at the clinic.";
 
                         $notificationModel->add(
                             $notifTitle,
