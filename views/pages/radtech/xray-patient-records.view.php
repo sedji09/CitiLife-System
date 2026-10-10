@@ -112,28 +112,13 @@ $records = $caseModel->getReleasedRecords($branchId);
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap">
                                 <?php if ($isClaimed): ?>
-                                    <button type="button"
-                                        onclick='openClaimDetailsModal(<?= htmlspecialchars(json_encode([
-                                            'case_id' => $row['id'],
-                                            'case_number' => $row['case_number'],
-                                            'patient_name' => $patFullName,
-                                            'claimed_at' => !empty($row['claimed_at']) ? date('F d, Y h:i A', strtotime($row['claimed_at'])) : '—',
-                                            'claimed_by' => $row['claimed_by'] ?: $patFullName,
-                                            'claimed_relationship' => $row['claimed_relationship'] ?: 'Self',
-                                            'claimed_id_presented' => $row['claimed_id_presented'] ?: 'None Specified',
-                                            'claimed_notes' => $row['claimed_notes'] ?: 'No additional notes'
-                                        ]), ENT_QUOTES, 'UTF-8') ?>)'
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition-all shadow-2xs cursor-pointer active:scale-95"
-                                        title="Claimed on <?= !empty($row['claimed_at']) ? date('M d, Y h:i A', strtotime($row['claimed_at'])) : '' ?><?= !empty($row['claimed_by']) ? ' by ' . htmlspecialchars($row['claimed_by']) : '' ?> (Click to view/revert)">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
                                         Claimed
-                                    </button>
+                                    </span>
                                 <?php else: ?>
-                                    <button type="button"
-                                        onclick="openMarkClaimModal(<?= $row['id'] ?>, '<?= htmlspecialchars(addslashes($row['case_number'])) ?>', '<?= htmlspecialchars(addslashes($patFullName)) ?>', '<?= htmlspecialchars(addslashes($row['examination_type'] ?? 'X-ray')) ?>')"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 transition-all shadow-2xs cursor-pointer active:scale-95"
-                                        title="Click to mark result as claimed">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
                                         Unclaimed
-                                    </button>
+                                    </span>
                                 <?php endif; ?>
                             </td>
                             <td class="py-3 px-3">
