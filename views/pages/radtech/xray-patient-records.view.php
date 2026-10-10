@@ -23,8 +23,8 @@ $records = $caseModel->getReleasedRecords($branchId);
     <select id="filter-claim-status"
         class="w-48 shrink-0 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500 shadow-2xs cursor-pointer">
         <option value="all">All Claim Status</option>
-        <option value="unclaimed">🟡 Unclaimed</option>
-        <option value="claimed">🟢 Claimed</option>
+        <option value="unclaimed">Unclaimed</option>
+        <option value="claimed">Claimed</option>
     </select>
 
     <select id="sort-date"
