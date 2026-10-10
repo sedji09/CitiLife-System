@@ -167,20 +167,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$is_locked) {
                             }
                         }
 
-                        // BYPASS OTP: Set full session variables immediately and proceed to dashboard
+                        // Generate 6-digit OTP
+                        $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                        $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+                        $updateStmt = $pdo->prepare("UPDATE users SET otp_code = ?, token_expires_at = ? WHERE id = ?");
+                        $updateStmt->execute([$otpCode, $expiresAt, $user['id']]);
+
+                        // Send OTP email
+                        $displayName = !empty($user['name']) ? $user['name'] : 'Staff';
+                        if (!function_exists('sendEmail')) {
+                            require_once basePath('app/Helpers/mailer_helper.php');
+                        }
+                        $emailBody = renderOtpEmail($displayName, $otpCode, 'login verification', 5, 'Staff Portal Login Verification');
+                        sendEmail($user['email'], $displayName, 'Staff Portal Verification Code - Citilife System', $emailBody);
+
+                        // Set temporary session for OTP validation
                         unset($_SESSION['staff_login_attempts']);
                         clearStaffLoginLock($pdo, $user['id']);
 
-                        session_regenerate_id(true);
-                        $_SESSION['user_id'] = $user['id'];
-                        $_SESSION['role'] = $user['role'];
-                        $_SESSION['email'] = $user['email'];
-                        $_SESSION['name'] = $user['name'] ?? '';
-                        $_SESSION['avatar'] = $user['avatar'] ?? null;
-                        $_SESSION['branch_id'] = $user['branch_id'];
-                        $_SESSION['LAST_ACTIVITY'] = time();
+                        $_SESSION['temp_user_id'] = $user['id'];
+                        $_SESSION['temp_role'] = $user['role'];
+                        $_SESSION['temp_email'] = $user['email'];
+                        $_SESSION['temp_branch_id'] = $user['branch_id'];
+                        $_SESSION['temp_name'] = $user['name'] ?? '';
+                        $_SESSION['temp_avatar'] = $user['avatar'] ?? null;
+                        $_SESSION['temp_portal'] = 'staff';
 
-                        redirect(url('dashboard'));
+                        redirect(url('otp-login'));
                     }
                 }
             } else {
