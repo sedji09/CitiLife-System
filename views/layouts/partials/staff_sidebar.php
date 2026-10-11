@@ -24,8 +24,8 @@
 
   <!-- Header logo-->
   <div class="mb-6 flex items-center border-b border-gray-200 pb-4">
-    <img src="<?= htmlspecialchars($logoPath) ?>" alt="<?= htmlspecialchars($appName) ?> Logo" class="h-10 w-auto" />
-    <span v-if="isOpen" class="text-sm font-semibold text-gray-600 ml-2 truncate">
+    <img src="<?= htmlspecialchars($logoPath) ?>" alt="<?= htmlspecialchars($appName) ?> Logo" class="h-10 w-auto app-brand-logo" />
+    <span v-if="isOpen" class="text-sm font-semibold text-gray-600 ml-2 truncate app-brand-text">
       <?= htmlspecialchars($appName) ?>
     </span>
   </div>

@@ -171,14 +171,20 @@
                     </div>
                   </div>
 
-                  <!-- Seen indicator: Miniature recipient avatar for Seen or 'Sent' text -->
+                  <!-- Seen indicator: Miniature recipient avatar and 'Seen' text like Messenger -->
                   <div v-if="msg.sender_id == userId && msgIndex === chat.messages.length - 1"
-                    class="flex items-center gap-1 mt-0.5 mr-0.5">
-                    <div v-if="msg.is_read == 1" class="w-3.5 h-3.5 rounded-full overflow-hidden border border-white shadow-xs" title="Seen">
-                      <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
-                      <div v-else class="w-full h-full bg-red-100 text-red-700 text-[8px] flex items-center justify-center font-bold">{{ chat.initials }}</div>
+                    class="flex items-center gap-1 mt-0.5 mr-0.5 justify-end">
+                    <div v-if="msg.is_read == 1" class="flex items-center gap-1" :title="'Seen by ' + (chat.name || 'user')">
+                      <span class="text-[10px] text-gray-400 font-medium select-none">Seen</span>
+                      <div class="w-3.5 h-3.5 rounded-full overflow-hidden border border-white shadow-xs flex-shrink-0">
+                        <img v-if="chat.avatar" :src="chat.avatar" class="w-full h-full object-cover" @error="chat.avatar = null">
+                        <div v-else class="w-full h-full bg-red-100 text-red-700 text-[8px] flex items-center justify-center font-bold">{{ chat.initials }}</div>
+                      </div>
                     </div>
-                    <span v-else class="text-[11px] text-gray-400 font-medium">Sent</span>
+                    <span v-else class="text-[10px] text-gray-400 font-medium select-none flex items-center gap-0.5">
+                      <svg class="w-2.5 h-2.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      Sent
+                    </span>
                   </div>
 
                 </div>

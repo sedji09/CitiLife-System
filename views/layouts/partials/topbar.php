@@ -4,7 +4,7 @@
   <div class="flex items-center justify-between gap-4">
     <div>
       <?php if ($role !== 'patient'): ?>
-        <h1 class="text-xl font-semibold text-gray-800"><?= htmlspecialchars($appName) ?></h1>
+        <h1 class="text-xl font-semibold text-gray-800 app-brand-text"><?= htmlspecialchars($appName) ?></h1>
         <?php if ($role !== 'radiologist'): ?>
           <p class="text-sm text-gray-500"><?= $branchNameDisplay ?></p>
         <?php endif; ?>

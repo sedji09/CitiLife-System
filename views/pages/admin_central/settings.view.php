@@ -464,6 +464,21 @@
             }
         }
 
+        // --- Instant Live System Name Preview as User Types ---
+        const systemNameInput = document.querySelector('input[name="system_name"]');
+        const defaultSystemName = <?= json_encode($currentSystemName) ?>;
+        const brandTextEls = document.querySelectorAll('.app-brand-text');
+
+        if (systemNameInput) {
+            systemNameInput.addEventListener('input', function () {
+                const val = this.value.trim() || defaultSystemName;
+                brandTextEls.forEach(el => {
+                    el.textContent = val;
+                });
+                document.title = val;
+            });
+        }
+
         // --- Instant Live Logo Preview on File Selection ---
         const clinicLogoInput = document.getElementById('clinicLogoInput');
         const logoPreviewImg = document.getElementById('logoPreviewImg');
@@ -511,6 +526,10 @@
                         logoPreviewBox.classList.remove('border-blue-500', 'bg-blue-50/20');
                     }
                     if (previewBadge) { previewBadge.classList.add('hidden'); }
+                    brandTextEls.forEach(el => {
+                        el.textContent = defaultSystemName;
+                    });
+                    document.title = defaultSystemName;
                 }, 50);
             });
         }

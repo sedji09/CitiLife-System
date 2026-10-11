@@ -121,6 +121,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         if (empty($error)) {
+            // Force refresh system settings static cache
+            if (function_exists('getSystemSetting')) {
+                getSystemSetting('', '', true);
+            }
+
             $success = "Settings updated successfully.";
             
             // Log this action

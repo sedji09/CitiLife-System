@@ -804,6 +804,14 @@
                   }
                 }
 
+                // If chat is currently open, un-minimized, and tab is visible, mark unread messages as seen
+                if (!chat.minimized && !document.hidden) {
+                  const unreadFromOther = data.messages.some(m => String(m.sender_id) !== String(this.userId) && (m.is_read == 0 || m.is_read === '0'));
+                  if (unreadFromOther) {
+                    this.markChatAsSeen(chat);
+                  }
+                }
+
                 // 2. Append genuinely new messages
                 if (data.messages.length > chat.messages.length) {
                   // Only push the genuinely new messages (avoid full array replacement)
@@ -952,6 +960,7 @@
           if (conv.initials) existing.initials = conv.initials;
           if (conv.role) existing.role = conv.role;
           this.bringChatToFront(existing);
+          this.markChatAsSeen(existing);
         } else {
           this.activeChats.unshift({
             ...conv,
@@ -965,13 +974,14 @@
             attachmentPreviews: []
           });
 
-          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id + '&mark_read=0', { credentials: 'same-origin' })
+          fetch('<?= url("app/Api/messages.php") ?>?action=fetch_chat&contact_id=' + conv.id + '&mark_read=1', { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
               const chat = this.activeChats.find(c => c.id === conv.id);
               if (chat && data.success) {
                 chat.messages = data.messages;
                 chat.loading = false;
+                this.markChatAsSeen(chat);
                 nextTick(() => {
                   const body = this.$refs['chatBody_' + chat.id];
                   if (body && body[0]) {
@@ -1052,6 +1062,7 @@
             }
             // Force absolute reactivity refresh in ALL cases
             this.activeChats = [...this.activeChats];
+            this.markChatAsSeen(this.activeChats[0]);
 
             // Ensure scroll is at the bottom after window re-opens
             nextTick(() => {
@@ -1062,6 +1073,7 @@
             });
           } else {
             chat.minimized = false;
+            this.markChatAsSeen(chat);
             nextTick(() => {
               const body = this.$refs['chatBody_' + chat.id];
               if (body && body[0]) {
@@ -1138,6 +1150,9 @@
       },
       toggleChatMinimize(chat) {
         chat.minimized = !chat.minimized;
+        if (!chat.minimized) {
+          this.markChatAsSeen(chat);
+        }
         this.saveActiveChats();
       },
       saveActiveChats() {
