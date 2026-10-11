@@ -766,15 +766,7 @@ if ($userRole === 'branch_admin' || $from === 'branch-xray-cases') {
             <div class="relative w-full max-w-md rounded-2xl bg-white text-left shadow-2xl transition-all border border-gray-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
                 <!-- Header -->
                 <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
-                            <i data-lucide="shield-check" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-gray-900 leading-tight">Result Claim Details</h3>
-                            <p class="text-xs text-gray-500">Physical result pickup verification record</p>
-                        </div>
-                    </div>
+                    <h3 class="text-base font-bold text-gray-900 leading-tight">Result Claim Details</h3>
                     <button type="button" onclick="closeClaimDetailsModalHistory()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
