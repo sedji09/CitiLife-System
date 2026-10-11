@@ -86,11 +86,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit();
 }
 
-// 3. Load active matrix from DB
 $activeMatrix = [];
 $stmt = $pdo->query("SELECT role, perm_key, access_level FROM role_permissions");
 while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
     $activeMatrix[$row['role']][$row['perm_key']] = intval($row['access_level']);
+}
+
+// Fallbacks for native permissions if not yet explicitly saved in role_permissions
+if (!isset($activeMatrix['branch_admin']['patient_feedback'])) {
+    $activeMatrix['branch_admin']['patient_feedback'] = 2;
+}
+if (!isset($activeMatrix['admin_central']['patient_feedback'])) {
+    $activeMatrix['admin_central']['patient_feedback'] = 1;
 }
 
         return get_defined_vars();

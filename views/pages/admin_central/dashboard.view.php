@@ -382,6 +382,11 @@
             options: {
                 ...commonOptions,
                 indexAxis: 'y',
+                interaction: {
+                    mode: 'index',
+                    axis: 'y',
+                    intersect: false
+                },
                 plugins: {
                     ...commonOptions.plugins,
                     tooltip: {

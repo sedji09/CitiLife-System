@@ -36,6 +36,18 @@ class FeedbackModel
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ";
         $this->pdo->exec($query);
+
+        // Ensure default role permissions exist for patient_feedback
+        try {
+            $this->pdo->exec("
+                INSERT IGNORE INTO role_permissions (role, perm_key, access_level) VALUES 
+                ('admin_central', 'patient_feedback', 1),
+                ('branch_admin', 'patient_feedback', 2),
+                ('patient', 'patient_feedback', 1)
+            ");
+        } catch (\Exception $e) {
+            // Ignore if role_permissions table does not exist or error occurs
+        }
     }
 
     /**
